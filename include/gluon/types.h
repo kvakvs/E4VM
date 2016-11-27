@@ -7,6 +7,8 @@
 #include <cassert>
 #include <string>
 #include <memory>
+#include "gluon/mem.h"
+#include "gluon/debug.h"
 
 namespace gluon {
     using Word = std::size_t;
@@ -75,9 +77,12 @@ namespace gluon {
         Count size_;
     public:
         BoxView(const BoxView<T> &other) = default;
+        explicit BoxView(): data_(nullptr), size_(0) {}
         explicit BoxView(const T *data, Count s)
                 : data_(data), size_(s) {
         }
+        bool is_empty() const { return not data_ || not size_; }
+        Count size() const { return size_; }
 
         // Iterator interface
         const T *cbegin() const { return data_; }
@@ -91,17 +96,28 @@ namespace gluon {
     template <class T>
     class UniqueBox {
     private:
-        using DataPtr = std::unique_ptr<T[]>;
-        DataPtr data_;
+        std::unique_ptr<T[]> data_;
         Count size_;
     public:
-        explicit UniqueBox(DataPtr &&data, Count s)
+        explicit UniqueBox(): data_(), size_(0) {}
+        explicit UniqueBox(std::unique_ptr<T[]> &&data, Count s)
                 : data_(std::move(data)), size_(s) {
         }
         explicit UniqueBox(T *data, Count s)
                 : data_(data), size_(s) {
         }
         BoxView<T> view() const { return BoxView<T>(data_.get(), size_); }
+        bool is_empty() const { return not data_ || not size_; }
+        Count size() const { return size_; }
+
+        // Replaces data_ with a new data, copy of the view
+        void copy_from(const BoxView<T> &bv) {
+            Gluon_assert(not bv.is_empty()); // hope we've got something
+            if (data_) { data_.release(); }
+            data_ = gluon::mem::make_uniq_array<T>(bv.size());
+            std::copy(bv.cbegin(), bv.cend(), data_.get());
+        }
+
         // Iterator interface
         const T *cbegin() const { return data_.get(); }
         const T *cend() const { return cbegin() + size_; }

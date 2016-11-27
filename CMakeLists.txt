@@ -18,14 +18,19 @@ set(GLUON_SOURCES
     include/gluon/conf.h
     include/gluon/debug.h
     include/gluon/fs.h
+    include/gluon/interned_string.h
+    include/gluon/mem.h
     include/gluon/module.h
     include/gluon/types.h
     include/gluon/vm.h
     src/code_mgr.cpp
     src/debug.cpp
+    src/interned_string.cpp
     src/main.cpp
+    src/mem.cpp
     src/module.cpp
-        )
+    src/vm.cpp
+    )
 
 add_executable(gleam_d ${GLUON_SOURCES})
 target_compile_options(gleam_d

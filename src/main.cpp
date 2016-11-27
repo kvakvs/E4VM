@@ -1,7 +1,7 @@
 #include "gluon.h"
 
 int main(int argc, const char *argv[]) {
-    gluon::Gleam vm;
-    vm.modules_.from_file("test1");
+    gluon::VM vm;
+    vm.modules_.from_file(vm, "../test/test1.erl.3eam");
     return 0;
 }

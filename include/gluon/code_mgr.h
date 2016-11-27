@@ -6,6 +6,8 @@
 
 namespace gluon {
 
+    class VM;
+
     class CodeManager {
     private:
         Dict<String, std::shared_ptr<Module>> mods_;
@@ -14,7 +16,7 @@ namespace gluon {
             // TODO: load preloaded modules
         }
 
-        void from_file(const char *fn);
+        void from_file(VM &vm, const char *fn);
     };
 
 } // ns gluon

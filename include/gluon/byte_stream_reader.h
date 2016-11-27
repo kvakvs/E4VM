@@ -60,6 +60,15 @@ public:
         }
         return result;
     }
+
+    String string() {
+        auto sz = Bytes(varint_u<Word>());
+        Gluon_assert(have(sz));
+
+        String result(reinterpret_cast<const char *>(pos_), sz.bytes());
+        pos_ += sz.bytes();
+        return result;
+    }
 };
 
 } // ns gluon

@@ -81,9 +81,9 @@ varint(N) -> [<<1:1, (N rem 128):7>>, varint(N bsr 7)].
 
 write_all_atoms() ->
     All0 = ets:tab2list(atoms),
-    varint(length(All0)),
     All1 = lists:keysort(2, All0),
-    [write_atoms_write_one(Atom) || {Atom, _Id} <- All1].
+    [varint(length(All0)) |
+        [write_atoms_write_one(Atom) || {Atom, _Id} <- All1]].
 
 write_exports([], Accum) -> Accum;
 write_exports([{Fun, Arity} | Exports], Accum) ->

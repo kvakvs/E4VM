@@ -1,12 +1,18 @@
 File Format for 3EAM files
 ==========================
 
-This format is different from the original Ericsson's Erlang/OTP BEAM format.
+This format is somewhat similar but also different from the original
+Ericsson's Erlang/OTP BEAM format.
+Emphasis is made to preprocess and precalculate as much as possible and
+simplify further loading and format interpretation, and to be able to
+execute straight from the loaded file image.
 
-3EAM are rewritten BEAM files with some post processing done on them.
+3EAM are rewritten BEAM files with some processing done on them.
 They have reduced instruction set.
-The code is preprocessed and ready to run directly after reading.
 Encoding of data is simplified to varint (UTF-8 algorithm where eldest bit).
+
+File header
+-----------
 
 File begins with initial marker "3EAM".
 It is followed by section markers in no particular order. They can be:
@@ -27,8 +33,10 @@ Atom section
 ------------
 
 Atom table contains all atoms collected from the module in form of strings.
+
+After the section header "Atom" and varint section_size goes varint atom_count.
 Each string is encoded as [varint size, utf8 characters] for each atom,
-beginning from the index 0.
+beginning with the index 0.
 Atom at position 0 is always the module name.
 
 Code section

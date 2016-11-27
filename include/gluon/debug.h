@@ -4,6 +4,7 @@ namespace gluon {
 
 void fail(const char *m);
 void failf(const char *format, ...);
+void dprintf(const char *format, ...);
 
 #if GLUON_DEBUG
 
