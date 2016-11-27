@@ -1,0 +1,8 @@
+cmake-build*/
+*.S
+*.beam
+*.3eam
+*.dump
+
+.idea/
+*.iml
