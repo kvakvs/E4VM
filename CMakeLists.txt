@@ -8,8 +8,11 @@ add_definitions(
     # enables filesystem feature: files, directories, code loading from disk etc
     -DGLUON_FEATURE_FS=1
     -DGLUON_DEBUG=1
+
     -std=c++14
 )
+# Static linking + lto (link time opt)
+# set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++ -static -flto")
 
 set(GLUON_SOURCES
     include/gluon.h

@@ -3,9 +3,7 @@ File Format for 3EAM files
 
 This format is somewhat similar but also different from the original
 Ericsson's Erlang/OTP BEAM format.
-Emphasis is made to preprocess and precalculate as much as possible and
-simplify further loading and format interpretation, and to be able to
-execute straight from the loaded file image.
+Emphasis is to preprocess and simplify the loading as much as possible.
 
 3EAM are rewritten BEAM files with some processing done on them.
 They have reduced instruction set.
@@ -60,3 +58,4 @@ by the value itself:
 *   ?VAL_X=1 denotes an X register, followed by varint x_register_index
 *   ?VAL_Y=2 denotes an Y stack slot, followed by varint y_index
 *   ?VAL_ATOM=3 followed by varint atom index
+*   more codes ... (consult gcompiler.erl)

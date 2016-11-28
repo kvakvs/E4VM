@@ -1,0 +1,16 @@
+{application, '3eamc',
+ [{description, "3EAM GluonVM cross-compiler"},
+  {vsn, "0.1.0"},
+  {registered, []},
+  {mod, { '3eamc', []}},
+  {applications,
+   [kernel,
+    stdlib
+   ]},
+  {env,[]},
+  {modules, ['3eamc', '3eamc_sup', '3eamc_compiler']},
+
+  {maintainers, []},
+  {licenses, []},
+  {links, []}
+ ]}.

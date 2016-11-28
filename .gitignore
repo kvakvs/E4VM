@@ -3,6 +3,7 @@ cmake-build*/
 *.beam
 *.3eam
 *.dump
+*.crashdump
 
 .idea/
 *.iml
