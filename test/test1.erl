@@ -3,7 +3,7 @@
 
 test() ->
     [
-%%    [5,4,3,2,1] = rev([1,2,3,4,5]),
+    [5,4,3,2,1] = rev([1,2,3,4,5]),
 %%    0 = recurse(10),
 %%    false = test_eq(),
 %%    test_list_ops(),
@@ -134,13 +134,13 @@ test_apply(X, Y) ->
 %%
 %%len([],Count) -> Count;
 %%len([_H|T],Count)-> len(T,Count+1).
-%%
-%%%% From 99 problems: P05 Reverse a list.
-%%rev([])-> [];
-%%rev(L) -> rev(L,[]).
-%%rev([],R)-> R;
-%%rev([H|T],R)-> rev(T,[H|R]).
-%%
+
+%% From 99 problems: P05 Reverse a list.
+rev([])-> [];
+rev(L) -> rev(L,[]).
+rev([],R)-> R;
+rev([H|T],R)-> rev(T,[H|R]).
+
 %%%% P06 Find out whether a list is a palindrome.
 %%is_palindrome([])-> false;
 %%is_palindrome(L) when length(L) == 1 -> false;

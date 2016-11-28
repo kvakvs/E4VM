@@ -3,7 +3,9 @@
 
 -include("3eamc.hrl").
 -import('3eamc_encode', [varint/1, val_zreg/1, val_int/1]).
--import('3eamc_asm', [asm_move/2, asm_syscall/1, asm_call/3, asm_apply/2]).
+-import('3eamc_pass_beam_asm', [asm_move/2, asm_syscall/1, asm_call/3, asm_apply/2]).
+-define(PASS1, '3eamc_pass_beam_asm').
+-define(PASS2, '3eamc_pass_asm_bin').
 
 %% @doc Takes filename as input, produces compiled BEAM AST and processes it
 process(F) ->
@@ -26,7 +28,9 @@ process_asm(F, {ModName, Exports, _I, Code, _NumLabels}) ->
     atom_index(ModName),
 
     OutExports = write_exports(Exports, []),
-    OutCode = write_code(Code, []),
+    OutCode = compile_gluon_asm(
+        transform_code(Code, []),
+        []),
     OutImports = [],
     OutLiterals = [],
     %% Atoms goes last
@@ -83,62 +87,17 @@ literal_index(L) ->
             varint(Id1)
     end.
 
-write_code([], Accum) -> Accum;
-write_code([Item | Tail], Accum) ->
-    write_code(Tail, [process_code_item(Item) | Accum]).
+transform_code([], Accum) ->
+    lists:flatten(lists:reverse(Accum));
+transform_code([Item | Tail], Accum) ->
+    transform_code(Tail, [?PASS1:transform(Item) | Accum]).
 
-%% Encodes one tuple from code (in the compiled BEAM)
-%% This function is used for single BEAM instructions. Sequences of BEAM
-%% instructions are TODO process sequences in the outer loop (write_code)
-process_code_item({function, Name, Arity, _Label, Code}) ->
-    [?MARK_FUNCTION, atom_index(Name), varint(Arity),
-        varint(length(Code)),
-        [process_code_item(I) || I <- Code]
-    ];
-process_code_item({label, _L}) -> [];
-process_code_item({line, _LN}) -> [];
-process_code_item({func_info, _Mod, _Fun, _Arity}) -> [];
-process_code_item({allocate, A, B}) ->
-    [
-        asm_move({imm, A}, {z, 0}),
-        asm_move({imm, B}, {z, 1}),
-        asm_syscall(?SYSCALL_ALLOC)];
-process_code_item({deallocate, A}) ->
-    [
-        asm_move({imm, A}, {z, 0}),
-        asm_syscall(?SYSCALL_DEALLOC)
-    ];
-process_code_item({move, Src, Dst}) ->
-    asm_move(value(Src), value(Dst));
-%%...
-process_code_item({call, Arity, Label}) ->
-    asm_call(label, 'Gluon_call', {value(Label), Arity});
-process_code_item({call_only, Arity, Label}) ->
-    asm_call(label, 'Gluon_tail_call', {value(Label), Arity});
-process_code_item({call_ext, _Arity, MFArity}) ->
-    asm_call(mfarity, 'Gluon_call', MFArity);
-process_code_item({call_ext_only, _Arity, MFArity}) ->
-    asm_call(mfarity, 'Gluon_tail_call', value(MFArity));
-%%...
-process_code_item({apply, Arity}) ->
-    %% Args go in x[0]..x[Arity-1], module goes in x[Arity], fun in x[Arity+1]
-    asm_apply('Gluon_call', val_int(Arity));
-process_code_item({apply_last, Arity, _}) ->
-    %% Args go in x[0]..x[Arity-1], module goes in x[Arity], fun in x[Arity+1]
-    asm_apply('Gluon_tail_call', value(Arity));
-%%...
-process_code_item({test_heap, A, B}) ->
-    [asm_move(val_int(A), val_zreg(0)),
-        asm_move(val_int(B), val_zreg(1)),
-        asm_syscall(?SYSCALL_TEST_HEAP)];
-process_code_item({put_list, Head, Tail, Dst}) ->
-    [?OPCODE_CONS, value(Head), value(Tail), value(Dst)];
-process_code_item({put_tuple, N, Dst}) -> [?OPCODE_CALL, value(Dst)];
-process_code_item({put, Val}) -> value(Val);
-process_code_item(return) -> ?OPCODE_RET;
-process_code_item(Other) ->
-    io:format("Unsupported opcode ignored: ~p~n", [Other]),
-    [].
+compile_gluon_asm([], Accum) ->
+    lists:flatten(lists:reverse(Accum));
+compile_gluon_asm([Item | Tail], Accum) ->
+    io:format("-- asm_bin ~p...~n", [Item]),
+    compile_gluon_asm(Tail, [?PASS2:transform(Item) | Accum]).
+
 
 %% Prepents a tag (signature) and varint section size to the data
 write_section(Iolist, Signature) ->
