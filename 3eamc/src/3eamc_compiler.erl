@@ -2,11 +2,12 @@
 -export([process/1]).
 
 -include("3eamc.hrl").
--import('3eamc_encode', [varint/1]).
+-import('3eamc_encode', [varint/1, val_zreg/1, val_int/1]).
+-import('3eamc_asm', [asm_move/2, asm_syscall/1, asm_call/3, asm_apply/2]).
 
 %% @doc Takes filename as input, produces compiled BEAM AST and processes it
 process(F) ->
-    case compile:file(F, ['S', binary, report]) of
+    case compile:file(F, [to_asm, binary, report]) of
         {ok, _M, Result} ->
             process_asm(F, Result);
         E ->
@@ -98,22 +99,38 @@ process_code_item({label, _L}) -> [];
 process_code_item({line, _LN}) -> [];
 process_code_item({func_info, _Mod, _Fun, _Arity}) -> [];
 process_code_item({allocate, A, B}) ->
-    [?OPCODE_ALLOC, varint(A), varint(B)];
+    [
+        asm_move({imm, A}, {z, 0}),
+        asm_move({imm, B}, {z, 1}),
+        asm_syscall(?SYSCALL_ALLOC)];
 process_code_item({deallocate, A}) ->
-    [?OPCODE_DEALLOC, varint(A)];
+    [
+        asm_move({imm, A}, {z, 0}),
+        asm_syscall(?SYSCALL_DEALLOC)
+    ];
 process_code_item({move, Src, Dst}) ->
-    [?OPCODE_MOVE, value(Src), value(Dst)];
-process_code_item({call, _Arity, Label}) ->
-    [?OPCODE_CALL, value(Label)];
+    asm_move(value(Src), value(Dst));
+%%...
+process_code_item({call, Arity, Label}) ->
+    asm_call(label, 'Gluon_call', {value(Label), Arity});
+process_code_item({call_only, Arity, Label}) ->
+    asm_call(label, 'Gluon_tail_call', {value(Label), Arity});
+process_code_item({call_ext, _Arity, MFArity}) ->
+    asm_call(mfarity, 'Gluon_call', MFArity);
 process_code_item({call_ext_only, _Arity, MFArity}) ->
-    [?OPCODE_TAIL_CALL, value(MFArity)];
+    asm_call(mfarity, 'Gluon_tail_call', value(MFArity));
+%%...
 process_code_item({apply, Arity}) ->
     %% Args go in x[0]..x[Arity-1], module goes in x[Arity], fun in x[Arity+1]
-    [?OPCODE_APPLY, value(Arity)];
+    asm_apply('Gluon_call', val_int(Arity));
 process_code_item({apply_last, Arity, _}) ->
     %% Args go in x[0]..x[Arity-1], module goes in x[Arity], fun in x[Arity+1]
-    [?OPCODE_TAIL_APPLY, value(Arity)];
-process_code_item({test_heap, _M, _N}) -> [];
+    asm_apply('Gluon_tail_call', value(Arity));
+%%...
+process_code_item({test_heap, A, B}) ->
+    [asm_move(val_int(A), val_zreg(0)),
+        asm_move(val_int(B), val_zreg(1)),
+        asm_syscall(?SYSCALL_TEST_HEAP)];
 process_code_item({put_list, Head, Tail, Dst}) ->
     [?OPCODE_CONS, value(Head), value(Tail), value(Dst)];
 process_code_item({put_tuple, N, Dst}) -> [?OPCODE_CALL, value(Dst)];

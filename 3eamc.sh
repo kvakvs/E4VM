@@ -1,2 +1,3 @@
 #!/bin/sh
-erlc gcompile.erl && erl -noshell -s gcompile main $@ -s init stop
+erl -pa 3eamc/_build/default/lib/*/ebin \
+    -noshell -s 3eamc start_3eamc $@ -s init stop

@@ -4,4 +4,5 @@ compile:
 
 .PHONY: test
 test:
-	./3eamc test/test1.erl
+	cd 3eamc && rebar3 compile && cd .. && \
+	./3eamc.sh test/test1.erl
