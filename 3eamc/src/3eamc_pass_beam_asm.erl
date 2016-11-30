@@ -44,6 +44,11 @@ transform_one({call, Arity, {f,_} = Label}) ->
     asm_call(label, '_op_call', {Label, Arity});
 transform_one({call_only, Arity, Label}) ->
     asm_call(label, '_op_tail_call', {Label, Arity});
+transform_one({call_last, Arity, Label, Dealloc}) ->
+    [
+        transform_one({deallocate, Dealloc}),
+        transform_one({call_only, Arity, Label})
+    ];
 transform_one({call_ext, _Arity, MFArity}) ->
     asm_call(mfarity, '_op_call', MFArity);
 transform_one({call_ext_only, _Arity, MFArity}) ->
@@ -66,10 +71,14 @@ transform_one({put_list, Head, Tail, Dst}) ->
     {'_op_cons', Head, Tail, Dst};
 transform_one({put_tuple, N, Dst}) ->
     {'_op_tuple', Dst};
+transform_one({put, Val}) ->
+    {'_op_tuple_append', Val};
 transform_one({'_op_tuple_put', Val}) ->
     Val;
 transform_one(return) ->
     {'_op_ret'};
+transform_one({jump, L}) ->
+    {'_op_jump', L};
 transform_one({get_list, H, T, List}) ->
     {'_op_decons', H, T, List};
 %%...
@@ -78,6 +87,17 @@ transform_one({test, Predicate, LFail, Args}) ->
         [Arg1] -> {'_op_test1', Predicate, LFail, Arg1};
         [Arg1, Arg2] -> {'_op_test2', Predicate, LFail, Arg1, Arg2}
     end;
+transform_one({get_tuple_element, Src, Element, Dst}) ->
+    [
+        asm_move(Src, {z, 0}),
+        asm_move({imm, Element}, {z, 1}),
+        asm_syscall(?SYSCALL_ELEMENT),
+        asm_move({z, 0}, Dst)
+    ];
+transform_one({gc_bif, Name, OnFail, Live, Args, Reg}) ->
+    asm_bif(Name, OnFail, Live, Args, Reg);
+transform_one({select_val, Value, OnFail, Choices}) ->
+    [erlang:error(fgsfds)];
 %%...
 transform_one(Other) ->
     io:format("Unsupported opcode ignored: ~p~n", [Other]),
@@ -104,7 +124,7 @@ asm_call(mfarity = _DestKind, CallOpcode, {extfunc, Mod, Fun, Arity})
         asm_move({imm, Mod},   {z, 0}),
         asm_move({imm, Fun},   {z, 1}),
         asm_move({imm, Arity}, {z, 2}),
-        asm_syscall(?SYSCALL_RESOLVE_EXPORT),
+        asm_syscall(?SYSCALL_RESOLVE_EXPORT), % result -> Z0
         {CallOpcode, Arity}
     ];
 asm_call(DestKind, CallOpcode, Arg) ->
@@ -124,5 +144,17 @@ asm_apply(ApplyOpcode, Arity) when is_atom(ApplyOpcode) ->
 asm_error(E) ->
     [
         asm_move({imm, E}, {z, 0}),
-        asm_syscall(?SYSCALL_ERROR)
+        asm_syscall(?SYSCALL_ERROR1)
     ].
+asm_error(E, Value) ->
+    [
+        asm_move({imm, E}, {z, 0}),
+        asm_move(Value, {z, 1}),
+        asm_syscall(?SYSCALL_ERROR2)
+    ].
+
+asm_bif(Name, OnFail, Live, Args, Reg) ->
+    %% Call the bif Bif with the argument Arg, and store the result in Reg.
+    %% On fail jump to OnFail. Do a GC if necessary to allocate
+    %% space on the heap for the result (saving Live number of X registers).
+    {'_op_bif', Name, OnFail, Live, Args, Reg}.
