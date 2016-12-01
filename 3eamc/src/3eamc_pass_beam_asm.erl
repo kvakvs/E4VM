@@ -10,7 +10,7 @@
 %% Encodes one tuple from code (in the compiled BEAM)
 %% This function is used for single BEAM instructions. Sequences of BEAM
 %% instructions are TODO process sequences in the outer loop (write_code)
-transform({function, Name, Arity, _Label, Code}) ->
+transform({function, _Name, _Arity, _Label, Code}) ->
     TransformedCode = [begin
                            io:format("-- transforming ~p...~n", [I]),
                            T = transform_one(I),
@@ -88,16 +88,11 @@ transform_one({test, Predicate, LFail, Args}) ->
         [Arg1, Arg2] -> {'_op_test2', Predicate, LFail, Arg1, Arg2}
     end;
 transform_one({get_tuple_element, Src, Element, Dst}) ->
-    [
-        asm_move(Src, {z, 0}),
-        asm_move({imm, Element}, {z, 1}),
-        asm_syscall(?SYSCALL_ELEMENT),
-        asm_move({z, 0}, Dst)
-    ];
+    {'_op_element', Src, Element, Dst};
 transform_one({gc_bif, Name, OnFail, Live, Args, Reg}) ->
     asm_bif(Name, OnFail, Live, Args, Reg);
-transform_one({select_val, Value, OnFail, Choices}) ->
-    [erlang:error(fgsfds)];
+transform_one({select_val, Value, OnFail, {list, Choices}}) ->
+    {'_op_select_val', Value, OnFail, Choices};
 %%...
 transform_one(Other) ->
     io:format("Unsupported opcode ignored: ~p~n", [Other]),

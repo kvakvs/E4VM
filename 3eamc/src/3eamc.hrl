@@ -25,6 +25,8 @@
 -define(OPCODE_TEST2,        1 + (7 bsl 4)). % checks jumps to fail, arity 2
 -define(OPCODE_TUPLE_APPEND, 1 + (8 bsl 4)). % appends to last put_tuple
 -define(OPCODE_JUMP,         1 + (9 bsl 4)). % jumps to Label
+-define(OPCODE_SELECT_VAL,   1 + (10 bsl 4)). % select(Val, OnFail, Choices)
+-define(OPCODE_ELEMENT,      1 + (11 bsl 4)). % get tuple element(Src E Dst)
 
 -define(OPCODE_SYSCALL,     2). % call id stored in upper 4 bits
     -define(SYSCALL_ALLOC,          0). % grows a new stack frame
@@ -33,4 +35,3 @@
     -define(SYSCALL_TEST_HEAP,      3). % checks heap/stack size
     -define(SYSCALL_ERROR1,         4). % produces error Z0
     -define(SYSCALL_ERROR2,         5). % produces {Z0, Z1}
-    -define(SYSCALL_ELEMENT,        6). % get tuple element(Src E Dst)
