@@ -9,8 +9,8 @@
 transform({'#label', _N}) -> [];
 transform({'_op_move', A, B}) ->
     [?OPCODE_MOVE, value(A), value(B)];
-transform({'_op_syscall', Id}) when Id >= 0 andalso Id =< 15 ->
-    ?OPCODE_SYSCALL + (Id bsl 4);
+%%transform({'_op_syscall', Id}) when Id >= 0 andalso Id =< 15 ->
+%%    ?OPCODE_SYSCALL + (Id bsl 4);
 transform({'_op_call', Arity}) ->
     [?OPCODE_CALL, varint(Arity)];
 transform({'_op_tail_call', Arity}) ->

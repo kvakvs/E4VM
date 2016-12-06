@@ -25,21 +25,16 @@ transform_one({line, _Ln}) -> [];
 %%transform_one({line, Ln}) -> {'#ln', Ln};
 transform_one({func_info, _Mod, _Fun, _Arity}) ->
     asm_error(function_clause);
-transform_one({badmatch, X}) -> asm_error(badmatch);
-transform_one({allocate_zero, A, B}) -> transform_one({allocate, A, B});
+transform_one({badmatch, X}) ->
+    asm_error(badmatch);
+transform_one({allocate_zero, A, B}) ->
+    transform_one({allocate, A, B});
 transform_one({allocate, A, B}) ->
-    [
-        asm_move({imm, A}, {z, 0}),
-        asm_move({imm, B}, {z, 1}),
-        asm_syscall(?SYSCALL_ALLOC)];
+    {'_op_alloc', A, B};
 transform_one({deallocate, A}) ->
-    [
-        asm_move({imm, A}, {z, 0}),
-        asm_syscall(?SYSCALL_DEALLOC)
-    ];
+    {'_op_dealloc', A};
 transform_one({move, Src, Dst}) ->
     asm_move(Src, Dst);
-%%...
 transform_one({call, Arity, {f,_} = Label}) ->
     asm_call(label, '_op_call', {Label, Arity});
 transform_one({call_only, Arity, Label}) ->
@@ -53,24 +48,18 @@ transform_one({call_ext, _Arity, MFArity}) ->
     asm_call(mfarity, '_op_call', MFArity);
 transform_one({call_ext_only, _Arity, MFArity}) ->
     asm_call(mfarity, '_op_tail_call', MFArity);
-%%...
 transform_one({apply, Arity}) ->
     %% Args go in x[0]..x[Arity-1], module goes in x[Arity], fun in x[Arity+1]
     asm_apply('_op_call', Arity);
 transform_one({apply_last, Arity, _}) ->
     %% Args go in x[0]..x[Arity-1], module goes in x[Arity], fun in x[Arity+1]
     asm_apply('_op_tail_call', Arity);
-%%...
 transform_one({test_heap, A, B}) ->
-    [
-        asm_move({imm, A}, {z, 0}),
-        asm_move({imm, B}, {z, 1}),
-        asm_syscall(?SYSCALL_TEST_HEAP)
-    ];
+    {'_op_test_heap', A, B};
 transform_one({put_list, Head, Tail, Dst}) ->
     {'_op_cons', Head, Tail, Dst};
 transform_one({put_tuple, N, Dst}) ->
-    {'_op_tuple', Dst};
+    {'_op_make_tuple', Dst};
 transform_one({put, Val}) ->
     {'_op_tuple_append', Val};
 transform_one({'_op_tuple_put', Val}) ->
@@ -81,7 +70,8 @@ transform_one({jump, L}) ->
     {'_op_jump', L};
 transform_one({get_list, H, T, List}) ->
     {'_op_decons', H, T, List};
-%%...
+transform_one({case_end, X}) ->
+    asm_error(case_clause, X);
 transform_one({test, Predicate, LFail, Args}) ->
     case Args of
         [Arg1] -> {'_op_test1', Predicate, LFail, Arg1};
@@ -93,7 +83,6 @@ transform_one({gc_bif, Name, OnFail, Live, Args, Reg}) ->
     asm_bif(Name, OnFail, Live, Args, Reg);
 transform_one({select_val, Value, OnFail, {list, Choices}}) ->
     {'_op_select_val', Value, OnFail, Choices};
-%%...
 transform_one(Other) ->
     io:format("Unsupported opcode ignored: ~p~n", [Other]),
     erlang:error({unsupported_opcode, ?MODULE}).
@@ -114,39 +103,19 @@ asm_call(label = _DestKind, CallOpcode, {{f,_}=Label, Arity})
     ];
 asm_call(mfarity = _DestKind, CallOpcode, {extfunc, Mod, Fun, Arity})
     when is_atom(CallOpcode) ->
-    %% Inject a syscall to resolve MFArity and then call
-    [
-        asm_move({imm, Mod},   {z, 0}),
-        asm_move({imm, Fun},   {z, 1}),
-        asm_move({imm, Arity}, {z, 2}),
-        asm_syscall(?SYSCALL_RESOLVE_EXPORT), % result -> Z0
-        {CallOpcode, Arity}
-    ];
+    {'_op_call_mfarity', Mod, Fun, Arity};
 asm_call(DestKind, CallOpcode, Arg) ->
     io:format("Err: asm_call(~p, ~p, ~p)~n", [DestKind, CallOpcode, Arg]),
     erlang:error({transformation_error, ?MODULE}).
 
 %% Args go in x[0]..x[Arity-1], module goes in x[Arity], fun in x[Arity+1]
 asm_apply(ApplyOpcode, Arity) when is_atom(ApplyOpcode) ->
-    [
-        asm_move({x, Arity},     {z, 0}),
-        asm_move({x, Arity + 1}, {z, 1}),
-        asm_move({imm, Arity},   {z, 2}),
-        asm_syscall(?SYSCALL_RESOLVE_EXPORT),
-        {ApplyOpcode, Arity}
-    ].
+    {'_op_apply', Arity}.
 
 asm_error(E) ->
-    [
-        asm_move({imm, E}, {z, 0}),
-        asm_syscall(?SYSCALL_ERROR1)
-    ].
-asm_error(E, Value) ->
-    [
-        asm_move({imm, E}, {z, 0}),
-        asm_move(Value, {z, 1}),
-        asm_syscall(?SYSCALL_ERROR2)
-    ].
+    {'_op_error', E, nil}.
+asm_error(Type, Value) ->
+    {'_op_error', Type, Value}.
 
 asm_bif(Name, OnFail, Live, Args, Reg) ->
     %% Call the bif Bif with the argument Arg, and store the result in Reg.
