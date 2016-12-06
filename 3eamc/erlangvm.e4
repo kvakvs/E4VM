@@ -1,0 +1,16 @@
+: ERROR-FN-CLAUSE 'function_clause' ERROR ;
+
+: MAKE-TUPLE ( a b c ... N -- , loop 1..N ) ;
+    DUP .ALLOC-RAW-TUPLE    ( create empty tuple in memory )
+    -1 0                    ( N -- N-1 0 , loop from 0 to N-1 )
+    DO
+        I .SET-ELEMENT      ( populate elements reversed on stack )
+    LOOP
+    ;
+
+: TRIM ( ... N -- , drops N args from the stack )
+    0 DO SWAP DROP LOOP ;
+
+: ON-FAIL-JMP ( OnFail X -- , jumps to OnFail if X is the nonvalue )
+    .NONVALUE? JUMP THEN
+    ;

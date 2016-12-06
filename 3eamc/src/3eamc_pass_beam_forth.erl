@@ -36,7 +36,8 @@ transform_fn_sequence_put_tuple({put_tuple, N, Dst}, Code, Accum) ->
 
 transform_one({label, L}) -> {label, L};
 transform_one({line, _Ln}) -> [];
-transform_one({func_info, _M, _F, _Arity}) -> f_emit_error(function_clause);
+transform_one({func_info, _M, {atom, Name}, Arity}) ->
+    [{comment, {function, Name, Arity}}, 'ERROR-FN-CLAUSE'];
 transform_one({badmatch, X}) -> f_emit_error(badmatch, X);
 transform_one({allocate_zero, A, B}) -> transform_one({allocate, A, B});
 transform_one({allocate, A, B}) -> [A, B, 'ALLOC'];
@@ -45,12 +46,15 @@ transform_one({move, Src, Dst}) -> f_emit_move(Src, Dst);
 transform_one({call, Arity, {f,_} = Label}) -> [Label, Arity, 'CALL'];
 transform_one({call_only, Arity, Label}) -> [Label, Arity, 'TAIL-CALL'];
 transform_one({call_last, Arity, Label, Dealloc}) ->
-    [transform_one({deallocate, Dealloc}),
-     transform_one({call_only, Arity, Label})];
+    transform_one({deallocate, Dealloc})
+    ++ transform_one({call_only, Arity, Label});
 transform_one({call_ext, Arity, MFArity}) ->
     [MFArity, 'RESOLVE-MFA', Arity, 'CALL']; % TODO: optimize me?
 transform_one({call_ext_only, Arity, MFArity}) ->
     [MFArity, 'RESOLVE-MFA', Arity, 'TAIL-CALL'];
+transform_one({call_ext_last, Arity, MFArity, Dealloc}) ->
+    transform_one({deallocate, Dealloc})
+    ++ transform_one({call_ext_only, Arity, MFArity});
 transform_one({call_fun, Fun}) -> [f_emit_read(Fun), 'CALL-FUN'];
 %% Args go in x[0]..x[Arity-1], module goes in x[Arity], fun in x[Arity+1]
 transform_one({apply, Arity}) -> [Arity, 'APPLY'];
@@ -86,15 +90,26 @@ transform_one({gc_bif, Name, OnFail, Live, Args, Reg}) ->
     asm_bif(Name, OnFail, Live, Args, Reg);
 transform_one({select_val, Value, OnFail, {list, Choices}}) ->
     {'_op_select_val', Value, OnFail, Choices};
+transform_one({make_fun2, Label, _Index, _OldUniq, NumFree}) ->
+    %% BEAM: this op takes a preparsed (at load time) FunEntry and should
+    %% produce a callable object. We have to invent something simpler.
+    [NumFree, Label, '*MAKE-FUN2'];
+transform_one({trim, N, _Remaining}) ->
+    %% BEAM: Reduce the stack usage by N words keeping the CP on the top.
+    [N, 'TRIM'];
+transform_one({bif, Name, OnFail, Args, Dst}) ->
+    [OnFail]
+    ++ lists:reverse(lists:map(fun f_emit_read/1, Args))
+    ++ [Name, f_emit_write(Dst), 'ON-FAIL-JMP']; % TODO a library function?
 transform_one(Other) ->
     io:format("Unsupported opcode ignored: ~p~n", [Other]),
-    erlang:error({unsupported_opcode, ?MODULE}).
+    erlang:error({unsupported_opcode, ?MODULE, Other}).
 
 f_emit_error(E) ->
-    [f_emit_read(E), 'NIL', 'ERROR'].
+    [f_emit_read(E), 'ERROR'].
 
 f_emit_error(Type, Value) ->
-    [f_emit_read(Type), f_emit_read(Value), 'ERROR'].
+    [f_emit_read(Type), f_emit_read(Value), 'ERROR/2'].
 
 asm_bif(Name, OnFail, Live, Args, Reg) ->
     %% Call the bif Bif with the argument Arg, and store the result in Reg.
@@ -111,8 +126,8 @@ f_emit_read({x, X})                 -> [X, 'READ-X'];
 f_emit_read({y, Y})                 -> [Y, 'READ-Y'];
 f_emit_read({f, Label})             -> {label, Label};
 f_emit_read(A) when is_atom(A)      -> f_emit_read({atom, A});
-f_emit_read({atom, A})              -> {atom, '3eamc_state':atom_index(A)};
-f_emit_read({literal, L})           -> {literal, '3eamc_state':literal_index(L)};
+f_emit_read({atom, A})              -> {atom, A};
+f_emit_read({literal, L})           -> {literal, L};
 f_emit_read({extfunc, M, F, Arity}) -> {extfunc, M, F, Arity}.
 %%f_emit_read({imm, L}) ->
 %%    case classify_value(L) of
@@ -138,6 +153,9 @@ f_emit_predicate(is_nonempty_list) -> 'IS-NONEMPTY-LIST';
 f_emit_predicate(is_integer)       -> 'IS-INTEGER';
 f_emit_predicate(is_atom)          -> 'IS-ATOM';
 f_emit_predicate(is_function2)     -> 'IS-FUN/2'; % is_function2 Lbl Arg1 Arity
+f_emit_predicate(is_float)         -> 'IS-FLOAT';
+f_emit_predicate(is_list)          -> 'IS-LIST';
+f_emit_predicate(is_binary)        -> 'IS-BINARY';
 f_emit_predicate(is_ge)            -> '>=';
 f_emit_predicate(is_gt)            -> '>';
 f_emit_predicate(is_le)            -> '=<';
