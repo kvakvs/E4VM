@@ -1,4 +1,4 @@
--module('3eamc_pass_asm_bin').
+-module('3eamc_pass_forth_bin').
 -include("3eamc.hrl").
 
 %% API
@@ -43,9 +43,12 @@ value({x, X}) -> [?VAL_X, varint(X)];
 value({y, Y}) -> [?VAL_Y, varint(Y)];
 value({z, Z}) -> [?VAL_Z + (Z bsl 4)];
 value({f, Label}) -> [varint(Label)];
-value({atom, A}) -> [?VAL_ATOM, atom_index(A)];
+value({atom, A}) -> [?VAL_ATOM, '3eamc_state':atom_index(A)];
 value({extfunc, Mod, Fun, Arity}) ->
-    [?VAL_MFARITY, atom_index(Mod), atom_index(Fun), varint(Arity)];
+    [?VAL_MFARITY,
+        '3eamc_state':atom_index(Mod),
+        '3eamc_state':atom_index(Fun),
+        varint(Arity)];
 value({imm, L}) ->
     case classify_value(L) of
         {ok, Type} ->
@@ -53,34 +56,8 @@ value({imm, L}) ->
         false -> % encode as a literal
             value({literal, L})
     end;
-value({literal, L}) -> [?VAL_LIT, literal_index(L)].
+value({literal, L}) -> [?VAL_LIT, '3eamc_state':literal_index(L)].
 
 classify_value(X) when is_atom(X) -> {ok, atom};
 classify_value(X) when is_integer(X) -> {ok, integer};
 classify_value(_) -> false.
-
-%% Registers atom in the atom table (unique), returns binary representation
-%% ready to be written
-atom_index(A) ->
-    case ets:lookup(atoms, A) of
-        [] ->
-            Info = ets:info(atoms),
-            Id2 = proplists:get_value(size, Info),
-            ets:insert(atoms, {A, Id2}),
-            varint(Id2);
-        [{A, Id1}|_] ->
-            varint(Id1)
-    end.
-
-%% Registers a literal the table (unique), returns binary representation
-%% ready to be written
-literal_index(L) ->
-    case ets:lookup(literals, L) of
-        [] ->
-            Info = ets:info(literals),
-            Id2 = proplists:get_value(size, Info),
-            ets:insert(literals, {L, Id2}),
-            varint(Id2);
-        [{L, Id1}|_] ->
-            varint(Id1)
-    end.

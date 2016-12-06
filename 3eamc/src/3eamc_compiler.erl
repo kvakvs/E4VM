@@ -3,9 +3,7 @@
 
 -include("3eamc.hrl").
 -import('3eamc_encode', [varint/1, val_zreg/1, val_int/1]).
--import('3eamc_pass_beam_asm', [asm_move/2, asm_syscall/1, asm_call/3, asm_apply/2]).
--define(PASS1, '3eamc_pass_beam_asm').
--define(PASS2, '3eamc_pass_asm_bin').
+-import('3eamc_pass_beam_forth', [asm_move/2, asm_syscall/1, f_emit_call/3, asm_apply/2]).
 
 %% @doc Takes filename as input, produces compiled BEAM AST and processes it
 process(F) ->
@@ -28,10 +26,9 @@ process_asm(F, {ModName, Exports, _I, Code, _NumLabels}) ->
     atom_index(ModName),
 
     OutExports = write_exports(Exports, []),
-    OutCode = compile_gluon_asm(
-        transform_code(Code, []),
-        []),
-    OutImports = [],
+    OutCode = lists:map(fun(Op) -> io_lib:format("~p~n", [Op]) end,
+        '3eamc_pass_beam_forth':process(Code, [])),
+OutImports = [],
     OutLiterals = [],
     %% Atoms goes last
     OutAtoms = write_all_atoms(),
@@ -87,16 +84,13 @@ literal_index(L) ->
             varint(Id1)
     end.
 
-transform_code([], Accum) ->
+compile_forth_to_binary([], Accum) ->
     lists:flatten(lists:reverse(Accum));
-transform_code([Item | Tail], Accum) ->
-    transform_code(Tail, [?PASS1:transform(Item) | Accum]).
-
-compile_gluon_asm([], Accum) ->
-    lists:flatten(lists:reverse(Accum));
-compile_gluon_asm([Item | Tail], Accum) ->
+compile_forth_to_binary([Item | Tail], Accum) ->
     io:format("-- asm_bin ~p...~n", [Item]),
-    compile_gluon_asm(Tail, [?PASS2:transform(Item) | Accum]).
+    compile_forth_to_binary(Tail, [
+        '3eamc_pass_forth_bin':transform(Item) | Accum
+    ]).
 
 
 %% Prepents a tag (signature) and varint section size to the data
