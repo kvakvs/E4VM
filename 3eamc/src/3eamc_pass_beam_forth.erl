@@ -20,7 +20,7 @@ transform_fn_code([In = {put_tuple, _, _} | Tail], Accum) ->
     transform_fn_sequence_put_tuple(In, Tail, Accum);
 transform_fn_code([In | Tail], Accum) ->
     io:format("--> in ~p~n", [In]),
-    Out = transform_one(In),
+    Out = transform_op(In),
     io:format("  <-out ~p~n", [Out]),
     transform_fn_code(Tail, [Out | Accum]).
 
@@ -34,88 +34,93 @@ transform_fn_sequence_put_tuple({put_tuple, N, Dst}, Code, Accum) ->
     io:format("  <-out ~p~n", [OutCode]),
     transform_fn_code(Tail, [OutCode | Accum]).
 
-transform_one({label, L}) -> {label, L};
-transform_one({line, _Ln}) -> [];
-transform_one({func_info, _M, {atom, Name}, Arity}) ->
+transform_op({label, L})                      -> {label, L};
+transform_op({line, _Ln})                     -> [];
+transform_op({func_info, _M, {atom, Name}, Arity}) ->
     [{comment, {function, Name, Arity}}, 'ERROR-FN-CLAUSE'];
-transform_one({badmatch, X}) -> f_emit_error(badmatch, X);
-transform_one({allocate_zero, A, B}) -> transform_one({allocate, A, B});
-transform_one({allocate, A, B}) -> [A, B, 'ALLOC'];
-transform_one({deallocate, A}) -> [A, 'DEALLOC'];
-transform_one({move, Src, Dst}) -> f_emit_move(Src, Dst);
-transform_one({call, Arity, {f,_} = Label}) -> [Label, Arity, 'CALL'];
-transform_one({call_only, Arity, Label}) -> [Label, Arity, 'TAIL-CALL'];
-transform_one({call_last, Arity, Label, Dealloc}) ->
-    transform_one({deallocate, Dealloc})
-    ++ transform_one({call_only, Arity, Label});
-transform_one({call_ext, Arity, MFArity}) ->
+transform_op({badmatch, X})                   -> f_emit_error(badmatch, X);
+transform_op({allocate_zero, A, B})           -> transform_op({allocate, A, B});
+transform_op({allocate, A, B})                -> [A, B, 'ALLOC'];
+transform_op({deallocate, A})                 -> [A, 'DEALLOC'];
+transform_op({move, Src, Dst})                -> f_emit_move(Src, Dst);
+transform_op({call, Arity, {f, _} = Label})   -> [Label, Arity, 'CALL'];
+transform_op({call_only, Arity, Label})       -> [Label, Arity, 'TAIL-CALL'];
+transform_op({call_last, Arity, Label, Dealloc}) ->
+    transform_op({deallocate, Dealloc})
+    ++ transform_op({call_only, Arity, Label});
+transform_op({call_ext, Arity, MFArity}) ->
     [MFArity, 'RESOLVE-MFA', Arity, 'CALL']; % TODO: optimize me?
-transform_one({call_ext_only, Arity, MFArity}) ->
+transform_op({call_ext_only, Arity, MFArity}) ->
     [MFArity, 'RESOLVE-MFA', Arity, 'TAIL-CALL'];
-transform_one({call_ext_last, Arity, MFArity, Dealloc}) ->
-    transform_one({deallocate, Dealloc})
-    ++ transform_one({call_ext_only, Arity, MFArity});
-transform_one({call_fun, Fun}) -> [f_emit_read(Fun), 'CALL-FUN'];
+transform_op({call_ext_last, Arity, MFArity, Dealloc}) ->
+    transform_op({deallocate, Dealloc})
+    ++ transform_op({call_ext_only, Arity, MFArity});
+transform_op({call_fun, Fun})                 -> [f_emit_read(Fun), 'CALL-FUN'];
 %% Args go in x[0]..x[Arity-1], module goes in x[Arity], fun in x[Arity+1]
-transform_one({apply, Arity}) -> [Arity, 'APPLY'];
+transform_op({apply, Arity})                  -> [Arity, 'APPLY'];
 %% Args go in x[0]..x[Arity-1], module goes in x[Arity], fun in x[Arity+1]
-transform_one({apply_last, Arity, _Something}) -> [Arity, 'TAIL-APPLY'];
-transform_one({test_heap, A, B}) -> [B, A, 'TEST-HEAP'];
-transform_one({put_list, Head, Tail, Dst}) ->
+transform_op({apply_last, Arity, _Something}) -> [Arity, 'TAIL-APPLY'];
+transform_op({test_heap, A, B})               -> [B, A, 'TEST-HEAP'];
+transform_op({put_list, Head, Tail, Dst}) ->
     [f_emit_read(Head), f_emit_read(Tail), 'CONS', f_emit_write(Dst)];
-%%transform_one({put_tuple, _N, Dst}) ->
-%%    {'_op_make_tuple', Dst};
-%%transform_one({put, Val}) ->
-%%    {'_op_tuple_append', Val};
-%%transform_one({'_op_tuple_put', Val}) ->
-%%    Val;
-transform_one({kill, {y, Y}}) -> [Y, 'KILL-Y'];
-transform_one(return) -> 'EXIT';
-transform_one({jump, L}) -> [L, 'JUMP'];
-transform_one({get_list, H, T, List}) ->
+transform_op({kill, {y, Y}})                  -> [Y, 'KILL-Y'];
+transform_op(return)                          -> 'EXIT';
+transform_op({jump, L})                       -> [L, 'JUMP'];
+transform_op({get_list, H, T, List}) ->
     [f_emit_read(List),
      'GET-LIST',
      f_emit_write(T),
      f_emit_write(H)];
-transform_one({case_end, X}) -> f_emit_error(case_clause, X);
-transform_one({test, Predicate, LFail, Args}) ->
+transform_op({case_end, X})                   -> f_emit_error(case_clause, X);
+transform_op({test, Predicate, LFail, Args}) ->
     lists:reverse(lists:map(fun f_emit_read/1, Args))
     ++ [f_emit_predicate(Predicate), 'IF', LFail, 'JUMP', 'THEN'];
-transform_one({get_tuple_element, Src, Element, Dst}) ->
+transform_op({get_tuple_element, Src, Element, Dst}) ->
     [f_emit_read(Src),
      f_emit_read(Element),
      'ELEMENT',
      f_emit_write(Dst)];
-transform_one({gc_bif, Name, OnFail, Live, Args, Reg}) ->
-    asm_bif(Name, OnFail, Live, Args, Reg);
-transform_one({select_val, Value, OnFail, {list, Choices}}) ->
+transform_op({gc_bif, Name, OnFail, _Live, Args, Dst}) ->
+    %% Same as bif but allows Garbage Collector using Live arg
+    transform_op({bif, Name, OnFail, Args, Dst});
+transform_op({select_val, Value, OnFail, {list, Choices}}) ->
     {'_op_select_val', Value, OnFail, Choices};
-transform_one({make_fun2, Label, _Index, _OldUniq, NumFree}) ->
+transform_op({make_fun2, Label, _Index, _OldUniq, NumFree}) ->
     %% BEAM: this op takes a preparsed (at load time) FunEntry and should
     %% produce a callable object. We have to invent something simpler.
-    [NumFree, Label, '*MAKE-FUN2'];
-transform_one({trim, N, _Remaining}) ->
+    [f_emit_read(NumFree),
+     f_emit_read(Label),
+     '*MAKE-FUN2'];
+transform_op({trim, N, _Remaining}) ->
     %% BEAM: Reduce the stack usage by N words keeping the CP on the top.
-    [N, 'TRIM'];
-transform_one({bif, Name, OnFail, Args, Dst}) ->
-    [OnFail]
-    ++ lists:reverse(lists:map(fun f_emit_read/1, Args))
-    ++ [Name, f_emit_write(Dst), 'ON-FAIL-JMP']; % TODO a library function?
-transform_one(Other) ->
+    [f_emit_read(N),
+     'TRIM'];
+transform_op({bif, Name, OnFail, Args, Dst}) ->
+    [f_emit_read(OnFail),
+        f_emit_bif(Name, Args, Dst),
+     'ON-FAIL-JMP'];
+transform_op({bs_init2, Label, Size, _Extra, Live, _Flags, Dst}) ->
+    %% Allocate shared binary of Size, create a ProcBin referencing the data.
+    %% Ensure that heap has enough space for a subbinary. Arg1 is live, Arg2
+    %% receives the result
+    [f_emit_read(Label),
+     f_emit_read(Size),
+     f_emit_read(Live),
+     '.SHARED-BIN',
+     'ON-FAIL-JUMP',
+     f_emit_write(Dst)];
+transform_op({bs_put_integer, _OnFail, Sz, U, _Flags, Src}) ->
+    %% Flags: [unsigned, big...]
+    [];
+transform_op(Other) ->
     io:format("Unsupported opcode ignored: ~p~n", [Other]),
     erlang:error({unsupported_opcode, ?MODULE, Other}).
 
-f_emit_error(E) ->
-    [f_emit_read(E), 'ERROR'].
+%%f_emit_error(E) ->
+%%    [f_emit_read(E), 'ERROR'].
 
 f_emit_error(Type, Value) ->
     [f_emit_read(Type), f_emit_read(Value), 'ERROR/2'].
-
-asm_bif(Name, OnFail, Live, Args, Reg) ->
-    %% Call the bif Bif with the argument Arg, and store the result in Reg.
-    %% On fail jump to OnFail. Do a GC if necessary to allocate
-    %% space on the heap for the result (saving Live number of X registers).
-    {'_op_bif', Name, OnFail, Live, Args, Reg}.
 
 %% Given value or register or slot reference emits Forth instruction to put
 %% this value onto stack
@@ -129,13 +134,6 @@ f_emit_read(A) when is_atom(A)      -> f_emit_read({atom, A});
 f_emit_read({atom, A})              -> {atom, A};
 f_emit_read({literal, L})           -> {literal, L};
 f_emit_read({extfunc, M, F, Arity}) -> {extfunc, M, F, Arity}.
-%%f_emit_read({imm, L}) ->
-%%    case classify_value(L) of
-%%        {ok, Type} ->
-%%            f_emit_read({Type, L});
-%%        false -> % encode as a literal
-%%            f_emit_read({literal, L})
-%%    end;
 
 f_emit_write({x, X}) -> [X, 'WRITE-X'];
 f_emit_write({y, Y}) -> [Y, 'WRITE-Y'].
@@ -162,3 +160,9 @@ f_emit_predicate(is_le)            -> '=<';
 f_emit_predicate(is_lt)            -> '<';
 f_emit_predicate(X) ->
     erlang:error({unknown_predicate, X}).
+
+%% Emits bif args and a call. To check for the error, push fail label before
+%% the args and use ON-FAIL-JUMP after the call
+f_emit_bif(Name, Args, Dst) ->
+    lists:reverse(lists:map(fun f_emit_read/1, Args))
+    ++ [Name, f_emit_write(Dst)].
