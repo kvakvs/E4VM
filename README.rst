@@ -1,13 +1,12 @@
 Gluon VM
 ========
 
-Virtual machine written in C++ to run custom flavour of Erlang byte-code.
-Includes a cross-compiler which produces said bytecode from BEAM assembly (``+S`).
+Virtual machine written in C++ to run custom flavour of Forth. Your program
+is compiled from Core Erlang to Forth.
+
+Includes a simple cross-compiler, which converts your Erlang source to Core Erlang
+and then produces a Forth program internally which is then compiled into Forth
+bytecode and written to disk.
+
 The project is intended to land on embedded devices or something like RTEMS
 (to be decided) but development naturally happens on x64 Linux.
-
-New 3EAM bytecode format description is here: doc/3eam-format.rst.
-
-This format is somewhat similar but also different from the original
-Ericsson's Erlang/OTP BEAM format.
-Emphasis is to preprocess and simplify the loading as much as possible.
