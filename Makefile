@@ -5,4 +5,4 @@ compile:
 .PHONY: test
 test:
 	cd 3eamc && rebar3 compile && cd .. && \
-	./3eamc.sh test/mochijson.erl
+	./3eamc.sh test/gb_trees.erl

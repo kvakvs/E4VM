@@ -7,6 +7,14 @@
 
 %% @doc Takes filename as input, produces compiled BEAM AST and processes it
 process(F) ->
+    case compile:file(F, [to_core, binary, report]) of
+        {ok, _M, Result} ->
+            '3eamc_pass_core_forth':process(Result);
+        E ->
+            io:format("~s: ~p~n", [F, E])
+    end.
+
+process_asm(F) ->
     case compile:file(F, [to_asm, binary, report]) of
         {ok, _M, Result} ->
             process_asm(F, Result);

@@ -33,6 +33,9 @@ start_3eamc([]) ->
     io:format("All arguments were processed~n", []),
     ok;
 start_3eamc([F | Tail]) ->
-    io:format("Processing: ~p~n...", [F]),
-    '3eamc_compiler':process(F),
+    io:format("Processing: ~p...~n", [F]),
+    try '3eamc_compiler':process(F)
+    catch T:Err ->
+        io:format("Failed~n~p ~p~n", [T, Err])
+    end,
     start_3eamc(Tail).
