@@ -33,8 +33,8 @@ process_defs(State, [{#c_var{name = {Name, Arity}},
 
 process_fun(State, #c_fun{vars=Vars, body=Body}) ->
     %% Assume stack now only has reversed args
-    State1 = State#state{stack = lists:reverse(Vars)},
-    State2 = process_fun_body(State1, Body),
+    State1 = State#state{stack = lists:reverse(lists:map(fun f_val/1, Vars))},
+    State2 = process_code(State1, Body),
     %% Reset stackframe and kill remaining args
     StackSize = length(State2#state.stack),
     case StackSize of
@@ -42,36 +42,93 @@ process_fun(State, #c_fun{vars=Vars, body=Body}) ->
         _ -> f_emit(State2, [StackSize, 'RETN'])
     end.
 
-process_fun_body(State, []) -> State;
-process_fun_body(State, [X | Tail]) ->
-    State1 = process_fun_body(State, X),
-    process_fun_body(State1, Tail);
-process_fun_body(State, #c_clause{guard=Guard, body=Body}) ->
-    f_emit(State, [clause, Guard, Body]);
-process_fun_body(State, #c_case{arg = Arg, clauses = Clauses}) ->
-    f_emit(State, f_case(Arg, Clauses));
-process_fun_body(State, #c_literal{val = Value}) ->
-    f_emit(State, f_literal(Value));
-process_fun_body(State, #c_let{arg = Arg, body = Body}) ->
-    f_emit(State, ['let', Arg, Body]);
-process_fun_body(State, #c_apply{}) ->
-    State;
-process_fun_body(State, #c_call{}) ->
-    State;
-process_fun_body(_State, X) ->
+process_code(State, []) -> State;
+process_code(State, [X | Tail]) ->
+    State1 = process_code(State, X),
+    process_code(State1, Tail);
+process_code(State0, #c_clause{pats=Pats, guard=Guard, body=Body}) ->
+    State = pattern_match(State0, Pats),
+    case Guard of
+        #c_literal{val = true} ->
+            process_code(State, Body);
+        _ ->
+            State1 = f_emit(State, [
+                f_expression(Guard), 'IF'
+            ]),
+            State2 = process_code(State1, Body),
+            f_emit(State2, 'THEN')
+    end;
+process_code(State, #c_case{arg = Arg, clauses = Clauses}) ->
+    process_case(State, Arg, Clauses);
+process_code(State, #c_literal{val = Value}) ->
+    f_emit(State, f_val(Value));
+process_code(State, #c_let{vars = Vars, arg = Arg, body = Body}) ->
+    State1 = f_emit(State, {'let <<', lists:map(fun f_val/1, Vars)}),
+    State2 = process_code(State1, Arg),
+    %% From here assume variable is added to the stack
+    State3 = lists:foldl(fun(Var, S) -> stack_push(S, Var) end, State2, Vars),
+
+    State4 = process_code(State3, Body),
+    %% Assume variable is dropped
+    State5 = stack_pop(State4),
+    f_emit(State5, '>> endlet');
+process_code(State, #c_apply{op = Op, args = Args}) ->
+    f_emit(State,
+        lists:reverse(lists:map(fun f_val/1, Args))
+        ++ ['?apply', f_val(Op)]);
+process_code(State, #c_call{module = M, name = N, args = Args}) ->
+    f_emit(State,
+        lists:reverse(lists:map(fun f_val/1, Args)) ++ [
+            f_fun_ref(f_val(M), f_val(N), length(Args))
+        ]);
+process_code(State, #c_primop{name = Name, args = Args}) ->
+    f_emit(State, ['?primop', f_val(Name), Args]);
+process_code(State, #c_tuple{es = Es}) ->
+    f_emit(State, ['?tuple', lists:map(fun f_val/1, Es)]);
+process_code(State, #c_cons{hd = H, tl = T}) ->
+    f_emit(State, ['?cons', H, T]);
+process_code(State, #c_var{name = N}) ->
+    f_emit(State, ['?var', N]);
+process_code(_State, X) ->
     io:format("Unknown body part ~p~n", [X]),
     erlang:error(core_ast_error).
 
-f_literal({_, nil})   -> 'NIL';
-f_literal({_, Value}) -> {literal, Value}.
+f_val(#c_literal{val = Unwrap}) -> f_val(Unwrap);
+f_val(#c_var{name = {Fun, Arity}}) -> {funarity, Fun, Arity};
+f_val(#c_var{name = N}) -> {var, N};
+f_val({_, nil})   -> 'NIL';
+f_val({_, Value}) -> {literal, Value};
+f_val(X) -> X. % assume nothing left to unwrap
 
 f_emit(State = #state{output = Output}, List) ->
     State#state{output = [List | Output]}.
 
 f_format_fun_name(#state{ module = Mod }, Name, Arity) ->
+    f_format_fun_name(Mod, Name, Arity);
+f_format_fun_name(Mod, Name, Arity) when is_atom(Mod) ->
     lists:flatten(
         io_lib:format("~s:~s/~p", [Mod, Name, Arity])
     ).
 
-f_case(Arg, Clauses) ->
-    [].
+f_fun_ref(#state{ module = Mod }, Name, Arity) ->
+    f_format_fun_name(Mod, Name, Arity);
+f_fun_ref(Mod, Name, Arity) when is_atom(Mod) ->
+    {mfarity, Mod, Name, Arity}.
+
+process_case(State, _Arg, []) -> State;
+process_case(State, Arg, [Clause | Remaining]) ->
+    State1 = process_code(State, Clause),
+    process_case(State1, Arg, Remaining).
+
+f_expression(#c_literal{} = Lit) -> f_val(Lit);
+f_expression(Expr) ->
+    ['expr', Expr].
+
+stack_push(#state{ stack = S } = State, Value) ->
+    State#state{ stack = [Value | S] }.
+
+stack_pop(#state{ stack = [_ | S] } = State) ->
+    State#state{ stack = S }.
+
+pattern_match(State, Pats) ->
+    f_emit(State, ['?pattern' | Pats]).

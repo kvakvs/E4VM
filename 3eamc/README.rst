@@ -9,8 +9,8 @@ Build
 
     $ make test
 
-Forth opcodes standard and custom
----------------------------------
+Forth words standard and custom
+-------------------------------
 
 *   `R:A RET` - pops `A` from return stack and jumps to `A`
 *   `R:A n RETN` - trims `N` items from value stack, pops `A` from return stack

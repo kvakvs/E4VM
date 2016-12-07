@@ -36,6 +36,6 @@ start_3eamc([F | Tail]) ->
     io:format("Processing: ~p...~n", [F]),
     try '3eamc_compiler':process(F)
     catch T:Err ->
-        io:format("Failed~n~p ~p~n", [T, Err])
+        io:format("Failed~n~p ~p~n~p~n", [T, Err, erlang:get_stacktrace()])
     end,
     start_3eamc(Tail).
