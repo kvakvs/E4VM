@@ -52,11 +52,10 @@ process_code(State0, #c_clause{pats=Pats, guard=Guard, body=Body}) ->
         #c_literal{val = true} ->
             process_code(State, Body);
         _ ->
-            State1 = f_emit(State, [
-                f_expression(Guard), 'IF'
-            ]),
-            State2 = process_code(State1, Body),
-            f_emit(State2, 'THEN')
+            State1 = process_code(State, Guard),
+            State2 = f_emit(State1, 'IF'),
+            State3 = process_code(State2, Body),
+            f_emit(State3, 'THEN')
     end;
 process_code(State, #c_case{arg = Arg, clauses = Clauses}) ->
     process_case(State, Arg, Clauses);
@@ -73,9 +72,10 @@ process_code(State, #c_let{vars = Vars, arg = Arg, body = Body}) ->
     State5 = stack_pop(State4),
     f_emit(State5, '>> endlet');
 process_code(State, #c_apply{op = Op, args = Args}) ->
-    f_emit(State,
+    State1 = f_emit(State,
         lists:reverse(lists:map(fun f_val/1, Args))
-        ++ ['?apply', f_val(Op)]);
+        ++ ['?apply']),
+    f_store(State1, f_val(Op));
 process_code(State, #c_call{module = M, name = N, args = Args}) ->
     f_emit(State,
         lists:reverse(lists:map(fun f_val/1, Args)) ++ [
@@ -84,11 +84,16 @@ process_code(State, #c_call{module = M, name = N, args = Args}) ->
 process_code(State, #c_primop{name = Name, args = Args}) ->
     f_emit(State, ['?primop', f_val(Name), Args]);
 process_code(State, #c_tuple{es = Es}) ->
-    f_emit(State, ['?tuple', lists:map(fun f_val/1, Es)]);
+    f_emit(State, [
+        lists:reverse(lists:map(fun f_val/1, Es)),
+        length(Es), 'MAKE-TUPLE'
+    ]);
 process_code(State, #c_cons{hd = H, tl = T}) ->
     f_emit(State, ['?cons', H, T]);
 process_code(State, #c_var{name = N}) ->
     f_emit(State, ['?var', N]);
+process_code(State, #c_alias{var = Var, pat = Pat}) ->
+    f_emit(State, ['?alias', Var, Pat]);
 process_code(_State, X) ->
     io:format("Unknown body part ~p~n", [X]),
     erlang:error(core_ast_error).
@@ -120,9 +125,9 @@ process_case(State, Arg, [Clause | Remaining]) ->
     State1 = process_code(State, Clause),
     process_case(State1, Arg, Remaining).
 
-f_expression(#c_literal{} = Lit) -> f_val(Lit);
-f_expression(Expr) ->
-    ['expr', Expr].
+%%f_expression(#c_literal{} = Lit) -> f_val(Lit);
+%%f_expression(Expr) ->
+%%    ['expr', Expr].
 
 stack_push(#state{ stack = S } = State, Value) ->
     State#state{ stack = [Value | S] }.
@@ -130,5 +135,31 @@ stack_push(#state{ stack = S } = State, Value) ->
 stack_pop(#state{ stack = [_ | S] } = State) ->
     State#state{ stack = S }.
 
+%% Searches the stack for {var,N} and creates if not found, returns its
+%% position on the stack at this given moment
+stack_find_create(#state{ stack = S } = State, Dst) ->
+    case index_of(Dst, S) of
+        not_found ->
+            {State#state{ stack = [Dst | S] }, {index, 0}};
+        Index ->
+            {State, {index, Index}}
+    end.
+
+index_of(Item, List) -> index_of(Item, List, 1).
+
+index_of(_, [], _)  -> not_found;
+index_of(Item, [Item|_], Index) -> Index;
+index_of(Item, [_|Tl], Index) -> index_of(Item, Tl, Index+1).
+
 pattern_match(State, Pats) ->
-    f_emit(State, ['?pattern' | Pats]).
+    State1 = f_emit(State, '?pattern <<'),
+    State2 = lists:foldl(fun(P, St) -> process_code(St, P) end, State1, Pats),
+    f_emit(State2, '>> ?endpat').
+
+%% For a value on the stack top emits store instruction to have it in Dst
+f_store(State, {funarity, F, Arity}) ->
+    %% A function is created
+    State;
+f_store(State, {var, _} = Dst) ->
+    {State1, {index, I}} = stack_find_create(State, Dst),
+    f_emit(State1, [I, 'STORE', {comment, Dst}]).
