@@ -1,7 +1,7 @@
--module('3eamc_pass_core_forth').
+-module(e4_pass_core_forth).
 
 %% API
--export([process/1]).
+-export([process/1, process_code/2, state_new/0]).
 
 -include_lib("compiler/src/core_parse.hrl").
 %%-include_lib("eunit/include/eunit.hrl").
@@ -24,7 +24,7 @@
     vars=[] % [{var,N}]
 }).
 
--import('3eamc_forth', [forth_if/2, forth_if/3, forth_and/1, forth_tuple/1,
+-import(e4_forth, [forth_if/2, forth_if/3, forth_and/1, forth_tuple/1,
     forth_compare/2]).
 
 -type state() :: #state{}.
@@ -41,6 +41,8 @@
 -type forth_word() :: atom().
 -type forth_op() :: forth_word() | integer() | {comment, _} | integer() | lazy_emit().
 -type forth_code() :: [forth_op()] | [forth_code()].
+
+state_new() -> #state{}.
 
 process(#c_module{name=Name, exports=_Exps, defs=Defs}) ->
     S0 = #state{module=Name#c_literal.val},

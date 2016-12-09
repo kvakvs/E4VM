@@ -1,14 +1,14 @@
 %%%-------------------------------------------------------------------
-%% @doc 3eamc public API
+%% @doc E4 Erlang-Forth public API
 %% @end
 %%%-------------------------------------------------------------------
 
--module('3eamc').
+-module(e4).
 
 -behaviour(application).
 
 %% Application callbacks
--export([start/2, stop/1, start_3eamc/1, start/0]).
+-export([start/2, stop/1, start_e4_compiler/1, start/0]).
 
 %%====================================================================
 %% API
@@ -18,7 +18,7 @@ start() ->
     start(normal, init:get_plain_arguments()).
 
 start(_StartType, Args) ->
-    start_3eamc(Args),
+    start_e4_compiler(Args),
     init:stop(),
     {ok, self()}.
 
@@ -29,13 +29,13 @@ stop(_State) ->
 %% Internal functions
 %%====================================================================
 
-start_3eamc([]) ->
-    io:format("All arguments were processed~n", []),
+start_e4_compiler([]) ->
+    io:format("E4: All arguments were processed~n", []),
     ok;
-start_3eamc([F | Tail]) ->
-    io:format("Processing: ~p...~n", [F]),
-    try '3eamc_compiler':process(F)
+start_e4_compiler([F | Tail]) ->
+    io:format("E4: Processing: ~p...~n", [F]),
+    try e4_compiler:process(F)
     catch T:Err ->
-        io:format("Failed~n~p ~p~n~p~n", [T, Err, erlang:get_stacktrace()])
+        io:format("E4: Failed~n~p ~p~n~p~n", [T, Err, erlang:get_stacktrace()])
     end,
-    start_3eamc(Tail).
+    start_e4_compiler(Tail).

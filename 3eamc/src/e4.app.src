@@ -1,14 +1,14 @@
-{application, '3eamc',
- [{description, "3EAM GluonVM cross-compiler"},
+{application, e4,
+ [{description, "GluonVM cross-compiler Erlang to Forth"},
   {vsn, "0.1.0"},
   {registered, []},
-  {mod, { '3eamc', []}},
+  {mod, { e4, []}},
   {applications,
    [kernel,
     stdlib
    ]},
   {env,[]},
-  {modules, ['3eamc', '3eamc_sup', '3eamc_compiler']},
+  {modules, [e4, e4_compiler]},
 
   {maintainers, []},
   {licenses, []},

@@ -1,4 +1,4 @@
--module('3eamc_forth').
+-module(e4_forth).
 
 %% API
 -export([forth_and/1, forth_if/2, forth_if/3, forth_tuple/1,

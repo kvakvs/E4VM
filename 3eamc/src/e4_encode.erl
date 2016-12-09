@@ -1,6 +1,6 @@
--module('3eamc_encode').
+-module(e4_encode).
 
--include("3eamc.hrl").
+-include("e4.hrl").
 
 %% API
 -export([
