@@ -19,8 +19,8 @@ start() ->
 
 start(_StartType, Args) ->
     start_3eamc(Args),
-    init:stop().
-%%    '3eamc_sup':start_link().
+    init:stop(),
+    {ok, self()}.
 
 stop(_State) ->
     ok.
