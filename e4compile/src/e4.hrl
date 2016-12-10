@@ -3,6 +3,7 @@
 -record(e4scope, {vars=[] :: [e4var()]}).
 -record(e4var, {name :: atom()}).
 -record(e4funarity, {fn :: atom(), arity :: integer()}).
+-record(e4mfa, {mod :: atom(), fn :: atom(), arity :: integer()}).
 -record(e4lit, {val :: any()}).
 -record(e4comment, {txt :: any()}).
 

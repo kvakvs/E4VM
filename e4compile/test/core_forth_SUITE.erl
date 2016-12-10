@@ -1,6 +1,7 @@
 -module(core_forth_SUITE).
 
 -include_lib("common_test/include/ct.hrl").
+-include("../src/e4.hrl").
 
 %% Test server callbacks
 -export([suite/0, all/0,
@@ -31,7 +32,7 @@ compile_clause(_Config) ->
     %% Try compile:
     %%      myfun(_, nil) -> 123;
     %%      ...
-    RootScope = [{var,[],cor0}, {var,[],cor1}],
+    RootScope = [#e4var{name=cor0}, #e4var{name=cor1}],
     Code = {c_case,
             [4, {}],
             {c_values,
@@ -44,11 +45,13 @@ compile_clause(_Config) ->
               {c_literal, [], true},
               {c_literal, [4, {}], 123}}
             ]},
+    io:format(standard_error,
+              color:yellowb("Compile: myfun(_, nil) -> 123") ++ "~n", []),
     Compiled = compile_helper(RootScope, Code),
     io:format(standard_error, "~p~n", [Compiled]).
 
 compile_helper(RootScope, Code) ->
-    Scope = {scope, RootScope},
+    Scope = #e4scope{vars=RootScope},
     S0 = e4_c2f:state_new(),
     S1 = lists:foldl(fun(Var, St) -> e4_c2f:stack_push(St, Var) end,
                      S0, RootScope),

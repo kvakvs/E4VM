@@ -2,7 +2,7 @@
 
 %% API
 -export([forth_and/1, forth_if/2, forth_if/3, forth_tuple/1,
-    forth_compare/2]).
+         forth_compare/2, forth_literal/1]).
 
 -include_lib("compiler/src/core_parse.hrl").
 -include("e4.hrl").
@@ -10,6 +10,7 @@
 %% Takes list of Forth checks and creates forth instructions which produce
 %% true if all conditions are true
 %% Assumption: each Cond in Conds is a Forth sequence which leaves one value on stack
+forth_and([]) -> [];
 forth_and(Conds) ->
     %% Remove true clauses
     Conds1 = lists:filter(
@@ -18,8 +19,10 @@ forth_and(Conds) ->
             (_) -> true
         end,
         Conds),
-%%    io:format(standard_error, "[Conds1 ~p]~n", [Conds1]),
-    [Conds1, lists:duplicate(length(Conds1) - 1, 'AND')].
+    case Conds1 of
+        [] -> [];
+        _ -> [Conds1, lists:duplicate(length(Conds1) - 1, 'AND')]
+    end.
 
 forth_if(#e4lit{val='true'}, Body) -> Body;
 forth_if(Cond, Body) ->
@@ -35,3 +38,5 @@ forth_tuple(Values) ->
 
 forth_compare(Lhs, Rhs) ->
     [Lhs, Rhs, '=='].
+
+forth_literal(Value) -> #e4lit{val=Value}.
