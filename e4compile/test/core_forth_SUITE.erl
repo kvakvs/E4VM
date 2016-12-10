@@ -28,7 +28,7 @@ all() -> [
 %% TEST CASES
 %%--------------------------------------------------------------------
 
-compile_clause(_Config) ->
+compile_clause() ->
     %% Try compile:
     %%      myfun(_, nil) -> 123;
     %%      ...
@@ -48,7 +48,8 @@ compile_clause(_Config) ->
     io:format(standard_error,
               color:yellowb("Compile: myfun(_, nil) -> 123") ++ "~n", []),
     Compiled = compile_helper(RootScope, Code),
-    io:format(standard_error, "~p~n", [Compiled]).
+    io:format(standard_error, "~s~n",
+              [e4_c2f:format_code(lists:flatten(Compiled), [])]).
 
 compile_helper(RootScope, Code) ->
     Scope = #e4scope{vars=RootScope},

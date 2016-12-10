@@ -5,7 +5,7 @@
 -record(e4funarity, {fn :: atom(), arity :: integer()}).
 -record(e4mfa, {mod :: atom(), fn :: atom(), arity :: integer()}).
 -record(e4lit, {val :: any()}).
--record(e4comment, {txt :: any()}).
+-record(e4comment, {comment :: any()}).
 
 -type e4scope() :: #e4scope{}.
 -type e4var() :: #e4var{}.
