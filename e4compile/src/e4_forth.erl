@@ -5,6 +5,7 @@
     forth_compare/2]).
 
 -include_lib("compiler/src/core_parse.hrl").
+-include("e4.hrl").
 
 %% Takes list of Forth checks and creates forth instructions which produce
 %% true if all conditions are true
@@ -12,16 +13,20 @@
 forth_and(Conds) ->
     %% Remove true clauses
     Conds1 = lists:filter(
-        fun(#c_literal{val='true'}) -> false; (_) -> true end,
+        fun(#c_literal{val='true'}) -> false;
+            ([]) -> false;
+            (_) -> true
+        end,
         Conds),
-    [Conds1, lists:duplicate(length(Conds1), 'AND')].
+%%    io:format(standard_error, "[Conds1 ~p]~n", [Conds1]),
+    [Conds1, lists:duplicate(length(Conds1) - 1, 'AND')].
 
-forth_if(#c_literal{val='true'}, Body) -> Body;
+forth_if(#e4lit{val='true'}, Body) -> Body;
 forth_if(Cond, Body) ->
-    [Cond, 'IF', Body, 'THEN'].
+    [?Lazy(Cond), 'IF', ?Lazy(Body), 'THEN'].
 
 forth_if(Cond, Body, Else) ->
-    [Cond, 'IF', Body, 'ELSE', Else, 'THEN'].
+    [?Lazy(Cond), 'IF', ?Lazy(Body), 'ELSE', ?Lazy(Else), 'THEN'].
 
 %% Takes list of Forth expressions where each leaves one value on stack
 %% and constructs a tuple of that size

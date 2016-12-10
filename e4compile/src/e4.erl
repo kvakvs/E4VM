@@ -36,6 +36,6 @@ start_e4_compiler([F | Tail]) ->
     io:format("E4: Processing: ~p...~n", [F]),
     try e4_compiler:process(F)
     catch T:Err ->
-        io:format("E4: Failed~n~p ~p~n~p~n", [T, Err, erlang:get_stacktrace()])
+        io:format("~nE4: Failed~n~p ~p~n~p~n", [T, Err, erlang:get_stacktrace()])
     end,
     start_e4_compiler(Tail).

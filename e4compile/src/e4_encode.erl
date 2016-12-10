@@ -4,9 +4,6 @@
 
 %% API
 -export([
-    val_int/1,
-    val_xreg/1,
-    val_zreg/1,
     varint/1
 ]).
 
@@ -15,12 +12,3 @@
 varint(N) when N < 0 -> erlang:error("varint: n<0");
 varint(N) when N =< 127 -> <<0:1, N:7>>; % last byte
 varint(N) -> [<<1:1, (N rem 128):7>>, varint(N bsr 7)].
-
-val_xreg(X) when X >= 0 andalso X =< 15 ->
-    ?VAL_X + (X bsl 4).
-
-val_zreg(Z) when Z >= 0 andalso Z =< 15 ->
-    ?VAL_Z + (Z bsl 4).
-
-val_int(N) ->
-    [?VAL_INTEGER, varint(N)].

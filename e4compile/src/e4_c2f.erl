@@ -1,9 +1,11 @@
--module(e4_pass_core_forth).
+-module(e4_c2f).
 
 %% API
--export([process/1, process_code/2, state_new/0]).
+-export([process/1, process_code/2, state_new/0, state_output/1,
+         scope_push/2, scope_pop/1, emit/2, stack_push/2, stack_pop/1]).
 
 -include_lib("compiler/src/core_parse.hrl").
+-include("e4.hrl").
 %%-include_lib("eunit/include/eunit.hrl").
 
 -record(state, {
@@ -12,24 +14,21 @@
     atoms=dict:new(),
     lit_counter=0,
     literals=dict:new(),
-    output=[],                % forth program output
+    output=[] :: forth_code(),                % forth program output
     %% Compile-time state
-    stack=[],
+    stack=[] :: [e4var()],
     %% Set at function start, current args
-    fun_args=[],
+    fun_args=[] :: [e4var()],
     %% A new #scope{} is added when entering case/let etc
-    scopes=[]
-}).
--record(scope, {
-    vars=[] % [{var,N}]
+    scopes=[] :: [e4scope()]
 }).
 
--import(e4_forth, [forth_if/2, forth_if/3, forth_and/1, forth_tuple/1,
+-import(e4_forth, [ forth_if/2, forth_if/3, forth_and/1, forth_tuple/1,
     forth_compare/2]).
 
 -type state() :: #state{}.
--type lhs() :: #c_literal{} | #c_var{} | #c_tuple{}. % TODO: binary, map
--type rhs() :: lhs().
+-type core_lhs() :: #c_literal{} | #c_var{} | #c_tuple{}. % TODO: binary, map
+-type core_rhs() :: core_lhs().
 -type lazy_emit() :: fun((state()) -> state()).
 -type core_ast_element() :: #c_literal{} | #c_alias{} | #c_apply{} | #c_binary{}
     | #c_bitstr{} | #c_call{} | #c_case{} | #c_catch{} | #c_clause{}
@@ -39,10 +38,11 @@
 -type core_ast() :: core_ast_element() | [core_ast_element()].
 
 -type forth_word() :: atom().
--type forth_op() :: forth_word() | integer() | {comment, _} | integer() | lazy_emit().
--type forth_code() :: [forth_op()] | [forth_code()].
+-type forth_op() :: forth_word() | e4comment() | e4lit() | lazy_emit().
+-type forth_code() :: [forth_op() | forth_code()].
 
 state_new() -> #state{}.
+state_output(#state{output=Out}) -> Out.
 
 process(#c_module{name=Name, exports=_Exps, defs=Defs}) ->
     S0 = #state{module=Name#c_literal.val},
@@ -64,7 +64,7 @@ compile_fun(State, #c_fun{vars=Vars, body=Body}) ->
     %% Assume stack now only has reversed args
     ReverseArgs = lists:reverse(lists:map(fun f_val/1, Vars)),
     State1 = State#state{stack=ReverseArgs},
-    State2 = scope_push(State1, #scope{vars=ReverseArgs}),
+    State2 = scope_push(State1, #e4scope{vars=ReverseArgs}),
     State3 = process_code(State2, Body),
 
     %% Reset stackframe and kill remaining args
@@ -94,7 +94,7 @@ process_code(State, #c_literal{val=Value}) ->
 
 process_code(State, #c_let{vars=Vars, arg=Arg, body=Body}) ->
     ReverseVars = lists:map(fun f_val/1, Vars),
-    State1 = scope_push(State, ReverseVars),
+    State1 = scope_push(State, #e4scope{vars = ReverseVars}),
     %% From here assume variable is added to the stack
     State2 = lists:foldl(fun(Var, S) -> stack_push(S, Var) end, State1, Vars),
 
@@ -134,15 +134,14 @@ process_code(State, #c_var{name=N}) ->
 process_code(State, #c_alias{var=Var, pat=Pat}) ->
     emit(State, ['?alias', Var, Pat]);
 process_code(_State, X) ->
-    io:format("Unknown body part ~p~n", [X]),
-    erlang:error(core_ast_error).
+    compile_error("Unknown Core AST piece ~p~n", [X]).
 
 f_val(#c_literal{val=Unwrap}) -> f_val(Unwrap);
-f_val(#c_var{name={Fun, Arity}}) -> {funarity, Fun, Arity};
-f_val(#c_var{name=N}) -> {var, N};
-f_val(#c_tuple{es = Es}) -> forth_tuple(Es);
+f_val(#c_var{name={Fun, Arity}}) -> #e4funarity{fn=Fun, arity=Arity};
+f_val(#c_var{name=N}) -> #e4var{name=N};
+f_val(#c_tuple{es=Es}) -> forth_tuple(Es);
 f_val({_, nil}) -> 'NIL';
-f_val({_, Value}) -> {literal, Value};
+f_val({_, Value}) -> #e4lit{val=Value};
 f_val(X) -> X. % assume nothing left to unwrap
 
 %% Takes list [code and lazy elements] which are callable fun/1
@@ -177,7 +176,7 @@ f_fun_ref(#state{module=Mod}, Name, Arity) ->
 f_fun_ref(Mod, Name, Arity) when is_atom(Mod) ->
     {mfarity, Mod, Name, Arity}.
 
-stack_push(#state{stack=S} = State, Value) ->
+stack_push(#state{stack=S} = State, #e4var{} = Value) ->
     State#state{stack=[Value | S]}.
 
 stack_pop(#state{stack=[_ | S]} = State) ->
@@ -185,12 +184,23 @@ stack_pop(#state{stack=[_ | S]} = State) ->
 
 %% Searches the stack for {var,N} and creates if not found, returns its
 %% position on the stack at this given moment
-stack_find_create(#state{stack=S} = State, Dst) ->
+-spec stack_find_create(state(), e4var()) -> {state(), {index, integer()}}.
+stack_find_create(#state{stack=S} = State, #e4var{} = Dst) ->
     case index_of(Dst, S) of
         not_found ->
-            {State#state{stack=[Dst | S]}, {index, 0}};
+            State1 = emit(State, [#e4lit{val = 'NONVALUE'}]),
+            {State1#state{stack=[Dst | S]}, {index, 0}};
         Index ->
             {State, {index, Index}}
+    end.
+
+%% Find without creating
+stack_find(#state{stack=S}, #e4var{} = Dst) ->
+    case index_of(Dst, S) of
+        not_found ->
+            compile_error("Local variable ~p not found", [Dst]);
+        Index ->
+            {index, Index}
     end.
 
 index_of(Item, List) -> index_of(Item, List, 1).
@@ -199,59 +209,63 @@ index_of(_, [], _) -> not_found;
 index_of(Item, [Item | _], Index) -> Index;
 index_of(Item, [_ | Tl], Index) -> index_of(Item, Tl, Index + 1).
 
+-spec scope_push(state(), e4scope()) -> state().
+scope_push(#state{scopes=S} = State, #e4scope{} = NewScope) ->
+    State#state{scopes=[NewScope | S]}.
 
-scope_push(#state{scopes=S} = State, Value) ->
-    State#state{scopes=[Value | S]}.
-
+-spec scope_pop(state()) -> state().
 scope_pop(#state{scopes=[_ | S]} = State) ->
     State#state{scopes=S}.
 
-scope_find(#state{scopes=S}, Var) ->
-    scope_find(S, Var);
-scope_find([], _Var) -> false;
-scope_find([#scope{vars=Vars} | Tail], Var) ->
-    case lists:member(Var, Vars) of
-        true -> true;
-        false -> scope_find(Tail, Var)
-    end.
+-spec var_exists(state() | [e4scope()], e4var()) -> boolean().
+var_exists(#state{scopes=Scopes}, #e4var{} = Var) ->
+    lists:any(fun(Scope) -> lists:member(Var, Scope#e4scope.vars) end,
+              Scopes).
 
 %% Takes top scope and introduces a variable. It is a caller's responsibility
 %% to have it on stack from now on.
+-spec scope_add_variable(state() | e4scope(), e4var()) -> state() | e4scope().
+scope_add_variable(#state{scopes=[]}, Var) ->
+    compile_error("There is no scope to add a variable ~p", [Var]);
 scope_add_variable(State = #state{scopes=[First | Tail]}, Var) ->
     State#state{scopes=[scope_add_variable(First, Var) | Tail]};
-scope_add_variable(Scope = #scope{vars=Vars}, Var) ->
-    Scope#scope{vars=[Var | Vars]}.
+scope_add_variable(Scope = #e4scope{vars=Vars}, Var) ->
+    Scope#e4scope{vars=[Var | Vars]}.
 
 %% For a value on the stack top emits store instruction to have it in Dst
 f_store(State, {funarity, _F, _Arity}) ->
     %% A function is created
     State;
-f_store(State, {var, _} = Dst) ->
+f_store(State, #e4var{} = Dst) ->
     {State1, {index, I}} = stack_find_create(State, Dst),
-    emit(State1, [I, 'STORE', {comment, Dst}]).
+    emit(State1, [#e4lit{val = I}, 'STORE', #e4comment{txt=Dst}]).
 
 %% Builds code to match Arg vs Pats with Guard
 %% Pats = [Tree], Guard = Tree, Body = Tree
 pattern_match(State, Args, #c_clause{pats=Pats, guard=Guard, body=Body}) ->
-    f_match(State, Pats, Args, Guard, Body).
-%%    State2 = lists:foldl(fun(P, St) -> process_code(St, P) end, State1, Pats),
-%%    f_emit(State2, '>> ?endmatch').
+    pattern_match_2(State, Pats, Args, Guard, Body).
 
 %% For each element in Arg match element in Pats, additionally emit the
 %% code to check Guard
-f_match(State, Pats, Args0, Guard, Body) ->
+-spec pattern_match_2(state(),
+                      Pats :: [core_ast()],
+                      Args0 :: core_ast(),
+                      Guard :: core_ast(),
+                      Body :: core_ast()) -> state().
+pattern_match_2(State, Pats, Args0, Guard, Body) ->
     %% Convert to list if c_values is supplied
-    Args1 = case Args0 of #c_values{es=Es} -> Es; _ -> Args0 end,
+    Args1 = case Args0 of
+                #c_values{es=Es} -> Es;
+                _ -> Args0
+            end,
     %% Convert to list if it was a single tuple
-    Args = case is_list(Args1) of true -> Args1; false -> [Args1] end,
-
+    Args = case is_list(Args1) of
+               true -> Args1;
+               false -> [Args1]
+           end,
     %% Pair args and pats and compare
-%%    io:format("f_match Arg ~p~n  Pats ~p~n  Guard ~p~n", [Args, Pats, Guard]),
     {State1, AccumChecks, AccumAssignments} = lists:foldl(
-        fun({Pat, Arg}, {St, AcChecks, AcAssignments}) ->
-            {St1, Checks, Assignments} = f_match_one(St, Pat, Arg),
-            {St1, [Checks | AcChecks], [Assignments | AcAssignments]}
-        end,
+        fun pattern_match_2_fold/2,
         {State, [], []},
         lists:zip(Pats, Args)
     ),
@@ -261,53 +275,62 @@ f_match(State, Pats, Args0, Guard, Body) ->
         fun(LazyState) -> process_code(LazyState, Body) end
     ])).
 
+-spec pattern_match_2_fold({Pat :: core_lhs(), Arg :: core_rhs()},
+                           {state(), forth_code(), forth_code()})
+                          -> {state(), forth_code(), forth_code()}.
+pattern_match_2_fold({Pat, Arg}, {State, AcChecks, AcAssignments}) ->
+    {State1, Checks, Assignments} = pattern_match_pairs(State, Pat, Arg),
+    {State1, [Checks | AcChecks], [Assignments | AcAssignments]}.
+
 %% Given state and left/right side of the match, checks if left-hand variable
 %% existed: if so - emits comparison, else introduces a new variable and emits
 %% assignment
 %% Returns {State, Checks, Assignments} - checks should be emitted first, if they
 %% did not fail, assignments should be emitted
-f_match_one(State, Lhs, Rhs) ->
-    case scope_find(State, Lhs) of
-        true ->
-            %% TODO: compare harder
-            {State, forth_compare(f_val(Lhs), f_val(Rhs)), []}; % compare
+-spec pattern_match_pairs(state(), core_lhs(), core_rhs())
+                         -> {state(), forth_code(), forth_code()}.
+pattern_match_pairs(State, #c_var{name=LhsName}, Rhs) ->
+    Lhs = #e4var{name=LhsName},
+    case var_exists(State, Lhs) of
+        true -> % variable exists, so read it and compare
+            {State, forth_compare(emit_read(State, Lhs), Rhs), []};
         false -> % introduce variable and use it
-            %% TODO: This should be emitted AFTER the pattern check if it did not fail
             State1 = scope_add_variable(State, Lhs),
-            case classify_lhs(Lhs) of
-                variable ->
-                    {State1, [], [make_store(State1, Lhs, Rhs)]};
-                tuple ->
-                    {State1, [], [make_store(State1, Lhs, Rhs)]};
-                literal ->
-                    {State1, [forth_compare(f_val(Lhs), f_val(Rhs))], []}
-            end
-    end.
+            {State1, [], [pattern_match_var_versus(State1, Lhs, Rhs)]}
+    end;
+pattern_match_pairs(_State, Lhs, Rhs) ->
+    compile_error("Match ~p versus ~p not implemented", [Lhs, Rhs]).
 
--spec make_store(#state{}, lhs(), rhs()) -> forth_code().
-make_store(_State, #c_literal{}, _Rhs) ->
-    erlang:error({error, "can't store with a literal on the left hand side"});
-make_store(_State, #c_var{} = Lhs, Rhs) ->
-    %% for introduced variable this is basically a push
-    %% TODO: maybe push a nonvalue when a variable is introduced and later assign it
-    %% ... to preserve stack position
-    %% TODO: handle {Var,...} = X, [Var,...] = X
-    [{comment, 'assign', f_val(Lhs)}, f_val(Rhs)];
-make_store(State, #c_tuple{es = Es}, Rhs) ->
-    %% Unwrap tuple store into a serie of variable stores
-    %% Rhs can be a single variable: Check if its a tuple, then use element(N,rhs)
-    %% instead of 1 to 1 matching
-    case Rhs of
-        X when is_list(X) ->
-            [make_store(State, LhsElement, RhsElement)
-                || {LhsElement, RhsElement} <- lists:zip(Es, Rhs)];
-        _ ->
-            %% TODO: if Rhs is a single variable, replace the code below with lhs = element(rhs)
-            []
-    end.
+-spec pattern_match_var_versus(state(), e4var(), core_rhs()) -> state().
+pattern_match_var_versus(State, #e4var{} = Lhs, #c_var{name = RhsName}) ->
+    Rhs = #e4var{name=RhsName},
+    {State1, {index, Index}} = stack_find_create(State, Lhs),
+    emit(State1, [Index, emit_read(State1, Rhs), 'STACK-WRITE']);
+pattern_match_var_versus(_State, _Lhs, Rhs) ->
+    compile_error("Match var versus ~p is not implemented", [Rhs]).
 
-classify_lhs(#c_literal{}) -> literal;
-classify_lhs(#c_tuple{}) -> tuple;
-classify_lhs(#c_var{}) -> variable.
+%%pattern_match_tuple_versus(State, #c_tuple{es = Es}, Rhs) ->
+%%    %% Unwrap tuple store into a serie of variable stores
+%%    %% Rhs can be a single variable: Check if its a tuple, then use element(N,rhs)
+%%    %% instead of 1 to 1 matching
+%%    case Rhs of
+%%        X when is_list(X) ->
+%%            lists:foldl(
+%%                fun({LhsEl, RhsEl}, St) -> pattern_match_var_versus(St, LhsEl, RhsEl) end,
+%%                State,
+%%                lists:zip(Es, Rhs));
+%%        _ ->
+%%            %% TODO: if Rhs is a single variable, replace the code below with lhs = element(rhs)
+%%            State
+%%    end.
 
 crlf() -> io:format("~n", []).
+
+compile_error(Format, Args) ->
+    E = lists:flatten(io_lib:format(Format, Args)),
+    erlang:error({error, E}).
+
+-spec emit_read(state(), e4var()) -> forth_code().
+emit_read(State, #e4var{} = Var) ->
+    {index, Index} = stack_find(State, Var),
+    [Index, 'STACK-READ'].

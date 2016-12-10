@@ -9,7 +9,7 @@
 process(F) ->
     case compile:file(F, [to_core, binary, report]) of
         {ok, _M, Result} ->
-            e4_pass_core_forth:process(Result);
+            e4_c2f:process(Result);
         E ->
-            io:format("~s: ~p~n", [F, E])
+            io:format("~n~s: ~p~n", [F, E])
     end.
