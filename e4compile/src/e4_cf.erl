@@ -3,7 +3,7 @@
 %% API
 -export(['and'/1, 'if'/2, 'if'/3, block/0, block/1, block/3, block/4, comment/1,
          comment/2, equals/2, lit/1, match_2_known/2, nil/0, retrieve/1, store/1,
-         tuple/1, var/1, element/2]).
+         tuple/1, var/1, element/2, unless/2]).
 
 -include_lib("compiler/src/core_parse.hrl").
 -include("e4.hrl").
@@ -33,6 +33,10 @@
 
 'if'(Cond, Body = #cf_block{}, Else = #cf_block{}) ->
     block([], [Cond, 'IF', Body, 'ELSE', Else], ['THEN']).
+
+unless(#cf_lit{val='false'}, _Block) -> [];
+unless(Cond, Body = #cf_block{}) ->
+    block([], [Cond, 'UNLESS', Body], ['THEN']).
 
 %% ( c b a N - {a,b,c} , constructs a tuple size N from values on stack )
 %% Takes list of Forth expressions where each leaves one value on stack
@@ -75,6 +79,9 @@ block(Before, Code, After, Scope) ->
 store(Dst = #cf_var{}) -> #cf_store{var=Dst}.
 
 %% ( -- X , retrieves value of variable V and leaves it on stack )
+retrieve(#c_apply{op=FunObj, args=Args}) ->
+    #cf_apply{funobj=FunObj, args=Args};
+retrieve(#cf_apply{}=A) -> A;
 retrieve(I) when is_integer(I) -> lit(I);
 retrieve(#cf_stack_top{}) -> [];
 retrieve(Retr = #cf_retrieve{}) -> Retr;
@@ -84,7 +91,8 @@ retrieve(#c_var{name=Var}) -> #cf_retrieve{var=Var};
 retrieve(Var = #cf_var{}) -> #cf_retrieve{var=Var}.
 
 var(#c_var{name=Name}) -> #cf_var{name=Name};
+var(#cf_var{}=CF) -> CF;
 var(Name) -> #cf_var{name=Name}.
 
 element(Index, Tuple) ->
-    [retrieve(Index), Tuple, 'ELEMENT'].
+    [retrieve(Tuple), retrieve(Index), 'ELEMENT'].

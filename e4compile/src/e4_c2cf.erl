@@ -28,7 +28,7 @@ process(#c_module{name=_Name, exports=_Exps, defs=Defs}) ->
         [],
         [e4_cf:comment("end mod")]),
     Out = process_fun_defs(Block, Defs),
-    io:format("~s~n", [format_code(Out)]).
+    io:format("~s~n", [format_code(Out, 0)]).
 
 add_code(Block = #cf_block{code=C}, AddCode) ->
     Block#cf_block{code=[AddCode| C]}.
@@ -71,7 +71,9 @@ process_code(Block0, #c_let{vars=Vars, arg=Arg, body=Body}) ->
         [e4_cf:comment("begin let")],
         [],
         [e4_cf:comment("end let")],
-        Block0#cf_block.scope ++ ReverseVars),
+        Block0#cf_block.scope
+        %% ++ ReverseVars
+    ),
 
     LetBlock1 = process_code(LetBlock, Arg),
     process_code(LetBlock1, Body);
@@ -86,10 +88,10 @@ process_code(Block0, #c_apply{op=Op, args=Args}) ->
 process_code(Block0, #c_call{module=M, name=N, args=Args}) ->
     emit(Block0,
          lists:reverse(lists:map(fun e4_cf:retrieve/1, Args)) ++ [
-            [e4_cf:retrieve(M),
-             e4_cf:retrieve(N),
-             length(Args)]
-        ]);
+            [#cf_mfarity{mod=e4_cf:retrieve(M),
+                         fn=e4_cf:retrieve(N),
+                         arity=length(Args)}]
+         ]);
 
 process_code(Block0, #c_primop{name=Name, args=Args}) ->
     emit(Block0, ['?primop', f_val(Name), Args]);
@@ -189,13 +191,19 @@ var_exists(#cf_block{scope=Scope}, #cf_var{} = Var) ->
                           Lhs :: cerl_lhs() | cf_var(),
                           Rhs :: cerl_rhs() | cf_var())
                          -> cf_block().
-pattern_match_pairs(Block0, Lhs, #c_var{name=RhsName}) ->
+pattern_match_pairs(Block0, #c_var{name=LhsName}, Rhs) -> % unwrap left
+    pattern_match_pairs(Block0, e4_cf:var(LhsName), Rhs);
+
+pattern_match_pairs(Block0, Lhs, #c_var{name=RhsName}) -> % unwrap right
     pattern_match_pairs(Block0, Lhs, e4_cf:var(RhsName));
-pattern_match_pairs(Block0 = #cf_block{scope=Scope0}, #c_var{name=LhsName}, Rhs) ->
-    Lhs = #cf_var{name=LhsName},
+
+pattern_match_pairs(Block0 = #cf_block{scope=Scope0}, #cf_var{}=Lhs, Rhs) ->
     case var_exists(Block0, Lhs) of % if have variable in scope
         true -> % variable exists, so read it and compare
-            emit(Block0, e4_cf:match_2_known(e4_cf:retrieve(Lhs), Rhs));
+            emit(Block0, [
+                e4_cf:match_2_known(e4_cf:retrieve(Lhs), Rhs),
+                e4_cf:comment("match two known")
+            ]);
         false -> % introduce variable and use it
             Block1 = Block0#cf_block{scope = [Lhs | Scope0]},
             pattern_match_var_versus(Block1, Lhs, Rhs)
@@ -214,11 +222,11 @@ pattern_match_pairs(_State, Lhs, Rhs) ->
                                cf_var(), cerl_rhs()|cf_var())
                               -> cf_block().
 pattern_match_var_versus(Block0, #c_var{name=LhsName}, Rhs) -> % unwrap left
-    Lhs = #cf_var{name=LhsName},
-    pattern_match_var_versus(Block0, Lhs, Rhs);
+    pattern_match_var_versus(Block0, e4_cf:var(LhsName), Rhs);
+
 pattern_match_var_versus(Block0, Lhs, #c_var{name=RhsName}) -> % unwrap right
-    Rhs = #cf_var{name=RhsName},
-    pattern_match_var_versus(Block0, Lhs, Rhs);
+    pattern_match_var_versus(Block0, Lhs, e4_cf:var(RhsName));
+
 pattern_match_var_versus(Block0, #cf_var{} = Lhs, Rhs) ->
     case var_exists(Block0, Lhs) of
         true -> % var exists, so compare
@@ -244,17 +252,18 @@ pattern_match_tuple_versus(Block0, LhsElements, #cf_var{} = Rhs) ->
                       LhsElements),
     %% check that Rhs is a tuple
     Block1 = emit(Block0, [
-        e4_cf:'if'(
+        e4_cf:unless(
             [e4_cf:retrieve(Rhs), e4_cf:lit(length(LhsElements)), 'IS-TUPLE'],
-            e4_cf:block()
+            e4_cf:block(['BADARG'])
         )
     ]),
     lists:foldl(
         fun({Index, Lhs1}, Blk0) ->
-            Blk1 = emit(Blk0, e4_cf:element(Index, Rhs)),
+            Blk1 = emit(Blk0, ['DUP', e4_cf:element(Index, #cf_stack_top{})]),
             pattern_match_var_versus(Blk1, Lhs1, #cf_stack_top{})
         end,
-        Block1, Pairs);
+        emit(Block1, [e4_cf:retrieve(Rhs)]),
+        Pairs);
 pattern_match_tuple_versus(_State, _Lhs, Rhs) ->
     compile_error("Match tuple vs ~9999p is not implemented", [Rhs]).
 
@@ -264,27 +273,40 @@ compile_error(Format, Args) ->
 
 get_code(#cf_mod{code=Code}) -> Code.
 
-format_code(L) when is_list(L) ->
-    [format_code(Item) || Item <- L];
-format_code(#cf_block{before=B, scope=_S, code=C, 'after'=A}) ->
-    [color:cyanb("\\ begin\n"),
-     format_code(B),
-     format_code(C),
-     format_code(A),
-     color:cyanb("\\ end\n")];
-format_code(W) when is_atom(W) ->
-    io_lib:format("~s ", [color:yellowb(str(W))]);
-format_code(#cf_lit{val=L}) ->
-    io_lib:format("'~s ", [color:magenta(str(L))]);
-format_code(#cf_retrieve{var=#cf_var{name=V}}) ->
-    io_lib:format("~s(~s) ", [color:green("LD"), color:greenb(str(V))]);
-format_code(#cf_store{var=#cf_var{name=V}}) ->
-    io_lib:format("~s(~s) ", [color:red("ST"), color:redb(str(V))]);
-format_code(#cf_comment{comment=C}) ->
-    io_lib:format("~s ~s~n", [color:cyan("\\"), color:cyan(C)]);
-format_code(#cf_var{name=V}) ->
-    io_lib:format("~s ", [color:blueb(str(V))]);
-format_code(C) -> io_lib:format("~p ", [C]).
+i(I) -> lists:duplicate((I-1) * 4, 32).
+
+format_code(L, Indent) when is_list(L) ->
+    [format_code(Item, Indent) || Item <- L];
+format_code(#cf_block{before=B, scope=_S, code=C, 'after'=A}, Indent) ->
+    [format_code(B, Indent+1),
+     format_code(C, Indent+1),
+     format_code(A, Indent+1)];
+format_code(C, Indent) ->
+    io_lib:format("~s~s~n", [i(Indent), format_op(C)]).
+
+format_op(#cf_var{name=V}) -> color:blueb(str(V));
+format_op(W) when is_atom(W) ->
+    io_lib:format("~s", [color:whiteb(str(W))]);
+format_op(#cf_lit{val=L}) ->
+    io_lib:format("'~s", [color:magenta(str(L))]);
+format_op(#cf_retrieve{var=V}) ->
+    io_lib:format("~s(~s)", [color:green("LD"), format_op(V)]);
+format_op(#cf_store{var=#cf_var{name=V}}) ->
+    io_lib:format("~s(~s)", [color:red("ST"), format_op(V)]);
+format_op(#cf_comment{comment=C}) ->
+    io_lib:format("~s ~s",
+                  [color:blackb("\\"), color:blackb(C)]);
+format_op(#cf_mfarity{mod=M, fn=F, arity=A}) ->
+    io_lib:format("~s~s,~s,~s~s",
+                  [
+                      color:magenta("MFA("),
+                      format_op(M),
+                      format_op(F),
+                      str(A),
+                      color:magenta(")")
+                  ]);
+format_op(#cf_var{}=Var) ->
+    io_lib:format("~s", [format_op(Var)]).
 
 str(X) when is_atom(X) -> atom_to_list(X);
 str(X) when is_binary(X) -> io_lib:format("~s", [X]);
