@@ -49,13 +49,13 @@ compile_clause() ->
               color:yellowb("Compile: myfun(_, nil) -> 123") ++ "~n", []),
     Compiled = compile_helper(RootScope, Code),
     io:format(standard_error, "~s~n",
-              [e4_c2f:format_code(lists:flatten(Compiled), [])]).
+              [e4_c2fc:format_code(lists:flatten(Compiled), [])]).
 
 compile_helper(RootScope, Code) ->
     Scope = #e4scope{vars=RootScope},
-    S0 = e4_c2f:module_new(),
-    S1 = lists:foldl(fun(Var, St) -> e4_c2f:stack_push(St, Var) end,
+    S0 = e4_c2fc:module_new(),
+    S1 = lists:foldl(fun(Var, St) -> e4_c2fc:stack_push(St, Var) end,
                      S0, RootScope),
-    S2 = e4_c2f:scope_push(S1, Scope),
-    S = e4_c2f:process_code(S2, Code),
-    lists:reverse(e4_c2f:get_code(S)).
+    S2 = e4_c2fc:scope_push(S1, Scope),
+    S = e4_c2fc:process_code(S2, Code),
+    lists:reverse(e4_c2fc:get_code(S)).

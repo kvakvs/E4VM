@@ -1,6 +1,6 @@
-%%% @doc From Erlang Core produces intermediate Forth-ified syntax tree with
-%%% variable accesses and scopes marked and constructs created.
--module(e4_c2f).
+%%% @doc From Core Erlang produces intermediate Core Forth syntax tree with
+%% scopes and variable accesses marked
+-module(e4_c2fc).
 
 %% API
 -export([process/1, process_code/2, module_new/0, get_code/1,
@@ -23,10 +23,10 @@ module_new() -> #e4module{}.
 -spec process(#c_module{}) -> e4block().
 process(#c_module{name=_Name, exports=_Exps, defs=Defs}) ->
     %M0 = #e4module{module=Name#c_literal.val},
-    Block = e4_forth:block(
-        [e4_forth:comment("begin mod")],
+    Block = e4_fcore:block(
+        [e4_fcore:comment("begin mod")],
         [],
-        [e4_forth:comment("end mod")]),
+        [e4_fcore:comment("end mod")]),
     process_fun_defs(Block, Defs).
 
 add_code(Block = #e4block{code=C}, AddCode) ->
@@ -35,17 +35,17 @@ add_code(Block = #e4block{code=C}, AddCode) ->
 -spec process_fun_defs(e4block(), core_ast()) -> e4block().
 process_fun_defs(ModB, []) -> ModB;
 process_fun_defs(ModB0, [{#c_var{name={Name, Arity}}, #c_fun{} = Fun} | Remaining]) ->
-    Block1 = e4_forth:block(
+    Block1 = e4_fcore:block(
             [':', format_fun_name(ModB0, Name, Arity)],
             [compile_fun(Fun)],
-            [';', e4_forth:comment("end fun ~s/~p", [Name, Arity])]),
+            [';', e4_fcore:comment("end fun ~s/~p", [Name, Arity])]),
     ModB1 = add_code(ModB0, Block1),
     process_fun_defs(ModB1, Remaining).
 
 compile_fun(#c_fun{vars=Vars, body=Body}) ->
     %% Assume stack now only has reversed args
     ReverseArgs = lists:reverse(lists:map(fun make_var/1, Vars)),
-    Block0 = e4_forth:block([], [], [], ReverseArgs),
+    Block0 = e4_fcore:block([], [], [], ReverseArgs),
     process_code(Block0, Body).
 
 -spec process_code(e4block(), core_ast()) -> e4block().
@@ -62,14 +62,14 @@ process_code(Block0, #c_case{arg=Arg, clauses=Clauses}) ->
         end, Block0, Clauses);
 
 process_code(Block0, #c_literal{val=Value}) ->
-    emit(Block0, e4_forth:lit(Value));
+    emit(Block0, e4_fcore:lit(Value));
 
 process_code(Block0, #c_let{vars=Vars, arg=Arg, body=Body}) ->
     ReverseVars = lists:map(fun make_var/1, Vars),
-    LetBlock = e4_forth:block(
-        [e4_forth:comment("begin let")],
+    LetBlock = e4_fcore:block(
+        [e4_fcore:comment("begin let")],
         [],
-        [e4_forth:comment("end let")],
+        [e4_fcore:comment("end let")],
         Block0#e4block.scope ++ ReverseVars),
 
     LetBlock1 = process_code(LetBlock, Arg),
@@ -77,22 +77,24 @@ process_code(Block0, #c_let{vars=Vars, arg=Arg, body=Body}) ->
 
 process_code(Block0, #c_apply{op=Op, args=Args}) ->
     emit(Block0,
-         lists:reverse(lists:map(fun retrieve/1, Args)) ++ [
-             length(Args), retrieve(Op), 'APPLY'
+         lists:reverse(lists:map(fun e4_fcore:retrieve/1, Args)) ++ [
+             length(Args), e4_fcore:retrieve(Op), 'APPLY'
         ]
     );
 
 process_code(Block0, #c_call{module=M, name=N, args=Args}) ->
     emit(Block0,
-         lists:reverse(lists:map(fun retrieve/1, Args)) ++ [
-            [retrieve(M), retrieve(N), length(Args)]
+         lists:reverse(lists:map(fun e4_fcore:retrieve/1, Args)) ++ [
+            [e4_fcore:retrieve(M),
+             e4_fcore:retrieve(N),
+             length(Args)]
         ]);
 
 process_code(Block0, #c_primop{name=Name, args=Args}) ->
     emit(Block0, ['?primop', f_val(Name), Args]);
 
 process_code(Block0, #c_tuple{es=Es}) ->
-    emit(Block0, e4_forth:tuple(lists:map(fun retrieve/1, Es)));
+    emit(Block0, e4_fcore:tuple(lists:map(fun e4_fcore:retrieve/1, Es)));
 
 process_code(Block0, #c_cons{hd=H, tl=T}) ->
     emit(Block0, ['?cons', H, T]);
@@ -108,14 +110,12 @@ process_code(_Block, X) ->
 
 make_var(#c_var{name=N}) -> #e4var{name=N}.
 
-retrieve(#e4var{}=Var) -> e4_forth:retrieve(Var).
-
 %% TODO: this plays no specific role, redo this or rename
-f_val(#c_literal{val=Unwrap}) -> e4_forth:lit(Unwrap);
+f_val(#c_literal{val=Unwrap}) -> e4_fcore:lit(Unwrap);
 f_val(#c_var{name={Fun, Arity}}) -> #e4funarity{fn=Fun, arity=Arity};
 f_val(#c_var{name=N}) -> #e4var{name=N};
-f_val(#c_tuple{es=Es}) -> e4_forth:tuple(Es);
-f_val({_, nil}) -> e4_forth:nil();
+f_val(#c_tuple{es=Es}) -> e4_fcore:tuple(Es);
+f_val({_, nil}) -> e4_fcore:nil();
 f_val({_, Value}) -> #e4lit{val=Value};
 f_val(X) -> X. % assume nothing left to unwrap
 
@@ -152,12 +152,10 @@ pattern_match(State, Args, #c_clause{pats=Pats, guard=Guard, body=Body}) ->
 
 %% For each element in Arg match element in Pats, additionally emit the
 %% code to check Guard
--spec pattern_match_2(e4module(),
-                      Pats :: [core_ast()],
-                      Args0 :: core_ast(),
-                      Guard :: core_ast(),
-                      Body :: core_ast()) -> e4module().
-pattern_match_2(State, Pats, Args0, _Guard, _Body) ->
+-spec pattern_match_2(e4block(),
+                      Pats :: [core_ast()], Args0 :: core_ast(),
+                      Guard :: core_ast(), Body :: core_ast()) -> e4block().
+pattern_match_2(Block0, Pats, Args0, _Guard, _Body) ->
     %% Convert to list if c_values is supplied
     Args1 = case Args0 of
                 #c_values{es=Es} -> Es;
@@ -171,24 +169,28 @@ pattern_match_2(State, Pats, Args0, _Guard, _Body) ->
     %% Pair args and pats and compare
     PatsArgs = lists:zip(Pats, Args),
     lists:foldl(
-        fun({Pat, Arg}, St) -> pattern_match_pairs(St, Pat, Arg) end,
-        State, PatsArgs).
+        fun({Pat, Arg}, Blk) -> pattern_match_pairs(Blk, Pat, Arg) end,
+        Block0, PatsArgs).
+
+var_exists(#e4block{scope=Scope}, #e4var{}=Var) ->
+    lists:member(Var, Scope).
 
 %% @doc Given state and left/right side of the match, checks if left-hand
 %% variable existed: if so - emits comparison, else introduces a new variable
 %% and emits the assignment.
 -spec pattern_match_pairs(e4module(), core_lhs(), core_rhs()) -> e4module().
-pattern_match_pairs(State, #c_var{name=LhsName}, Rhs) ->
+pattern_match_pairs(Block0 = #e4block{scope=Scope0}, #c_var{name=LhsName}, Rhs) ->
     Lhs = #e4var{name=LhsName},
-    case var_exists(State, Lhs) of
+    case var_exists(Block0, Lhs) of % if have variable in scope
         true -> % variable exists, so read it and compare
-            emit(State, e4_forth:compare(make_read(State, Lhs), Rhs));
+            emit(Block0, e4_fcore:equals(e4_fcore:retrieve(Lhs), Rhs));
         false -> % introduce variable and use it
-            State1 = scope_add_variable(State, Lhs),
-            pattern_match_var_versus(State1, Lhs, Rhs)
+            Block1 = Block0#e4block{scope = [Lhs | Scope0]},
+            pattern_match_var_versus(Block1, Lhs, Rhs)
     end;
 pattern_match_pairs(State, #c_literal{val=LhsLit}, Rhs) ->
-    emit(State, e4_forth:compare(#e4lit{val=LhsLit}, f_val(Rhs)));
+    emit(State, e4_fcore:equals(e4_fcore:lit(LhsLit),
+                                e4_fcore:retrieve(Rhs)));
 pattern_match_pairs(State, #c_tuple{es=LhsElements}, Rhs) ->
     emit(State, [
         fun(St) ->
@@ -199,36 +201,43 @@ pattern_match_pairs(_State, Lhs, Rhs) ->
     compile_error("Match ~9999p versus ~9999p not implemented", [Lhs, Rhs]).
 
 -spec pattern_match_var_versus(e4module(), e4var(), core_rhs()) -> e4module().
-pattern_match_var_versus(State, #e4var{} = Lhs, #c_var{name=RhsName}) ->
+pattern_match_var_versus(Block0, #e4var{} = Lhs, #c_var{name=RhsName}) ->
     Rhs = #e4var{name=RhsName},
-    case stack_find_create(State, Lhs) of
-        {State1A, {index, Index}} ->
-            emit(State1A, [
-                e4_forth:lit(Index), make_read(State1A, Rhs), 'STACK-WRITE',
-                e4_forth:comment("write ~p", [Lhs])
+    case var_exists(Block0, Lhs) of
+        true -> % var exists, so compare
+            emit(Block0, [
+                e4_fcore:equals(e4_fcore:retrieve(Rhs),
+                                e4_fcore:retrieve(Lhs)),
+                e4_fcore:comment("compare-match ~p = ~p", [Lhs, Rhs])
             ]);
-        {State1B, {created, _J}} ->
-            emit(State1B, [make_read(State1B, Rhs),
-                           e4_forth:comment("created var ~p", [Lhs])])
+        false -> % var did not exist, so copy-assign
+            emit(Block0, [
+                e4_fcore:retrieve(Rhs),
+                e4_fcore:comment("assign-match ~p = ~p", [Lhs, Rhs])]
+            )
     end;
 pattern_match_var_versus(_State, _Lhs, Rhs) ->
     compile_error("Match var versus ~9999p is not implemented", [Rhs]).
 
-pattern_match_tuple_versus(State, LhsElements, #c_var{name=RhsName}) ->
+pattern_match_tuple_versus(Block0, LhsElements, #c_var{name=RhsName}) ->
     %% Iterate a list of [{1,Lhs1}, {2,Lhs2}, ...] and get element from Rhs
     Pairs = lists:zip(LhsElements, lists:seq(1, length(LhsElements))),
     %% check that Rhs is a tuple
     Rhs = #e4var{name = RhsName},
-    State1 = emit(State, [
-        e4_forth:'if'([make_read(State, Rhs)], []),
-        e4_forth:comment("is tuple?", [])
+    Block1 = emit(Block0, [
+        e4_fcore:'if'([e4_fcore:retrieve(Rhs),
+                       e4_fcore:lit(length(LhsElements)),
+                       'IS-TUPLE'], [])
     ]),
-    lists:foldl(fun pattern_match_tuple_fold/2, State1, Pairs);
+    lists:foldl(fun pattern_match_var_versus, Block1, Pairs);
+    %lists:foldl(fun pattern_match_tuple_fold/2, State1, Pairs);
 pattern_match_tuple_versus(_State, _Lhs, Rhs) ->
     compile_error("Match var versus ~9999p is not implemented", [Rhs]).
 
 pattern_match_tuple_fold({#c_var{name=LhsName}, Index}, St) ->
-    St1 = emit(St, [e4_forth:lit(Index), 'TUPLE-ELEMENT']),
+    St1 = emit(St, [
+        e4_fcore:equals(e4_fcore:retrieve(LhsName),
+                        [e4_fcore:lit(Index), 'TUPLE-ELEMENT']),
     Lhs = #e4var{name=LhsName},
     emit_store(St1, Lhs).
 
@@ -238,11 +247,11 @@ compile_error(Format, Args) ->
     E = lists:flatten(io_lib:format(Format, Args)),
     erlang:error(E).
 
--spec make_read(e4module(), e4var()) -> forth_code().
-make_read(State, #e4var{} = Var) ->
-    {index, Index} = stack_find(State, Var),
-    [e4_forth:lit(Index), 'STACK-READ',
-        e4_forth:comment("read ~p", [Var])].
+%%-spec make_read(e4module(), e4var()) -> forth_code().
+%%make_read(State, #e4var{} = Var) ->
+%%    {index, Index} = stack_find(State, Var),
+%%    [e4_forth:lit(Index), 'STACK-READ',
+%%        e4_forth:comment("read ~p", [Var])].
 
 %% @doc Given the code creates color string with the output
 format_code([], Accum) -> lists:reverse(Accum);
