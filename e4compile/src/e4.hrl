@@ -1,51 +1,52 @@
 %%-define(Lazy(EmitCode), fun(St) -> e4_c2f:emit(St, EmitCode) end).
 
--record(e4var, {name :: atom()}).
--type e4var() :: #e4var{}.
+%%
+%% Core Forth definitions
+%% Maps from Core Erlang very approximately and simplifies a lot
+%%
+-record(cf_var, {name :: atom()}).
+-type cf_var() :: #cf_var{}.
 
--record(e4funarity, {fn :: atom(), arity :: integer()}).
+-record(cf_funarity, {fn :: atom(), arity :: integer()}).
 
--record(e4mfa, {mod :: atom(), fn :: atom(), arity :: integer()}).
+-record(cf_mfarity, {mod :: atom(), fn :: atom(), arity :: integer()}).
 
--record(e4lit, {val :: any()}).
--type e4lit() :: #e4lit{}.
+-record(cf_lit, {val :: any()}).
+-type cf_lit() :: #cf_lit{}.
 
--record(e4comment, {comment :: any()}).
--type e4comment() :: #e4comment{}.
-
-%%-record(e4varscope, {
-%%    vars=[] :: [e4var()]
-%%}).
-%%-type e4varscope() :: #e4varscope{}.
+-record(cf_comment, {comment :: any()}).
+-type cf_comment() :: #cf_comment{}.
 
 %% A code block with prefix and suffix
 %% TODO: Have var scopes merged with this? Not sure how to find scope parent
--record(e4block, {
-    code=[] :: forth_code(),                % forth program output
-    before=[] :: forth_code(),
-    'after'=[] :: forth_code(),
+-record(cf_block, {
+    before=[] :: cf_code(),
     %% A copy of upper level scope + own variables
-    scope=[] :: [e4var()]
+    scope=[] :: [cf_var()],
+    code=[] :: cf_code(), % forth program output
+    'after'=[] :: cf_code()
 }).
--type e4block() :: #e4block{}.
+-type cf_block() :: #cf_block{}.
 
--type forth_word() :: atom().
--type forth_op() :: forth_word() | e4comment() | e4lit() | e4block().
--type forth_code() :: [forth_op() | forth_code()].
+-type cf_word() :: atom().
+-type cf_op() :: cf_word() | cf_comment() | cf_lit() | cf_block().
+-type cf_code() :: [cf_op() | cf_code()].
 
--record(e4module, {
+-record(cf_mod, {
     module=undefined,
     atom_counter=0,
     atoms=dict:new(),
     lit_counter=0,
     literals=dict:new(),
     %% list of nested code blocks, containing code
-    code=[] :: forth_code()
+    code=[] :: cf_code()
 %%    %% Compile-time state
 %%    stack=[] :: [e4var()]
 }).
 
--type e4module() :: #e4module{}.
+-type cf_mod() :: #cf_mod{}.
 
--record(e4retrieve_op, {var :: e4var()}).
--record(e4store_op, {var :: e4var()}).
+%% Marking for variable operation, either read or write
+-record(cf_retrieve, {var :: cf_var()}).
+-record(cf_store, {var :: cf_var()}).
+-record(cf_stack_top, {}). % denotes the value currently on the stack top
