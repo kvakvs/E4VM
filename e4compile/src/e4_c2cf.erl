@@ -243,9 +243,11 @@ pattern_match_var_versus(Block0, #cf_var{} = Lhs, Rhs) ->
     case var_exists(Block0, Lhs) of
         true -> % var exists, so compare
             emit(Block0, [
-                e4_cf:equals(e4_cf:retrieve(Rhs),
-                             e4_cf:retrieve(Lhs)),
-                e4_cf:comment("compare-match ~p = ~p", [Lhs, Rhs])
+                e4_cf:comment("compare-match ~p = ~p", [Lhs, Rhs]),
+                e4_cf:unless(
+                    [e4_cf:equals(e4_cf:retrieve(Rhs), e4_cf:retrieve(Lhs))],
+                    e4_cf:block(['BADMATCH']))
+                    %% TODO: Use fail label instead of badmatch if possible
             ]);
         false -> % var did not exist, so copy-assign
             emit(Block0, [
