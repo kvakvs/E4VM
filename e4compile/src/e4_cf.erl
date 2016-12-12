@@ -29,19 +29,24 @@
 'if'(#cf_lit{val='true'}, Body = #cf_block{}) ->
     Body;
 'if'(Cond, Body = #cf_block{}) ->
-    block([], [Cond, 'IF', Body], ['THEN']).
+    block([comment("begin if"), Cond, 'IF'], [Body], ['THEN']).
 
 'if'(Cond, Body = #cf_block{}, Else = #cf_block{}) ->
-    block([], [Cond, 'IF', Body, 'ELSE', Else], ['THEN']).
+    block([comment("begin ifelse"), Cond, 'IF'], [Body, 'ELSE', Else], ['THEN']).
 
 unless(#cf_lit{val='false'}, _Block) -> [];
 unless(Cond, Body = #cf_block{}) ->
-    block([], [Cond, 'UNLESS', Body], ['THEN']).
+    block([comment("begin unless"), Cond, 'UNLESS'], [Body], ['THEN']).
 
 %% ( c b a N - {a,b,c} , constructs a tuple size N from values on stack )
 %% Takes list of Forth expressions where each leaves one value on stack
 %% and constructs a tuple of that size
-tuple(Values) -> [lists:reverse(Values), length(Values), 'MAKE-TUPLE'].
+tuple(Values) ->
+    [
+        lists:reverse(lists:map(fun retrieve/1, Values)),
+        lit(length(Values)),
+        'MAKE-TUPLE'
+    ].
 
 %% ( X Y -- (X==Y) , takes 2 values from stack, pushes comparison result )
 equals(Lhs, Rhs) -> [Lhs, Rhs, '=='].
@@ -79,6 +84,7 @@ block(Before, Code, After, Scope) ->
 store(Dst = #cf_var{}) -> #cf_store{var=Dst}.
 
 %% ( -- X , retrieves value of variable V and leaves it on stack )
+retrieve(#c_tuple{es=Es}) -> tuple(Es);
 retrieve(#c_apply{op=FunObj, args=Args}) ->
     #cf_apply{funobj=FunObj, args=Args};
 retrieve(#cf_apply{}=A) -> A;
@@ -87,6 +93,8 @@ retrieve(#cf_stack_top{}) -> [];
 retrieve(Retr = #cf_retrieve{}) -> Retr;
 retrieve(Lit = #cf_lit{}) -> Lit;
 retrieve(#c_literal{val=Lit}) -> lit(Lit);
+retrieve(#c_var{name={F,A}}) when is_atom(F), is_integer(A) ->
+    #cf_mfarity{mod='.', fn=F, arity=A};
 retrieve(#c_var{name=Var}) -> #cf_retrieve{var=Var};
 retrieve(Var = #cf_var{}) -> #cf_retrieve{var=Var}.
 

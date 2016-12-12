@@ -28,6 +28,7 @@ process(#c_module{name=_Name, exports=_Exps, defs=Defs}) ->
         [],
         [e4_cf:comment("end mod")]),
     Out = process_fun_defs(Block, Defs),
+    io:format("~p~n", [Out]),
     io:format("~s~n", [format_code(Out, 0)]).
 
 add_code(Block = #cf_block{code=C}, AddCode) ->
@@ -57,16 +58,32 @@ process_code(Block0, [CoreOp | Tail]) ->
 
 process_code(Block0, #c_case{arg=Arg, clauses=Clauses}) ->
     %% Arg = Tree, Clauses = [Tree]
-    lists:foldl(
+    Case0 = e4_cf:block(
+        [e4_cf:comment("begin case")],
+        [],
+        [e4_cf:comment("end case")]),
+    Case1 = lists:foldl(
         fun(Clause, Blk) ->
-            pattern_match(Blk, Arg, Clause)
-        end, Block0, Clauses);
+            Blk1 = pattern_match(Blk, Arg, Clause),
+            process_code(Blk1, Clause)
+        end,
+        Case0,
+        Clauses),
+    emit(Block0, Case1);
+
+process_code(Block0, #c_clause{body=Body}) ->
+    ClauseBlock0 = e4_cf:block(
+        [e4_cf:comment("begin clause")],
+        [],
+        [e4_cf:comment("end clause")]),
+    ClauseBlock1 = process_code(ClauseBlock0, Body),
+    emit(Block0, ClauseBlock1);
 
 process_code(Block0, #c_literal{val=Value}) ->
     emit(Block0, e4_cf:lit(Value));
 
 process_code(Block0, #c_let{vars=Vars, arg=Arg, body=Body}) ->
-    ReverseVars = lists:map(fun e4_cf:var/1, Vars),
+    % ReverseVars = lists:map(fun e4_cf:var/1, Vars),
     LetBlock = e4_cf:block(
         [e4_cf:comment("begin let")],
         [],
@@ -76,12 +93,15 @@ process_code(Block0, #c_let{vars=Vars, arg=Arg, body=Body}) ->
     ),
 
     LetBlock1 = process_code(LetBlock, Arg),
-    process_code(LetBlock1, Body);
+    LetBlock2 = process_code(LetBlock1, Body),
+    emit(Block0, LetBlock2);
 
 process_code(Block0, #c_apply{op=Op, args=Args}) ->
     emit(Block0,
          lists:reverse(lists:map(fun e4_cf:retrieve/1, Args)) ++ [
-             length(Args), e4_cf:retrieve(Op), 'APPLY'
+             e4_cf:lit(length(Args)),
+             e4_cf:retrieve(Op),
+             'APPLY'
         ]
     );
 
@@ -94,7 +114,10 @@ process_code(Block0, #c_call{module=M, name=N, args=Args}) ->
          ]);
 
 process_code(Block0, #c_primop{name=Name, args=Args}) ->
-    emit(Block0, ['?primop', f_val(Name), Args]);
+    emit(Block0, lists:reverse(lists:map(fun e4_cf:retrieve/1, Args)) ++ [
+        e4_cf:retrieve(Name),
+        'PRIMOP'
+    ]);
 
 process_code(Block0, #c_tuple{es=Es}) ->
     emit(Block0, e4_cf:tuple(lists:map(fun e4_cf:retrieve/1, Es)));
@@ -103,24 +126,13 @@ process_code(Block0, #c_cons{hd=H, tl=T}) ->
     emit(Block0, ['?cons', H, T]);
 
 process_code(Block0, #c_var{name=N}) ->
-    emit(Block0, ['?var', N]);
+    emit(Block0, [e4_cf:comment("retrieve ~p", [N])]);
 
 process_code(Block0, #c_alias{var=Var, pat=Pat}) ->
     emit(Block0, ['?alias', Var, Pat]);
 
 process_code(_Block, X) ->
     compile_error("Unknown Core AST piece ~p~n", [X]).
-
-%%make_var(#c_var{name=N}) -> #cf_var{name=N}.
-
-%% TODO: this plays no specific role, redo this or rename
-f_val(#c_literal{val=Unwrap}) -> e4_cf:lit(Unwrap);
-f_val(#c_var{name={Fun, Arity}}) -> #cf_funarity{fn=Fun, arity=Arity};
-f_val(#c_var{name=N}) -> e4_cf:var(N);
-f_val(#c_tuple{es=Es}) -> e4_cf:tuple(Es);
-f_val({_, nil}) -> e4_cf:nil();
-f_val({_, Value}) -> #cf_lit{val=Value};
-f_val(X) -> X. % assume nothing left to unwrap
 
 %% Takes list [code and lazy elements] which are callable fun/1
 %% (fun(State) -> emit... end) and runs the lazy elements combining
@@ -287,6 +299,8 @@ format_code(C, Indent) ->
 format_op(#cf_var{name=V}) -> color:blueb(str(V));
 format_op(W) when is_atom(W) ->
     io_lib:format("~s", [color:whiteb(str(W))]);
+%%format_op(LitInt) when is_integer(LitInt) ->
+%%    io_lib:format("'~s", [color:magenta(str(LitInt))]);
 format_op(#cf_lit{val=L}) ->
     io_lib:format("'~s", [color:magenta(str(L))]);
 format_op(#cf_retrieve{var=V}) ->

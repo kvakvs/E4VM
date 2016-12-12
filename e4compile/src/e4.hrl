@@ -7,7 +7,7 @@
 -record(cf_var, {name :: atom()}).
 -type cf_var() :: #cf_var{}.
 
--record(cf_funarity, {fn :: atom(), arity :: integer()}).
+%%-record(cf_funarity, {fn :: atom(), arity :: integer()}).
 
 -record(cf_mfarity, {mod :: atom(), fn :: atom(), arity :: integer()}).
 
