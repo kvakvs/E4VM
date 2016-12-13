@@ -217,7 +217,7 @@ pattern_match_pairs(Block0 = #cf_block{scope=Scope0}, #cf_var{}=Lhs, Rhs) ->
                 e4_cf:comment("match two known")
             ]);
         false -> % introduce variable and use it
-            Block1 = Block0#cf_block{scope = [Lhs | Scope0]},
+            Block1 = Block0#cf_block{scope = Scope0},
             pattern_match_var_versus(Block1, Lhs, Rhs)
     end;
 pattern_match_pairs(Block0, #c_literal{val=LhsLit}, Rhs) ->
@@ -245,15 +245,15 @@ pattern_match_var_versus(Block0, #cf_var{} = Lhs, Rhs) ->
             emit(Block0, [
                 e4_cf:comment("compare-match ~p = ~p", [Lhs, Rhs]),
                 e4_cf:unless(
-                    [e4_cf:equals(e4_cf:retrieve(Rhs), e4_cf:retrieve(Lhs))],
+                    [e4_cf:equals(e4_cf:retrieve(Lhs), e4_cf:retrieve(Rhs))],
                     e4_cf:block(['BADMATCH']))
                     %% TODO: Use fail label instead of badmatch if possible
             ]);
         false -> % var did not exist, so copy-assign
             emit(Block0, [
-                e4_cf:retrieve(Rhs), e4_cf:store(Lhs),
-                e4_cf:comment("assign-match ~p = ~p", [Lhs, Rhs])]
-            )
+                e4_cf:comment("assign-match ~p = ~p", [Lhs, Rhs]),
+                e4_cf:alias(Rhs, Lhs)
+            ])
     end;
 pattern_match_var_versus(_Blk, L, R) ->
     compile_error("Match var ~9999p against ~9999p is not implemented", [L, R]).
@@ -309,6 +309,8 @@ format_op(#cf_retrieve{var=V}) ->
     io_lib:format("~s(~s)", [color:green("LD"), format_op(V)]);
 format_op(#cf_store{var=#cf_var{name=V}}) ->
     io_lib:format("~s(~s)", [color:red("ST"), format_op(V)]);
+format_op(#cf_alias{var=V, alt=Alt}) ->
+    io_lib:format("~s(~s=~s)", [color:red("ALIAS"), format_op(V), format_op(Alt)]);
 format_op(#cf_comment{comment=C}) ->
     io_lib:format("~s ~s",
                   [color:blackb("\\"), color:blackb(C)]);

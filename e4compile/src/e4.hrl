@@ -51,3 +51,4 @@
 -record(cf_store, {var :: cf_var()}).
 -record(cf_stack_top, {}). % denotes the value currently on the stack top
 -record(cf_apply, {funobj, args=[]}).
+-record(cf_alias, {var :: cf_var(), alt :: cf_var()}).

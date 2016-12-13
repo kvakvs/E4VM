@@ -2,8 +2,8 @@
 
 %% API
 -export(['and'/1, 'if'/2, 'if'/3, block/0, block/1, block/3, block/4, comment/1,
-         comment/2, equals/2, lit/1, match_2_known/2, nil/0, retrieve/1, store/1,
-         tuple/1, var/1, element/2, unless/2]).
+    comment/2, equals/2, lit/1, match_2_known/2, nil/0, retrieve/1, store/1,
+    tuple/1, var/1, element/2, unless/2, alias/2]).
 
 -include_lib("compiler/src/core_parse.hrl").
 -include("e4.hrl").
@@ -82,6 +82,11 @@ block(Before, Code, After, Scope) ->
 
 %% ( X -- , stores value X on stack into variable Dst )
 store(Dst = #cf_var{}) -> #cf_store{var=Dst}.
+
+%% @doc If both args are variables, creates an alias for the next compiler
+%% pass and generates no code. Otherwise generates code for copying.
+alias(Var = #cf_var{}, Alt = #cf_var{}) -> #cf_alias{var=Var, alt=Alt};
+alias(#cf_stack_top{}, Alt = #cf_var{}) -> ['DUP', store(Alt)].
 
 %% ( -- X , retrieves value of variable V and leaves it on stack )
 retrieve(#c_tuple{es=Es}) -> tuple(Es);
