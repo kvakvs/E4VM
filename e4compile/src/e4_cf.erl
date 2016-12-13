@@ -6,7 +6,7 @@
     tuple/1, var/1, element/2, unless/2, alias/2]).
 
 -include_lib("compiler/src/core_parse.hrl").
--include("e4.hrl").
+-include("e4_cf.hrl").
 
 %% Takes list of Forth checks and creates forth instructions which produce
 %% true if all conditions are true

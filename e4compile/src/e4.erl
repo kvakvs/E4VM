@@ -8,7 +8,7 @@
 -behaviour(application).
 
 %% Application callbacks
--export([start/2, stop/1, start_e4_compiler/1, start/0]).
+-export([start/2, stop/1, start_e4_compiler/1, start/0, compile_error/2]).
 
 %%====================================================================
 %% API
@@ -41,3 +41,7 @@ start_e4_compiler([F | Tail]) ->
             T, Err, erlang:get_stacktrace()])
     end,
     start_e4_compiler(Tail).
+
+compile_error(Format, Args) ->
+    E = lists:flatten(io_lib:format(Format, Args)),
+    erlang:error(E).

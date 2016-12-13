@@ -4,10 +4,12 @@
 
 %% API
 -export([process/1, process_code/2, module_new/0, get_code/1,
-         emit/2]).
+    emit/2, format_core_forth/2]).
 
 -include_lib("compiler/src/core_parse.hrl").
--include("e4.hrl").
+-include("e4_cf.hrl").
+
+-import(e4, [compile_error/2]).
 
 -type cerl_lhs() :: #c_literal{} | #c_var{} | #c_tuple{}. % TODO: binary, map
 -type cerl_rhs() :: cerl_lhs().
@@ -28,8 +30,9 @@ process(#c_module{name=_Name, exports=_Exps, defs=Defs}) ->
         [],
         [e4_cf:comment("end mod")]),
     Out = process_fun_defs(Block, Defs),
-    io:format("~p~n", [Out]),
-    io:format("~s~n", [format_code(Out, 0)]).
+%%    io:format("~p~n", [Out]),
+%%    io:format("~s~n", [format_code(Out, 0)]),
+    Out.
 
 add_code(Block = #cf_block{code=C}, AddCode) ->
     Block#cf_block{code=[AddCode| C]}.
@@ -82,7 +85,7 @@ process_code(Block0, #c_clause{body=Body}) ->
 process_code(Block0, #c_literal{val=Value}) ->
     emit(Block0, e4_cf:lit(Value));
 
-process_code(Block0, #c_let{vars=Vars, arg=Arg, body=Body}) ->
+process_code(Block0, #c_let{vars=_Vars, arg=Arg, body=Body}) ->
     % ReverseVars = lists:map(fun e4_cf:var/1, Vars),
     LetBlock = e4_cf:block(
         [e4_cf:comment("begin let")],
@@ -132,7 +135,7 @@ process_code(Block0, #c_alias{var=Var, pat=Pat}) ->
     emit(Block0, ['?alias', Var, Pat]);
 
 process_code(_Block, X) ->
-    compile_error("Unknown Core AST piece ~p~n", [X]).
+    compile_error("E4Cerl: Unknown Core AST piece ~p~n", [X]).
 
 %% Takes list [code and lazy elements] which are callable fun/1
 %% (fun(State) -> emit... end) and runs the lazy elements combining
@@ -228,7 +231,7 @@ pattern_match_pairs(Block0, #c_literal{val=LhsLit}, Rhs) ->
 pattern_match_pairs(Block0 = #cf_block{}, #c_tuple{es=LhsElements}, Rhs) ->
     pattern_match_tuple_versus(Block0, LhsElements, Rhs);
 pattern_match_pairs(_State, Lhs, Rhs) ->
-    compile_error("Match ~9999p versus ~9999p not implemented", [Lhs, Rhs]).
+    compile_error("E4Cerl: Match ~9999p versus ~9999p not implemented", [Lhs, Rhs]).
 
 -spec pattern_match_var_versus(Block :: cf_block(),
                                cf_var(), cerl_rhs()|cf_var())
@@ -256,7 +259,8 @@ pattern_match_var_versus(Block0, #cf_var{} = Lhs, Rhs) ->
             ])
     end;
 pattern_match_var_versus(_Blk, L, R) ->
-    compile_error("Match var ~9999p against ~9999p is not implemented", [L, R]).
+    compile_error("E4Cerl: Match var ~9999p against ~9999p is not implemented", 
+        [L, R]).
 
 pattern_match_tuple_versus(Block0, LhsElements, #c_var{}=Rhs) ->
     pattern_match_tuple_versus(Block0, LhsElements, e4_cf:var(Rhs));
@@ -279,23 +283,19 @@ pattern_match_tuple_versus(Block0, LhsElements, #cf_var{} = Rhs) ->
         emit(Block1, [e4_cf:retrieve(Rhs)]),
         Pairs);
 pattern_match_tuple_versus(_State, _Lhs, Rhs) ->
-    compile_error("Match tuple vs ~9999p is not implemented", [Rhs]).
-
-compile_error(Format, Args) ->
-    E = lists:flatten(io_lib:format(Format, Args)),
-    erlang:error(E).
+    compile_error("E4Cerl: Match tuple vs ~9999p is not implemented", [Rhs]).
 
 get_code(#cf_mod{code=Code}) -> Code.
 
 i(I) -> lists:duplicate((I-1) * 4, 32).
 
-format_code(L, Indent) when is_list(L) ->
-    [format_code(Item, Indent) || Item <- L];
-format_code(#cf_block{before=B, scope=_S, code=C, 'after'=A}, Indent) ->
-    [format_code(B, Indent+1),
-     format_code(C, Indent+1),
-     format_code(A, Indent+1)];
-format_code(C, Indent) ->
+format_core_forth(L, Indent) when is_list(L) ->
+    [format_core_forth(Item, Indent) || Item <- L];
+format_core_forth(#cf_block{before=B, scope=_S, code=C, 'after'=A}, Indent) ->
+    [format_core_forth(B, Indent+1),
+     format_core_forth(C, Indent+1),
+     format_core_forth(A, Indent+1)];
+format_core_forth(C, Indent) ->
     io_lib:format("~s~s~n", [i(Indent), format_op(C)]).
 
 format_op(#cf_var{name=V}) -> color:blueb(str(V));

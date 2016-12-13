@@ -49,7 +49,7 @@ compile_clause() ->
               color:yellowb("Compile: myfun(_, nil) -> 123") ++ "~n", []),
     Compiled = compile_helper(RootScope, Code),
     io:format(standard_error, "~s~n",
-              [e4_c2cf:format_code(lists:flatten(Compiled), [])]).
+              [e4_c2cf:format_core_forth(lists:flatten(Compiled), [])]).
 
 compile_helper(RootScope, Code) ->
     Scope = #e4scope{vars=RootScope},

@@ -1,9 +1,10 @@
-%%-define(Lazy(EmitCode), fun(St) -> e4_c2f:emit(St, EmitCode) end).
+%%%============================================================================
+%%%     Core Forth definitions
+%%%
+%%%     Core Erlang very approximately maps to Core Forth with some
+%%%     simplifications and generalizations on the way
+%%%============================================================================
 
-%%
-%% Core Forth definitions
-%% Maps from Core Erlang very approximately and simplifies a lot
-%%
 -record(cf_var, {name :: atom()}).
 -type cf_var() :: #cf_var{}.
 
@@ -32,6 +33,7 @@
 -type cf_op() :: cf_word() | cf_comment() | cf_lit() | cf_block().
 -type cf_code() :: [cf_op() | cf_code()].
 
+%% TODO: not sure if used in this pass
 -record(cf_mod, {
     module=undefined,
     atom_counter=0,
@@ -44,7 +46,7 @@
 %%    stack=[] :: [e4var()]
 }).
 
--type cf_mod() :: #cf_mod{}.
+%%-type cf_mod() :: #cf_mod{}.
 
 %% Marking for variable operation, either read or write
 -record(cf_retrieve, {var :: cf_var()}).
