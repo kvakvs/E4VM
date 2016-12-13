@@ -4,6 +4,8 @@
 %%%     Core Erlang very approximately maps to Core Forth with some
 %%%     simplifications and generalizations on the way
 %%%============================================================================
+-ifndef(E4_CORE_FORTH).
+-define(E4_CORE_FORTH, 1).
 
 -record(cf_var, {name :: atom()}).
 -type cf_var() :: #cf_var{}.
@@ -54,3 +56,5 @@
 -record(cf_stack_top, {}). % denotes the value currently on the stack top
 -record(cf_apply, {funobj, args=[]}).
 -record(cf_alias, {var :: cf_var(), alt :: cf_var()}).
+
+-endif.

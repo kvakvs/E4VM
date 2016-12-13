@@ -1,6 +1,6 @@
 %%% @doc From Core Erlang produces intermediate Core Forth syntax tree with
 %% scopes and variable accesses marked
--module(e4_c2cf).
+-module(e4_core_cforth).
 
 %% API
 -export([process/1, process_code/2, module_new/0, get_code/1,
@@ -31,7 +31,7 @@ process(#c_module{name=_Name, exports=_Exps, defs=Defs}) ->
         [e4_cf:comment("end mod")]),
     Out = process_fun_defs(Block, Defs),
 %%    io:format("~p~n", [Out]),
-%%    io:format("~s~n", [format_code(Out, 0)]),
+    io:format("~s~n", [format_core_forth(Out, 0)]),
     Out.
 
 add_code(Block = #cf_block{code=C}, AddCode) ->
@@ -137,9 +137,6 @@ process_code(Block0, #c_alias{var=Var, pat=Pat}) ->
 process_code(_Block, X) ->
     compile_error("E4Cerl: Unknown Core AST piece ~p~n", [X]).
 
-%% Takes list [code and lazy elements] which are callable fun/1
-%% (fun(State) -> emit... end) and runs the lazy elements combining
-%% the output together
 -spec emit(Block :: cf_block(), Code :: cf_op() | cf_code()) -> cf_block().
 emit(Block, AddCode) when not is_list(AddCode) ->
     emit(Block, [AddCode]);
@@ -147,13 +144,9 @@ emit(Block, AddCode) ->
     lists:foldl(
         fun(Nested, Blk) when is_list(Nested) ->
                 emit(Blk, Nested);
-%%            (NewBlk = #cf_block{code=NewCode}, Blk = #cf_block{code=Code}) ->
-%%                NewBlk1 = NewBlk#cf_block{code=lists:reverse(NewCode)},
-%%                Blk#cf_block{code=[NewBlk1 | Code]};
             (ForthOp, Blk = #cf_block{code=Code}) ->
                 %% TODO: Fix me i'm slow
                 Blk#cf_block{code=Code++[ForthOp]}
-                %% Blk#cf_block{code=[ForthOp | Code]}
         end,
         Block,
         AddCode).
@@ -253,10 +246,11 @@ pattern_match_var_versus(Block0, #cf_var{} = Lhs, Rhs) ->
                     %% TODO: Use fail label instead of badmatch if possible
             ]);
         false -> % var did not exist, so copy-assign
-            emit(Block0, [
+            Block1 = emit(Block0, [
                 e4_cf:comment("assign-match ~p = ~p", [Lhs, Rhs]),
                 e4_cf:alias(Rhs, Lhs)
-            ])
+            ]),
+            scope_add_var(Block1, Lhs)
     end;
 pattern_match_var_versus(_Blk, L, R) ->
     compile_error("E4Cerl: Match var ~9999p against ~9999p is not implemented", 
@@ -329,3 +323,6 @@ format_op(#cf_var{}=Var) ->
 str(X) when is_atom(X) -> atom_to_list(X);
 str(X) when is_binary(X) -> io_lib:format("~s", [X]);
 str(X) -> lists:flatten(io_lib:format("~p", [X])).
+
+scope_add_var(Block = #cf_block{scope=Scope}, Var) ->
+    Block#cf_block{scope=ordsets:add_element(Var, Scope)}.
