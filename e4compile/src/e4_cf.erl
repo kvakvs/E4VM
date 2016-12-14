@@ -2,15 +2,15 @@
 
 %% API
 -export(['and'/1, 'if'/2, 'if'/3, block/0, block/1, block/3, block/4, comment/1,
-    comment/2, equals/2, lit/1, match_2_known/2, nil/0, retrieve/1, store/1,
+    comment/2, equals/2, lit/1, match_two_values/2, nil/0, retrieve/1, store/1,
     tuple/1, var/1, element/2, unless/2, mark_alias/2, mark_new_var/1]).
 
 -include_lib("compiler/src/core_parse.hrl").
 -include("e4_cf.hrl").
 
 %% Takes list of Forth checks and creates forth instructions which produce
-%% true if all conditions are true
-%% Assumption: each Cond in Conds is a Forth sequence which leaves one value on stack
+%% true if all conditions are true. Assumption: each Cond in Conds is a Forth
+%% sequence which leaves one value on stack
 'and'([]) -> [];
 'and'(Conds) ->
     %% Remove true clauses
@@ -32,7 +32,9 @@
     block([comment("begin if"), Cond, 'IF'], [Body], ['THEN']).
 
 'if'(Cond, Body = #cf_block{}, Else = #cf_block{}) ->
-    block([comment("begin ifelse"), Cond, 'IF'], [Body, 'ELSE', Else], ['THEN']).
+    block([comment("begin ifelse"), Cond, 'IF'],
+        [Body, 'ELSE', Else],
+        ['THEN']).
 
 unless(#cf_lit{val='false'}, _Block) -> [];
 unless(Cond, Body = #cf_block{}) ->
@@ -52,7 +54,7 @@ tuple(Values) ->
 equals(Lhs, Rhs) -> [Lhs, Rhs, '=='].
 
 %% ( X Y -- X , if X==Y, otherwise badmatch error )
-match_2_known(L, R) ->
+match_two_values(L, R) ->
     [retrieve(L), 'DUP', retrieve(R), '==',
      'UNLESS', 'BADMATCH', 'THEN'].
 
@@ -98,7 +100,7 @@ retrieve(#cf_stack_top{}) -> [];
 retrieve(Retr = #cf_retrieve{}) -> Retr;
 retrieve(Lit = #cf_lit{}) -> Lit;
 retrieve(#c_literal{val=Lit}) -> lit(Lit);
-retrieve(#c_var{name={F,A}}) when is_atom(F), is_integer(A) ->
+retrieve(#c_var{name={F, A}}) when is_atom(F), is_integer(A) ->
     #cf_mfarity{mod='.', fn=F, arity=A};
 retrieve(#c_var{name=Var}) -> #cf_retrieve{var=Var};
 retrieve(Var = #cf_var{}) -> #cf_retrieve{var=Var}.

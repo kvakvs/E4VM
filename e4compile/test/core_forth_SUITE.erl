@@ -12,7 +12,7 @@
 -compile([export_all]).
 
 suite() ->
-    [{timetrap,{minutes,1}}].
+    [{timetrap, {minutes, 1}}].
 
 init_per_suite(Config) -> Config.
 end_per_suite(_Config) -> ok.

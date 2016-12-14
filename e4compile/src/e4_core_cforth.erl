@@ -16,13 +16,14 @@
 -type cerl_ast_element() :: #c_literal{} | #c_alias{} | #c_apply{} | #c_binary{}
     | #c_bitstr{} | #c_call{} | #c_case{} | #c_catch{} | #c_clause{}
     | #c_cons{} | #c_fun{} | #c_let{} | #c_letrec{} | #c_map{} | #c_map_pair{}
-    | #c_module{} | #c_primop{} | #c_receive{} | #c_seq{} | #c_try{} | #c_tuple{}
-    | #c_values{} | #c_var{}.
+    | #c_module{} | #c_primop{} | #c_receive{} | #c_seq{} | #c_try{}
+    | #c_tuple{} | #c_values{} | #c_var{}.
 -type cerl_ast() :: cerl_ast_element() | [cerl_ast_element()].
+-type cerl_module() :: #c_module().
 
 module_new() -> #cf_mod{}.
 
--spec process(#c_module{}) -> cf_block().
+-spec process(cerl_module()) -> cf_block().
 process(#c_module{name=_Name, exports=_Exps, defs=Defs}) ->
     %M0 = #e4module{module=Name#c_literal.val},
     Block = e4_cf:block(
@@ -39,7 +40,8 @@ add_code(Block = #cf_block{code=C}, AddCode) ->
 
 -spec process_fun_defs(cf_block(), cerl_ast()) -> cf_block().
 process_fun_defs(ModB, []) -> ModB;
-process_fun_defs(ModB0, [{#c_var{name={Name, Arity}}, #c_fun{} = Fun} | Remaining]) ->
+process_fun_defs(ModB0, [{#c_var{name={Name, Arity}},
+                          #c_fun{} = Fun} | Remaining]) ->
     Block1 = e4_cf:block(
             [':', format_fun_name(Name, Arity)],
             [compile_fun(Fun)],
@@ -155,7 +157,7 @@ emit(Block, AddCode) ->
                 emit(Blk, Nested);
             (ForthOp, Blk = #cf_block{code=Code}) ->
                 %% TODO: Fix me i'm slow
-                Blk#cf_block{code=Code++[ForthOp]}
+                Blk#cf_block{code=Code ++ [ForthOp]}
         end,
         Block,
         AddCode).
@@ -174,14 +176,14 @@ format_fun_name(Name, Arity) ->
 %% Builds code to match Arg vs Pats with Guard
 %% Pats = [Tree], Guard = Tree, Body = Tree
 pattern_match(State, Args, #c_clause{pats=Pats, guard=Guard, body=Body}) ->
-    pattern_match_2(State, Pats, Args, Guard, Body).
+    pattern_match2(State, Pats, Args, Guard, Body).
 
 %% For each element in Arg match element in Pats, additionally emit the
 %% code to check Guard
--spec pattern_match_2(cf_block(),
+-spec pattern_match2(cf_block(),
                       Pats :: [cerl_ast()], Args0 :: cerl_ast(),
                       Guard :: cerl_ast(), Body :: cerl_ast()) -> cf_block().
-pattern_match_2(Block0, Pats, Args0, _Guard, _Body) ->
+pattern_match2(Block0, Pats, Args0, _Guard, _Body) ->
     %% Convert to list if c_values is supplied
     Args1 = case Args0 of
                 #c_values{es=Es} -> Es;
@@ -218,7 +220,7 @@ pattern_match_pairs(Block0 = #cf_block{scope=Scope0}, #cf_var{}=Lhs, Rhs) ->
     case var_exists(Block0, Lhs) of % if have variable in scope
         true -> % variable exists, so read it and compare
             emit(Block0, [
-                e4_cf:match_2_known(e4_cf:retrieve(Lhs), Rhs),
+                e4_cf:match_two_values(e4_cf:retrieve(Lhs), Rhs),
                 e4_cf:comment("match two known")
             ]);
         false -> % introduce variable and use it
@@ -226,7 +228,7 @@ pattern_match_pairs(Block0 = #cf_block{scope=Scope0}, #cf_var{}=Lhs, Rhs) ->
             pattern_match_var_versus(Block1, Lhs, Rhs)
     end;
 pattern_match_pairs(Block0, #c_literal{val=LhsLit}, Rhs) ->
-    emit(Block0, e4_cf:match_2_known(
+    emit(Block0, e4_cf:match_two_values(
         e4_cf:lit(LhsLit),
         e4_cf:retrieve(Rhs)
     ));
@@ -246,7 +248,8 @@ pattern_match_pairs(Block0, [#c_var{}=Lhs0], Rhs) ->
     end,
     scope_add_var(Block2, Lhs);
 pattern_match_pairs(_State, Lhs, Rhs) ->
-    compile_error("E4Cerl: Match ~9999p versus ~9999p not implemented", [Lhs, Rhs]).
+    compile_error("E4Cerl: Match ~9999p versus ~9999p not implemented",
+        [Lhs, Rhs]).
 
 -spec pattern_match_var_versus(Block :: cf_block(),
                                cf_var(), cerl_rhs()|cf_var())
@@ -278,7 +281,7 @@ pattern_match_var_versus(Block0, #cf_var{} = Lhs, Rhs) ->
             scope_add_var(Block1, Lhs)
     end;
 pattern_match_var_versus(_Blk, L, R) ->
-    compile_error("E4Cerl: Match var ~9999p against ~9999p is not implemented", 
+    compile_error("E4Cerl: Match var ~9999p against ~9999p is not implemented",
         [L, R]).
 
 pattern_match_tuple_versus(Block0, LhsElements, #c_var{}=Rhs) ->
@@ -331,7 +334,8 @@ format_op(#cf_store{var=#cf_var{name=V}}) ->
 format_op(#cf_new_var{var=#cf_var{name=V}}) ->
     io_lib:format("~s(~s)", [color:blackb("var"), format_op(V)]);
 format_op(#cf_alias{var=V, alt=Alt}) ->
-    io_lib:format("~s(~s=~s)", [color:blackb("alias"), format_op(V), format_op(Alt)]);
+    io_lib:format("~s(~s=~s)", [
+        color:blackb("alias"), format_op(V), format_op(Alt)]);
 format_op(#cf_comment{comment=C}) ->
     io_lib:format("~s ~s",
                   [color:blackb("\\"), color:blackb(C)]);

@@ -35,7 +35,7 @@ emit(Mod0, AddCode) ->
                 emit(Md, Nested);
             (ForthOp, Md = #f_module{output=Code}) ->
                 %% TODO: Fix me i'm slow
-                Md#f_module{output=Code++[ForthOp]}
+                Md#f_module{output=Code ++ [ForthOp]}
         end,
         Mod0,
         AddCode).
@@ -43,7 +43,8 @@ emit(Mod0, AddCode) ->
 process_op(Mod0 = #f_module{}, A) when is_atom(A) ->
     emit(Mod0, A); % pass through forth words
 process_op(Mod0 = #f_module{scope=OuterScope},
-           #cf_block{before=Before, code=Code, 'after'=After, scope=InnerScope}) ->
+           #cf_block{before=Before, code=Code,
+               'after'=After, scope=InnerScope}) ->
     %% Enter deeper scope
     EnterScope = ordsets:union([InnerScope, OuterScope]),
     Mod1 = Mod0, %stack_frame_enter(Mod0, InnerScope),
