@@ -1,7 +1,7 @@
 -module(core_forth_SUITE).
 
 -include_lib("common_test/include/ct.hrl").
--include("../src/e4.hrl").
+-include("../src/e4_cf.hrl").
 
 %% Test server callbacks
 -export([suite/0, all/0,

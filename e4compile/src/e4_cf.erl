@@ -3,7 +3,7 @@
 %% API
 -export(['and'/1, 'if'/2, 'if'/3, block/0, block/1, block/3, block/4, comment/1,
     comment/2, equals/2, lit/1, match_two_values/2, nil/0, retrieve/1, store/1,
-    tuple/1, var/1, element/2, unless/2, mark_alias/2, mark_new_var/1]).
+    tuple/1, var/1, element/2, unless/2, mark_alias/2, mark_new_var/1, mark_new_arg/1]).
 
 -include_lib("compiler/src/core_parse.hrl").
 -include("e4_cf.hrl").
@@ -87,8 +87,10 @@ store(Dst = #cf_var{}) -> #cf_store{var=Dst}.
 
 %% @doc If both args are variables, creates an alias for the next compiler
 %% pass and generates no code. Otherwise generates code for copying.
-mark_alias(Var = #cf_var{}, Alt = #cf_var{}) -> #cf_alias{var=Var, alt=Alt};
-mark_alias(#cf_stack_top{}, Alt = #cf_var{}) -> ['DUP', store(Alt)].
+mark_alias(Var = #cf_var{}, Existing = #cf_var{}) ->
+    #cf_alias{var=Var, existing=Existing};
+mark_alias(Existing = #cf_var{}, #cf_stack_top{}) ->
+    ['DUP', store(Existing)].
 
 %% ( -- X , retrieves value of variable V and leaves it on stack )
 retrieve(#c_tuple{es=Es}) -> tuple(Es);
@@ -112,6 +114,8 @@ var(Name) -> #cf_var{name=Name}.
 mark_new_var(#c_var{}=V) -> #cf_new_var{var=var(V)};
 mark_new_var(#cf_var{}=V) -> #cf_new_var{var=var(V)};
 mark_new_var(Name) -> #cf_new_var{var=var(Name)}.
+
+mark_new_arg(#cf_var{}=V) -> #cf_new_arg{var=var(V)}.
 
 element(Index, Tuple) ->
     [retrieve(Tuple), retrieve(Index), 'ELEMENT'].

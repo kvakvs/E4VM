@@ -19,7 +19,7 @@
     | #c_module{} | #c_primop{} | #c_receive{} | #c_seq{} | #c_try{}
     | #c_tuple{} | #c_values{} | #c_var{}.
 -type cerl_ast() :: cerl_ast_element() | [cerl_ast_element()].
--type cerl_module() :: #c_module().
+-type cerl_module() :: #c_module{}.
 
 module_new() -> #cf_mod{}.
 
@@ -53,7 +53,11 @@ compile_fun(#c_fun{vars=Vars, body=Body}) ->
     %% Assume stack now only has reversed args
     ReverseArgs = lists:reverse(lists:map(fun e4_cf:var/1, Vars)),
     Block0 = e4_cf:block([], [], [], ReverseArgs),
-    process_code(Block0, Body).
+    Block1 = lists:foldl(
+        fun(V, Blk) -> emit(Blk, e4_cf:mark_new_arg(V)) end,
+        Block0,
+        ReverseArgs),
+    process_code(Block1, Body).
 
 -spec process_code(cf_block(), cerl_ast()) -> cf_block().
 process_code(Block, []) -> Block;
@@ -267,8 +271,9 @@ pattern_match_var_versus(Block0, #cf_var{} = Lhs, Rhs) ->
                 e4_cf:comment("compare-match ~p = ~p", [Lhs, Rhs]),
                 e4_cf:unless(
                     [e4_cf:equals(e4_cf:retrieve(Lhs), e4_cf:retrieve(Rhs))],
-                    e4_cf:block(['BADMATCH']))
-                    %% TODO: Use fail label instead of badmatch if possible
+                    e4_cf:block(['BADMATCH'])
+                )
+                %% TODO: Use fail label instead of badmatch if possible
             ]);
         false -> % var did not exist, so copy-assign
             Block1 = emit(Block0, [
@@ -276,7 +281,7 @@ pattern_match_var_versus(Block0, #cf_var{} = Lhs, Rhs) ->
                     [
                         format_vars([Lhs]), format_vars([Rhs])
                     ]),
-                e4_cf:mark_alias(Rhs, Lhs)
+                e4_cf:mark_alias(Lhs, Rhs)
             ]),
             scope_add_var(Block1, Lhs)
     end;
@@ -286,9 +291,9 @@ pattern_match_var_versus(_Blk, L, R) ->
 
 pattern_match_tuple_versus(Block0, LhsElements, #c_var{}=Rhs) ->
     pattern_match_tuple_versus(Block0, LhsElements, e4_cf:var(Rhs));
-pattern_match_tuple_versus(Block0, LhsElements, #cf_var{} = Rhs) ->
+pattern_match_tuple_versus(Block0, LhsElements, Rhs) ->
     %% Iterate a list of [{1,Lhs1}, {2,Lhs2}, ...] and get element from Rhs
-    Pairs = lists:zip(lists:seq(1, length(LhsElements)),
+    LhsPairs = lists:zip(lists:seq(1, length(LhsElements)),
                       LhsElements),
     %% check that Rhs is a tuple
     Block1 = emit(Block0, [
@@ -297,15 +302,21 @@ pattern_match_tuple_versus(Block0, LhsElements, #cf_var{} = Rhs) ->
             e4_cf:block(['BADARG'])
         )
     ]),
+    %% For all variables in the left introduce a variable and create
+    %% variable assignment
     lists:foldl(
         fun({Index, Lhs1}, Blk0) ->
-            Blk1 = emit(Blk0, ['DUP', e4_cf:element(Index, #cf_stack_top{})]),
+            Blk1 = emit(Blk0, [
+                e4_cf:mark_new_var(Lhs1),
+                'DUP',
+                e4_cf:element(Index, #cf_stack_top{})
+            ]),
             pattern_match_var_versus(Blk1, Lhs1, #cf_stack_top{})
         end,
         emit(Block1, [e4_cf:retrieve(Rhs)]),
-        Pairs);
-pattern_match_tuple_versus(_State, _Lhs, Rhs) ->
-    compile_error("E4Cerl: Match tuple vs ~9999p is not implemented", [Rhs]).
+        LhsPairs).
+%%pattern_match_tuple_versus(_State, _Lhs, Rhs) ->
+%%    compile_error("E4Cerl: Match tuple vs ~9999p is not implemented", [Rhs]).
 
 get_code(#cf_mod{code=Code}) -> Code.
 
@@ -333,7 +344,9 @@ format_op(#cf_store{var=#cf_var{name=V}}) ->
     io_lib:format("~s(~s)", [color:red("store"), format_op(V)]);
 format_op(#cf_new_var{var=#cf_var{name=V}}) ->
     io_lib:format("~s(~s)", [color:blackb("var"), format_op(V)]);
-format_op(#cf_alias{var=V, alt=Alt}) ->
+format_op(#cf_new_arg{var=#cf_var{name=V}}) ->
+    io_lib:format("~s(~s)", [color:blackb("arg"), format_op(V)]);
+format_op(#cf_alias{var=V, existing=Alt}) ->
     io_lib:format("~s(~s=~s)", [
         color:blackb("alias"), format_op(V), format_op(Alt)]);
 format_op(#cf_comment{comment=C}) ->

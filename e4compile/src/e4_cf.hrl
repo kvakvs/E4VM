@@ -60,7 +60,10 @@
 %% introduce a new variable (produces no code, but allocates storage in a
 %% further pass)
 -record(cf_new_var, {var :: cf_var()}).
+%% introduce a new variable which is already on stack, and should not have
+%% storage allocated.
+-record(cf_new_arg, {var :: cf_var()}).
 %% introduce a new name to existing variable (produces no code)
--record(cf_alias, {var :: cf_var(), alt :: cf_var()}).
+-record(cf_alias, {var :: cf_var(), existing :: cf_var()}).
 
 -endif.

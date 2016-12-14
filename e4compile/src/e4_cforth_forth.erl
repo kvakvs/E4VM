@@ -14,7 +14,10 @@
 -import(e4, [compile_error/2]).
 
 process(CoreForth) ->
-    #f_module{output=F} = process_code(#f_module{}, CoreForth),
+    NewM = #f_module{
+        cfgraph = digraph:new([cyclic, protected])
+    },
+    #f_module{output=F} = process_code(NewM, CoreForth),
     io:format("~p~n", [F]),
     F.
 
@@ -49,16 +52,22 @@ process_op(Mod0 = #f_module{scope=OuterScope},
     EnterScope = ordsets:union([InnerScope, OuterScope]),
     Mod1 = Mod0, %stack_frame_enter(Mod0, InnerScope),
 
-    io:format("enter scope ~s~n", [e4_f:format_scope(EnterScope)]),
+    io:format("enter scope ~s~n", [e4_f:format_vars(EnterScope)]),
     Mod2 = Mod1#f_module{scope=EnterScope},
 
     Mod3 = process_code(Mod2, [Before ++ Code ++ After]),
 
     %% Restore scope
-    io:format("leave scope, restore ~sn", [e4_f:format_scope(OuterScope)]),
+    io:format("leave scope, restore ~sn", [e4_f:format_vars(OuterScope)]),
     Mod4 = Mod3, %stack_frame_leave(Mod3, length(InnerScope)),
     Mod4#f_module{scope=OuterScope};
 
+process_op(Mod0 = #f_module{}, #cf_alias{var=V, existing=E}) ->
+    add_alias(Mod0, V, E);
+process_op(Mod0 = #f_module{}, #cf_new_var{var=V}) ->
+    allocate_var(Mod0, V);
+process_op(Mod0 = #f_module{}, #cf_new_arg{var=V}) ->
+    declare_arg(Mod0, V);
 process_op(Mod0 = #f_module{}, #cf_comment{} = C) ->
     emit(Mod0, C);
 process_op(Mod0 = #f_module{}, #cf_mfarity{} = MFA) ->
@@ -69,8 +78,16 @@ process_op(Mod0 = #f_module{}, #cf_store{var=V}) ->
     emit(Mod0, e4_f:store(Mod0, V));
 process_op(Mod0 = #f_module{}, #cf_lit{} = Lit) ->
     emit(Mod0, Lit);
-process_op(Mod0 = #f_module{}, #cf_alias{var=Var, alt=A}) ->
-    emit(Mod0, [e4_cf:comment("alias for ~p=~p", [Var, A])]);
+%%process_op(Mod0 = #f_module{}, #cf_alias{var=Var, existing=A}) ->
+%%    emit(Mod0, [e4_cf:comment("alias for ~p=~p", [Var, A])]);
 process_op(_Mod0, CF) ->
     compile_error("E4Core4: Unknown op ~p~n", [CF]).
 
+allocate_var(Mod0 = #f_module{alloc_vars=Vars}, V) ->
+    Mod0#f_module{alloc_vars=e4_f:alloc_var(Vars, V, stack_frame)}.
+
+declare_arg(Mod0 = #f_module{alloc_vars=Vars}, V) ->
+    Mod0#f_module{alloc_vars=e4_f:alloc_var(Vars, V, pre_existing)}.
+
+add_alias(Mod0 = #f_module{alloc_vars=Vars}, NewV, ExistingV) ->
+    Mod0#f_module{alloc_vars=e4_f:add_alias(Vars, NewV, ExistingV)}.
