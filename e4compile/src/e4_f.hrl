@@ -14,8 +14,9 @@
 %% Forth module equivalent to Erlang module
 %% Contains stack and variable scope from #cf_block's, stack is used to
 %% calculate variable positions.
--record(f_mod, {
+-record(f_module, {
     scope=[]    :: [cf_var()],
     stack=[]    :: [cf_var()],
-    output=[]   :: forth_code()
+    output=[]   :: forth_code(),
+    control_flow=digraph:new([cyclic | protected]) :: digraph:graph()
 }).

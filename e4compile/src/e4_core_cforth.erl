@@ -62,7 +62,7 @@ process_code(Block0, [CoreOp | Tail]) ->
 process_code(Block0, #c_case{arg=Arg, clauses=Clauses}) ->
     %% Arg = Tree, Clauses = [Tree]
     Case0 = e4_cf:block(
-        [e4_cf:comment("begin case")],
+        [e4_cf:comment("begin case(~s)", [format_vars(Arg)])],
         [],
         [e4_cf:comment("end case")]),
     Case1 = lists:foldl(
@@ -88,7 +88,7 @@ process_code(Block0, #c_literal{val=Value}) ->
 process_code(Block0, #c_let{vars=Vars, arg=Arg, body=Body}) ->
     % ReverseVars = lists:map(fun e4_cf:var/1, Vars),
     LetBlock = e4_cf:block(
-        [e4_cf:comment("begin let")],
+        [e4_cf:comment("begin let(~s)", [format_vars(Vars)])],
         [],
         [e4_cf:comment("end let")],
         Block0#cf_block.scope
@@ -96,9 +96,17 @@ process_code(Block0, #c_let{vars=Vars, arg=Arg, body=Body}) ->
     ),
 
     %% LetBlock1 = process_code(LetBlock, Arg),
-    LetBlock1 = pattern_match_pairs(LetBlock, Vars, Arg),
-    LetBlock2 = process_code(LetBlock1, Body),
-    emit(Block0, LetBlock2);
+    LetBlock1 = lists:foldl(
+        fun(V, Blk) ->
+            V1 = e4_cf:var(V),
+            Blk1 = emit(Blk, e4_cf:mark_new_var(V1)),
+            scope_add_var(Blk1, V1)
+        end,
+        LetBlock,
+        Vars),
+    LetBlock2 = pattern_match_pairs(LetBlock1, Vars, Arg),
+    LetBlock3 = process_code(LetBlock2, Body),
+    emit(Block0, LetBlock3);
 
 process_code(Block0, #c_apply{op=Op, args=Args}) ->
     emit(Block0,
@@ -227,8 +235,15 @@ pattern_match_pairs(Block0 = #cf_block{}, #c_tuple{es=LhsElements}, Rhs) ->
 pattern_match_pairs(Block0, [#c_var{}=Lhs0], Rhs) ->
     Lhs = e4_cf:var(Lhs0),
     Block1 = process_code(Block0, Rhs), % assume Rhs leaves 1 value on stack?
-    Block2 = emit(Block1, [e4_cf:store(Lhs),
-                           e4_cf:comment("introduce variable")]),
+    Block2 = case var_exists(Block1, Lhs) of
+        true -> emit(Block1, [e4_cf:store(Lhs)]); % Store Rhs result into Lhs
+        false ->
+            emit(Block1, [
+                e4_cf:mark_new_var(Lhs),
+                e4_cf:store(Lhs),
+                e4_cf:comment("introduce variable")
+            ])
+    end,
     scope_add_var(Block2, Lhs);
 pattern_match_pairs(_State, Lhs, Rhs) ->
     compile_error("E4Cerl: Match ~9999p versus ~9999p not implemented", [Lhs, Rhs]).
@@ -254,8 +269,11 @@ pattern_match_var_versus(Block0, #cf_var{} = Lhs, Rhs) ->
             ]);
         false -> % var did not exist, so copy-assign
             Block1 = emit(Block0, [
-                e4_cf:comment("assign-match ~p = ~p", [Lhs, Rhs]),
-                e4_cf:alias(Rhs, Lhs)
+                e4_cf:comment("assign-match ~s = ~s",
+                    [
+                        format_vars([Lhs]), format_vars([Rhs])
+                    ]),
+                e4_cf:mark_alias(Rhs, Lhs)
             ]),
             scope_add_var(Block1, Lhs)
     end;
@@ -307,22 +325,24 @@ format_op(W) when is_atom(W) ->
 format_op(#cf_lit{val=L}) ->
     io_lib:format("'~s", [color:magenta(str(L))]);
 format_op(#cf_retrieve{var=V}) ->
-    io_lib:format("~s(~s)", [color:green("LD"), format_op(V)]);
+    io_lib:format("~s(~s)", [color:green("retrieve"), format_op(V)]);
 format_op(#cf_store{var=#cf_var{name=V}}) ->
-    io_lib:format("~s(~s)", [color:red("ST"), format_op(V)]);
+    io_lib:format("~s(~s)", [color:red("store"), format_op(V)]);
+format_op(#cf_new_var{var=#cf_var{name=V}}) ->
+    io_lib:format("~s(~s)", [color:blackb("var"), format_op(V)]);
 format_op(#cf_alias{var=V, alt=Alt}) ->
-    io_lib:format("~s(~s=~s)", [color:red("ALIAS"), format_op(V), format_op(Alt)]);
+    io_lib:format("~s(~s=~s)", [color:blackb("alias"), format_op(V), format_op(Alt)]);
 format_op(#cf_comment{comment=C}) ->
     io_lib:format("~s ~s",
                   [color:blackb("\\"), color:blackb(C)]);
 format_op(#cf_mfarity{mod=M, fn=F, arity=A}) ->
     io_lib:format("~s~s,~s,~s~s",
                   [
-                      color:magenta("MFA("),
+                      color:magentab("MFA("),
                       format_op(M),
                       format_op(F),
                       str(A),
-                      color:magenta(")")
+                      color:magentab(")")
                   ]);
 format_op(#cf_var{}=Var) ->
     io_lib:format("~s", [format_op(Var)]).
@@ -333,3 +353,13 @@ str(X) -> lists:flatten(io_lib:format("~p", [X])).
 
 scope_add_var(Block = #cf_block{scope=Scope}, Var) ->
     Block#cf_block{scope=ordsets:add_element(Var, Scope)}.
+
+format_vars(#c_values{es=Vars}) -> format_vars(Vars);
+format_vars(Vars) ->
+    Names = lists:map(
+        fun(#cf_var{name=N}) -> atom_to_list(N);
+           (#c_var{name=N}) -> atom_to_list(N);
+            (#cf_stack_top{}) -> "$stack-top"
+        end,
+        Vars),
+    string:join(Names, ", ").

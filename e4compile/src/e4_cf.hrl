@@ -53,8 +53,14 @@
 %% Marking for variable operation, either read or write
 -record(cf_retrieve, {var :: cf_var()}).
 -record(cf_store, {var :: cf_var()}).
+
 -record(cf_stack_top, {}). % denotes the value currently on the stack top
 -record(cf_apply, {funobj, args=[]}).
+
+%% introduce a new variable (produces no code, but allocates storage in a
+%% further pass)
+-record(cf_new_var, {var :: cf_var()}).
+%% introduce a new name to existing variable (produces no code)
 -record(cf_alias, {var :: cf_var(), alt :: cf_var()}).
 
 -endif.

@@ -9,13 +9,13 @@
 
 -include("e4_f.hrl").
 
-retrieve(#f_mod{scope=Scope, stack=Stack}, Var) ->
+retrieve(#f_module{scope=Scope, stack=Stack}, Var) ->
     CfVar = e4_cf:var(Var),
     io:format("retr ~p in sco ~s~n", [CfVar, format_scope(Scope)]),
     {ok, Index} = where_is_variable(Stack, CfVar),
     [e4_cf:lit(Index), 'LD'].
 
-store(#f_mod{scope=Scope, stack=Stack}, Var) ->
+store(#f_module{scope=Scope, stack=Stack}, Var) ->
     CfVar = e4_cf:var(Var),
     io:format("stor ~p in sco ~s~n", [CfVar, format_scope(Scope)]),
     {ok, Index} = where_is_variable(Stack, CfVar),
