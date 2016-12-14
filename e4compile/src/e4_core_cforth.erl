@@ -85,7 +85,7 @@ process_code(Block0, #c_clause{body=Body}) ->
 process_code(Block0, #c_literal{val=Value}) ->
     emit(Block0, e4_cf:lit(Value));
 
-process_code(Block0, #c_let{vars=_Vars, arg=Arg, body=Body}) ->
+process_code(Block0, #c_let{vars=Vars, arg=Arg, body=Body}) ->
     % ReverseVars = lists:map(fun e4_cf:var/1, Vars),
     LetBlock = e4_cf:block(
         [e4_cf:comment("begin let")],
@@ -95,7 +95,8 @@ process_code(Block0, #c_let{vars=_Vars, arg=Arg, body=Body}) ->
         %% ++ ReverseVars
     ),
 
-    LetBlock1 = process_code(LetBlock, Arg),
+    %% LetBlock1 = process_code(LetBlock, Arg),
+    LetBlock1 = pattern_match_pairs(LetBlock, Vars, Arg),
     LetBlock2 = process_code(LetBlock1, Body),
     emit(Block0, LetBlock2);
 
@@ -223,6 +224,12 @@ pattern_match_pairs(Block0, #c_literal{val=LhsLit}, Rhs) ->
     ));
 pattern_match_pairs(Block0 = #cf_block{}, #c_tuple{es=LhsElements}, Rhs) ->
     pattern_match_tuple_versus(Block0, LhsElements, Rhs);
+pattern_match_pairs(Block0, [#c_var{}=Lhs0], Rhs) ->
+    Lhs = e4_cf:var(Lhs0),
+    Block1 = process_code(Block0, Rhs), % assume Rhs leaves 1 value on stack?
+    Block2 = emit(Block1, [e4_cf:store(Lhs),
+                           e4_cf:comment("introduce variable")]),
+    scope_add_var(Block2, Lhs);
 pattern_match_pairs(_State, Lhs, Rhs) ->
     compile_error("E4Cerl: Match ~9999p versus ~9999p not implemented", [Lhs, Rhs]).
 

@@ -46,14 +46,17 @@ process_op(Mod0 = #f_mod{scope=OuterScope},
            #cf_block{before=Before, code=Code, 'after'=After, scope=InnerScope}) ->
     %% Enter deeper scope
     EnterScope = ordsets:union([InnerScope, OuterScope]),
-    io:format("enter scope ~s~n", [e4_f:format_scope(EnterScope)]),
-    Mod1 = Mod0#f_mod{scope=EnterScope},
+    Mod1 = stack_frame_enter(Mod0, InnerScope),
 
-    Mod2 = process_code(Mod1, [Before ++ Code ++ After]),
+    io:format("enter scope ~s~n", [e4_f:format_scope(EnterScope)]),
+    Mod2 = Mod1#f_mod{scope=EnterScope},
+
+    Mod3 = process_code(Mod2, [Before ++ Code ++ After]),
 
     %% Restore scope
     io:format("leave scope, restore ~sn", [e4_f:format_scope(OuterScope)]),
-    Mod2#f_mod{scope=OuterScope};
+    Mod4 = stack_frame_leave(Mod3, length(InnerScope)),
+    Mod4#f_mod{scope=OuterScope};
 
 process_op(Mod0 = #f_mod{}, #cf_comment{} = C) ->
     emit(Mod0, C);
@@ -66,7 +69,7 @@ process_op(Mod0 = #f_mod{}, #cf_store{var=V}) ->
 process_op(Mod0 = #f_mod{}, #cf_lit{} = Lit) ->
     emit(Mod0, Lit);
 process_op(Mod0 = #f_mod{}, #cf_alias{var=Var, alt=A}) ->
-    emit(Mod0, ['(', 'ALIAS', Var, A, ')']);
+    emit(Mod0, [e4_cf:comment("alias for ~p=~p", [Var, A])]);
 process_op(_Mod0, CF) ->
     compile_error("E4Core4: Unknown op ~p~n", [CF]).
 

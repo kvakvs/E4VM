@@ -9,16 +9,16 @@
 
 -include("e4_f.hrl").
 
-retrieve(#f_mod{scope=Scope, stack=_Stack}, Var) ->
+retrieve(#f_mod{scope=Scope, stack=Stack}, Var) ->
     CfVar = e4_cf:var(Var),
     io:format("retr ~p in sco ~s~n", [CfVar, format_scope(Scope)]),
-    {ok, Index} = index_of(CfVar, Scope),
+    {ok, Index} = where_is_variable(Stack, CfVar),
     [e4_cf:lit(Index), 'LD'].
 
-store(#f_mod{scope=Scope, stack=_Stack}, Var) ->
+store(#f_mod{scope=Scope, stack=Stack}, Var) ->
     CfVar = e4_cf:var(Var),
     io:format("stor ~p in sco ~s~n", [CfVar, format_scope(Scope)]),
-    {ok, Index} = index_of(e4_cf:var(CfVar), Scope),
+    {ok, Index} = where_is_variable(Stack, CfVar),
     [e4_cf:lit(Index), 'ST'].
 
 index_of(Item, List) -> index_of(Item, List, 1).
@@ -30,3 +30,7 @@ format_scope(Scope) ->
     {_, V} = lists:unzip(Scope),
     S = lists:map(fun erlang:atom_to_list/1, V),
     [$[, string:join(S, ", "), $]].
+
+%% @doc Given the current stack state find the position of the variable
+where_is_variable(Stack, CfVar) ->
+    index_of(Stack, CfVar).
