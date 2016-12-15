@@ -110,7 +110,9 @@ process_code(Block0, #c_let{vars=Vars, arg=Arg, body=Body}) ->
         end,
         LetBlock,
         Vars),
-    LetBlock2 = pattern_match_pairs(LetBlock1, Vars, Arg),
+    %% TODO: Can vars be longer than 1?
+    [_] = Vars,
+    LetBlock2 = pattern_match_pairs(LetBlock1, hd(Vars), Arg),
     LetBlock3 = process_code(LetBlock2, Body),
     emit(Block0, LetBlock3);
 
@@ -126,9 +128,8 @@ process_code(Block0, #c_apply{op=Op, args=Args}) ->
 process_code(Block0, #c_call{module=M, name=N, args=Args}) ->
     emit(Block0,
          lists:reverse(lists:map(fun e4_cf:retrieve/1, Args)) ++ [
-            [#cf_mfarity{mod=e4_cf:retrieve(M),
-                         fn=e4_cf:retrieve(N),
-                         arity=length(Args)}]
+            [e4_cf:make_mfarity(e4_cf:retrieve(M), e4_cf:retrieve(N),
+                                length(Args))]
          ]);
 
 process_code(Block0, #c_primop{name=Name, args=Args}) ->
@@ -211,8 +212,8 @@ var_exists(#cf_block{scope=Scope}, #cf_var{} = Var) ->
 %% variable existed: if so - emits comparison, else introduces a new variable
 %% and emits the assignment.
 -spec pattern_match_pairs(cf_block(),
-                          Lhs :: cerl_lhs() | cf_var(),
-                          Rhs :: cerl_rhs() | cf_var())
+                          Lhs :: any() | [any()],
+                          Rhs :: any())
                          -> cf_block().
 pattern_match_pairs(Block0, #c_var{name=LhsName}, Rhs) -> % unwrap left
     pattern_match_pairs(Block0, e4_cf:var(LhsName), Rhs);
@@ -256,7 +257,7 @@ pattern_match_pairs(_State, Lhs, Rhs) ->
         [Lhs, Rhs]).
 
 -spec pattern_match_var_versus(Block :: cf_block(),
-                               cf_var(), cerl_rhs()|cf_var())
+                               cf_var(), cerl_rhs()|cf_var()|cf_stack_top())
                               -> cf_block().
 pattern_match_var_versus(Block0, #c_var{name=LhsName}, Rhs) -> % unwrap left
     pattern_match_var_versus(Block0, e4_cf:var(LhsName), Rhs);
@@ -331,11 +332,12 @@ format_core_forth(#cf_block{before=B, scope=_S, code=C, 'after'=A}, Indent) ->
 format_core_forth(C, Indent) ->
     io_lib:format("~s~s~n", [i(Indent), format_op(C)]).
 
+format_op(#cf_apply{funobj=FO, args=Args}) ->
+    io_lib:format("~s(~s;~s)", [color:whiteb("apply"), format_op(FO),
+                                [format_op(A) || A <- Args]]);
 format_op(#cf_var{name=V}) -> color:blueb(str(V));
 format_op(W) when is_atom(W) ->
     io_lib:format("~s", [color:whiteb(str(W))]);
-%%format_op(LitInt) when is_integer(LitInt) ->
-%%    io_lib:format("'~s", [color:magenta(str(LitInt))]);
 format_op(#cf_lit{val=L}) ->
     io_lib:format("'~s", [color:magenta(str(L))]);
 format_op(#cf_retrieve{var=V}) ->
@@ -366,6 +368,8 @@ format_op(#cf_var{}=Var) ->
 
 str(X) when is_atom(X) -> atom_to_list(X);
 str(X) when is_binary(X) -> io_lib:format("~s", [X]);
+str({A,B}) when is_atom(A), is_integer(B) ->
+    io_lib:format("~s/~p", [A, B]);
 str(X) -> lists:flatten(io_lib:format("~p", [X])).
 
 scope_add_var(Block = #cf_block{scope=Scope}, Var) ->

@@ -29,7 +29,7 @@ process_code(Mod0 = #f_module{}, [CF | Tail]) ->
 process_code(Mod0, Op) -> % if a single item is given, like a root block
     process_op(Mod0, Op).
 
--spec emit(Block :: cf_block(), Code :: cf_op() | cf_code()) -> cf_block().
+-spec emit(Mod :: f_module(), Code :: cf_op() | cf_code()) -> cf_block().
 emit(Mod0, AddCode) when not is_list(AddCode) ->
     emit(Mod0, [AddCode]);
 emit(Mod0, AddCode) ->
@@ -52,13 +52,13 @@ process_op(Mod0 = #f_module{scope=OuterScope},
     EnterScope = ordsets:union([InnerScope, OuterScope]),
     Mod1 = Mod0, %stack_frame_enter(Mod0, InnerScope),
 
-    io:format("enter scope ~s~n", [e4_f:format_vars(EnterScope)]),
+    io:format("enter scope ~s~n", [e4_f:format_scope(EnterScope)]),
     Mod2 = Mod1#f_module{scope=EnterScope},
 
     Mod3 = process_code(Mod2, [Before ++ Code ++ After]),
 
     %% Restore scope
-    io:format("leave scope, restore ~sn", [e4_f:format_vars(OuterScope)]),
+    io:format("leave scope, restore ~s~n", [e4_f:format_scope(OuterScope)]),
     Mod4 = Mod3, %stack_frame_leave(Mod3, length(InnerScope)),
     Mod4#f_module{scope=OuterScope};
 
@@ -78,6 +78,8 @@ process_op(Mod0 = #f_module{}, #cf_store{var=V}) ->
     emit(Mod0, e4_f:store(Mod0, V));
 process_op(Mod0 = #f_module{}, #cf_lit{} = Lit) ->
     emit(Mod0, Lit);
+process_op(Mod0 = #f_module{}, #cf_apply{funobj=FO, args=Args}) ->
+    emit(Mod0, [FO, Args, 'APPLY']);
 %%process_op(Mod0 = #f_module{}, #cf_alias{var=Var, existing=A}) ->
 %%    emit(Mod0, [e4_cf:comment("alias for ~p=~p", [Var, A])]);
 process_op(_Mod0, CF) ->

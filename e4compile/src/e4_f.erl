@@ -5,7 +5,7 @@
 -module(e4_f).
 
 %% API
--export([retrieve/2, store/2, format_vars/1, alloc_var/3, add_alias/3]).
+-export([retrieve/2, store/2, format_vars/1, alloc_var/3, add_alias/3, format_scope/1]).
 
 -include("e4_f.hrl").
 
@@ -32,8 +32,9 @@ format_vars(#f_var_storage{stack_frame=Frm, args=Args}) ->
     ArgVars = lists:map(ExtractFn, Args),
     ["Vars{frm=[", string:join(FrmVars, ", "),
         "] args=[", string:join(ArgVars, ", "),
-        "]}" ];
-format_vars(Scope) ->
+        "]}" ].
+
+format_scope(Scope) when is_list(Scope) ->
     {_, V} = lists:unzip(Scope),
     S = lists:map(fun erlang:atom_to_list/1, V),
     [$[, string:join(S, ", "), $]].
@@ -44,25 +45,37 @@ format_vars(Scope) ->
 %% which gives args positive values (forward in memory) and vars on frame
 %% negative values (back in memory), and stack grows back in memory too when
 %% more frames are needed.
-index_in_storage(#f_var_storage{stack_frame=Frm, args=Args, aliases=Aliases},
+index_in_storage(Storage = #f_var_storage{aliases=Aliases},
                  CfVar0 = #cf_var{}) ->
-    %% Maybe an alias?
-    CfVar = case orddict:find(CfVar0, Aliases) of
-                {ok, OtherVar} -> OtherVar;
-                error -> CfVar0
-            end,
-    case index_of(CfVar, Args) of
-        {ok, ArgIndex} -> {ok, ArgIndex};
+    case index_in_storage2(Storage, CfVar0) of
+        {ok, I} -> {ok, I};
         not_found ->
-            case index_of(CfVar, Frm) of
-                {ok, FrameIndex} -> {ok, -FrameIndex};
+            %% Maybe an alias?
+            CfVar = case orddict:find(CfVar0, Aliases) of
+                        {ok, OtherVar} -> OtherVar;
+                        error ->
+                            e4:compile_error("variable ~p not found", [CfVar0])
+                    end,
+            case index_in_storage2(Storage, CfVar) of
+                {ok, I} -> {ok, I};
                 not_found ->
-                    e4:compile_error("variable ~p not found", [CfVar])
+                    e4:compile_error("variable ~p not found", [CfVar0])
             end
     end.
 
--spec alloc_var([f_var_storage()], cf_var(), f_var_alloc_type())
-        -> [f_var_storage()].
+index_in_storage2(#f_var_storage{stack_frame=StackFrame, args=Args},
+                  CfVar = #cf_var{}) ->
+    case index_of(CfVar, Args) of
+        {ok, ArgIndex} -> {ok, ArgIndex};
+        not_found ->
+            case index_of(CfVar, StackFrame) of
+                {ok, FrameIndex} -> {ok, -FrameIndex};
+                not_found -> not_found
+            end
+    end.
+
+-spec alloc_var(f_var_storage(), cf_var(), f_var_alloc_type())
+        -> f_var_storage().
 alloc_var(Storage = #f_var_storage{args=Existing},
           Var = #cf_var{},
           pre_existing) ->
@@ -75,4 +88,5 @@ alloc_var(Storage = #f_var_storage{stack_frame=Frame},
 add_alias(Storage = #f_var_storage{aliases=Aliases},
           Var = #cf_var{},
           ExistingVar = #cf_var{}) ->
-    Storage#f_var_storage{args=orddict:store(Var, ExistingVar, Aliases)}.
+    Aliases1 = orddict:store(Var, ExistingVar, Aliases),
+    Storage#f_var_storage{aliases=Aliases1}.

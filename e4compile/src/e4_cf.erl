@@ -2,8 +2,8 @@
 
 %% API
 -export(['and'/1, 'if'/2, 'if'/3, block/0, block/1, block/3, block/4, comment/1,
-    comment/2, equals/2, lit/1, match_two_values/2, nil/0, retrieve/1, store/1,
-    tuple/1, var/1, element/2, unless/2, mark_alias/2, mark_new_var/1, mark_new_arg/1]).
+         comment/2, equals/2, lit/1, match_two_values/2, nil/0, retrieve/1, store/1,
+         tuple/1, var/1, element/2, unless/2, mark_alias/2, mark_new_var/1, mark_new_arg/1, make_mfarity/3]).
 
 -include_lib("compiler/src/core_parse.hrl").
 -include("e4_cf.hrl").
@@ -95,7 +95,10 @@ mark_alias(Existing = #cf_var{}, #cf_stack_top{}) ->
 %% ( -- X , retrieves value of variable V and leaves it on stack )
 retrieve(#c_tuple{es=Es}) -> tuple(Es);
 retrieve(#c_apply{op=FunObj, args=Args}) ->
-    #cf_apply{funobj=FunObj, args=Args};
+    #cf_apply{
+        funobj=retrieve(FunObj),
+        args=lists:map(fun retrieve/1, Args)
+    };
 retrieve(#cf_apply{}=A) -> A;
 retrieve(I) when is_integer(I) -> lit(I);
 retrieve(#cf_stack_top{}) -> [];
@@ -119,3 +122,8 @@ mark_new_arg(#cf_var{}=V) -> #cf_new_arg{var=var(V)}.
 
 element(Index, Tuple) ->
     [retrieve(Tuple), retrieve(Index), 'ELEMENT'].
+
+make_mfarity(M, F, Arity) when is_atom(F), is_atom(F) ->
+    #cf_mfarity{mod=M, fn=F, arity=Arity};
+make_mfarity(MExpr, FExpr, Arity) ->
+    [MExpr, FExpr, lit(Arity), 'MAKE-MFARITY'].

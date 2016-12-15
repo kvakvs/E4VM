@@ -31,3 +31,4 @@
     output=[]   :: forth_code(),
     cfgraph     :: digraph:graph()
 }).
+-type f_module() :: #f_module{}.
