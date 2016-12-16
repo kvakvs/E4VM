@@ -3,13 +3,12 @@
 %%% and literals. Optimize. Resolve variables.
 %%% @end
 %%%-------------------------------------------------------------------
--module(e4_cforth_forth).
+-module(e4_pass1).
 
 %% API
 -export([process/1]).
 
--include("e4_cf.hrl").
--include("e4_f.hrl").
+-include("e4_forth.hrl").
 
 -import(e4, [compile_error/2]).
 
@@ -29,7 +28,7 @@ process_code(Mod0 = #f_module{}, [CF | Tail]) ->
 process_code(Mod0, Op) -> % if a single item is given, like a root block
     process_op(Mod0, Op).
 
--spec emit(Mod :: f_module(), Code :: cf_op() | cf_code()) -> cf_block().
+-spec emit(Mod :: f_module(), Code :: forth_op() | forth_code()) -> f_block().
 emit(Mod0, AddCode) when not is_list(AddCode) ->
     emit(Mod0, [AddCode]);
 emit(Mod0, AddCode) ->
@@ -43,53 +42,65 @@ emit(Mod0, AddCode) ->
         Mod0,
         AddCode).
 
+stack_frame_enter(Mod0, 0) -> Mod0;
+stack_frame_enter(Mod0, Sz) when is_integer(Sz) ->
+    emit(Mod0, #f_enter{size=Sz}).
+
+stack_frame_leave(Mod0, 0) -> Mod0;
+stack_frame_leave(Mod0, Sz) when is_integer(Sz) ->
+    emit(Mod0, #f_leave{size=Sz}).
+
+%% Atoms processing
+process_op(Mod0 = #f_module{}, ';') ->
+    emit(Mod0, 'RET');
 process_op(Mod0 = #f_module{}, A) when is_atom(A) ->
     emit(Mod0, A); % pass through forth words
+
+%% Other code structures processing
 process_op(Mod0 = #f_module{scope=OuterScope},
-           #cf_block{before=Before, code=Code,
+           #f_block{before=Before, code=Code,
                'after'=After, scope=InnerScope}) ->
     %% Enter deeper scope
     EnterScope = ordsets:union([InnerScope, OuterScope]),
-    Mod1 = Mod0, %stack_frame_enter(Mod0, InnerScope),
+    FrameSize  = length(InnerScope),
+    Mod10      = stack_frame_enter(Mod0, FrameSize),
 
-    io:format("enter scope ~s~n", [e4_f:format_scope(EnterScope)]),
-    Mod2 = Mod1#f_module{scope=EnterScope},
+%%    io:format("enter scope ~s~n", [e4_f:format_scope(EnterScope)]),
+    Mod20 = Mod10#f_module{scope=EnterScope},
 
-    Mod3 = process_code(Mod2, [Before ++ Code ++ After]),
+    Mod30 = process_code(Mod20, [Before ++ Code ++ After]),
 
     %% Restore scope
-    io:format("leave scope, restore ~s~n", [e4_f:format_scope(OuterScope)]),
-    Mod4 = Mod3, %stack_frame_leave(Mod3, length(InnerScope)),
-    Mod4#f_module{scope=OuterScope};
+%%    io:format("leave scope, restore ~s~n", [e4_f:format_scope(OuterScope)]),
+    Mod40 = stack_frame_leave(Mod30, FrameSize),
+    Mod40#f_module{scope=OuterScope};
 
-process_op(Mod0 = #f_module{}, #cf_alias{var=V, existing=E}) ->
+process_op(Mod0 = #f_module{}, #f_var_alias{var=V, existing=E}) ->
     add_alias(Mod0, V, E);
-process_op(Mod0 = #f_module{}, #cf_new_var{var=V}) ->
+process_op(Mod0 = #f_module{}, #f_decl_var{var=V}) ->
     allocate_var(Mod0, V);
-process_op(Mod0 = #f_module{}, #cf_new_arg{var=V}) ->
+process_op(Mod0 = #f_module{}, #f_decl_arg{var=V}) ->
     declare_arg(Mod0, V);
-process_op(Mod0 = #f_module{}, #cf_comment{} = C) ->
+process_op(Mod0 = #f_module{}, #f_comment{} = C) ->
     emit(Mod0, C);
-process_op(Mod0 = #f_module{}, #cf_mfarity{} = MFA) ->
+process_op(Mod0 = #f_module{}, #f_mfa{} = MFA) ->
     emit(Mod0, MFA);
-process_op(Mod0 = #f_module{}, #cf_retrieve{var=V}) ->
-    emit(Mod0, e4_f:retrieve(Mod0, V));
-process_op(Mod0 = #f_module{}, #cf_store{var=V}) ->
-    emit(Mod0, e4_f:store(Mod0, V));
-process_op(Mod0 = #f_module{}, #cf_lit{} = Lit) ->
+process_op(Mod0 = #f_module{}, #f_ld{var=V}) ->
+    emit(Mod0, e4_f2:retrieve(Mod0, V));
+process_op(Mod0 = #f_module{}, #f_st{var=V}) ->
+    emit(Mod0, e4_f2:store(Mod0, V));
+process_op(Mod0 = #f_module{}, #f_lit{} = Lit) ->
     emit(Mod0, Lit);
-process_op(Mod0 = #f_module{}, #cf_apply{funobj=FO, args=Args}) ->
+process_op(Mod0 = #f_module{}, #f_apply{funobj=FO, args=Args}) ->
     emit(Mod0, [FO, Args, 'APPLY']);
-%%process_op(Mod0 = #f_module{}, #cf_alias{var=Var, existing=A}) ->
-%%    emit(Mod0, [e4_cf:comment("alias for ~p=~p", [Var, A])]);
 process_op(_Mod0, CF) ->
     compile_error("E4Core4: Unknown op ~p~n", [CF]).
 
 allocate_var(Mod0 = #f_module{alloc_vars=Vars}, V) ->
-    Mod0#f_module{alloc_vars=e4_f:alloc_var(Vars, V, stack_frame)}.
+    Mod0#f_module{alloc_vars=e4_f2:alloc_var(Vars, V, stack_frame)}.
 
 declare_arg(Mod0 = #f_module{alloc_vars=Vars}, V) ->
-    Mod0#f_module{alloc_vars=e4_f:alloc_var(Vars, V, pre_existing)}.
+    Mod0#f_module{alloc_vars=e4_f2:alloc_var(Vars, V, pre_existing)}.
 
 add_alias(Mod0 = #f_module{alloc_vars=Vars}, NewV, ExistingV) ->
-    Mod0#f_module{alloc_vars=e4_f:add_alias(Vars, NewV, ExistingV)}.
+    Mod0#f_module{alloc_vars=e4_f2:add_alias(Vars, NewV, ExistingV)}.

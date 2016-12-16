@@ -1,6 +1,6 @@
 -module(e4_encode).
 
--include("e4_cf.hrl").
+-include("e4_forth.hrl").
 
 %% API
 -export([
