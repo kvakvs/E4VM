@@ -32,7 +32,7 @@ process(#c_module{name=_Name, exports=_Exps, defs=Defs}) ->
         [e4_f:comment("end mod")]),
     Out = process_fun_defs(Block, Defs),
 %%    io:format("~p~n", [Out]),
-    io:format("~s~n", [format_core_forth(Out, 0)]),
+    io:format("PASS1~n~s~n", [format_core_forth(Out, 0)]),
     Out.
 
 add_code(Block = #f_block{code=C}, AddCode) ->

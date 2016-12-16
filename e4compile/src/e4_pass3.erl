@@ -12,10 +12,10 @@
 
 process(Forth) ->
     Output = process_code([], Forth),
-    io:format("~p~n", [Output]),
+    io:format("PASS3~n~p~n", [Output]),
     Output.
 
-process_code(Code, []) -> lists:reverse(Code);
+process_code(Code, []) -> lists:flatten(lists:reverse(Code));
 
 process_code(Code, [Op | Tail]) ->
     Piece = process_code([], Op),

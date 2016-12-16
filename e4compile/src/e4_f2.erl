@@ -10,6 +10,8 @@
 
 retrieve(Mod = #f_module{}, #f_ld{var=Var}) ->
     retrieve(Mod, Var);
+retrieve(#f_module{}, #f_mfa{}=MFA) ->
+    MFA;
 retrieve(#f_module{scope=_Scope, alloc_vars=AllocatedVars}, Var) ->
     CfVar = e4_f:var(Var),
     io:format("retr ~p in vars ~s~n", [CfVar, format_vars(AllocatedVars)]),
