@@ -9,15 +9,18 @@
     .SET-ELEMENT            ( -- a Tuple )
     SWAP DROP ;             ( -- Tuple )
 
-: TUPLE ( a b c ... N -- , loop 1..N )
+: MAKE-TUPLE ( a b c ... N -- , loop 1..N )
     DUP .ALLOC-RAW-TUPLE    ( a b c N N -- a b c N Tuple , create empty )
     SWAP 0 DO               ( a b c N Tuple -- a b c Tuple N 0 , begin loop 0..N-1 )
         I .SET-ELEMENT      ( populate inplace with elements reversed on stack )
     LOOP
     ;
 
-: TRIM ( ... N -- , drops N args from the stack )
+: .ENTER ( N -- , pushes N the_non_values on the stack )
+    0 DO NIL LOOP ;
+
+: .LEAVE ( N -- , drops N args from the stack )
     0 DO SWAP DROP LOOP ;
 
 : ON-FAIL-JMP ( OnFail X -- , jumps to OnFail if X is the nonvalue )
-    NONVALUE? IF JUMP THEN ;
+    .NONVALUE? IF JUMP THEN ;

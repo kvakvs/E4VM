@@ -26,7 +26,7 @@ process_code(Code, Op) -> % if a single item is given, like a root block
 -spec process_op(intermediate_forth_op()) -> forth_code().
 process_op(A) when is_atom(A) -> A; % pass through forth words
 process_op(#f_lit{}=L) -> L; % pass through forth literals
-process_op(#f_comment{comment=C}) -> ['(', C, ')'];
+process_op(#f_comment{comment=C}) -> []; %['(', C, ')'];
 process_op(#f_enter{size=Size}) -> [e4_f:lit(Size), '.ENTER'];
 process_op(#f_leave{size=Size}) -> [e4_f:lit(Size), '.LEAVE'];
 process_op(#f_mfa{}=MFA) -> MFA;

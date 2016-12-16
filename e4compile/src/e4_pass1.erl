@@ -133,10 +133,10 @@ process_code(Block0, #c_call{module=M, name=N, args=Args}) ->
          ]);
 
 process_code(Block0, #c_primop{name=Name, args=Args}) ->
-    emit(Block0, lists:reverse(lists:map(fun e4_f:retrieve/1, Args)) ++ [
-        e4_f:retrieve(Name),
-        'PRIMOP'
-    ]);
+    emit(Block0, lists:reverse(lists:map(fun e4_f:retrieve/1, Args))
+%%                 ++ [e4_f:retrieve(Name), 'PRIMOP']
+        ++ [e4_f:primop(Name, length(Args))]
+    );
 
 process_code(Block0, #c_tuple{es=Es}) ->
     emit(Block0, e4_f:tuple(lists:map(fun e4_f:retrieve/1, Es)));
@@ -169,14 +169,6 @@ emit(Block, AddCode) ->
 
 format_fun_name(Name, Arity) ->
     #f_mfa{mod='.', fn=Name, arity=Arity}.
-
-%%format_fun_name(Mod, Name, Arity) when is_atom(Mod) ->
-%%    #cf_mfarity{mod=Mod, fn=Name, arity=Arity}.
-
-%%f_fun_ref(#e4module{module=Mod}, #e4lit{val=Name}, Arity) ->
-%%    format_fun_name(Mod, Name, Arity);
-%%f_fun_ref(#e4lit{val=Mod}, #e4lit{val=Name}, Arity) ->
-%%    #e4mfa{mod=Mod, fn=Name, arity=Arity}.
 
 %% Builds code to match Arg vs Pats with Guard
 %% Pats = [Tree], Guard = Tree, Body = Tree

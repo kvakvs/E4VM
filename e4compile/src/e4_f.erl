@@ -2,11 +2,10 @@
 
 %% API
 -export([
-    'and'/1, 'if'/2, 'if'/3, block/0, block/1, block/3, block/4, comment/1,
-    comment/2, equals/2, lit/1, match_two_values/2, nil/0, retrieve/1,
-    store/1, tuple/1, var/1, element/2, unless/2, mark_alias/2,
-    mark_new_var/1, mark_new_arg/1, make_mfarity/3
-]).
+      'and'/1, 'if'/2, 'if'/3, block/0, block/1, block/3, block/4, comment/1,
+      comment/2, equals/2, lit/1, match_two_values/2, nil/0, retrieve/1,
+      store/1, tuple/1, var/1, element/2, unless/2, mark_alias/2,
+      mark_new_var/1, mark_new_arg/1, make_mfarity/3, primop/2]).
 
 -include_lib("compiler/src/core_parse.hrl").
 -include("e4_forth.hrl").
@@ -134,3 +133,9 @@ make_mfarity(M, F, Arity) when is_atom(F), is_atom(F) ->
     #f_mfa{mod=M, fn=F, arity=Arity};
 make_mfarity(MExpr, FExpr, Arity) ->
     [MExpr, FExpr, lit(Arity), 'MAKE-MFARITY'].
+
+primop(#c_literal{val=Primop}, Arity) -> primop(Primop, Arity);
+primop(match_fail, 1) ->
+    'MATCH-FAIL';
+primop(Name, Arity) ->
+    e4:compile_error("E4: Unknown primop ~p/~p", [Name, Arity]).
