@@ -1,7 +1,5 @@
-%%%-------------------------------------------------------------------
-%%% @doc Forth primitives and helpers
-%%% @end
-%%%-------------------------------------------------------------------
+%%% @doc Pass 2: allocates variables and places load/store instructions
+%%% in the code
 -module(e4_f2).
 
 %% API
@@ -10,6 +8,8 @@
 
 -include("e4_forth.hrl").
 
+retrieve(Mod = #f_module{}, #f_ld{var=Var}) ->
+    retrieve(Mod, Var);
 retrieve(#f_module{scope=_Scope, alloc_vars=AllocatedVars}, Var) ->
     CfVar = e4_f:var(Var),
     io:format("retr ~p in vars ~s~n", [CfVar, format_vars(AllocatedVars)]),

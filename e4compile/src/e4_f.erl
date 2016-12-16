@@ -76,11 +76,15 @@ nil() -> 'NIL'.
 block() -> block([], [], [], []).
 block(Code) -> block([], Code, [], []).
 
--spec block(forth_code(), forth_code(), forth_code()) -> f_block().
+-spec block(Before :: intermediate_forth_code(),
+            Code :: intermediate_forth_code(),
+            After :: intermediate_forth_code()) -> f_block().
 block(Before, Code, After) ->
     block(Before, Code, After, []).
 
--spec block(forth_code(), forth_code(), forth_code(), [f_var()]) ->
+-spec block(Before :: intermediate_forth_code(),
+            Code :: intermediate_forth_code(),
+            After :: intermediate_forth_code(), [f_var()]) ->
     f_block().
 block(Before, Code, After, Scope) ->
     #f_block{before=Before, code=Code, 'after'=After, scope=Scope}.
@@ -115,7 +119,7 @@ retrieve(Var = #f_var{}) -> #f_ld{var=Var}.
 
 var(#c_var{name=Name}) -> #f_var{name=Name};
 var(#f_var{}=CF) -> CF;
-var(Name) -> #f_var{name=Name}.
+var(Name) when is_atom(Name) -> #f_var{name=Name}.
 
 mark_new_var(#c_var{}=V) -> #f_decl_var{var=var(V)};
 mark_new_var(#f_var{}=V) -> #f_decl_var{var=var(V)};

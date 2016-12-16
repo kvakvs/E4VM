@@ -24,23 +24,23 @@
 %% A code block with prefix and suffix
 %% TODO: Have var scopes merged with this? Not sure how to find scope parent
 -record(f_block, {
-    before=[] :: forth_code(),
+    before=[] :: intermediate_forth_code(),
     %% A copy of upper level scope + own variables
     scope=[] :: [f_var()],
-    code=[] :: forth_code(), % forth program output
-    'after'=[] :: forth_code()
+    code=[] :: intermediate_forth_code(), % forth program output
+    'after'=[] :: intermediate_forth_code()
 }).
 -type f_block() :: #f_block{}.
 
 %% TODO: not sure if used in this pass
--record(f_mod, {
+-record(f_mod_pass1, {
     module=undefined,
     atom_counter=0,
     atoms=dict:new(),
     lit_counter=0,
     literals=dict:new(),
     %% list of nested code blocks, containing code
-    code=[] :: forth_code()
+    code=[] :: intermediate_forth_code()
 %%    %% Compile-time state
 %%    stack=[] :: [e4var()]
 }).
@@ -89,7 +89,7 @@
 -record(f_module, {
     scope=[]    :: [f_var()],
     alloc_vars=#f_var_storage{}, % allocated vars go here and args also go here
-    output=[]   :: forth_code(),
+    output=[]   :: intermediate_forth_code(),
     cfgraph     :: digraph:graph()
 }).
 -type f_module() :: #f_module{}.
@@ -104,10 +104,14 @@
 %% Grouping types
 %%
 -type forth_word() :: atom().
--type forth_op() :: forth_word() | f_comment() | f_lit() | f_block()
-                | cf_mfa() | f_decl_var() | f_decl_arg()
-                | f_ld() | f_st() | f_enter() | f_leave()
-                | atom().
+
+-type intermediate_forth_op() ::
+    forth_word() | f_comment() | f_lit() | f_block() | cf_mfa() | f_decl_var()
+    | f_decl_arg() | f_ld() | f_st() | f_enter() | f_leave() | atom().
+-type intermediate_forth_code() :: intermediate_forth_op()
+    | [intermediate_forth_op()] | [intermediate_forth_code()].
+
+-type forth_op() :: forth_word() | f_lit().
 -type forth_code() :: forth_op() | [forth_op()] | [forth_code()].
 
 -endif. % E4_FORTH_HRL

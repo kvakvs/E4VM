@@ -7,9 +7,9 @@
 process(F) ->
     case compile:file(F, [to_core, binary, report]) of
         {ok, _M, CoreErlang} ->
-            CoreForth = e4_pass2:process(CoreErlang),
-            Forth = e4_pass1:process(CoreForth),
-            _Binary = e4_forth_bytecode:process(Forth);
+            Forth1 = e4_pass1:process(CoreErlang),
+            Forth2 = e4_pass2:process(Forth1),
+            _RealForth = e4_pass3:process(Forth2);
         E ->
             io:format("~n~s: ~p~n", [F, E])
     end.
