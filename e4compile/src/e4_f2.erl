@@ -14,15 +14,15 @@ retrieve(#f_module{}, #f_mfa{}=MFA) ->
     MFA;
 retrieve(#f_module{scope=_Scope, alloc_vars=AllocatedVars}, Var) ->
     CfVar = e4_f:var(Var),
-    io:format("retr ~p in vars ~s~n", [CfVar, format_vars(AllocatedVars)]),
+%%    io:format("retr ~p in vars ~s~n", [CfVar, format_vars(AllocatedVars)]),
     {ok, Index} = index_in_storage(AllocatedVars, CfVar),
-    [e4_f:lit(Index), 'LD'].
+    [e4_f:lit(Index), <<".LD">>].
 
 store(#f_module{scope=_Scope, alloc_vars=AllocatedVars}, Var) ->
     CfVar = e4_f:var(Var),
-    io:format("stor ~p into vars ~s~n", [CfVar, format_vars(AllocatedVars)]),
+%%    io:format("stor ~p into vars ~s~n", [CfVar, format_vars(AllocatedVars)]),
     {ok, Index} = index_in_storage(AllocatedVars, CfVar),
-    [e4_f:lit(Index), 'ST'].
+    [e4_f:lit(Index), <<".ST">>].
 
 index_of(Item, List) -> index_of(Item, List, 1).
 index_of(_, [], _)  -> not_found;

@@ -2,10 +2,11 @@
 
 %% API
 -export([
-      'and'/1, 'if'/2, 'if'/3, block/0, block/1, block/3, block/4, comment/1,
-      comment/2, equals/2, lit/1, match_two_values/2, nil/0, retrieve/1,
-      store/1, tuple/1, var/1, element/2, unless/2, mark_alias/2,
-      mark_new_var/1, mark_new_arg/1, make_mfarity/3, primop/2]).
+    'and'/1, 'if'/2, 'if'/3, block/0, block/1, block/3, block/4, comment/1,
+    comment/2, equals/2, lit/1, match_two_values/2, nil/0, retrieve/1,
+    store/1, tuple/1, var/1, element/2, unless/2, mark_alias/2,
+    mark_new_var/1, mark_new_arg/1, make_mfarity/3, primop/2, include/1
+]).
 
 -include_lib("compiler/src/core_parse.hrl").
 -include("e4_forth.hrl").
@@ -31,16 +32,26 @@
 'if'(#f_lit{val='true'}, Body = #f_block{}) ->
     Body;
 'if'(Cond, Body = #f_block{}) ->
-    block([comment("begin if"), Cond, 'IF'], [Body], ['THEN']).
+    block(
+        [comment("begin if"), Cond, <<"IF">>],
+        [Body],
+        [<<"THEN">>]
+    ).
 
 'if'(Cond, Body = #f_block{}, Else = #f_block{}) ->
-    block([comment("begin ifelse"), Cond, 'IF'],
-        [Body, 'ELSE', Else],
-        ['THEN']).
+    block(
+        [comment("begin ifelse"), Cond, <<"IF">>],
+        [Body, <<"ELSE">>, Else],
+        [<<"THEN">>]
+    ).
 
 unless(#f_lit{val='false'}, _Block) -> [];
 unless(Cond, Body = #f_block{}) ->
-    block([comment("begin unless"), Cond, 'UNLESS'], [Body], ['THEN']).
+    block(
+        [comment("begin unless"), Cond, <<"UNLESS">>],
+        [Body],
+        [<<"THEN">>]
+    ).
 
 %% ( c b a N - {a,b,c} , constructs a tuple size N from values on stack )
 %% Takes list of Forth expressions where each leaves one value on stack
@@ -49,16 +60,18 @@ tuple(Values) ->
     [
         lists:reverse(lists:map(fun retrieve/1, Values)),
         lit(length(Values)),
-        'MAKE-TUPLE'
+        <<"MAKE-TUPLE">>
     ].
 
 %% ( X Y -- (X==Y) , takes 2 values from stack, pushes comparison result )
-equals(Lhs, Rhs) -> [Lhs, Rhs, '=='].
+equals(Lhs, Rhs) -> [Lhs, Rhs, <<"==">>].
 
 %% ( X Y -- X , if X==Y, otherwise badmatch error )
 match_two_values(L, R) ->
-    [retrieve(L), 'DUP', retrieve(R), '==',
-     'UNLESS', 'BADMATCH', 'THEN'].
+    [   % TODO: move to core.fs
+        retrieve(L), <<"DUP">>, retrieve(R), <<"==">>,
+        <<"UNLESS">>, <<"ERROR-BADMATCH">>, <<"THEN">>
+    ].
 
 %% ( -- Value , leaves a literal value on stack )
 lit(Value) -> #f_lit{val=Value}.
@@ -70,7 +83,7 @@ comment(Format, Args) ->
     #f_comment{comment=Txt}.
 
 %% ( -- nil , leaves value [] on stack )
-nil() -> 'NIL'.
+nil() -> <<"NIL">>.
 
 block() -> block([], [], [], []).
 block(Code) -> block([], Code, [], []).
@@ -96,7 +109,7 @@ store(Dst = #f_var{}) -> #f_st{var=Dst}.
 mark_alias(Var = #f_var{}, Existing = #f_var{}) ->
     #f_var_alias{var=Var, existing=Existing};
 mark_alias(Existing = #f_var{}, #f_stacktop{}) ->
-    ['DUP', store(Existing)].
+    [<<"DUP">>, store(Existing)].
 
 %% ( -- X , retrieves value of variable V and leaves it on stack )
 retrieve(#c_tuple{es=Es}) -> tuple(Es);
@@ -127,15 +140,17 @@ mark_new_var(Name) -> #f_decl_var{var=var(Name)}.
 mark_new_arg(#f_var{}=V) -> #f_decl_arg{var=var(V)}.
 
 element(Index, Tuple) ->
-    [retrieve(Tuple), retrieve(Index), 'ELEMENT'].
+    [retrieve(Tuple), retrieve(Index), <<"GET-ELEMENT">>].
 
 make_mfarity(M, F, Arity) when is_atom(F), is_atom(F) ->
     #f_mfa{mod=M, fn=F, arity=Arity};
 make_mfarity(MExpr, FExpr, Arity) ->
-    [MExpr, FExpr, lit(Arity), 'MAKE-MFARITY'].
+    [MExpr, FExpr, lit(Arity), <<"MAKE-MFARITY">>].
 
 primop(#c_literal{val=Primop}, Arity) -> primop(Primop, Arity);
 primop(match_fail, 1) ->
-    'MATCH-FAIL';
+    <<"MATCH-FAIL">>;
 primop(Name, Arity) ->
     e4:compile_error("E4: Unknown primop ~p/~p", [Name, Arity]).
+
+include(F) -> #f_include{filename=F}.

@@ -17,7 +17,7 @@ process(CoreForth) ->
     F.
 
 process_code(Mod0 = #f_module{output=Code}, []) ->
-    Mod0#f_module{output=lists:reverse(Code)};
+    Mod0#f_module{output=lists:flatten(Code)};
 process_code(Mod0 = #f_module{}, [CF | Tail]) ->
     Mod1 = process_code(Mod0, CF),
     process_code(Mod1, Tail);
@@ -25,8 +25,8 @@ process_code(Mod0, Op) -> % if a single item is given, like a root block
     process_op(Mod0, Op).
 
 -spec emit(Mod :: f_module(), Code :: intermediate_forth_code()) -> f_block().
-emit(_Mod0, #f_ld{}) -> compile_error("E4 Pass2: can't emit LD construct");
-emit(_Mod0, #f_st{}) -> compile_error("E4 Pass2: can't emit ST construct");
+%%emit(_Mod0, #f_ld{}) -> compile_error("E4 Pass2: can't emit LD construct");
+%%emit(_Mod0, #f_st{}) -> compile_error("E4 Pass2: can't emit ST construct");
 emit(Mod0, AddCode) when not is_list(AddCode) ->
     emit(Mod0, [AddCode]);
 emit(Mod0, AddCode) ->
@@ -34,7 +34,6 @@ emit(Mod0, AddCode) ->
         fun(Nested, Md) when is_list(Nested) ->
                 emit(Md, Nested);
             (ForthOp, Md = #f_module{output=Code}) ->
-                %% TODO: Fix me i'm slow
                 Md#f_module{output=Code ++ [ForthOp]}
         end,
         Mod0,
@@ -49,9 +48,9 @@ stack_frame_leave(Mod0, Sz) when is_integer(Sz) ->
     emit(Mod0, #f_leave{size=Sz}).
 
 %% Atoms processing
-process_op(Mod0 = #f_module{}, ';') ->
-    emit(Mod0, 'RET');
-process_op(Mod0 = #f_module{}, A) when is_atom(A) ->
+process_op(Mod0 = #f_module{}, <<";">>) ->
+    emit(Mod0, <<"RET">>);
+process_op(Mod0 = #f_module{}, A) when ?IS_FORTH_WORD(A) ->
     emit(Mod0, A); % pass through forth words
 
 %% Other code structures processing
@@ -64,7 +63,7 @@ process_op(Mod0 = #f_module{scope=OuterScope},
     Mod10      = stack_frame_enter(Mod0, FrameSize),
     Mod20 = Mod10#f_module{scope=EnterScope},
 
-    Mod30 = process_code(Mod20, [Before ++ Code ++ After]),
+    Mod30 = process_code(Mod20, [Before, Code, After]),
 
     %% Restore scope
     Mod40 = stack_frame_leave(Mod30, FrameSize),
@@ -86,12 +85,14 @@ process_op(Mod0 = #f_module{}, #f_st{var=V}) ->
     emit(Mod0, e4_f2:store(Mod0, V));
 process_op(Mod0 = #f_module{}, #f_lit{} = Lit) ->
     emit(Mod0, Lit);
+process_op(Mod0, #f_include{filename=F}) ->
+    emit(Mod0, e4_forth_parse:parse(F));
 process_op(Mod0 = #f_module{}, #f_apply{funobj=FO, args=Args}) ->
     Mod1 = lists:foldl(
         fun(Arg, M0) -> emit(M0, e4_f2:retrieve(M0, Arg)) end,
         Mod0,
         Args),
-    emit(Mod1, [e4_f2:retrieve(Mod1, FO), 'APPLY']);
+    emit(Mod1, [e4_f2:retrieve(Mod1, FO), <<"APPLY">>]);
 process_op(_Mod0, CF) ->
     compile_error("E4 Pass2: Unknown op ~p~n", [CF]).
 

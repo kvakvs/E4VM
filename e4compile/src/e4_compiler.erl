@@ -9,7 +9,8 @@ process(F) ->
         {ok, _M, CoreErlang} ->
             Forth1 = e4_pass1:process(CoreErlang),
             Forth2 = e4_pass2:process(Forth1),
-            _RealForth = e4_pass3:process(Forth2);
+            RealForth1 = e4_pass3:process(Forth2),
+            _RealForth2 = e4_pass_opt1:process(RealForth1);
         E ->
             io:format("~n~s: ~p~n", [F, E])
     end.

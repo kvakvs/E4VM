@@ -103,16 +103,19 @@
 %%
 %% Grouping types
 %%
--type forth_word() :: atom().
+-type forth_word() :: binary().
+-define(IS_FORTH_WORD(X), is_binary(X)).
 
 -type intermediate_forth_op() ::
     forth_word() | f_comment() | f_lit() | f_block() | cf_mfa() | f_decl_var()
-    | f_decl_arg() | f_ld() | f_st() | f_enter() | f_leave() | atom().
+    | f_decl_arg() | f_ld() | f_st() | f_enter() | f_leave().
 -type intermediate_forth_code() :: intermediate_forth_op()
     | [intermediate_forth_op()] | [intermediate_forth_code()].
 
 -type forth_op() :: forth_word() | f_lit().
 -type forth_code() :: forth_op() | [forth_op()] | [forth_code()].
 
--endif. % E4_FORTH_HRL
+-record(f_include, {filename="" :: string()}).
+-type f_include() :: #f_include{}.
 
+-endif. % E4_FORTH_HRL

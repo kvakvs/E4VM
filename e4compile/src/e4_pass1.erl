@@ -27,12 +27,12 @@ module_new() -> #f_mod_pass1{}.
 process(#c_module{name=_Name, exports=_Exps, defs=Defs}) ->
     %M0 = #e4module{module=Name#c_literal.val},
     Block = e4_f:block(
-        [e4_f:comment("begin mod")],
+        [e4_f:comment("begin mod"), e4_f:include("forth-lib/core.fs")],
         [],
         [e4_f:comment("end mod")]),
     Out = process_fun_defs(Block, Defs),
-%%    io:format("~p~n", [Out]),
-    io:format("PASS1~n~s~n", [format_core_forth(Out, 0)]),
+    io:format("PASS1~n~p~n", [Out]),
+%%    io:format("PASS1~n~s~n", [format_core_forth(Out, 0)]),
     Out.
 
 add_code(Block = #f_block{code=C}, AddCode) ->
@@ -43,9 +43,9 @@ process_fun_defs(ModB, []) -> ModB;
 process_fun_defs(ModB0, [{#c_var{name={Name, Arity}},
                           #c_fun{} = Fun} | Remaining]) ->
     Block1 = e4_f:block(
-            [':', format_fun_name(Name, Arity)],
+            [<<":">>, format_fun_name(Name, Arity)],
             [compile_fun(Fun)],
-            [';', e4_f:comment("end fun ~s/~p", [Name, Arity])]),
+            [<<";">>, e4_f:comment("end fun ~s/~p", [Name, Arity])]),
     ModB1 = add_code(ModB0, Block1),
     process_fun_defs(ModB1, Remaining).
 
@@ -121,7 +121,7 @@ process_code(Block0, #c_apply{op=Op, args=Args}) ->
          lists:reverse(lists:map(fun e4_f:retrieve/1, Args)) ++ [
              e4_f:lit(length(Args)),
              e4_f:retrieve(Op),
-             'APPLY'
+             <<"APPLY">>
         ]
     );
 
@@ -134,7 +134,7 @@ process_code(Block0, #c_call{module=M, name=N, args=Args}) ->
 
 process_code(Block0, #c_primop{name=Name, args=Args}) ->
     emit(Block0, lists:reverse(lists:map(fun e4_f:retrieve/1, Args))
-%%                 ++ [e4_f:retrieve(Name), 'PRIMOP']
+%%                 ++ [e4_f:retrieve(Name), <<"PRIMOP">>]
         ++ [e4_f:primop(Name, length(Args))]
     );
 
@@ -161,7 +161,6 @@ emit(Block, AddCode) ->
         fun(Nested, Blk) when is_list(Nested) ->
                 emit(Blk, Nested);
             (ForthOp, Blk = #f_block{code=Code}) ->
-                %% TODO: Fix me i'm slow
                 Blk#f_block{code=Code ++ [ForthOp]}
         end,
         Block,
@@ -264,7 +263,7 @@ pattern_match_var_versus(Block0, #f_var{} = Lhs, Rhs) ->
                 e4_f:comment("compare-match ~p = ~p", [Lhs, Rhs]),
                 e4_f:unless(
                     [e4_f:equals(e4_f:retrieve(Lhs), e4_f:retrieve(Rhs))],
-                    e4_f:block(['BADMATCH'])
+                    e4_f:block([<<"ERROR-BADMATCH">>])
                 )
                 %% TODO: Use fail label instead of badmatch if possible
             ]);
@@ -291,8 +290,8 @@ pattern_match_tuple_versus(Block0, LhsElements, Rhs) ->
     %% check that Rhs is a tuple
     Block1 = emit(Block0, [
         e4_f:unless(
-            [e4_f:retrieve(Rhs), e4_f:lit(length(LhsElements)), 'IS-TUPLE'],
-            e4_f:block(['BADARG'])
+            [e4_f:retrieve(Rhs), e4_f:lit(length(LhsElements)), <<"IS-TUPLE">>],
+            e4_f:block([<<"ERROR-BADARG">>])
         )
     ]),
     %% For all variables in the left introduce a variable and create
@@ -301,7 +300,7 @@ pattern_match_tuple_versus(Block0, LhsElements, Rhs) ->
         fun({Index, Lhs1}, Blk0) ->
             Blk1 = emit(Blk0, [
                 e4_f:mark_new_var(Lhs1),
-                'DUP',
+                <<"DUP">>,
                 e4_f:element(Index, #f_stacktop{})
             ]),
             pattern_match_var_versus(Blk1, Lhs1, #f_stacktop{})
@@ -330,6 +329,8 @@ format_op(#f_apply{funobj=FO, args=Args}) ->
 format_op(#f_var{name=V}) -> color:blueb(str(V));
 format_op(W) when is_atom(W) ->
     io_lib:format("~s", [color:whiteb(str(W))]);
+format_op(W) when ?IS_FORTH_WORD(W) ->
+    io_lib:format("~s", [color:whiteb(str(W))]);
 format_op(#f_lit{val=L}) ->
     io_lib:format("'~s", [color:magenta(str(L))]);
 format_op(#f_ld{var=V}) ->
@@ -355,6 +356,8 @@ format_op(#f_mfa{mod=M, fn=F, arity=A}) ->
                       str(A),
                       color:magentab(")")
                   ]);
+format_op(#f_include{filename=F}) ->
+    io_lib:format("~s(~s)", [color:whiteb("include"), F]);
 format_op(#f_var{}=Var) ->
     io_lib:format("~s", [format_op(Var)]).
 

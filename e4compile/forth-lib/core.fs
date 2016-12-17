@@ -1,4 +1,9 @@
-: ERROR-FN-CLAUSE 'function_clause' ERROR ;
+: ERROR-FN-CLAUSE
+    'function_clause' .ERROR ;
+: ERROR-BADMATCH
+    'badmatch' .ERROR ;
+: ERROR-BADARG
+    'badarg' .ERROR ;
 
 : TUPLE0 ( -- , returns {} )
     0 .NEW-TUPLE ;
@@ -16,10 +21,10 @@
     LOOP
     ;
 
-: .ENTER ( N -- , pushes N the_non_values on the stack )
+: X.ENTER ( N -- , pushes N the_non_values on the stack )
     0 DO NIL LOOP ;
 
-: .LEAVE ( N -- , drops N args from the stack )
+: X.LEAVE ( N -- , drops N args from the stack )
     0 DO SWAP DROP LOOP ;
 
 : ON-FAIL-JMP ( OnFail X -- , jumps to OnFail if X is the nonvalue )

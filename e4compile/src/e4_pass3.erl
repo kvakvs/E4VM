@@ -12,7 +12,13 @@
 
 process(Forth) ->
     Output = process_code([], Forth),
-    io:format("PASS3~n~p~n", [Output]),
+    Output2 = lists:map(
+        fun(<<";">>) -> io_lib:format(";~n", []);
+            (X) when is_integer(X) -> io_lib:format("~p ", [X]);
+            (X) -> io_lib:format("~s ", [X]) end,
+        Output),
+    io:format("~s~n~s~n", [color:redb("PASS3"), Output2]),
+%%    io:format("~s~n~p~n", [color:redb("PASS3"), Output]),
     Output.
 
 process_code(Code, []) -> lists:flatten(lists:reverse(Code));
@@ -24,11 +30,21 @@ process_code(Code, Op) -> % if a single item is given, like a root block
     [process_op(Op) | Code].
 
 -spec process_op(intermediate_forth_op()) -> forth_code().
-process_op(A) when is_atom(A) -> A; % pass through forth words
-process_op(#f_lit{}=L) -> L; % pass through forth literals
+process_op(A) when ?IS_FORTH_WORD(A) -> A; % forth words (as atoms)
+%%process_op(B) when is_binary(B) -> B; % forth words (parsed from disk)
+
+process_op(#f_lit{val=V}) -> f_lit(V);
+process_op(#f_mfa{mod=M, fn=F, arity=A}) ->
+    [<<".MFA">>,
+     atom_to_binary(M, utf8),
+     atom_to_binary(F, utf8),
+     integer_to_binary(A)];
+
 process_op(#f_comment{comment=C}) -> []; %['(', C, ')'];
-process_op(#f_enter{size=Size}) -> [e4_f:lit(Size), '.ENTER'];
-process_op(#f_leave{size=Size}) -> [e4_f:lit(Size), '.LEAVE'];
-process_op(#f_mfa{}=MFA) -> MFA;
+process_op(#f_enter{size=Size}) -> [f_lit(Size), <<".ENTER">>];
+process_op(#f_leave{size=Size}) -> [f_lit(Size), <<".LEAVE">>];
 process_op(Op) ->
     compile_error("E4 Pass3: Unknown op ~p~n", [Op]).
+
+f_lit(V) when is_integer(V) -> V;
+f_lit(V) when is_atom(V) -> <<"'", (atom_to_binary(V, utf8))/binary>>.
