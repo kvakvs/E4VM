@@ -12,9 +12,11 @@
 compile(ModuleName, Input) ->
     Prog0 = #j1prog{mod = ModuleName},
     Prog1 = compile2(Prog0, Input),
-    Result = lists:reverse(Prog1#j1prog.output),
+    Result0 = lists:reverse(Prog1#j1prog.output),
+    Result = apply_patches(Result0, Prog1#j1prog.patch_table, []),
     io:format("~s~n~s~n",
-              [color:redb("J1C PASS 1"), format_j1c_pass1(Result, [])]),
+              [color:redb("J1C PASS 1"),
+               format_j1c_pass1(Prog1, 0, Result, [])]),
     Result.
 
 
@@ -200,7 +202,7 @@ emit(Prog0 = #j1prog{output=Out, pc=PC}, #j1patch{}=Patch) ->
                  pc=PC + 1};
 emit(Prog0 = #j1prog{output=Out, pc=PC}, IOList) ->
     Prog0#j1prog{output=[IOList | Out],
-                 pc=PC + iolist_size(IOList)}.
+                 pc=PC + 1}.
 
 -spec emit_alu(j1prog(), alu() | [alu()]) -> j1prog().
 emit_alu(Prog = #j1prog{}, ALUList) when is_list(ALUList) ->
@@ -374,11 +376,83 @@ emit_lit(Prog0 = #j1prog{}, mfa, {M, F, A}) ->
     {Prog1, LIndex} = literal_index_or_create(Prog0, {M, F, A}),
     emit(Prog1, <<1:1, LIndex:?J1_LITERAL_BITS>>).
 
-format_j1c_pass1([], Accum) -> lists:reverse(Accum);
-format_j1c_pass1([H | Tail], Accum) ->
-    format_j1c_pass1(Tail, [format_j1c_op(H) | Accum]).
+format_j1c_pass1(_Prog, _Pc, [], Accum) -> lists:reverse(Accum);
+format_j1c_pass1(Prog, Pc, [H | Tail], Accum) ->
+    format_j1c_pass1(Prog, Pc+1, Tail, [
+        io_lib:format("~4.16.0B: ", [Pc]),
+        format_j1c_op(Prog, H) | Accum
+    ]).
 
-format_j1c_op(#j1patch{op= <<Op:8, _:8>>, id=Id}) ->
-    io_lib:format(" Patch(~2.16.0B #~p) ", [Op, Id]);
-format_j1c_op(<<Cmd:?J1BITS>>) ->
-    io_lib:format("~4.16.0B ", [Cmd]).
+format_j1c_op(Prog, #j1patch{op=Op, id=Id}) ->
+    io_lib:format("~s id=~p (~s)~n", [color:yellowb("PATCH"), Id,
+                                      format_j1c_op(Prog, Op)]);
+format_j1c_op(_Prog, <<1:1, Lit:(?J1BITS-1)/signed>>) ->
+    io_lib:format("~s ~p~n", [color:blueb("LIT"), Lit]);
+format_j1c_op(Prog, <<?J1INSTR_CALL:?J1INSTR_WIDTH,
+                       Addr:?J1OP_INDEX_WIDTH/signed>>) ->
+    io_lib:format("~s ~s~n", [color:green("CALL"), whereis_addr(Prog, Addr)]);
+format_j1c_op(_Prog, <<?J1INSTR_JUMP:?J1INSTR_WIDTH,
+                Addr:?J1OP_INDEX_WIDTH/signed>>) ->
+    io_lib:format("~s ~4.16.0B~n", [color:green("JMP"), Addr]);
+format_j1c_op(_Prog, <<?J1INSTR_JUMP_COND:?J1INSTR_WIDTH,
+                Addr:?J1OP_INDEX_WIDTH/signed>>) ->
+    io_lib:format("~s ~4.16.0B~n", [color:green("JZ"), Addr]);
+format_j1c_op(_Prog, <<?J1INSTR_ALU:3, RPC:1, Op:4, TN:1, TR:1, NTI:1,
+                _Unused:1, Ds:2, Rs:2>>) ->
+    format_j1c_alu(RPC, Op, TN, TR, NTI, Ds, Rs);
+format_j1c_op(_Prog, <<Cmd:?J1BITS>>) ->
+    io_lib:format("?UNKNOWN ~4.16.0B~n", [Cmd]).
+
+format_j1c_alu(RPC, Op, TN, TR, NTI, Ds, Rs) ->
+    FormatOffset =
+        fun(_, 0) -> [];
+            (Prefix, 1) -> Prefix ++ "++";
+            (Prefix, 2) -> Prefix ++ "--"
+            end,
+    [
+        io_lib:format("~s", [color:red("ALU." ++ j1_op(Op))]),
+        case RPC of 0 -> []; _ -> " RET" end,
+        case TN of 0 -> []; _ -> " T->N" end,
+        case TR of 0 -> []; _ -> " T->R" end,
+        case NTI of 0 -> []; _ -> " [T]" end,
+        FormatOffset(" DS", Ds),
+        FormatOffset(" RS", Rs),
+        "\n"
+    ].
+
+j1_op(?J1OP_T) -> "T";
+j1_op(?J1OP_N) -> "N";
+j1_op(?J1OP_T_PLUS_N) -> "T+N";
+j1_op(?J1OP_T_AND_N) -> "T&N";
+j1_op(?J1OP_T_OR_N) -> "T|N";
+j1_op(?J1OP_T_XOR_N) -> "T^N";
+j1_op(?J1OP_INVERT_T) -> "~T";
+j1_op(?J1OP_N_EQ_T) -> "N==T";
+j1_op(?J1OP_N_LESS_T) -> "N<T";
+j1_op(?J1OP_N_RSHIFT_T) -> "N>>T";
+j1_op(?J1OP_T_MINUS_1) -> "T-1";
+j1_op(?J1OP_R) -> "R";
+j1_op(?J1OP_INDEX_T) -> "[T]";
+j1_op(?J1OP_N_LSHIFT_T) -> "N<<T";
+j1_op(?J1OP_DEPTH) -> "DEPTH";
+j1_op(?J1OP_N_UNSIGNED_LESS_T) -> "UN<T".
+
+whereis_addr(#j1prog{dict=Words}, Addr) when Addr >= 0 ->
+    case lists:keyfind(Addr, 2, Words) of
+        {Name, _} -> io_lib:format("'~s'", [Name]);
+        false -> "?"
+    end;
+whereis_addr(#j1prog{dict_nif=Nifs}, Addr) when Addr < 0 ->
+    case lists:keyfind(Addr, 2, Nifs) of
+        {Name, _} -> io_lib:format("NIF '~s'", [Name]);
+        false -> "?"
+    end.
+
+%% @doc Additional pass resolves #j1patch inserts from PatchTab
+apply_patches([], _PatchTab, Accum) -> lists:reverse(Accum);
+apply_patches([#j1patch{op= <<Op:16>>, id=Id} | Tail], PatchTab, Accum) ->
+    Addr = orddict:fetch(Id, PatchTab),
+    NewOp = <<(Op bor Addr):16>>,
+    apply_patches(Tail, PatchTab, [NewOp | Accum]);
+apply_patches([H | Tail], PatchTab, Accum) ->
+    apply_patches(Tail, PatchTab, [H | Accum]).
