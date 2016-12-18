@@ -60,7 +60,7 @@ tuple(Values) ->
     [
         lists:reverse(lists:map(fun retrieve/1, Values)),
         lit(length(Values)),
-        <<"MAKE-TUPLE">>
+        <<".MAKE-TUPLE">>
     ].
 
 %% ( X Y -- (X==Y) , takes 2 values from stack, pushes comparison result )
@@ -140,16 +140,16 @@ mark_new_var(Name) -> #f_decl_var{var=var(Name)}.
 mark_new_arg(#f_var{}=V) -> #f_decl_arg{var=var(V)}.
 
 element(Index, Tuple) ->
-    [retrieve(Tuple), retrieve(Index), <<"GET-ELEMENT">>].
+    [retrieve(Tuple), retrieve(Index), <<".GET-ELEMENT">>].
 
 make_mfarity(M, F, Arity) when is_atom(F), is_atom(F) ->
     #f_mfa{mod=M, fn=F, arity=Arity};
 make_mfarity(MExpr, FExpr, Arity) ->
-    [MExpr, FExpr, lit(Arity), <<"MAKE-MFARITY">>].
+    [MExpr, FExpr, lit(Arity), <<".MAKE-MFARITY">>].
 
 primop(#c_literal{val=Primop}, Arity) -> primop(Primop, Arity);
 primop(match_fail, 1) ->
-    <<"MATCH-FAIL">>;
+    <<"ERROR-CASE-CLAUSE">>;
 primop(Name, Arity) ->
     e4:compile_error("E4: Unknown primop ~p/~p", [Name, Arity]).
 

@@ -1,40 +1,30 @@
 :MODULE e4core
 :NIF .ERROR -1 ( creates an error exception in the current process )
-:NIF .NEW-TUPLE -2
-:NIF .SET-ELEMENT -3
-:NIF .NONVALUE? -4
-:NIF .ALLOC-RAW-TUPLE -5
+:NIF .NONVALUE? -2
+:NIF .MAKE-MFARITY -3
+
 :NIF .ENTER -10
 :NIF .LEAVE -11
+:NIF .LD -12
+:NIF .ST -13
+:NIF .APPLY -14
 
-: ERROR-FN-CLAUSE
-    'function_clause .ERROR ;
-: ERROR-BADMATCH
-    'badmatch .ERROR ;
-: ERROR-BADARG
-    'badarg .ERROR ;
+:NIF == -20
+:NIF =:= -21
 
-: TUPLE0 ( -- , returns {} )
-    0 .NEW-TUPLE ;
+:NIF .NEW-TUPLE -30
+:NIF .SET-ELEMENT -31
+:NIF .GET-ELEMENT -32
+:NIF .ALLOC-RAW-TUPLE -33
+:NIF .IS-TUPLE -34
+:NIF .MAKE-TUPLE -35
 
-: TUPLE1 ( a -- , returns {a} )
-    1 .NEW-TUPLE            ( -- a Tuple )
-    DUP 0                   ( -- a Tuple Tuple 0 )
-    .SET-ELEMENT            ( -- a Tuple )
-    SWAP DROP ;             ( -- Tuple )
+: ERROR-FN-CLAUSE 'function_clause .ERROR ;
+: ERROR-BADMATCH 'badmatch .ERROR ;
+: ERROR-BADARG 'badarg .ERROR ;
+: ERROR-CASE-CLAUSE 'case_clause .ERROR ;
 
-: MAKE-TUPLE ( a b c ... N -- , loop 1..N )
-    DUP .ALLOC-RAW-TUPLE    ( a b c N N -- a b c N Tuple , create empty )
-    SWAP 0 DO               ( a b c N Tuple -- a b c Tuple N 0 , begin loop 0..N-1 )
-        I .SET-ELEMENT      ( populate inplace with elements reversed on stack )
-    LOOP
-    ;
+( OnFail X -- , jumps to OnFail if X is the nonvalue )
+( : ON-FAIL-JMP
+    .NONVALUE? IF JUMP THEN ; )
 
-: X.ENTER ( N -- , pushes N the_non_values on the stack )
-    0 DO NIL LOOP ;
-
-: X.LEAVE ( N -- , drops N args from the stack )
-    0 DO SWAP DROP LOOP ;
-
-: ON-FAIL-JMP ( OnFail X -- , jumps to OnFail if X is the nonvalue )
-    .NONVALUE? IF JUMP THEN ;

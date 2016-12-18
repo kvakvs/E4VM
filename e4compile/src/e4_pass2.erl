@@ -13,7 +13,7 @@ process(CoreForth) ->
         cfgraph = digraph:new([cyclic, protected])
     },
     #f_module{output=F} = process_code(NewM, CoreForth),
-    io:format("PASS2~n~p~n", [F]),
+%%    io:format("PASS2~n~p~n", [F]),
     F.
 
 process_code(Mod0 = #f_module{output=Code}, []) ->
@@ -90,7 +90,7 @@ process_op(Mod0 = #f_module{}, #f_apply{funobj=FO, args=Args}) ->
         fun(Arg, M0) -> emit(M0, e4_f2:retrieve(M0, Arg)) end,
         Mod0,
         Args),
-    emit(Mod1, [e4_f2:retrieve(Mod1, FO), <<"APPLY">>]);
+    emit(Mod1, [e4_f2:retrieve(Mod1, FO), <<".APPLY">>]);
 process_op(_Mod0, CF) ->
     compile_error("E4 Pass2: Unknown op ~p~n", [CF]).
 

@@ -31,7 +31,7 @@ process(#c_module{name=_Name, exports=_Exps, defs=Defs}) ->
         [],
         [e4_f:comment("end mod")]),
     Out = process_fun_defs(Block, Defs),
-    io:format("PASS1~n~p~n", [Out]),
+%%    io:format("PASS1~n~p~n", [Out]),
 %%    io:format("PASS1~n~s~n", [format_core_forth(Out, 0)]),
     Out.
 
@@ -121,7 +121,7 @@ process_code(Block0, #c_apply{op=Op, args=Args}) ->
          lists:reverse(lists:map(fun e4_f:retrieve/1, Args)) ++ [
              e4_f:lit(length(Args)),
              e4_f:retrieve(Op),
-             <<"APPLY">>
+             <<".APPLY">>
         ]
     );
 
@@ -290,7 +290,9 @@ pattern_match_tuple_versus(Block0, LhsElements, Rhs) ->
     %% check that Rhs is a tuple
     Block1 = emit(Block0, [
         e4_f:unless(
-            [e4_f:retrieve(Rhs), e4_f:lit(length(LhsElements)), <<"IS-TUPLE">>],
+            [e4_f:retrieve(Rhs),
+             e4_f:lit(length(LhsElements)),
+             <<".IS-TUPLE">>],
             e4_f:block([<<"ERROR-BADARG">>])
         )
     ]),

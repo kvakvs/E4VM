@@ -2,9 +2,9 @@
 -define(J1_HEADER, 1).
 
 -define(J1BITS, 16).
--define(J1OP_CMD_WIDTH, 3).
+-define(J1INSTR_WIDTH, 3).
 -define(J1_LITERAL_BITS, (?J1BITS-1)). % how many bits remain after lit flag bit
--define(J1OP_INDEX_WIDTH, (?J1BITS-?J1OP_CMD_WIDTH)).
+-define(J1OP_INDEX_WIDTH, (?J1BITS-?J1INSTR_WIDTH)).
 %% Bit values for the first nibble (Instruction type)
 -define(J1LITERAL,          8). % top bit set for literals
 -define(J1INSTR_JUMP,       0).
@@ -39,5 +39,42 @@
     rs = 0 :: 0..3      % 2 bits, signed increment of return stack
 }).
 -type alu() :: #alu{}.
+
+%% Patch instruction is inserted into the code during compilation.
+%% The second pass will find these patch instructions and replace them with
+%% machine code instruction (op | patch_table[id]) where the patch_table is
+%% updatedduring the same 1st pass but possibly later.
+-record(j1patch, {
+    id = 0 :: integer(),    % patch id to search later (equals PC value)
+    op = 0 :: integer()     % instruction to insert without address parth
+}).
+-type j1patch() :: #j1patch{}.
+
+%% Output of the J1 forth compiler (J1C Pass 1)
+-record(j1prog, {
+    mod :: atom(),
+    dict = orddict:new() :: orddict:orddict(binary(), integer()),
+    dict_nif = orddict:new() :: orddict:orddict(binary(), integer()),
+
+    %% a literal value is the key, and the index in the lit table is the value
+    lit_id = 0 :: integer(),
+    literals = orddict:new() :: orddict:orddict(any(), integer()),
+
+    vars = orddict:new() :: orddict:orddict(),
+    modules = orddict:new() :: orddict:orddict(),
+
+    condstack = [] :: [integer()],
+    loopstack = [] :: [integer()],
+    %% maps code address (where jump instruction is written) to another code
+    %% address (jump destination) processed on the 2nd pass
+    patch_table = orddict:new() :: orddict:orddict(integer(), integer()),
+
+    atom_id = 0 :: integer(),
+    atoms = orddict:new() :: orddict:orddict(binary(), integer()),
+
+    pc = 0 :: integer(),
+    output = [] :: iolist()
+}).
+-type j1prog() :: #j1prog{}.
 
 -endif. % J1_HEADER
