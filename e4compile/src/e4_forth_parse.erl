@@ -6,13 +6,17 @@
 -export([parse/1]).
 
 parse(Filename) ->
-    {ok, F} = file:read_file(Filename),
-    Parts = binary:split(
-        F,
-        [<<" ">>, <<"\n">>, <<"\t">>, <<"\r">>],
-        [global, trim_all]
-    ),
-    lists:reverse(parse_postprocess(Parts, [])).
+    case file:read_file(Filename) of
+        {ok, F} ->
+            Parts = binary:split(
+                F,
+                [<<" ">>, <<"\n">>, <<"\t">>, <<"\r">>],
+                [global, trim_all]
+            ),
+            lists:reverse(parse_postprocess(Parts, []));
+        {error, E} ->
+            e4:compile_error("E4: Include file ~p error ~p", [Filename, E])
+    end.
 
 parse_postprocess([], Out) -> lists:flatten(Out);
 parse_postprocess([<<"(">> | Tail], Out) ->

@@ -6,11 +6,13 @@
 %% API
 -export([compile/2]).
 -include("e4_forth.hrl").
+-include("e4_j1.hrl").
 -import(e4, [compile_error/2]).
 
 -record(program, {
     mod :: atom(),
-    dict = orddict:new() :: orddict:orddict(),
+    dict = orddict:new() :: orddict:orddict(binary(), integer()),
+    dict_nif = orddict:new() :: orddict:orddict(binary(), integer()),
     consts = orddict:new() :: orddict:orddict(),
     vars = orddict:new() :: orddict:orddict(),
     modules = orddict:new() :: orddict:orddict(),
@@ -31,26 +33,40 @@ compile(ModuleName, Input) ->
 
 
 compile2(Prog0 = #program{}, []) -> Prog0;
+
+%% --- special words ---
 compile2(Prog0 = #program{}, [<<":">>, <<".MFA">>, Mod, Fn, Arity | Tail]) ->
     Prog1 = prog_add_word(Prog0, mfa_to_word(Prog0, Mod, Fn, Arity)),
     compile2(Prog1, Tail);
 
+compile2(Prog0 = #program{}, [<<":MODULE">>, Name | Tail]) ->
+    compile2(Prog0#program{mod=Name}, Tail);
 compile2(Prog0 = #program{}, [<<":">>, Name | Tail]) ->
     Prog1 = prog_add_word(Prog0, Name),
+    compile2(Prog1, Tail);
+compile2(Prog0 = #program{}, [<<":NIF">>, Name, Index0 | Tail]) ->
+    Index1 = binary_to_integer(Index0),
+    Prog1 = prog_add_nif(Prog0, Name, Index1),
     compile2(Prog1, Tail);
 compile2(Prog0 = #program{}, [<<";">> | Tail]) ->
     Prog1 = emit_alu(Prog0, #alu{op=0, rpc=1, ds=2}),
     compile2(Prog1, Tail);
 
+%% --- literals ---
 compile2(Prog0 = #program{}, [<<"'", Word/binary>> | Tail]) -> % a quoted 'atom
     Prog1 = emit_lit(Prog0, atom, Word),
+    compile2(Prog1, Tail);
+compile2(Prog0 = #program{}, [<<First:8, _/binary>> = Word | Tail])
+    when First >= $0, First =< $9; First =:= $-
+    -> % begins with a number or a minus
+    Prog1 = emit_lit(Prog0, integer, binary_to_integer(Word)),
     compile2(Prog1, Tail);
 
 compile2(Prog0 = #program{}, [Word | Tail]) ->
     %% Possibly a word, try resolve
     Prog1 = case prog_find_word(Prog0, Word) of
                 not_found -> emit_base_word(Prog0, Word);
-                Index -> emit_f_address(Prog0, Index)
+                Index -> emit_call(Prog0, Index)
             end,
     compile2(Prog1, Tail);
 compile2(_Prog, [Other | _]) ->
@@ -70,59 +86,40 @@ prog_add_word(Prog0 = #program{pc=PC, dict=Dict}, Word) ->
     Dict1 = orddict:store(Word, PC, Dict),
     Prog0#program{dict=Dict1}.
 
+%% @doc Adds a NIF name to the dictionary, does not register any other data
+%% just marks the name as existing.
+-spec prog_add_nif(program(), Word :: binary(), Index :: neg_integer())
+                  -> program().
+prog_add_nif(#program{}, Word, Index) when Index >= 0 ->
+    compile_error("E4 J1C: Bad NIF index ~p in :NIF directive", [Index, Word]);
+prog_add_nif(Prog0 = #program{dict_nif=Dict}, Word, Index) ->
+    Dict1 = orddict:store(Word, Index, Dict),
+    Prog0#program{dict_nif=Dict1}.
+
+
 %% @doc Looks up a word in the dictionary, returns its address or 'not_found'
 -spec prog_find_word(program(), forth_word()) -> integer() | not_found.
-prog_find_word(#program{dict=Dict}, Word) ->
-    case orddict:find(Word, Dict) of
-        {ok, Index} -> Index;
-        error -> not_found
+prog_find_word(#program{dict_nif=Nifs, dict=Dict}, Word) ->
+    case orddict:find(Word, Nifs) of
+        {ok, Index} -> Index; % nifs have negative indexes
+        error ->
+            case orddict:find(Word, Dict) of
+                {ok, Index} -> Index;
+                error -> not_found
+            end
     end.
 
--define(J1BITS, 16).
--define(J1OP_CMD_WIDTH, 3).
--define(J1OP_INDEX_WIDTH, (?J1BITS-?J1OP_CMD_WIDTH)).
-%% Bit values for the first nibble (Instruction type)
--define(J1LITERAL,          8). % top bit set for literals
--define(J1INSTR_JUMP,       0).
--define(J1INSTR_JUMP_COND,  1).
--define(J1INSTR_CALL,       2).
--define(J1INSTR_ALU,        3).
-%% Bit values for the second nibble (Operation)
--define(J1OP_T,             0).
--define(J1OP_N,             1).
--define(J1OP_T_PLUS_N,      2).
--define(J1OP_T_AND_N,       3).
--define(J1OP_T_OR_N,        4).
--define(J1OP_T_XOR_N,       5).
--define(J1OP_INVERT_T,      6).
--define(J1OP_N_EQ_T,        7).
--define(J1OP_N_LESS_T,      8).
--define(J1OP_N_RSHIFT_T,    9).
--define(J1OP_T_MINUS_1,     10).
--define(J1OP_R,             11).
--define(J1OP_INDEX_T,       12).
--define(J1OP_N_LSHIFT_T,    13).
--define(J1OP_DEPTH,         14).
--define(J1OP_N_UNSIGNED_LESS_T, 15).
-
-emit_f_address(Prog0 = #program{}, Index)
-    when Index >= 0, Index < 1 bsl ?J1OP_INDEX_WIDTH ->
-    emit(Prog0, <<2:?J1OP_CMD_WIDTH, Index:?J1OP_INDEX_WIDTH>>).
+%% @doc Emits a CALL instruction with Index (signed) into the code.
+%% Negative indices point to NIF functions
+emit_call(Prog0 = #program{}, Index)
+    when Index < 1 bsl ?J1OP_INDEX_WIDTH, Index > -(1 bsl ?J1OP_INDEX_WIDTH)
+    ->
+    emit(Prog0, <<?J1INSTR_CALL:?J1OP_CMD_WIDTH,
+                  Index:?J1OP_INDEX_WIDTH/signed>>).
 
 emit(Prog0 = #program{output=Out, pc=PC}, IOList) ->
     Prog0#program{output=[IOList | Out],
                   pc=PC + iolist_size(IOList)}.
-
--record(alu, {
-    op = 0 :: 0..15,    % one of ?J1OP_* macros.
-    tn = 0 :: 0..1,     % copy T (stack top) -> N (next after stack top)
-    rpc = 0 :: 0..1,    % copy R (return stack top) to PC (program counter)
-    tr = 0 :: 0..1,     % copy T (stack top) to R (return stack top)
-    nti = 0 :: 0..1,    % indexed RAM access N->[T]
-    ds = 0 :: 0..3,     % 2 bits, signed increment of data stack
-    rs = 0 :: 0..3      % 2 bits, signed increment of return stack
-}).
--type alu() :: #alu{}.
 
 -spec emit_alu(program(), alu() | [alu()]) -> program().
 emit_alu(Prog = #program{}, ALUList) when is_list(ALUList) ->
@@ -250,4 +247,6 @@ emit_lit(Prog0 = #program{atom_id=AId, atoms=Atoms}, atom, Word) ->
         atom_id=AId+1,
         atoms=orddict:store(Word, AId, Atoms)
     },
-    emit(Prog1, <<(?J1LITERAL bor AId):?J1BITS>>).
+    emit(Prog1, <<1:1, AId:?J1_LITERAL_BITS>>);
+emit_lit(Prog0 = #program{}, integer, X) ->
+    emit(Prog0, <<1:1, X:?J1_LITERAL_BITS/signed>>).

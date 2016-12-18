@@ -27,7 +27,7 @@ module_new() -> #f_mod_pass1{}.
 process(#c_module{name=_Name, exports=_Exps, defs=Defs}) ->
     %M0 = #e4module{module=Name#c_literal.val},
     Block = e4_f:block(
-        [e4_f:comment("begin mod"), e4_f:include("forth-lib/core.fs")],
+        [e4_f:comment("begin mod"), e4_f:include("forth-lib/e4core.fs")],
         [],
         [e4_f:comment("end mod")]),
     Out = process_fun_defs(Block, Defs),

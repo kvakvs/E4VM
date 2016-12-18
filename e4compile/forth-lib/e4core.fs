@@ -1,3 +1,12 @@
+:MODULE e4core
+:NIF .ERROR -1 ( creates an error exception in the current process )
+:NIF .NEW-TUPLE -2
+:NIF .SET-ELEMENT -3
+:NIF .NONVALUE? -4
+:NIF .ALLOC-RAW-TUPLE -5
+:NIF .ENTER -10
+:NIF .LEAVE -11
+
 : ERROR-FN-CLAUSE
     'function_clause .ERROR ;
 : ERROR-BADMATCH
