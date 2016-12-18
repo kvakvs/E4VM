@@ -48,8 +48,6 @@ stack_frame_leave(Mod0, Sz) when is_integer(Sz) ->
     emit(Mod0, #f_leave{size=Sz}).
 
 %% Atoms processing
-process_op(Mod0 = #f_module{}, <<";">>) ->
-    emit(Mod0, <<"RET">>);
 process_op(Mod0 = #f_module{}, A) when ?IS_FORTH_WORD(A) ->
     emit(Mod0, A); % pass through forth words
 

@@ -35,10 +35,7 @@ process_op(A) when ?IS_FORTH_WORD(A) -> A; % forth words (as atoms)
 
 process_op(#f_lit{val=V}) -> f_lit(V);
 process_op(#f_mfa{mod=M, fn=F, arity=A}) ->
-    [<<".MFA">>,
-     atom_to_binary(M, utf8),
-     atom_to_binary(F, utf8),
-     integer_to_binary(A)];
+    [<<".MFA">>, f_lit(M), f_lit(F), f_lit(A)];
 
 process_op(#f_comment{comment=C}) -> []; %['(', C, ')'];
 process_op(#f_enter{size=Size}) -> [f_lit(Size), <<".ENTER">>];

@@ -30,7 +30,8 @@ optimize_code(Code, [L1, <<".LEAVE">>, L2, <<".LEAVE">> | Tail])
     Sum = L1 + L2,
     io:format("simplify leave(~p) + leave(~p)~n", [L1, L2]),
     optimize_code([[Sum, <<".LEAVE">>] | Code], Tail);
-optimize_code(Code, [Op | Tail]) -> % if a single item is given, like a root block
+optimize_code(Code, [Op | Tail]) ->
+    %% if a single item is given, like a root block
     optimize_code([Op | Code], Tail).
 
 %%process_code(Code, [Op | Tail]) ->

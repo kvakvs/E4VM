@@ -1,9 +1,9 @@
 : ERROR-FN-CLAUSE
-    'function_clause' .ERROR ;
+    'function_clause .ERROR ;
 : ERROR-BADMATCH
-    'badmatch' .ERROR ;
+    'badmatch .ERROR ;
 : ERROR-BADARG
-    'badarg' .ERROR ;
+    'badarg .ERROR ;
 
 : TUPLE0 ( -- , returns {} )
     0 .NEW-TUPLE ;
