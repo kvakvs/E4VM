@@ -12,12 +12,14 @@
 
 process(Forth) ->
     Output = process_code([], Forth),
-    Output2 = lists:map(
-        fun(<<";">>) -> io_lib:format(";~n", []);
-            (X) when is_integer(X) -> io_lib:format("~p ", [X]);
-            (X) -> io_lib:format("~s ", [X]) end,
-        Output),
-    io:format("~s~n~s~n", [color:redb("PASS3"), Output2]),
+    %% output with line breaks after ';'
+%%    Output2 = lists:map(
+%%        fun(<<";">>) -> io_lib:format(";~n", []);
+%%            (X) when is_integer(X) -> io_lib:format("~p ", [X]);
+%%            (X) -> io_lib:format("~s ", [X]) end,
+%%        Output),
+%%    io:format("~s~n~s~n", [color:redb("PASS3"), Output2]),
+    %% raw output
 %%    io:format("~s~n~p~n", [color:redb("PASS3"), Output]),
     Output.
 

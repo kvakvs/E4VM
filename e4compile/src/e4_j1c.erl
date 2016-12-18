@@ -12,12 +12,15 @@
 compile(ModuleName, Input) ->
     Prog0 = #j1prog{mod = ModuleName},
     Prog1 = compile2(Prog0, Input),
-    Result0 = lists:reverse(Prog1#j1prog.output),
-    Result = apply_patches(Result0, Prog1#j1prog.patch_table, []),
-    io:format("~s~n~s~n",
-              [color:redb("J1C PASS 1"),
-               format_j1c_pass1(Prog1, 0, Result, [])]),
-    Result.
+
+    %% Print the output
+    Output = lists:reverse(Prog1#j1prog.output),
+    Patched = apply_patches(Output, Prog1#j1prog.patch_table, []),
+    Prog2 = Prog1#j1prog{output=Patched},
+
+%%    io:format("~s~n~s~n", [color:redb("J1C PASS 1"),
+%%                           format_j1c_pass1(Prog2, 0, Patched, [])]),
+    Prog2.
 
 
 compile2(Prog0 = #j1prog{}, []) -> Prog0;
@@ -379,8 +382,8 @@ emit_lit(Prog0 = #j1prog{}, mfa, {M, F, A}) ->
 format_j1c_pass1(_Prog, _Pc, [], Accum) -> lists:reverse(Accum);
 format_j1c_pass1(Prog, Pc, [H | Tail], Accum) ->
     format_j1c_pass1(Prog, Pc+1, Tail, [
-        io_lib:format("~4.16.0B: ", [Pc]),
-        format_j1c_op(Prog, H) | Accum
+        format_j1c_op(Prog, H),
+        io_lib:format("~4.16.0B: ", [Pc]) | Accum
     ]).
 
 format_j1c_op(Prog, #j1patch{op=Op, id=Id}) ->
@@ -420,22 +423,22 @@ format_j1c_alu(RPC, Op, TN, TR, NTI, Ds, Rs) ->
         "\n"
     ].
 
-j1_op(?J1OP_T) -> "T";
-j1_op(?J1OP_N) -> "N";
-j1_op(?J1OP_T_PLUS_N) -> "T+N";
-j1_op(?J1OP_T_AND_N) -> "T&N";
-j1_op(?J1OP_T_OR_N) -> "T|N";
-j1_op(?J1OP_T_XOR_N) -> "T^N";
-j1_op(?J1OP_INVERT_T) -> "~T";
-j1_op(?J1OP_N_EQ_T) -> "N==T";
-j1_op(?J1OP_N_LESS_T) -> "N<T";
-j1_op(?J1OP_N_RSHIFT_T) -> "N>>T";
-j1_op(?J1OP_T_MINUS_1) -> "T-1";
-j1_op(?J1OP_R) -> "R";
-j1_op(?J1OP_INDEX_T) -> "[T]";
-j1_op(?J1OP_N_LSHIFT_T) -> "N<<T";
-j1_op(?J1OP_DEPTH) -> "DEPTH";
-j1_op(?J1OP_N_UNSIGNED_LESS_T) -> "UN<T".
+j1_op(?J1OP_T)                  -> "T";
+j1_op(?J1OP_N)                  -> "N";
+j1_op(?J1OP_T_PLUS_N)           -> "T+N";
+j1_op(?J1OP_T_AND_N)            -> "T&N";
+j1_op(?J1OP_T_OR_N)             -> "T|N";
+j1_op(?J1OP_T_XOR_N)            -> "T^N";
+j1_op(?J1OP_INVERT_T)           -> "~T";
+j1_op(?J1OP_N_EQ_T)             -> "N==T";
+j1_op(?J1OP_N_LESS_T)           -> "N<T";
+j1_op(?J1OP_N_RSHIFT_T)         -> "N>>T";
+j1_op(?J1OP_T_MINUS_1)          -> "T-1";
+j1_op(?J1OP_R)                  -> "R";
+j1_op(?J1OP_INDEX_T)            -> "[T]";
+j1_op(?J1OP_N_LSHIFT_T)         -> "N<<T";
+j1_op(?J1OP_DEPTH)              -> "DEPTH";
+j1_op(?J1OP_N_UNSIGNED_LESS_T)  -> "UN<T".
 
 whereis_addr(#j1prog{dict=Words}, Addr) when Addr >= 0 ->
     case lists:keyfind(Addr, 2, Words) of
@@ -444,7 +447,7 @@ whereis_addr(#j1prog{dict=Words}, Addr) when Addr >= 0 ->
     end;
 whereis_addr(#j1prog{dict_nif=Nifs}, Addr) when Addr < 0 ->
     case lists:keyfind(Addr, 2, Nifs) of
-        {Name, _} -> io_lib:format("NIF '~s'", [Name]);
+        {Name, _} -> io_lib:format("~s '~s'", [color:blackb("NIF"), Name]);
         false -> "?"
     end.
 

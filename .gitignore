@@ -8,3 +8,6 @@ cmake-build*/
 .idea/
 *.iml
 rebar.lock
+
+# compiled E4 Forth binaries
+*.4bin

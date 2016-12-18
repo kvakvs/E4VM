@@ -16,7 +16,7 @@ process(Forth) ->
             (X) -> io_lib:format("~s ", [X])
         end,
         Output1),
-    io:format("~s~n~s~n", [color:redb("PASS4 OPT#1"), Output2]),
+%%    io:format("~s~n~s~n", [color:redb("PASS4 OPT#1"), Output2]),
     Output.
 
 optimize_code(Code, []) -> lists:flatten(lists:reverse(Code));

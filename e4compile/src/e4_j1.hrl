@@ -1,3 +1,6 @@
+%%
+%% Definitions for J1 Forth virtual machine
+%%
 -ifndef(J1_HEADER).
 -define(J1_HEADER, 1).
 
