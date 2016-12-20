@@ -8,8 +8,9 @@
 -behaviour(application).
 
 %% Application callbacks
--export([start/2, stop/1, start_e4_compiler/1, start/0,
-         compile_error/2, compile_error/1]).
+-export([start/2, stop/1, arguments_loop/1, start/0, try_do/2]).
+
+-include("e4.hrl").
 
 %%====================================================================
 %% API
@@ -19,7 +20,7 @@ start() ->
     start(normal, init:get_plain_arguments()).
 
 start(_StartType, Args) ->
-    start_e4_compiler(Args),
+    arguments_loop(Args),
     init:stop(),
     {ok, self()}.
 
@@ -30,21 +31,32 @@ stop(_State) ->
 %% Internal functions
 %%====================================================================
 
-start_e4_compiler([]) ->
+arguments_loop([]) ->
     io:format("~s~n", [color:greenb("E4: All arguments were processed")]),
     ok;
-start_e4_compiler([F | Tail]) ->
+arguments_loop([F | Tail]) ->
     io:format("E4: Processing: ~p...~n", [F]),
-    try e4_compiler:process(F)
-    catch T:Err ->
-        io:format("~n~s~n~p ~p~n~p~n", [
-            color:red("E4: Failed"),
-            T, Err, erlang:get_stacktrace()])
-    end,
-    start_e4_compiler(Tail).
+    try
+        try_do("top-level compiler invocation",
+               fun() -> e4_compiler:process(F) end),
+        arguments_loop(Tail)
+    catch throw:compile_failed ->
+        io:format("~s - ~s~n", [color:yellow("E4: Compilation failed"), F])
+    end.
 
-compile_error(Format) -> compile_error(Format, []).
-
-compile_error(Format, Args) ->
-    E = lists:flatten(io_lib:format(Format, Args)),
-    erlang:error(E).
+try_do(What, Fun) ->
+    try Fun()
+    catch
+        throw:compile_failed ->
+            erlang:throw(compile_failed); % chain the error out
+        T:Err ->
+            io:format("~n~s (~s): ~s~n"
+                      "~p~n",
+                      [color:red("E4: Failed"),
+                       color:yellow(What),
+                       ?COLOR_TERM(redb, {T, Err}),
+                       erlang:get_stacktrace()
+                       %?COLOR_TERM(blackb, erlang:get_stacktrace())
+                      ]),
+            erlang:throw(compile_failed)
+    end.

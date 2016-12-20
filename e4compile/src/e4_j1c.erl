@@ -4,10 +4,11 @@
 -module(e4_j1c).
 
 %% API
--export([compile/2]).
+-export([compile/2, format_j1c_pass1/4]).
+
 -include("e4_forth.hrl").
 -include("e4_j1.hrl").
--import(e4, [compile_error/1, compile_error/2]).
+-include("e4.hrl").
 
 compile(ModuleName, Input) ->
     Prog0 = #j1prog{mod = ModuleName},
@@ -114,7 +115,7 @@ compile2(Prog0 = #j1prog{}, [Word | Tail]) ->
     compile2(Prog1, Tail);
 
 compile2(_Prog, [Other | _]) ->
-    compile_error("E4 J1C: unknown op ~p", [Other]).
+    ?COMPILE_ERROR("E4 J1C: unknown op ~p", [Other]).
 
 j1_jump(Addr) ->
     <<?J1INSTR_JUMP:?J1INSTR_WIDTH, Addr:?J1OP_INDEX_WIDTH>>.
@@ -134,13 +135,13 @@ prog_loop_push(Prog0 = #j1prog{pc=PC, loopstack=LoopStack}) ->
 
 -spec prog_cond_pop(j1prog()) -> {j1prog(), integer()}.
 prog_cond_pop(#j1prog{condstack=[]}) ->
-    compile_error("E4 J1C: ELSE or THEN have no matching IF");
+    ?COMPILE_ERROR("E4 J1C: ELSE or THEN have no matching IF");
 prog_cond_pop(Prog0 = #j1prog{condstack=[CSTop | CondStack]}) ->
     {Prog0#j1prog{condstack=CondStack}, CSTop}.
 
 -spec prog_loop_pop(j1prog()) -> {j1prog(), integer()}.
 prog_loop_pop(#j1prog{loopstack=[]}) ->
-    compile_error("E4 J1C: AGAIN or UNTIL have no matching BEGIN");
+    ?COMPILE_ERROR("E4 J1C: AGAIN or UNTIL have no matching BEGIN");
 prog_loop_pop(Prog0 = #j1prog{loopstack=[LSTop | LoopStack]}) ->
     {Prog0#j1prog{loopstack=LoopStack}, LSTop}.
 
@@ -174,7 +175,8 @@ prog_add_word(Prog0 = #j1prog{pc=PC, dict=Dict}, Word) ->
 -spec prog_add_nif(j1prog(), Word :: binary(), Index :: neg_integer())
                   -> j1prog().
 prog_add_nif(#j1prog{}, Word, Index) when Index >= 0 ->
-    compile_error("E4 J1C: Bad NIF index ~p in :NIF directive", [Index, Word]);
+    ?COMPILE_ERROR("E4 J1C: Bad NIF index ~p in :NIF directive ~p",
+                   [Index, Word]);
 prog_add_nif(Prog0 = #j1prog{dict_nif=Dict}, Word, Index) ->
     Dict1 = orddict:store(Word, Index, Dict),
     Prog0#j1prog{dict_nif=Dict1}.
@@ -335,10 +337,12 @@ emit_base_word(Prog0, <<First:8, _/binary>> = Word)
         X when is_integer(X) ->
             emit_lit(Prog0, integer, X);
         {'EXIT', {badarg, _}} ->
-            compile_error("E4 J1C Pass1: word is not defined: ~p", [Word])
+            ?COMPILE_ERROR("E4 J1C Pass1: word is not defined: ~s",
+                           [?COLOR_TERM(red, Word)])
     end;
 emit_base_word(_Prog, Word) ->
-    compile_error("E4 J1C Pass1: word is not defined: ~p", [Word]).
+    ?COMPILE_ERROR("E4 J1C Pass1: word is not defined: ~s",
+                   [?COLOR_TERM(red, Word)]).
 
 %% @doc Looks up an atom in the atom table, returns its paired value or creates
 %% a new atom, assigns it next available index and returns it

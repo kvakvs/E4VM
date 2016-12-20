@@ -1,11 +1,12 @@
-BEAM to Erl-Forth (E4) compiler
-===============================
+Erlang-to-Forth (E4) compiler
+=============================
 
-A simple cross-compiler, converts your Erlang source to Core Erlang and then
-produces a Forth program which is then compiled into Forth bytecode.
+A simple cross-compiler, converts your Erlang source to Kernel Erlang and then
+produces a Forth program internally which is then compiled into Forth bytecode.
 
-Build
------
+Forth dialect is based on J1Forth but with added Erlang types and extra opcodes.
 
-    $ make test
+Trying it out
+-------------
 
+    $ make run

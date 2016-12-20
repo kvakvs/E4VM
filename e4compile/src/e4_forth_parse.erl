@@ -4,6 +4,7 @@
 
 %% API
 -export([parse/1]).
+-include("e4.hrl").
 
 parse(Filename) ->
     case file:read_file(Filename) of
@@ -15,7 +16,7 @@ parse(Filename) ->
             ),
             lists:reverse(parse_postprocess(Parts, []));
         {error, E} ->
-            e4:compile_error("E4: Include file ~p error ~p", [Filename, E])
+            ?COMPILE_ERROR("E4: Include file ~p error ~p", [Filename, E])
     end.
 
 parse_postprocess([], Out) -> lists:flatten(Out);
