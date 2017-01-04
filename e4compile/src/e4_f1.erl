@@ -102,6 +102,7 @@ match_two_values(L, R) ->
     ].
 
 %% ( -- Value , leaves a literal value on stack )
+%%lit([]) -> #k_nil{};
 lit(Value) when is_integer(Value) -> #k_int{val=Value};
 lit(Value) when is_atom(Value) -> #k_atom{val=Value};
 lit(Value) when is_float(Value) -> #k_float{val=Value};

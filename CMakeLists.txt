@@ -1,45 +1,66 @@
 cmake_minimum_required(VERSION 3.5)
-project(GluonVM)
+project(gluonvm2)
 
 set(CMAKE_CXX_STANDARD 14)
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
 add_definitions(
-    # enables filesystem feature: files, directories, code loading from disk etc
-    -DGLUON_FEATURE_FS=1
-    -DGLUON_DEBUG=1
-
-    -std=c++14
+        # enables filesystem feature: files, directories, code loading from disk etc
+        -DGLUON_FEATURE_FS=1
+        -DGLUON_DEBUG=1
+        -DGLUON_WORD_SIZE=64
+        -std=c++14
 )
 # Static linking + lto (link time opt)
 # set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++ -static -flto")
 
+
+## Erlang Runtime system for GluonVM: types, bifs, memory etc
+set(GLUON_ERTS_SOURCES
+        include/g_erts/code_mgr.h
+        include/g_erts/dist.h
+        include/g_erts/ext_term_format.h
+        include/g_erts/heap.h
+        include/g_erts/module.h
+        include/g_erts/term.h
+        include/g_erts/term_layout.h
+        include/g_erts/vm.h
+        include/gluon.h
+        src/g_erts/code_mgr.cpp
+        src/g_erts/ext_term_format.cpp
+        src/g_erts/module.cpp
+        src/g_erts/vm.cpp
+        src/g_erts/term.cpp include/g_erts/box.h src/g_erts/binary.cpp include/g_erts/binary.h)
+
+## Helpers and OS abstraction library
+set(GLUON_PLATF_SOURCES
+        include/g_platform/byte_stream_reader.h
+        include/g_platform/conf.h
+        include/g_platform/debug.h
+        include/g_platform/fs.h
+        include/g_platform/interned_string.h
+        include/g_platform/mem.h
+        include/g_platform/types.h
+        src/g_platform/debug.cpp
+        src/g_platform/interned_string.cpp
+        src/g_platform/mem.cpp
+        )
+
 set(GLUON_SOURCES
-    include/gluon.h
-    include/gluon/byte_stream_reader.h
-    include/gluon/code_mgr.h
-    include/gluon/conf.h
-    include/gluon/debug.h
-    include/gluon/fs.h
-    include/gluon/interned_string.h
-    include/gluon/mem.h
-    include/gluon/module.h
-    include/gluon/types.h
-    include/gluon/vm.h
-    src/code_mgr.cpp
-    src/debug.cpp
-    src/interned_string.cpp
-    src/main.cpp
-    src/mem.cpp
-    src/module.cpp
-    src/vm.cpp
-    )
+        src/main.cpp
+        )
+
+add_library(gluon_erts ${GLUON_ERTS_SOURCES})
+add_library(gluon_platform ${GLUON_PLATF_SOURCES})
 
 add_executable(gleam_d ${GLUON_SOURCES})
+target_link_libraries(gleam_d gluon_erts gluon_platform)
 target_compile_options(gleam_d
         PUBLIC -O0 -ggdb
         )
-add_executable(gleam_opt_sz ${GLUON_SOURCES})
-target_compile_options(gleam_opt_sz
-        PUBLIC -Os
-        )
+
+#add_executable(gleam_opt_sz ${GLUON_SOURCES})
+#target_link_libraries(gleam_opt_sz gluon_erts gluon_platform)
+#target_compile_options(gleam_opt_sz
+#        PUBLIC -Os
+#        )

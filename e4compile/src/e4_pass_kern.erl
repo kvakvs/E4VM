@@ -28,7 +28,7 @@ process(#k_mdef{name=Name, exports=_Exps, attributes=_Attr, body=Body}) ->
     Block0 = e4_f1:block(
         [
             e4_f1:comment("begin mod ~s", [Name]),
-            e4_f1:include("forth-lib/e4core.fs"),
+            e4_f1:include("forth-lib/e4core.e4"),
             e4_f1:comment("MODULE ~s", [Name])
         ],
         [],
@@ -124,18 +124,18 @@ process_code(Block0 = #f_block{}, Ctx = #match_ctx{},
 process_code(Block0 = #f_block{}, #match_ctx{}, #k_return{args=Args}) ->
 %%    io:format("k_return args=~p~n", [Args]),
     Block1 = eval_args(Block0, Args),
-    emit(Block1, [<<"RET">>]);
+    emit(Block1, [?F_RET]);
 
 process_code(Block0 = #f_block{}, #match_ctx{}, #k_enter{op=Op, args=Args}) ->
 %%    io:format("k_enter op=~p args=~p~n", [Op, Args]),
     Block1 = eval_args(Block0, Args),
-    emit(Block1, [Op, <<"JUMP">>]);
+    emit(Block1, [Op, <<".CALL-TAIL">>]);
 
 process_code(Block0 = #f_block{}, #match_ctx{},
              #k_call{op=Op, args=Args, ret=Ret}) ->
 %%    io:format("k_call op=~p~n  args=~p~n  ret=~p~n", [Op, Args, Ret]),
     Block1 = eval_args(Block0, Args),
-    Block2 = emit(Block1, [e4_f1:eval(Op), <<"CALL">>]),
+    Block2 = emit(Block1, [e4_f1:eval(Op), <<".CALL">>]),
     emit(Block2, e4_f1:store(Ret));
 
 process_code(Block0 = #f_block{}, #match_ctx{},
@@ -149,7 +149,7 @@ process_code(Block0 = #f_block{}, #match_ctx{},
              #k_test{op=Op, args=Args}) ->
     %% Emit args
     Block1 = eval_args(Block0, Args),
-    Block2 = emit(Block1, [e4_f1:eval(Op), <<"CALL">>]),
+    Block2 = emit(Block1, [e4_f1:eval(Op), <<".CALL">>]),
 %%    case Inv of
 %%        true -> emit(Block2, <<".INVERT">>);
 %%        false -> Block2
@@ -258,7 +258,7 @@ match_if_type(Type, Context = #match_ctx{}) ->
         e4_f1:block()
     ).
 
-make_type_check(k_nil)      -> <<".NIL?">>;
+make_type_check(k_nil)      -> ?F_IS_NIL;
 make_type_check(k_int)      -> <<".INT?">>;
 make_type_check(k_cons)     -> <<".CONS?">>;
 make_type_check(k_atom)     -> <<".ATOM?">>;
@@ -353,7 +353,7 @@ emit_match(Scope, k_cons, #k_cons{hd=LHead, tl=LTail}, Rhs) ->
                     ])
             end
     end;
-emit_match(_Scope, k_nil, _, R)    -> e4_f1:block([e4_f1:eval(R), <<".NIL?">>]);
+emit_match(_Scope, k_nil, _, R)    -> e4_f1:block([e4_f1:eval(R), ?F_IS_NIL]);
 emit_match(_Scope, k_float, L, R)  -> e4_f1:block(e4_f1:equals(L, R));
 emit_match(_Scope, k_int, L, R)    -> e4_f1:block(e4_f1:equals(L, R));
 emit_match(_Scope, k_atom, L, R)   -> e4_f1:block(e4_f1:equals(L, R));

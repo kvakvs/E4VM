@@ -1,9 +1,12 @@
-#TESTFILE=test1
 TESTFILE=gb_trees
+TESTFILE2=test1
 
 .PHONY: run
 run:
 	rebar3 compile && ./e4c.sh priv/$(TESTFILE).erl
+.PHONY: run2
+run2:
+	rebar3 compile && ./e4c.sh priv/$(TESTFILE2).erl
 
 .PHONY: dialyze
 dialyze:

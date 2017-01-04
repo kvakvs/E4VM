@@ -28,4 +28,4 @@ std::unique_ptr<T> make_uniq(Args&&... args) {
 }
 
     } // ns mem
-} // ns gluon
+} // ns g_erts

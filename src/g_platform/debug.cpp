@@ -1,6 +1,6 @@
 #include <cstdio>
 #include <stdlib.h>
-#include "gluon/debug.h"
+#include "g_platform/debug.h"
 //#include <stdarg.h>
 
 namespace gluon {

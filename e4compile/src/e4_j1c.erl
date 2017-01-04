@@ -12,7 +12,10 @@
 
 compile(ModuleName, Input) ->
     Prog0 = #j1prog{mod = ModuleName},
-    Prog1 = compile2(Prog0, Input),
+    % Module name should always be #0
+    {Prog0A, _} = atom_index_or_create(Prog0, atom_to_binary(ModuleName, utf8)),
+
+    Prog1 = compile2(Prog0A, preprocess(Input, [])),
 
     %% Print the output
     Output = lists:reverse(Prog1#j1prog.output),
@@ -23,12 +26,18 @@ compile(ModuleName, Input) ->
 %%                           format_j1c_pass1(Prog2, 0, Patched, [])]),
     Prog2.
 
+preprocess([], Acc) -> lists:flatten(lists:reverse(Acc));
+preprocess([?F_LIT_ATOM, Word | T], Acc) ->
+    preprocess(T, [#k_atom{val=Word} | Acc]);
+preprocess([H | T], Acc) -> preprocess(T, [H | Acc]).
 
 compile2(Prog0 = #j1prog{}, []) -> Prog0;
 
 %% --- special words ---
-compile2(Prog0 = #j1prog{}, [<<":">>, <<".MFA">>, Mod, Fn, Arity | Tail]) ->
-    Prog1 = prog_add_word(Prog0, mfa_to_word(Prog0, Mod, Fn, Arity)),
+
+%% NEW FUNCTION -- : MFA ... ;
+compile2(Prog0 = #j1prog{}, [<<":">>, ?F_LIT_FUNA, Fn, Arity | Tail]) ->
+    Prog1 = prog_add_word(Prog0, #k_local{name=Fn, arity=Arity}),
     compile2(Prog1, Tail);
 
 compile2(Prog0 = #j1prog{}, [<<":MODULE">>, Name | Tail]) ->
@@ -40,24 +49,21 @@ compile2(Prog0 = #j1prog{}, [<<":NIF">>, Name, Index0 | Tail]) ->
     Index1 = binary_to_integer(Index0),
     Prog1 = prog_add_nif(Prog0, Name, Index1),
     compile2(Prog1, Tail);
+
 compile2(Prog0 = #j1prog{}, [<<";">> | Tail]) ->
+    Prog1 = emit_alu(Prog0, #alu{op=0, rpc=1, ds=2}),
+    compile2(Prog1, Tail);
+compile2(Prog0 = #j1prog{}, [?F_RET | Tail]) ->
     Prog1 = emit_alu(Prog0, #alu{op=0, rpc=1, ds=2}),
     compile2(Prog1, Tail);
 
 %% --- literals ---
-compile2(Prog0 = #j1prog{}, [<<"'", Word/binary>> | Tail]) -> % a quoted 'atom
+compile2(Prog0 = #j1prog{}, [#k_atom{val=Word} | Tail]) -> % atom follows
     Prog1 = emit_lit(Prog0, atom, Word),
     compile2(Prog1, Tail);
-%%compile2(Prog0 = #j1prog{}, [<<First:8>> = Word | Tail])
-%%    when First >= $0, First =< $9 -> % begins with a digit
-%%    Prog1 = emit_lit(Prog0, integer, binary_to_integer(Word)),
-%%    compile2(Prog1, Tail);
-%%compile2(Prog0 = #j1prog{}, [<<First:8, Second:8, _/binary>> = Word | Tail])
-%%    when (First >= $0 andalso First =< $9 orelse First =:= $-),
-%%    (Second >= $0 andalso Second =< $9)
-%%    -> % begins with a digit or a minus, followed by a digit
-%%    Prog1 = emit_lit(Prog0, integer, binary_to_integer(Word)),
-%%    compile2(Prog1, Tail);
+compile2(Prog0 = #j1prog{}, [#k_literal{val=L} | Tail]) -> % a preparsed literal
+    Prog1 = emit_lit(Prog0, arbitrary, L),
+    compile2(Prog1, Tail);
 
 %% --- Conditions ---
 compile2(Prog0 = #j1prog{}, [<<"IF">> | Tail]) ->
@@ -100,8 +106,11 @@ compile2(Prog0 = #j1prog{}, [<<"UNTIL">> | Tail]) -> % conditional if-zero loop
 
 %% TODO: EQU, maybe VAR, ARR?
 
-compile2(Prog0 = #j1prog{}, [<<".MFA">>, M, F, A | Tail]) -> % mfa literal
+compile2(Prog0 = #j1prog{}, [?F_LIT_MFA, M, F, A | Tail]) -> % mfa literal
     Prog1 = emit_lit(Prog0, mfa, {M, F, A}),
+    compile2(Prog1, Tail);
+compile2(Prog0 = #j1prog{}, [?F_LIT_FUNA, Fn, Arity | Tail]) ->
+    Prog1 = emit_lit(Prog0, funarity, {Fn, Arity}),
     compile2(Prog1, Tail);
 
 %% Nothing else worked, look for the word in our dictionaries and base words,
@@ -156,12 +165,13 @@ update_patch_table(Prog0 = #j1prog{pc=PC, patch_table=PTab}, Offset) ->
     {Prog1, PatchId} = prog_cond_pop(Prog0),
     Prog1#j1prog{patch_table=orddict:store(PatchId, PC + Offset, PTab)}.
 
-%% @doc Formats MFArity as a string, substitutes current module name if it was
+%% @ doc Formats MFArity as a string, substitutes current module name if it was
 %% set to "."
-mfa_to_word(Prog0, <<"'.">>, Fn, Arity) ->
-    mfa_to_word(Prog0, Prog0#j1prog.mod, Fn, Arity);
-mfa_to_word(_Prog0, Mod, Fn, Arity) ->
-    iolist_to_binary(io_lib:format("~s:~s/~p", [Mod, Fn, Arity])).
+%%local_to_word(Prog0, <<"'.">>, Fn, Arity) ->
+%%    mfa_to_word(Prog0, Prog0#j1prog.mod, Fn, Arity).
+%%
+%%mfa_to_word(#k_atom{val=Mod}, #k_atom{val=Fn}, Arity) ->
+%%    iolist_to_binary(io_lib:format("~s:~s/~p", [Mod, Fn, Arity])).
 
 %% @doc Adds a word to the dictionary, records current program length (program
 %% counter position) as the word address.
@@ -330,6 +340,7 @@ emit_base_word(Prog0, <<"NOOP">>) ->
 
 emit_base_word(Prog0, Integer) when is_integer(Integer) ->
     emit_lit(Prog0, integer, Integer);
+emit_base_word(Prog0, #f_comment{}) -> Prog0; % skip comments
 emit_base_word(Prog0, <<First:8, _/binary>> = Word)
     when First >= $0 andalso First =< $9 orelse First =:= $-
     ->
@@ -380,8 +391,21 @@ emit_lit(Prog0 = #j1prog{}, atom, Word) ->
 emit_lit(Prog0 = #j1prog{}, integer, X) ->
     emit(Prog0, <<1:1, X:?J1_LITERAL_BITS/signed>>);
 emit_lit(Prog0 = #j1prog{}, mfa, {M, F, A}) ->
-    {Prog1, LIndex} = literal_index_or_create(Prog0, {M, F, A}),
+    M1 = eval(M),
+    F1 = eval(F),
+    A1 = erlang:binary_to_integer(A),
+    {Prog1, LIndex} = literal_index_or_create(Prog0, {'$MFA', M1, F1, A1}),
+    emit(Prog1, <<1:1, LIndex:?J1_LITERAL_BITS>>);
+emit_lit(Prog0 = #j1prog{}, funarity, {F, A}) ->
+    F1 = eval(F),
+    A1 = erlang:binary_to_integer(A),
+    {Prog1, LIndex} = literal_index_or_create(Prog0, {'$FA', F1, A1}),
+    emit(Prog1, <<1:1, LIndex:?J1_LITERAL_BITS>>);
+emit_lit(Prog0 = #j1prog{}, arbitrary, Lit) ->
+    {Prog1, LIndex} = literal_index_or_create(Prog0, Lit),
     emit(Prog1, <<1:1, LIndex:?J1_LITERAL_BITS>>).
+
+eval(#k_atom{val=A}) -> erlang:binary_to_atom(A, utf8).
 
 format_j1c_pass1(_Prog, _Pc, [], Accum) -> lists:reverse(Accum);
 format_j1c_pass1(Prog, Pc, [H | Tail], Accum) ->

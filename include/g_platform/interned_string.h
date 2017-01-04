@@ -32,4 +32,4 @@ public:
     }
 };
 
-} // ns gluon
+} // ns g_erts

@@ -125,4 +125,18 @@
 -record(f_include, {filename="" :: string()}).
 -type f_include() :: #f_include{}.
 
+%% Literal codes, not really opcodes - processed at source load time
+-define(F_LIT_FUNA,     <<"'FUNA">>).   % Fun/Arity local literal
+-define(F_LIT_MFA,      <<"'MFA">>).    % M:F/Arity remote literal
+-define(F_LIT_ATOM,     <<"'ATOM">>).   % literal atom
+-define(F_LIT_NIL,      <<".NIL">>).    % literal nil []
+
+%% Words and opcodes used for various stuff
+-define(F_IS_NIL,       <<".NIL?">>).   % compare top with literal nil []
+-define(F_LD,           <<".LD">>).     % opcode to load a variable or arg
+-define(F_ST,           <<".ST">>).     % opcode to store a variable or arg
+-define(F_ENTER,        <<".ENTER">>).  % opcode to create a stack frame
+-define(F_LEAVE,        <<".LEAVE">>).  % opcode to drop a stack frame
+-define(F_RET,          <<"RET">>).     % drops stack frame and returns
+
 -endif. % E4_FORTH_HRL

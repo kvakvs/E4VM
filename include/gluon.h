@@ -1,4 +1,5 @@
 #pragma once
 
-#include "gluon/types.h"
-#include "gluon/vm.h"
+#include "g_platform/types.h"
+
+#include "g_erts/vm.h"

@@ -2,6 +2,6 @@
 
 int main(int argc, const char *argv[]) {
     gluon::VM vm;
-    vm.modules_.from_file(vm, "../test/test1.erl.3eam");
+    vm.modules_.load_file(vm, "e4compile/priv/test1.e4b");
     return 0;
 }

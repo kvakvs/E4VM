@@ -1,13 +1,19 @@
 :MODULE e4core
 :NIF .ERROR         -1 ( creates an error exception in the current process )
 :NIF .MAKE-MFARITY  -2
+:NIF .NIL           -3
 
 ( ------ stack operations ------ )
-:NIF .ENTER -10 ( TODO: maybe allocate frame on dynamic heap? )
-:NIF .LEAVE -11 ( TODO: if on dynamic heap maybe just let GC take it )
-:NIF .LD    -12
-:NIF .ST    -13
-:NIF .APPLY -14
+:NIF .ENTER  -10 ( TODO: maybe allocate frame on dynamic heap? )
+:NIF .LEAVE  -11 ( TODO: if on dynamic heap maybe just let GC take it )
+:NIF .LEAVE0 -11 ( same as LEAVE, only one can be in the code )
+:NIF .LD     -12
+:NIF .ST     -13
+:NIF .APPLY  -14
+:NIF .CALL   -15
+:NIF .BIF    -16
+:NIF .JUMP   -17
+:NIF .CALL-TAIL -18
 
 ( ------ comparison tests ------ )
 :NIF ==     -20
@@ -35,11 +41,11 @@
 :NIF .HD        -52
 :NIF .TL        -53
 
-: ERROR-FN-CLAUSE 'function_clause .ERROR ;
-: ERROR-BADMATCH 'badmatch .ERROR ;
-: ERROR-BADARG 'badarg .ERROR ;
-: ERROR-CASE-CLAUSE 'case_clause .ERROR ;
+: ERROR-FN-CLAUSE 'ATOM function_clause .ERROR ;
+: ERROR-BADMATCH 'ATOM badmatch .ERROR ;
+: ERROR-BADARG 'ATOM badarg .ERROR ;
+: ERROR-CASE-CLAUSE 'ATOM case_clause .ERROR ;
 
 ( OnFail X -- , jumps to OnFail if X is the nonvalue )
 ( : ON-FAIL-JMP
-    .NONVALUE? IF JUMP THEN ; )
+    .NONVALUE? IF .JUMP THEN ; )

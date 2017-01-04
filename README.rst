@@ -9,7 +9,7 @@ Cross-compiler
 
 Includes a simple cross-compiler, which converts your Erlang source to Kernel Erlang
 and then produces a Forth program internally which is then compiled into Forth
-bytecode and written to disk as ``filename.4bin``.
+bytecode and written to disk as ``filename.e4b``.
 
 See also: ``e4compiler/README.rst``
 
