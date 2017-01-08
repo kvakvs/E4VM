@@ -1,3 +1,7 @@
+/* * This is an open source non-commercial project. Dear PVS-Studio, please check it.
+ * PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
+ */
+
 #pragma once
 
 #include "g_erts/box.h"
@@ -31,20 +35,23 @@ namespace gluon {
     };
 
     template <typename T>
-    ProcBinaryBox *make_proc_binary(VM &vm, Heap &heap, GenericSize<T> size) {
+    ProcBinaryBox *make_proc_binary(Heap &heap, GenericSize<T> size) {
+        dprintf("bin: new procbin %zu b\n", size.bytes());
         G_ASSERT(size.bytes() <= PROCBIN_THRESHOLD);
-        auto w_size = Heap::word_size(size);
-        auto pbin = (ProcBinaryBox *)heap.allocate_box(w_size);
+        auto wsz = Heap::word_size(size);
+        auto pbin = reinterpret_cast<ProcBinaryBox *>(heap.allocate_box(wsz));
         pbin->header_.set_tag(BoxTag::ProcBinary);
         pbin->header_.set_arity(size.bytes());
         return pbin;
     }
 
     template <typename T>
-    RCBinaryBox *make_rc_binary(VM &vm, Heap &heap, GenericSize<T> size) {
+    RCBinaryBox *make_rc_binary(VM &vm, GenericSize<T> size) {
+        dprintf("bin: new rcbin %zu b\n", size.bytes());
         // Too large, we allocate an RCBinaryBox instead
         auto w_size = Heap::word_size(GenericSize<RCBinaryBox>(1));
-        auto rcbin = (RCBinaryBox *)heap.allocate_box(w_size);
+        auto rcbin = reinterpret_cast<RCBinaryBox *>(
+                            vm.binary_heap_.allocate_box(w_size));
         rcbin->header_.set_tag(BoxTag::RCBinary);
         rcbin->header_.set_arity(0);
         return rcbin;

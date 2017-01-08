@@ -1,3 +1,7 @@
+/* * This is an open source non-commercial project. Dear PVS-Studio, please check it.
+ * PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
+ */
+
 #pragma once
 
 #include "g_platform/types.h"
@@ -28,11 +32,9 @@ namespace gluon {
     // First word of a boxed value is a header, which defines contents and size
     class BoxHeader {
     private:
-        static constexpr Word TAG_BITS = 4;
-        static constexpr Word VALUE_BITS = BITS_PER_WORD - TAG_BITS;
         struct {
-            Word val_:VALUE_BITS;
-            BoxTag tag_:TAG_BITS;
+            BoxTag tag_:BOXED_TAG_BITS;   // least-significant goes first
+            Word val_:BOXED_VALUE_BITS;
         };
         Word data_[0];
     public:

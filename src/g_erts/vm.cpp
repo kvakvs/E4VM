@@ -1,3 +1,8 @@
+//
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
+//
+
 #include "g_erts/vm.h"
 
 namespace gluon {
@@ -20,10 +25,8 @@ Term VM::add_atom(const String &atom_name) {
         // duplicate
         return Term::make_atom(rev_i->second);
     }
-    dprintf("add atom: %s\n", (const char *) atom_namei);
-
     G_ASSERT(fits_in<Word>(atoms_.size())); // 64bit machine with 32bit words
-    Word atom_id = (Word)atoms_.size();
+    Word atom_id = static_cast<Word>(atoms_.size());
 
     // Add name to interned names and use only pointer to it in dicts
     atom_interned_names_.push_back(atom_name);

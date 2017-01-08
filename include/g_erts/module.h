@@ -1,3 +1,7 @@
+/* * This is an open source non-commercial project. Dear PVS-Studio, please check it.
+ * PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
+ */
+
 #pragma once
 
 #include "g_platform/debug.h"
@@ -13,13 +17,15 @@ class VM;
 
 class Module {
 private:
+    Term name_ = NON_VALUE; // atom name
     UniqueBox<Uint8> code_;
     Heap literals_;
     VM &vm_;
 
 public:
-    explicit Module(VM &vm): vm_(vm), literals_(64) {}
+    explicit Module(VM &vm): literals_(64), vm_(vm) {}
     void load(const BoxView<Uint8> &data);
+    Term name() const { return name_; }
 
 private:
     static BoxView<Uint8> find_section(const char *want_sig,

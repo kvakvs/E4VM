@@ -1,3 +1,7 @@
+/* * This is an open source non-commercial project. Dear PVS-Studio, please check it.
+ * PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
+ */
+
 //
 // Term memory layout rules
 //
@@ -12,7 +16,7 @@ namespace gluon { namespace layout {
     public:
         static constexpr Word box_size(Word arity) { return arity+1; }
         // Query tuple element using zero-based index
-        static Term element(BoxHeader *box, Word z_index) {
+        static Term element(const BoxHeader *box, Word z_index) {
             return Term(box->element(z_index));
         }
         static void set_element(BoxHeader *box, Word z_index, Term val) {

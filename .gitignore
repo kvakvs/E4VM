@@ -11,3 +11,6 @@ rebar.lock
 
 # compiled E4 Forth binaries
 *.e4b
+
+# PVS-studio analysis results
+PVS-report.tasks

@@ -1,3 +1,7 @@
+/* * This is an open source non-commercial project. Dear PVS-Studio, please check it.
+ * PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
+ */
+
 #pragma once
 
 #include <bits/unique_ptr.h>
@@ -24,7 +28,8 @@ public:
     }
 
     ConsCell *allocate_cons() {
-        return (ConsCell *)allocate_raw_words(2);
+        dprintf("heap: alloc cons\n");
+        return reinterpret_cast<ConsCell *>(allocate_raw_words(2));
     }
 
     // A helper to find any size in words
@@ -34,8 +39,9 @@ public:
     }
 
     BoxHeader *allocate_box(WordSize want_size) {
+        dprintf("heap: alloc box %zu w\n", want_size.units());
         Word *box = allocate_raw_words(want_size.units() + 1);
-        return (BoxHeader *)box;
+        return reinterpret_cast<BoxHeader *>(box);
     }
 
 private:

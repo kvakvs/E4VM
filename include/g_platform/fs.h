@@ -1,3 +1,7 @@
+/* * This is an open source non-commercial project. Dear PVS-Studio, please check it.
+ * PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
+ */
+
 #pragma once
 
 #include <cstdio>
@@ -34,7 +38,7 @@ public:
 
     UniqueBox<Uint8> read_file() {
         std::fseek(f_, 0, SEEK_END);
-        Count size = (Count) std::ftell(f_);
+        Count size = static_cast<Count>(std::ftell(f_));
 
         std::fseek(f_, 0, SEEK_SET);
         auto data = mem::make_uniq_array<Uint8>(size);

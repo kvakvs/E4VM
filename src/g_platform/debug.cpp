@@ -1,16 +1,23 @@
+//
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
+//
+
 #include <cstdio>
 #include <stdlib.h>
+
+#include "g_platform/conf.h"
 #include "g_platform/debug.h"
 //#include <stdarg.h>
 
 namespace gluon {
 
-void fail(const char *m) {
+GLUON_NORETURN void fail(const char *m) {
     std::puts(m);
     std::abort();
 }
 
-void failf(const char *format, ...) {
+GLUON_NORETURN void failf(const char *format, ...) {
     va_list args;
     va_start (args, format);
     std::vprintf(format, args);

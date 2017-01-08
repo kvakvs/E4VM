@@ -1,3 +1,7 @@
+/* * This is an open source non-commercial project. Dear PVS-Studio, please check it.
+ * PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
+ */
+
 #pragma once
 
 #include "g_erts/code_mgr.h"
@@ -23,13 +27,13 @@ private:
     Vector<String> atom_interned_names_;
     Dict<Word, CString> atoms_;
     Dict<CString, Word> atoms_reverse_;
-
     Node *this_node_ = nullptr;
 
 public:
     CodeManager modules_;
+    Heap binary_heap_;
 
-    explicit VM() {}
+    explicit VM(): binary_heap_(1024) {}
 
     Term add_atom(const String &atom_name);
     Node *dist_this_node();

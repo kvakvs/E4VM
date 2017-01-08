@@ -1,3 +1,7 @@
+/* * This is an open source non-commercial project. Dear PVS-Studio, please check it.
+ * PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
+ */
+
 #pragma once
 
 #include <vector>
@@ -28,7 +32,7 @@ namespace gluon {
     // Ensure that casting to word will not lose any bits
     template <typename ContainerType, typename ValueType>
     constexpr bool fits_in(ValueType i) {
-        return (ValueType)(ContainerType)i == i;
+        return static_cast<ValueType>(static_cast<ContainerType>(i)) == i;
     }
 
     using Uint8  = std::uint8_t;
@@ -39,6 +43,9 @@ namespace gluon {
     // count type
     using Count = Word;
     using SignedCount = SignedWord;
+
+    static constexpr Word BOXED_TAG_BITS = 4;
+    static constexpr Word BOXED_VALUE_BITS = BITS_PER_WORD - BOXED_TAG_BITS;
 
     // Generic size type which respects units
     template <class StoredType, class StorageType = Word>

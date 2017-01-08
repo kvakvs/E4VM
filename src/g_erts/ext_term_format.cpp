@@ -1,3 +1,8 @@
+//
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
+//
+
 #include "g_erts/binary.h"
 #include "g_erts/ext_term_format.h"
 #include "g_erts/term_layout.h"
@@ -25,7 +30,7 @@ Term ExtTerm::read_atom_string_i8(VM& vm, tool::Reader& r) {
 // Reads tag byte, then reads long or short atom as string and attempts to
 // create it in atom table.
 Term ExtTerm::read_tagged_atom_string(VM& vm, tool::Reader& r) {
-    Tag tag = (Tag)r.read_byte();
+    Tag tag = static_cast<Tag>(r.read_byte());
     if (tag == Tag::AtomExt) {
         return read_atom_string_i16(vm, r);
     } else if (tag == Tag::SmallAtomExt) {
@@ -35,7 +40,7 @@ Term ExtTerm::read_tagged_atom_string(VM& vm, tool::Reader& r) {
 }
 
 Node* ExtTerm::get_node(VM& vm, Term /*sysname*/, dist::Creation /*creation*/) {
-#if FEATURE_ERL_DIST
+#if GLUON_FEATURE_ERLDIST
     G_TODO("distribution support pid etf")
 #endif
     return vm.dist_this_node();
@@ -53,7 +58,7 @@ Term ExtTerm::make_pid(VM& vm, Term sysname, Word id, Word serial,
     if (node == vm.dist_this_node()) {
         return Term::make_short_pid(data);
     }
-#if FEATURE_ERL_DIST
+#if GLUON_FEATURE_ERLDIST
     G_TODO("distribution support pid etf");
 #endif
     // distribution disabled, no want remote pids
@@ -65,7 +70,7 @@ Term ExtTerm::read_tuple(VM& vm, Heap& heap, tool::Reader& r, Word arity) {
         return Term::make_zero_tuple();
     }
 
-    WordSize box_sz(layout::Tuple::box_size(arity));
+    WordSize box_sz(arity);
     auto box = heap.allocate_box(box_sz);
     box->set_arity(arity);
 
@@ -82,7 +87,7 @@ Term ExtTerm::read_with_marker(VM& vm, Heap& heap, tool::Reader &r) {
     return ExtTerm::read(vm, heap, r);
 }
 
-#if FEATURE_MAPS
+#if GLUON_FEATURE_MAPS
 Term read_map(Heap* heap, tool::Reader& r) {
     Word arity = r.read_bigendian_i32();
 
@@ -130,7 +135,7 @@ Term ExtTerm::read_list_ext(VM &vm, Heap &heap, tool::Reader &r) {
     Term result = NIL;
     Term *ref = &result;
 
-    for (SignedWord i = (SignedWord) length - 1; i >= 0; i--) {
+    for (SignedWord i = static_cast<SignedWord>(length) - 1; i >= 0; i--) {
         ConsCell *cons = heap.allocate_cons();
         cons->head_ = ExtTerm::read(vm, heap, r);
         *ref = Term(cons);
@@ -144,19 +149,19 @@ Term ExtTerm::read_list_ext(VM &vm, Heap &heap, tool::Reader &r) {
 Term ExtTerm::read_binary(VM &vm, Heap &heap, tool::Reader &r) {
     Word length = r.read_big_u32();
     if (length <= PROCBIN_THRESHOLD) {
-        auto pbox = make_proc_binary(vm, heap, ByteSize(length));
+        auto pbox = make_proc_binary(heap, ByteSize(length));
         Uint8 *data = pbox->data_;
         r.read(data, length);
         return Term::box_wrap(pbox);
     }
-    auto rcbox = make_rc_binary(vm, heap, ByteSize(length));
+    auto rcbox = make_rc_binary(vm, ByteSize(length));
     Uint8 *data = rcbox->bin_->data_;
     r.read(data, length);
     return Term::box_wrap(rcbox);
 }
 
 Term ExtTerm::read(VM &vm, Heap &heap, tool::Reader &r) {
-    auto t = (Tag) r.read_byte();
+    auto t = static_cast<Tag>(r.read_byte());
     switch (t) {
         case Tag::Compressed:
             // =80; 4 bytes size; compressed data
@@ -271,10 +276,10 @@ Term ExtTerm::read(VM &vm, Heap &heap, tool::Reader &r) {
         case Tag::AtomCacheRef:
             // Std::fmt("invalid ETF value tag %d\n", t);
             throw err::ExternalTerm("bad etf tag");
-        default:
-            dprintf("read etf: tag %d\n", (int)t);
-            failf("Something is not right");
     }  // switch tag
+
+    dprintf("read etf: tag %d\n", static_cast<int>(t));
+    failf("Something is not right");
     return NON_VALUE;
 }  // parse function
 

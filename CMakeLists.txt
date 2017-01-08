@@ -5,15 +5,16 @@ set(CMAKE_CXX_STANDARD 14)
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
 add_definitions(
-        # enables filesystem feature: files, directories, code loading from disk etc
         -DGLUON_FEATURE_FS=1
         -DGLUON_DEBUG=1
         -DGLUON_WORD_SIZE=64
-        -std=c++14
+        -std=c++17
+        -fno-rtti -fno-unroll-loops
+        -Weverything -Wall -Werror
+        -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-gnu-anonymous-struct
+        -Wno-zero-length-array -Wno-nested-anon-types
+        -Wno-format-nonliteral -Wno-global-constructors
 )
-# Static linking + lto (link time opt)
-# set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++ -static -flto")
-
 
 ## Erlang Runtime system for GluonVM: types, bifs, memory etc
 set(GLUON_ERTS_SOURCES
@@ -56,11 +57,29 @@ add_library(gluon_platform ${GLUON_PLATF_SOURCES})
 add_executable(gleam_d ${GLUON_SOURCES})
 target_link_libraries(gleam_d gluon_erts gluon_platform)
 target_compile_options(gleam_d
-        PUBLIC -O0 -ggdb
+        PUBLIC -O0 -g -ggdb
         )
 
-#add_executable(gleam_opt_sz ${GLUON_SOURCES})
-#target_link_libraries(gleam_opt_sz gluon_erts gluon_platform)
-#target_compile_options(gleam_opt_sz
-#        PUBLIC -Os
-#        )
+add_executable(gleam_opt ${GLUON_SOURCES})
+target_link_libraries(gleam_opt gluon_erts gluon_platform)
+target_compile_options(gleam_opt
+        PUBLIC -Oz -g0
+        )
+# Static linking + lto (link time opt) -static-libgcc -static-libstdc++ -static -flto
+# llvm-ld  -strip-all
+set_target_properties(gleam_opt gleam_d
+        PROPERTIES LINK_FLAGS "-flto")
+set_target_properties(gleam_opt
+        PROPERTIES LINK_FLAGS "-s -flto")
+
+include(PVS-Studio.cmake)
+pvs_studio_add_target(
+        TARGET analyze ALL
+        OUTPUT FORMAT tasklist
+        PREPROCESSOR gcc
+        LOG "PVS-report.tasks"
+        ANALYZE gluon_erts gluon_platform gleam_d
+        CXX_FLAGS ${PREPROCESSOR_ADDITIONAL_FLAGS}
+        C_FLAGS ${PREPROCESSOR_ADDITIONAL_FLAGS}
+        CONFIG "${CMAKE_SOURCE_DIR}/PVS-Studio.cfg"
+        )

@@ -1,3 +1,7 @@
+/* * This is an open source non-commercial project. Dear PVS-Studio, please check it.
+ * PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
+ */
+
 #pragma once
 
 namespace gluon {
@@ -28,6 +32,9 @@ void dprintf(const char *format, ...);
 #define G_TODO(what)                                                \
     gluon::failf(BOLDYELLOW "TODO:" RESET " %s (%s:%d)\n", what,    \
           __FILE__, __LINE__);
+#define G_FAIL(T) gluon::failf(BOLDRED "FAIL:" RESET \
+            " %s:%d -- " BOLDYELLOW #T "\n" RESET, \
+             __FILE__, __LINE__);
 
 #if GLUON_DEBUG
     // TODO: file, line, assert text format

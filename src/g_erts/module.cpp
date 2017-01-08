@@ -1,3 +1,8 @@
+//
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
+//
+
 #include "g_platform/byte_stream_reader.h"
 
 #include "g_erts/module.h"
@@ -10,11 +15,11 @@ constexpr Word SIG_SIZE = 4; // module and section signature length
 constexpr const char *SIG_MODULE = "E4J1"; // Erl-Forth J1Forth Flavour
 
 constexpr const char *SIG_ATOMS = "ATOM";   // atoms section tag
-constexpr const char *SIG_ATOMS_GZ = "atom"; // gzipped
+//constexpr const char *SIG_ATOMS_GZ = "atom"; // gzipped
 constexpr const char *SIG_CODE = "CODE";    // code section tag
-constexpr const char *SIG_CODE_GZ = "code"; // gzipped
+//constexpr const char *SIG_CODE_GZ = "code"; // gzipped
 constexpr const char *SIG_LTRL = "LTRL";    // literals section tag
-constexpr const char *SIG_LTRL_GZ = "ltrl"; // gzipped
+//constexpr const char *SIG_LTRL_GZ = "ltrl"; // gzipped
 
 BoxView<Uint8> Module::find_section(const char *want_sig,
                                     const BoxView<Uint8> &data) {
@@ -57,7 +62,9 @@ void Module::load(const BoxView<Uint8> &data) {
 
         if (not std::memcmp(section_sig, SIG_ATOMS, SIG_SIZE)) {
             // Atoms table
-            for (const auto &a: load_atoms(section_view)) {
+            auto atoms = load_atoms(section_view);
+            name_ = vm_.add_atom(atoms.front());
+            for (const auto &a: atoms) {
                 vm_.add_atom(a);
             }
         } else if (not std::memcmp(section_sig, SIG_CODE, SIG_SIZE)) {

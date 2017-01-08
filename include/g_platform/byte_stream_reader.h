@@ -1,3 +1,7 @@
+/* * This is an open source non-commercial project. Dear PVS-Studio, please check it.
+ * PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
+ */
+
 #pragma once
 
 #include <cstring>
@@ -29,13 +33,14 @@ public:
 
     template <class StoredType>
     bool have(GenericSize<StoredType> sz) const {
-        return end_ - ptr_ >= sz.bytes();
+        return end_ - ptr_ >= static_cast<SignedWord>(sz.bytes());
     }
 
     template <class StoredType>
     void assert_have(GenericSize<StoredType> want_have) const {
         auto have_remaining = end_ - ptr_;
-        G_ASSERT_GTE(have_remaining, want_have.bytes());
+        G_ASSERT_GTE(have_remaining,
+                     static_cast<SignedWord>(want_have.bytes()));
     }
 
     const Uint8 *pos() const { return ptr_; }
@@ -79,7 +84,7 @@ public:
             if (safety_limit) {
                 safety_limit--;
             } else {
-                G_ASSERT(!"Varint too long");
+                G_FAIL("Varint too long");
             }
         }
         return result;
@@ -100,20 +105,23 @@ public:
         String result;
         result.reserve(size);
         for (Word i = 0; i < size; ++i) {
-            result += (char)read_byte();
+            result += static_cast<char>(read_byte());
         }
         return result;
     }
 
     Word read_big_u16() {
-        Word result = ((Word)ptr_[0] << 8) | (Word)ptr_[1];
+        Word result = (static_cast<Word>(ptr_[0]) << 8)
+                      | static_cast<Word>(ptr_[1]);
         ptr_ += 2;
         return result;
     }
 
     Word read_big_u32() {
-        Word result = ((Word)ptr_[0] << 24) | ((Word)ptr_[1] << 16) |
-                      ((Word)ptr_[2] << 8) | (Word)ptr_[3];
+        Word result = (static_cast<Word>(ptr_[0]) << 24)
+                       | (static_cast<Word>(ptr_[1]) << 16)
+                       | (static_cast<Word>(ptr_[2]) << 8)
+                       | static_cast<Word>(ptr_[3]);
         ptr_ += 4;
         return result;
     }
@@ -122,7 +130,8 @@ public:
         SignedWord result = read_byte();
         if (result & 128) {
             // set all bytes above first to 0xFF
-            result = (SignedWord)((~0xFFul) | (Word)result);
+            result = static_cast<SignedWord>((~0xFFul)
+                                             | static_cast<Word>(result));
         }
         for (Word i = 1; i < bytes; i++) {
             result <<= 8;
