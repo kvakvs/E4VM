@@ -24,3 +24,8 @@ lic-rm:
 plog:
 	plog-converter -t tasklist -a "GA:1,2;64:1;CS" \
 		cmake-build-debug/PVS-Studio/src/main.cpp.plog
+
+.PHONY: valgrind
+valgrind: compile
+	valgrind --log-file=valgrind.log \
+		cmake-build-debug/gleam_d

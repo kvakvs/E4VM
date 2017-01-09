@@ -1,13 +1,45 @@
 cmake_minimum_required(VERSION 3.5)
-project(gluonvm2)
+project(E4VM)
 
 set(CMAKE_CXX_STANDARD 14)
 
+option(CUSTOM_STDLIB "Use MUSL C library and custom build of libc++"
+        OFF)
+option(COMPILATION_INTERMEDIATE_RESULTS "Dump asm and preprocessed files"
+        OFF)
+
+if (CUSTOM_STDLIB)
+        ## MUSL
+        set(MUSL_libc           /usr/local/musl)
+        set(MUSL_libc_inc       /usr/local/musl/include)
+        set(MUSL_libc_lib       /usr/local/musl/lib)
+        set(MUSL_LIBS           c c++ c++abi)
+
+        add_definitions(-B${CMAKE_SOURCE_DIR}/musl
+                -nostdinc
+                --sysroot "${MUSL_libc}"
+                -isystem "${MUSL_libc_inc}"
+                )
+        link_directories(${MUSL_libc_lib})
+
+        ##
+        ## Custom libc++
+        ##
+        link_directories(${CMAKE_SOURCE_DIR}/../LLVM/_build/lib)
+endif(CUSTOM_STDLIB)
+
+## We do not use standard C++ library here, but we DO use C++ startup/exit code
+add_definitions(-nostdinc++)
+
+##
+##
 include_directories(${CMAKE_SOURCE_DIR}/include)
 add_definitions(
-        -DGLUON_FEATURE_FS=1
-        -DGLUON_DEBUG=1
-        -DGLUON_WORD_SIZE=64
+        -DE4FEATURE_FS=1
+        -DE4DEBUG=1
+        -DE4_WORD_SIZE=64
+        )
+add_definitions(
         -std=c++17
         -fno-rtti -fno-unroll-loops
         -Weverything -Wall -Werror
@@ -16,70 +48,112 @@ add_definitions(
         -Wno-format-nonliteral -Wno-global-constructors
 )
 
-## Erlang Runtime system for GluonVM: types, bifs, memory etc
-set(GLUON_ERTS_SOURCES
-        include/g_erts/code_mgr.h
-        include/g_erts/dist.h
-        include/g_erts/ext_term_format.h
-        include/g_erts/heap.h
-        include/g_erts/module.h
-        include/g_erts/term.h
-        include/g_erts/term_layout.h
-        include/g_erts/vm.h
-        include/gluon.h
-        src/g_erts/code_mgr.cpp
-        src/g_erts/ext_term_format.cpp
-        src/g_erts/module.cpp
-        src/g_erts/vm.cpp
-        src/g_erts/term.cpp include/g_erts/box.h src/g_erts/binary.cpp include/g_erts/binary.h)
-
-## Helpers and OS abstraction library
-set(GLUON_PLATF_SOURCES
-        include/g_platform/byte_stream_reader.h
-        include/g_platform/conf.h
-        include/g_platform/debug.h
-        include/g_platform/fs.h
-        include/g_platform/interned_string.h
-        include/g_platform/mem.h
-        include/g_platform/types.h
-        src/g_platform/debug.cpp
-        src/g_platform/interned_string.cpp
-        src/g_platform/mem.cpp
+## Erlang Runtime system for E4VM: types, bifs, memory etc
+## Minus the VM itself this later can become a runtime library for compiled Erl
+set(E4_RUNTIME_SOURCES
+        include/e4.h
+        include/e4rt/binary.h
+        include/e4rt/box.h
+        include/e4rt/code_mgr.h
+        include/e4rt/dist.h
+        include/e4rt/ext_term_format.h
+        include/e4rt/heap.h
+        include/e4rt/module.h
+        include/e4rt/term.h
+        include/e4rt/term_tag.h
+        include/e4rt/vm.h
+        src/e4rt/binary.cpp
+        src/e4rt/code_mgr.cpp
+        src/e4rt/ext_term_format.cpp
+        src/e4rt/module.cpp
+        src/e4rt/term.cpp
+        src/e4rt/vm.cpp
         )
 
-set(GLUON_SOURCES
+## Helpers and OS abstraction library
+set(E4_PLATF_SOURCES
+        include/e4platf/byte_stream_reader.h
+        include/e4platf/conf.h
+        include/e4platf/debug.h
+        include/e4platf/fs.h
+        include/e4platf/mem.h
+        include/e4platf/types.h
+        src/e4platf/debug.cpp
+        src/e4platf/mem.cpp
+        )
+
+# A minimal replacement for C++ stuff which we don't link
+set(E4_STD_SOURCES
+        include/e4std/array.h
+        include/e4std/map.h
+        include/e4std/ptr.h
+        include/e4std/sizes.h
+        include/e4std/string.h
+        include/e4std/stuff.h
+        include/e4std/vector.h
+        include/e4std/view.h
+        src/e4std/stuff.cpp
+        )
+
+set(EMU_SOURCES
         src/main.cpp
         )
 
-add_library(gluon_erts ${GLUON_ERTS_SOURCES})
-add_library(gluon_platform ${GLUON_PLATF_SOURCES})
+add_library(e4_runtime  ${E4_RUNTIME_SOURCES})
+add_library(e4_platform ${E4_PLATF_SOURCES})
+add_library(e4_std      ${E4_STD_SOURCES})
 
-add_executable(gleam_d ${GLUON_SOURCES})
-target_link_libraries(gleam_d gluon_erts gluon_platform)
-target_compile_options(gleam_d
+##
+## Static Debug
+##
+add_executable(e4emu-debug ${EMU_SOURCES})
+target_link_libraries(e4emu-debug
+        e4_runtime e4_platform e4_std ${MUSL_LIBS})
+target_compile_options(e4emu-debug
         PUBLIC -O0 -g -ggdb
         )
 
-add_executable(gleam_opt ${GLUON_SOURCES})
-target_link_libraries(gleam_opt gluon_erts gluon_platform)
-target_compile_options(gleam_opt
+##
+## Static Optimized Release
+##
+add_executable(e4emu-x64 ${EMU_SOURCES})
+target_link_libraries(e4emu-x64
+        e4_runtime e4_platform e4_std ${MUSL_LIBS})
+target_compile_options(e4emu-x64
         PUBLIC -Oz -g0
         )
-# Static linking + lto (link time opt) -static-libgcc -static-libstdc++ -static -flto
-# llvm-ld  -strip-all
-set_target_properties(gleam_opt gleam_d
-        PROPERTIES LINK_FLAGS "-flto")
-set_target_properties(gleam_opt
-        PROPERTIES LINK_FLAGS "-s -flto")
 
+if (COMPILATION_INTERMEDIATE_RESULTS)
+        target_compile_options(e4_std           PUBLIC -save-temps)
+        target_compile_options(e4_platform      PUBLIC -save-temps)
+        target_compile_options(e4_runtime       PUBLIC -save-temps)
+        target_compile_options(e4emu-debug      PUBLIC -save-temps)
+endif()
+
+##
+## Link Flags
+## -static-libgcc -static-libstdc++ -static -flto
+##
+set_target_properties(e4emu-x64 e4emu-debug
+        PROPERTIES LINK_FLAGS "-flto -static-libgcc -static-libstdc++ -static")
+set_target_properties(e4emu-x64
+        PROPERTIES LINK_FLAGS "-s ")
+if (CUSTOM_STDLIB)
+        set_target_properties(e4emu-x64 e4emu-debug
+                PROPERTIES LINK_FLAGS "-nostdlib")
+endif(CUSTOM_STDLIB)
+
+##
+## PVS-Studio Static Checker
+##
 include(PVS-Studio.cmake)
 pvs_studio_add_target(
-        TARGET analyze ALL
-        OUTPUT FORMAT tasklist
-        PREPROCESSOR gcc
-        LOG "PVS-report.tasks"
-        ANALYZE gluon_erts gluon_platform gleam_d
-        CXX_FLAGS ${PREPROCESSOR_ADDITIONAL_FLAGS}
-        C_FLAGS ${PREPROCESSOR_ADDITIONAL_FLAGS}
-        CONFIG "${CMAKE_SOURCE_DIR}/PVS-Studio.cfg"
+        TARGET          analyze ALL
+        OUTPUT FORMAT   tasklist
+        PREPROCESSOR    gcc
+        LOG             "PVS-report.tasks"
+        ANALYZE         e4_runtime e4_platform e4emu-debug
+        CXX_FLAGS       ${PREPROCESSOR_ADDITIONAL_FLAGS}
+        C_FLAGS         ${PREPROCESSOR_ADDITIONAL_FLAGS}
+        CONFIG          "${CMAKE_SOURCE_DIR}/PVS-Studio.cfg"
         )

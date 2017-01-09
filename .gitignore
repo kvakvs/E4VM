@@ -14,3 +14,4 @@ rebar.lock
 
 # PVS-studio analysis results
 PVS-report.tasks
+valgrind.log

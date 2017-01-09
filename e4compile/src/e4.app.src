@@ -1,5 +1,5 @@
 {application, e4,
- [{description, "GluonVM cross-compiler Erlang to Forth"},
+ [{description, "E4VM cross-compiler Erlang to Forth"},
   {vsn, "0.1.0"},
   {registered, []},
   {mod, { e4, []}},

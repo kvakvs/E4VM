@@ -3,10 +3,8 @@
 // PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 //
 
-#include "e4.h"
+#include "e4rt/binary.h"
 
-int main(int /*argc*/, const char ** /*argv [] */) {
-    e4::VM vm;
-    vm.modules_.load_file(vm, "e4compile/priv/test1.e4b");
-    return 0;
-}
+namespace e4 {
+
+} // ns e4
