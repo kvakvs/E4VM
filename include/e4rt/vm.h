@@ -11,13 +11,11 @@
 
 namespace e4 {
 
-namespace err {
-    DECL_EXCEPTION(FeatureMissing)
-    DECL_EXCEPTION(CodeLoader)
-    DECL_EXCEPTION(Scheduler)
-    DECL_EXCEPTION(CodeServer)
-    DECL_EXCEPTION(Process)
-}  // ns err
+DECL_EXCEPTION(FeatureMissing)
+DECL_EXCEPTION(CodeLoader)
+DECL_EXCEPTION(Scheduler)
+DECL_EXCEPTION(CodeServer)
+DECL_EXCEPTION(Process)
 
 // Erlang-Forth Abstract Machine (E4VM)
 class VM {

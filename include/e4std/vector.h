@@ -14,7 +14,7 @@
 
 namespace e4std {
 
-    static constexpr ::size_t VECTOR_MIN_GROWTH = 4;
+static constexpr ::size_t VECTOR_MIN_GROWTH = 4;
 
 template<class ValueType>
 class Vector {
@@ -96,11 +96,34 @@ public:
         return *(data_.get());
     }
 
-    using ForwardIterator = ValueType*;
+    //
+    // Iterator stuff
+    //
+    template <class V>
+    class TIterator {
+    private:
+        V* ptr_;
+    public:
+        explicit TIterator(V* v): ptr_(v) {}
+        bool operator != (const TIterator& other) {
+            return ptr_ != other.ptr_;
+        }
+        TIterator& operator++() {
+            ptr_++;
+            return *this;
+        }
+        V& operator*() const { return *ptr_; }
+    };
+    using Iterator = TIterator<ValueType>;
+    using ConstIterator = TIterator<const ValueType>;
 
-    ForwardIterator begin() { return data_.get(); }
+    Iterator begin() { return Iterator(data_.get()); }
 
-    ForwardIterator end() { return data_.get() + size_; }
+    Iterator end() { return Iterator(data_.get() + size_); }
+
+    ConstIterator begin() const { return ConstIterator(data_.get()); }
+
+    ConstIterator end() const { return ConstIterator(data_.get() + size_); }
 
 private:
     // Growth strategy! +25% or 4 cells, whatever is smaller

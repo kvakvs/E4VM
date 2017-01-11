@@ -7,13 +7,11 @@
 
 namespace e4 {
 
-namespace err {
-    IMPL_EXCEPTION(FeatureMissing)
-    IMPL_EXCEPTION(CodeLoader)
-    IMPL_EXCEPTION(Scheduler)
-    IMPL_EXCEPTION(CodeServer)
-    IMPL_EXCEPTION(Process)
-}  // ns err
+IMPL_EXCEPTION(FeatureMissing)
+IMPL_EXCEPTION(CodeLoader)
+IMPL_EXCEPTION(Scheduler)
+IMPL_EXCEPTION(CodeServer)
+IMPL_EXCEPTION(Process)
 
 Term VM::add_atom(const String &atom_name) {
     CString atom_namei(atom_name.c_str());

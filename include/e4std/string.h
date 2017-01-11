@@ -81,8 +81,27 @@ public:
         return *this;
     }
 
+    String operator +(const char*str) const {
+        String tmp(*this);
+        tmp.resize(size() + ::strlen(str));
+        ::strcat(tmp.data(), str);
+        return tmp;
+    }
+
+    const char* data() const {
+        return content_.data();
+    }
+
+    char* data() {
+        return content_.data();
+    }
+
+    void resize(::size_t sz) {
+        return content_.resize(sz);
+    }
+
     void reserve(::size_t capacity) {
-        content_.reserve(capacity + 1);
+        return content_.reserve(capacity + 1);
     }
 
     String& operator+=(char t) {

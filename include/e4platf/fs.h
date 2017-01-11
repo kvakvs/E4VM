@@ -68,5 +68,7 @@ public:
 // Otherwise: Will check if the file is present in statically linked files
 Vector<Uint8> read(const Vector<String>& search_paths, const char* fn);
 
+bool exists(String& path);
+
 }} // ns platf::fs
 

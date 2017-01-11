@@ -9,9 +9,7 @@
 
 namespace e4 {
 
-namespace err {
 DECL_IMPL_EXCEPTION(ExternalTerm)
-}  // ns err
 
 // Reads long atom as string and attempts to create it in atom table.
 Term ExtTerm::read_atom_string_i16(VM& vm, tool::Reader& r) {
@@ -36,7 +34,7 @@ Term ExtTerm::read_tagged_atom_string(VM& vm, tool::Reader& r) {
     } else if (tag == Tag::SmallAtomExt) {
         return read_atom_string_i8(vm, r);
     }
-    throw err::ExternalTerm("atom expected");
+    throw ExternalTermError("atom expected");
 }
 
 Node* ExtTerm::get_node(VM& vm, Term /*sysname*/, dist::Creation /*creation*/) {
@@ -49,7 +47,7 @@ Node* ExtTerm::get_node(VM& vm, Term /*sysname*/, dist::Creation /*creation*/) {
 Term ExtTerm::make_pid(VM& vm, Term sysname, Word id, Word serial,
                        Uint8 creation) {
     if (!Term::is_valid_pid_id(id) || !Term::is_valid_pid_serial(serial)) {
-        throw err::ExternalTerm("bad pid");
+        throw ExternalTermError("bad pid");
     }
     // TODO: check valid creation
     Word data = Term::make_pid_data(serial, id);
@@ -62,7 +60,7 @@ Term ExtTerm::make_pid(VM& vm, Term sysname, Word id, Word serial,
     E4TODO("distribution support pid etf");
 #endif
     // distribution disabled, no want remote pids
-    throw err::FeatureMissing(e4err::no_feat_erldist);
+    throw FeatureMissingError(e4err::no_feat_erldist);
 }
 
 Term ExtTerm::read_tuple(VM& vm, Heap& heap, tool::Reader& r, Word arity) {
@@ -186,7 +184,7 @@ Term ExtTerm::read(VM &vm, Heap &heap, tool::Reader &r) {
                 }
 #else
                 // no bignum, and hardware bits not enough: much fail here
-                throw err::FeatureMissing(e4err::no_feat_bignum);
+                throw FeatureMissingError(e4err::no_feat_bignum);
 #endif
             }  // hardware bits = 32
         }      // integer_ext
@@ -201,7 +199,7 @@ Term ExtTerm::read(VM &vm, Heap &heap, tool::Reader &r) {
 #else
         case Tag::OldFloatStringExt:
         case Tag::IeeeFloatExt:
-            throw err::FeatureMissing(e4err::no_feat_float);
+            throw FeatureMissingError(e4err::no_feat_float);
 #endif
 
         case Tag::AtomUtf8Ext:  // fall through
@@ -249,7 +247,7 @@ Term ExtTerm::read(VM &vm, Heap &heap, tool::Reader &r) {
                 // return read_map(heap, r);
                 throw err::TODO("etf MAPS");
 #else
-                throw err::FeatureMissing(e4err::no_feat_maps);
+                throw FeatureMissingError(e4err::no_feat_maps);
 #endif
 
         case Tag::NilExt:
@@ -269,13 +267,13 @@ Term ExtTerm::read(VM &vm, Heap &heap, tool::Reader &r) {
 #if E4FEATURE_BIGNUM
                 throw err::FeatureMissing("BIGNUM");
 #else
-                throw err::FeatureMissing(e4err::no_feat_bignum);
+                throw FeatureMissingError(e4err::no_feat_bignum);
 #endif
 
         case Tag::DistHeader:
         case Tag::AtomCacheRef:
             // Std::fmt("invalid ETF value tag %d\n", t);
-            throw err::ExternalTerm(e4err::etf_bad_tag);
+            throw ExternalTermError(e4err::etf_bad_tag);
     }  // switch tag
 
     E4LOG1("read etf: tag %d\n", static_cast<int>(t));
