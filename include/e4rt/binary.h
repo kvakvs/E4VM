@@ -10,53 +10,53 @@
 
 namespace e4 {
 
-    constexpr Word PROCBIN_THRESHOLD = 50;
+constexpr Word PROCBIN_THRESHOLD = 50;
 
-    // A heap object representing an onheap binary (< threshold)
-    class ProcBinaryBox {
-    public:
-        BoxHeaderWord header_;
-        Uint8 data_[0];
-    };
+// A heap object representing an onheap binary (< threshold)
+class ProcBinaryBox {
+public:
+    BoxHeaderWord header_;
+    Uint8 data_[0];
+};
 
-    // Refcounted binary on the separate heap
-    class RCBinary {
-    public:
-        Word size_;
-        Word rc_; // ref count
-        Uint8 data_[0];
-    };
+// Refcounted binary on the separate heap
+class RCBinary {
+public:
+    Word size_;
+    Word rc_; // ref count
+    Uint8 data_[0];
+};
 
-    // A process heap object holding refcount to an external RCBinary
-    class RCBinaryBox {
-    public:
-        BoxHeaderWord header_;
-        RCBinary *bin_;
-    };
+// A process heap object holding refcount to an external RCBinary
+class RCBinaryBox {
+public:
+    BoxHeaderWord header_;
+    RCBinary* bin_;
+};
 
-    template <typename T>
-    ProcBinaryBox *make_proc_binary(Heap &heap, GenericSize<T> size) {
-        E4LOG1("bin: new procbin %zu b\n", size.bytes());
-        E4ASSERT(size.bytes() <= PROCBIN_THRESHOLD);
-        auto wsz = Heap::word_size(size);
-        auto newbox = heap.allocate_box(wsz, BoxTag::ProcBinary, size.bytes());
-        auto pbin = reinterpret_cast<ProcBinaryBox *>(newbox);
-        pbin->header_.set_tag(BoxTag::ProcBinary);
-        pbin->header_.set_val(size.bytes());
-        return pbin;
-    }
+template<typename T>
+ProcBinaryBox* make_proc_binary(Heap& heap, GenericSize<T> size) {
+    E4LOG1("bin: new procbin %zu b\n", size.bytes());
+    E4ASSERT(size.bytes() <= PROCBIN_THRESHOLD);
+    auto wsz = Heap::word_size(size);
+    auto newbox = heap.allocate_box(wsz, BoxTag::ProcBinary, size.bytes());
+    auto pbin = reinterpret_cast<ProcBinaryBox*>(newbox);
+    pbin->header_.set_tag(BoxTag::ProcBinary);
+    pbin->header_.set_val(size.bytes());
+    return pbin;
+}
 
-    template <typename T>
-    RCBinaryBox *make_rc_binary(VM &vm, GenericSize<T> size) {
-        E4LOG1("bin: new rcbin %zu b\n", size.bytes());
-        // Too large, we allocate an RCBinaryBox instead
-        auto w_size = Heap::word_size(GenericSize<RCBinaryBox>(1));
-        auto newbox = vm.binary_heap_.allocate_box(
-                            w_size, BoxTag::RCBinary, size.bytes());
-        auto rcbin = reinterpret_cast<RCBinaryBox *>(newbox);
-        rcbin->header_.set_tag(BoxTag::RCBinary);
-        rcbin->header_.set_val(0);
-        return rcbin;
-    }
+template<typename T>
+RCBinaryBox* make_rc_binary(VM& vm, GenericSize<T> size) {
+    E4LOG1("bin: new rcbin %zu b\n", size.bytes());
+    // Too large, we allocate an RCBinaryBox instead
+    auto w_size = Heap::word_size(GenericSize<RCBinaryBox>(1));
+    auto newbox = vm.binary_heap_.allocate_box(
+            w_size, BoxTag::RCBinary, size.bytes());
+    auto rcbin = reinterpret_cast<RCBinaryBox*>(newbox);
+    rcbin->header_.set_tag(BoxTag::RCBinary);
+    rcbin->header_.set_val(0);
+    return rcbin;
+}
 
 } // ns e4

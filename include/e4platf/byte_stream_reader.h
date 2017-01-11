@@ -17,10 +17,11 @@ namespace e4 { namespace tool {
 
 class Reader {
 private:
-    const Uint8 *ptr_;
-    const Uint8 *end_;
+    const Uint8* ptr_;
+    const Uint8* end_;
+
 public:
-    explicit Reader(const e4std::BoxView <Uint8>& data)
+    explicit Reader(const e4std::BoxView<Uint8>& data)
             : ptr_(data.cbegin()), end_(data.cend()) {
     }
 
@@ -37,28 +38,28 @@ public:
     }
 
     template<class StoredType>
-    bool have(GenericSize<StoredType> sz) const {
+    bool have(GenericSize <StoredType> sz) const {
         return end_ - ptr_ >= static_cast<SignedWord>(sz.bytes());
     }
 
     template<class StoredType>
-    void assert_have(GenericSize<StoredType> want_have) const {
+    void assert_have(GenericSize <StoredType> want_have) const {
         auto have_remaining = end_ - ptr_;
         E4ASSERT_GTE(have_remaining,
                      static_cast<SignedWord>(want_have.bytes()));
     }
 
-    const Uint8 *pos() const { return ptr_; }
+    const Uint8* pos() const { return ptr_; }
 
     // Looks ahead if next bytes are same as the 'sample'
-    template <class StoredType>
-    bool compare_ahead(const StoredType *sample, GenericSize<StoredType> sz) {
+    template<class StoredType>
+    bool compare_ahead(const StoredType* sample, GenericSize <StoredType> sz) {
         assert_have(sz);
         return 0 == ::memcmp(sample, ptr_, sz.bytes());
     }
 
-    template <class StoredType>
-    void advance(GenericSize<StoredType> sz) {
+    template<class StoredType>
+    void advance(GenericSize <StoredType> sz) {
         assert_have(sz);
         ptr_ += sz.bytes();
     }
@@ -68,15 +69,15 @@ public:
         return *(ptr_++);
     }
 
-    template <class T>
-    void read(T *dst, Count units) {
+    template<class T>
+    void read(T* dst, Count units) {
         assert_have(ByteSize(units));
         ::memcpy(dst, ptr_, units * sizeof(T));
         advance(GenericSize<T>(units));
     }
 
     // Unsigned varint, word
-    template <typename T>
+    template<typename T>
     T read_varint_u() {
         int safety_limit = sizeof(T) + 1; // limit loop
         T result = 0;
@@ -99,7 +100,7 @@ public:
         auto sz = ByteSize(read_varint_u<Word>());
         assert_have(sz);
 
-        String result(reinterpret_cast<const char *>(ptr_), sz.bytes());
+        String result(reinterpret_cast<const char*>(ptr_), sz.bytes());
 //        E4LOG("read_v_str: %s\n", result.c_str());
         ptr_ += sz.bytes();
         return result;
@@ -124,9 +125,9 @@ public:
 
     Word read_big_u32() {
         Word result = (static_cast<Word>(ptr_[0]) << 24)
-                       | (static_cast<Word>(ptr_[1]) << 16)
-                       | (static_cast<Word>(ptr_[2]) << 8)
-                       | static_cast<Word>(ptr_[3]);
+                      | (static_cast<Word>(ptr_[1]) << 16)
+                      | (static_cast<Word>(ptr_[2]) << 8)
+                      | static_cast<Word>(ptr_[3]);
         ptr_ += 4;
         return result;
     }

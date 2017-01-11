@@ -18,6 +18,7 @@ public:
     Term ml_sysname = NIL;
     dist::Creation m_creation = dist::INTERNAL_CREATION;
 };
+
 #pragma clang diagnostic pop
 
 }  // ns e4

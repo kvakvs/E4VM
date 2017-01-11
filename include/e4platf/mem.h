@@ -10,23 +10,23 @@
 
 namespace platf {
 
-    struct SingleAlloc {
-        template<class T>
-        static void free(T* p) {
-            if (p) { delete p; }
-        }
-    };
+struct SingleAlloc {
+    template<class T>
+    static void free(T* p) {
+        if (p) { delete p; }
+    }
+};
 
-    struct ArrayAlloc {
-        template<class T>
-        static T* alloc(::size_t sz) {
-            return new T[sz];
-        }
+struct ArrayAlloc {
+    template<class T>
+    static T* alloc(::size_t sz) {
+        return new T[sz];
+    }
 
-        template<class T>
-        static void free(T* p) {
-            if (p) { delete[] p; }
-        }
-    };
+    template<class T>
+    static void free(T* p) {
+        if (p) { delete[] p; }
+    }
+};
 
 } // ns platf

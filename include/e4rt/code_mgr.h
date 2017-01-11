@@ -19,7 +19,7 @@ class CodeManager {
 private:
     Map<Word, Module*> mods_;
 public:
-    explicit CodeManager(): mods_() {
+    explicit CodeManager() : mods_() {
         // TODO: load preloaded modules
     }
 

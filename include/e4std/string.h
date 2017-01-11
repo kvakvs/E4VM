@@ -43,7 +43,7 @@ public:
     }
 
     // Copy assignment
-    String& operator =(const String& other) {
+    String& operator=(const String& other) {
         content_.resize(other.size() + 1); // extra for trailing '\0'
         if (content_.data() && other.content_.data()) {
             E4ASSERT(content_.capacity() >= other.content_.size() + 1);
@@ -55,11 +55,11 @@ public:
     }
 
     // Copy ctor
-    explicit String(const String &other) {
+    explicit String(const String& other) {
         *this = other;
     }
 
-    String(const char *src, ::size_t sz) {
+    String(const char* src, ::size_t sz) {
         content_.resize(sz + 1);
         auto datap = content_.data();
         ::memcpy(datap, src, sz);
@@ -67,9 +67,10 @@ public:
     }
 
     ::size_t size() const { return content_.size() + 1; }
+
     ::size_t capacity() const { return content_.capacity() - 1; }
 
-    String& operator = (const char *src) {
+    String& operator=(const char* src) {
         auto srclen = ::strlen(src);
         content_.resize(srclen + 1);
 
@@ -84,7 +85,7 @@ public:
         content_.reserve(capacity + 1);
     }
 
-    String& operator += (char t) {
+    String& operator+=(char t) {
         E4ASSERT(content_.size() > 0);
         content_.resize(content_.size() - 1); // cut the trailing zero
         content_.push_back(t);

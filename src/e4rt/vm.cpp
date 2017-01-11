@@ -9,7 +9,6 @@ namespace e4 {
 
 namespace err {
     IMPL_EXCEPTION(FeatureMissing)
-    IMPL_EXCEPTION(TODO)
     IMPL_EXCEPTION(BeamLoad)
     IMPL_EXCEPTION(Scheduler)
     IMPL_EXCEPTION(CodeServer)

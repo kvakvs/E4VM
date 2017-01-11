@@ -262,7 +262,7 @@ Term ExtTerm::read(VM &vm, Heap &heap, tool::Reader &r) {
         case Tag::BinaryExt:
             return read_binary(vm, heap, r);
         case Tag::BitBinaryExt:
-            throw err::TODO("read bit-binary etf");
+            E4TODO("read bit-binary etf");
 
         case Tag::SmallBigExt:
         case Tag::LargeBigExt:

@@ -81,7 +81,7 @@ private:
         if (not root) { return 0; }
         else {
             return 1 + count_nodes_helper(root->left_) +
-                    count_nodes_helper(root->right_);
+                   count_nodes_helper(root->right_);
         }
     }
 

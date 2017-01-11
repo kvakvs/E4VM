@@ -19,7 +19,7 @@ private:
     UniqueArrayPtr<Word> heap_;
 
 public:
-    explicit Heap(Word init_size): capacity_(0), htop_(0) {
+    explicit Heap(Word init_size) : capacity_(0), htop_(0) {
         this->alloc_heap(init_size);
     }
 
@@ -27,9 +27,9 @@ public:
         return (capacity_ - htop_) >= want_size;
     }
 
-    ConsCell *allocate_cons() {
+    ConsCell* allocate_cons() {
         E4LOG("heap: alloc cons\n");
-        return reinterpret_cast<ConsCell *>(allocate_raw_words(2));
+        return reinterpret_cast<ConsCell*>(allocate_raw_words(2));
     }
 
     // A helper to find any size in words
@@ -39,19 +39,19 @@ public:
     }
 
     // Create a box in memory, set up its first word with boxtag and value bits
-    BoxHeaderWord *allocate_box(WordSize want_size, BoxTag bt, Word val) {
+    BoxHeaderWord* allocate_box(WordSize want_size, BoxTag bt, Word val) {
         E4LOG1("heap: alloc box %zu w\n", want_size.units());
-        Word *box = allocate_raw_words(want_size.units() + 1);
+        Word* box = allocate_raw_words(want_size.units() + 1);
         return BoxHeaderWord::setup_a_box(box, bt, val);
     }
 
-    TupleBoxHeader *allocate_tuple_box(Word arity) {
+    TupleBoxHeader* allocate_tuple_box(Word arity) {
         return reinterpret_cast<TupleBoxHeader*>(
                 allocate_box(WordSize(arity), BoxTag::Tuple, arity));
     }
 
 private:
-    Word *allocate_raw_words(Word want_size) {
+    Word* allocate_raw_words(Word want_size) {
         if (not have(want_size)) {
             // Grow or something
             E4TODO("Grow or something");
@@ -60,9 +60,10 @@ private:
         auto result = heap_.get() + htop_;
         htop_ += want_size;
         E4LOG3("h::alloc(%zu) htop %zu size %zu\n",
-              want_size, htop_, capacity_);
+               want_size, htop_, capacity_);
         return result;
     }
+
     void alloc_heap(Word size) {
         heap_ = e4std::make_array<Word>(size);
         capacity_ = size;

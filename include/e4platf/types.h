@@ -18,6 +18,7 @@
 #include "e4platf/debug.h"
 
 namespace e4 {
+
 #if E4_WORD_SIZE == 64
     using Word = ::uint64_t;
     using SignedWord = ::int64_t;

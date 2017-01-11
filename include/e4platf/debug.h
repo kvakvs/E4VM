@@ -36,15 +36,15 @@ E4_NORETURN void failf(const char *format, ...);
 
 #if E4DEBUG
     // TODO: file, line, assert text format
-    #define E4ASSERT(C) if (!(C)) { \
-        e4::failf(BOLDRED "ASSERT:" RESET \
-            " %s:%d -- " BOLDYELLOW #C "\n" RESET, \
-             __FILE__, __LINE__); \
+    #define E4ASSERT(C) if (!(C)) {                 \
+        e4::failf(BOLDRED "ASSERT:" RESET           \
+            " %s:%d -- " BOLDYELLOW #C "\n" RESET,  \
+             __FILE__, __LINE__);                   \
         }
-    #define E4ASSERT_GTE(A, B) if (A < B) { \
-        e4::failf(BOLDRED "ASSERT:" RESET \
+    #define E4ASSERT_GTE(A, B) if (A < B) {         \
+        e4::failf(BOLDRED "ASSERT:" RESET           \
             " %s:%d -- " BOLDYELLOW #A " (%zu) is not gt-eq " #B " (%zu) \n" \
-            RESET, __FILE__, __LINE__, A, B); \
+            RESET, __FILE__, __LINE__, A, B);       \
         }
     #define E4IF_NODEBUG(X)
 

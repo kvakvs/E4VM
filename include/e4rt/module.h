@@ -21,16 +21,18 @@ private:
     Term name_ = NON_VALUE; // atom name
     Vector<Uint8> code_;
     Heap literals_;
-    VM &vm_;
+    VM& vm_;
 
 public:
-    explicit Module(VM &vm): literals_(64), vm_(vm) {}
-    void load(const e4std::BoxView<Uint8> &data);
+    explicit Module(VM& vm) : literals_(64), vm_(vm) {}
+
+    void load(const e4std::BoxView<Uint8>& data);
+
     Term name() const { return name_; }
 
 private:
-    void load_atoms(const e4std::BoxView <Uint8> &adata, Vector<String>& out);
-    void load_literals(const e4std::BoxView<Uint8> &adata, Vector<Term>& out);
+    void load_atoms(const e4std::BoxView<Uint8>& adata, Vector<String>& out);
+    void load_literals(const e4std::BoxView<Uint8>& adata, Vector<Term>& out);
 };
 
 } // ns e4

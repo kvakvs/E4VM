@@ -12,18 +12,22 @@ namespace e4 {
 #if E4FEATURE_FS
 class File {
 private:
-    FILE *f_ = nullptr;
+    FILE* f_ = nullptr;
+
 public:
-    explicit File(const char *fn, const char *mode) {
+    explicit File(const char* fn, const char* mode) {
         f_ = ::fopen(fn, mode);
         E4ASSERT(is_open());
     }
+
     ~File() {
         close();
     }
+
     bool is_open() const {
         return f_ != nullptr;
     }
+
     void close() {
         if (f_) {
             ::fclose(f_);
@@ -31,7 +35,7 @@ public:
         f_ = nullptr;
     }
 
-    static Vector<Uint8> read_file(const char *fn) {
+    static Vector<Uint8> read_file(const char* fn) {
         File f(fn, "rb");
         return f.read_file();
     }
@@ -48,6 +52,7 @@ public:
         return result;
     }
 }; // class File
+
 #endif // E4FEATURE_FS
 
 } // ns e4

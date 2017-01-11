@@ -13,7 +13,6 @@ namespace e4 {
 
 namespace err {
     DECL_EXCEPTION(FeatureMissing)
-    DECL_EXCEPTION(TODO)
     DECL_EXCEPTION(BeamLoad)
     DECL_EXCEPTION(Scheduler)
     DECL_EXCEPTION(CodeServer)
@@ -27,16 +26,16 @@ private:
     Vector<String> atom_interned_names_;
     Map<Word, CString> atoms_;
     Map<CString, Word> atoms_reverse_;
-    Node *this_node_ = nullptr;
+    Node* this_node_ = nullptr;
 
 public:
     CodeManager modules_;
     Heap binary_heap_;
 
-    explicit VM(): binary_heap_(1024) {}
+    explicit VM() : binary_heap_(1024) {}
 
-    Term add_atom(const String &atom_name);
-    Node *dist_this_node();
+    Term add_atom(const String& atom_name);
+    Node* dist_this_node();
 };
 
 } // ns e4
