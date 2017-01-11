@@ -16,7 +16,7 @@ private:
 public:
     explicit File(const char *fn, const char *mode) {
         f_ = ::fopen(fn, mode);
-        G_ASSERT(is_open());
+        E4ASSERT(is_open());
     }
     ~File() {
         close();

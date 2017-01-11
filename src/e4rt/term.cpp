@@ -12,8 +12,8 @@ TupleBoxHeader Term::empty_tuple_ = TupleBoxHeader(0);
 
 Term Term::make_tuple(TupleBoxHeader *tuple_box) {
     // Assumption: boxheader already has tuple tag and arity set
-    G_ASSERT(tuple_box->tag() == BoxTag::Tuple);
-    G_ASSERT(tuple_box->val() > 0);
+    E4ASSERT(tuple_box->tag() == BoxTag::Tuple);
+    E4ASSERT(tuple_box->val() > 0);
     return box_wrap(tuple_box);
 }
 

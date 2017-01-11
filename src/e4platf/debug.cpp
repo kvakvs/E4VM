@@ -25,11 +25,13 @@ E4_NORETURN void failf(const char *format, ...) {
     ::abort();
 }
 
-void dprintf(const char *format, ...) {
+#if E4DEBUG
+void debug_printf(const char* format, ...) {
     va_list args;
     va_start (args, format);
     ::vprintf(format, args);
     va_end (args);
 }
+#endif // E4DEBUG
 
 } // ns e4

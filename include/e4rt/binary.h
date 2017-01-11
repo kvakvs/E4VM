@@ -36,8 +36,8 @@ namespace e4 {
 
     template <typename T>
     ProcBinaryBox *make_proc_binary(Heap &heap, GenericSize<T> size) {
-        dprintf("bin: new procbin %zu b\n", size.bytes());
-        G_ASSERT(size.bytes() <= PROCBIN_THRESHOLD);
+        E4LOG1("bin: new procbin %zu b\n", size.bytes());
+        E4ASSERT(size.bytes() <= PROCBIN_THRESHOLD);
         auto wsz = Heap::word_size(size);
         auto newbox = heap.allocate_box(wsz, BoxTag::ProcBinary, size.bytes());
         auto pbin = reinterpret_cast<ProcBinaryBox *>(newbox);
@@ -48,7 +48,7 @@ namespace e4 {
 
     template <typename T>
     RCBinaryBox *make_rc_binary(VM &vm, GenericSize<T> size) {
-        dprintf("bin: new rcbin %zu b\n", size.bytes());
+        E4LOG1("bin: new rcbin %zu b\n", size.bytes());
         // Too large, we allocate an RCBinaryBox instead
         auto w_size = Heap::word_size(GenericSize<RCBinaryBox>(1));
         auto newbox = vm.binary_heap_.allocate_box(

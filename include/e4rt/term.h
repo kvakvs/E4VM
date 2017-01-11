@@ -90,7 +90,7 @@ public:
 
     // Construct an atom from atom index
     static Term make_atom(Word a) {
-        G_ASSERT(a < (1UL << IMM1_VALUE_BITS));
+        E4ASSERT(a < (1UL << IMM1_VALUE_BITS));
         return Term(PrimaryTag::Immediate, ImmediateTag::Atom, a);
     }
 
@@ -109,7 +109,7 @@ public:
     template <typename T>
     static Word ptr_to_val1(const T *ptr) {
         Word result = reinterpret_cast<Word>(ptr) & TAG1_VALUE_MASK;
-        G_ASSERT(fits_in<Word>(result));
+        E4ASSERT(fits_in<Word>(result));
         return reinterpret_cast<Word>(result);
     }
 
@@ -119,7 +119,7 @@ public:
     }
 
     BoxHeaderWord *unbox() const {
-        G_ASSERT(is_boxed());
+        E4ASSERT(is_boxed());
         return reinterpret_cast<BoxHeaderWord *>(raw_ & TAG1_VALUE_MASK);
     }
 

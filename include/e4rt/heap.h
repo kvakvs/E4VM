@@ -28,7 +28,7 @@ public:
     }
 
     ConsCell *allocate_cons() {
-        dprintf("heap: alloc cons\n");
+        E4LOG("heap: alloc cons\n");
         return reinterpret_cast<ConsCell *>(allocate_raw_words(2));
     }
 
@@ -40,7 +40,7 @@ public:
 
     // Create a box in memory, set up its first word with boxtag and value bits
     BoxHeaderWord *allocate_box(WordSize want_size, BoxTag bt, Word val) {
-        dprintf("heap: alloc box %zu w\n", want_size.units());
+        E4LOG1("heap: alloc box %zu w\n", want_size.units());
         Word *box = allocate_raw_words(want_size.units() + 1);
         return BoxHeaderWord::setup_a_box(box, bt, val);
     }
@@ -54,13 +54,13 @@ private:
     Word *allocate_raw_words(Word want_size) {
         if (not have(want_size)) {
             // Grow or something
-            G_TODO("Grow or something");
+            E4TODO("Grow or something");
             return nullptr;
         }
         auto result = heap_.get() + htop_;
         htop_ += want_size;
-        dprintf("h::alloc(%zu) htop %zu size %zu\n",
-                want_size, htop_, capacity_);
+        E4LOG3("h::alloc(%zu) htop %zu size %zu\n",
+              want_size, htop_, capacity_);
         return result;
     }
     void alloc_heap(Word size) {

@@ -66,10 +66,10 @@ public:
             }
             return;
         }
-        G_ASSERT(newlength > 0);
+        E4ASSERT(newlength > 0);
         auto newdata = e4std::make_array<ValueType>(newlength);
         if (data_) { // there may possibly be empty src data
-            G_ASSERT(newlength >= size_);
+            E4ASSERT(newlength >= size_);
             ::memmove(newdata.get(), data_.get(), size_);
         }
         capacity_ = size_ = newlength;
@@ -77,22 +77,22 @@ public:
     }
 
     ValueType& back() {
-        G_ASSERT(size_ > 0);
+        E4ASSERT(size_ > 0);
         return *(data_.get() + size_ - 1);
     }
 
     const ValueType& back() const {
-        G_ASSERT(size_ > 0);
+        E4ASSERT(size_ > 0);
         return *(data_.get() + size_ - 1);
     }
 
     ValueType& front() {
-        G_ASSERT(size_ > 0);
+        E4ASSERT(size_ > 0);
         return *(data_.get());
     }
 
     const ValueType& front() const {
-        G_ASSERT(size_ > 0);
+        E4ASSERT(size_ > 0);
         return *(data_.get());
     }
 
@@ -110,7 +110,7 @@ private:
 
     void change_capacity(::size_t newcap) {
         if (newcap <= capacity_) { return; }
-        G_ASSERT(newcap > size_);
+        E4ASSERT(newcap > size_);
         auto newdata = e4std::make_array<ValueType>(newcap);
         if (size_) {
             e4std::move_objects<ValueType>(data_.get(),

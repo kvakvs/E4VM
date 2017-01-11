@@ -25,7 +25,7 @@ Term VM::add_atom(const String &atom_name) {
         // duplicate
         return Term::make_atom(rev_i->value_);
     }
-    G_ASSERT(fits_in<Word>(atoms_.size())); // 64bit machine with 32bit words
+    E4ASSERT(fits_in<Word>(atoms_.size())); // 64bit machine with 32bit words
     Word atom_id = static_cast<Word>(atoms_.size());
 
     // Add name to interned names and use only pointer to it in dicts
@@ -40,7 +40,7 @@ Term VM::add_atom(const String &atom_name) {
 
 Node *VM::dist_this_node() {
 #if E4FEATURE_ERLDIST
-    G_TODO("implement Node and this node variable")
+    E4TODO("implement Node and this node variable")
 #endif
     return this_node_;
 }

@@ -43,22 +43,22 @@ public:
             : primary_tag_(PrimaryTag::Header), tag_(t), val_(val) {}
 
     void set_tag(BoxTag t) {
-        G_ASSERT(primary_tag_ == PrimaryTag::Header);
+        E4ASSERT(primary_tag_ == PrimaryTag::Header);
         tag_ = t;
     }
 
     BoxTag tag() const {
-        G_ASSERT(primary_tag_ == PrimaryTag::Header);
+        E4ASSERT(primary_tag_ == PrimaryTag::Header);
         return tag_;
     }
 
     void set_val(Word a) {
-        G_ASSERT(primary_tag_ == PrimaryTag::Header);
+        E4ASSERT(primary_tag_ == PrimaryTag::Header);
         val_ = a;
     }
 
     Word val() const {
-        G_ASSERT(primary_tag_ == PrimaryTag::Header);
+        E4ASSERT(primary_tag_ == PrimaryTag::Header);
         return val_;
     }
 

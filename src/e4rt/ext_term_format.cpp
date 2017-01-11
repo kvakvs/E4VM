@@ -40,7 +40,7 @@ Term ExtTerm::read_tagged_atom_string(VM& vm, tool::Reader& r) {
 
 Node* ExtTerm::get_node(VM& vm, Term /*sysname*/, dist::Creation /*creation*/) {
 #if E4FEATURE_ERLDIST
-    G_TODO("distribution support pid etf")
+    E4TODO("distribution support pid etf")
 #endif
     return vm.dist_this_node();
 }
@@ -58,7 +58,7 @@ Term ExtTerm::make_pid(VM& vm, Term sysname, Word id, Word serial,
         return Term::make_short_pid(data);
     }
 #if E4FEATURE_ERLDIST
-    G_TODO("distribution support pid etf");
+    E4TODO("distribution support pid etf");
 #endif
     // distribution disabled, no want remote pids
     throw err::FeatureMissing("ERL_DIST");
@@ -164,8 +164,8 @@ Term ExtTerm::read(VM &vm, Heap &heap, tool::Reader &r) {
     switch (t) {
         case Tag::Compressed:
             // =80; 4 bytes size; compressed data
-            G_TODO("compressed etf");
-            G_IF_NODEBUG(break;)
+            E4TODO("compressed etf");
+            E4IF_NODEBUG(break;)
 
         case Tag::SmallIntegerExt:
             return Term::make_small(r.read_byte());
@@ -179,7 +179,7 @@ Term ExtTerm::read(VM &vm, Heap &heap, tool::Reader &r) {
             } else {  // hardware bits = 32
 #if E4FEATURE_BIGNUM
                 if (Term::is_big(n)) {
-                    G_TODO("construct bignum etf");
+                    E4TODO("construct bignum etf");
                 } else {
                     return Term::make_small(n);
                 }
@@ -192,10 +192,10 @@ Term ExtTerm::read(VM &vm, Heap &heap, tool::Reader &r) {
 
 #if E4FEATURE_FLOAT
         case OLD_FLOAT_STRING_EXT: {
-            G_TODO("parse float string etf");
+            E4TODO("parse float string etf");
         }  // old string float_ext
         case IEEE_FLOAT_EXT: {
-            G_TODO("make ieee 8byte double etf");
+            E4TODO("make ieee 8byte double etf");
         }  // new 8byte double float_ext
 #else
         case Tag::OldFloatStringExt:
@@ -216,8 +216,8 @@ Term ExtTerm::read(VM &vm, Heap &heap, tool::Reader &r) {
             //      Term node = read_atom_string(r);
             //      Word id = r.read_bigendian_i32();
             //      u8_t creation = r.read_byte();
-            G_TODO("ref etf");
-            G_IF_NODEBUG(break;)
+            E4TODO("ref etf");
+            E4IF_NODEBUG(break;)
         }  // end reference_ext
 
         case Tag::PortExt: {
@@ -225,8 +225,8 @@ Term ExtTerm::read(VM &vm, Heap &heap, tool::Reader &r) {
             //      Term node = read_atom_string(r);
             //      Word id = r.read_bigendian_i32();
             //      u8_t creation = r.read_byte();
-            G_TODO("port etf");
-            G_IF_NODEBUG(break;)
+            E4TODO("port etf");
+            E4IF_NODEBUG(break;)
         }  // end reference_ext
 
         case Tag::PidExt: {
@@ -277,7 +277,7 @@ Term ExtTerm::read(VM &vm, Heap &heap, tool::Reader &r) {
             throw err::ExternalTerm("bad etf tag");
     }  // switch tag
 
-    dprintf("read etf: tag %d\n", static_cast<int>(t));
+    E4LOG1("read etf: tag %d\n", static_cast<int>(t));
     failf("Something is not right");
 //    return NON_VALUE;
 }  // parse function

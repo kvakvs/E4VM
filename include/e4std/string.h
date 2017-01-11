@@ -46,7 +46,7 @@ public:
     String& operator =(const String& other) {
         content_.resize(other.size() + 1); // extra for trailing '\0'
         if (content_.data() && other.content_.data()) {
-            G_ASSERT(content_.capacity() >= other.content_.size() + 1);
+            E4ASSERT(content_.capacity() >= other.content_.size() + 1);
             ::memcpy(content_.data(),
                      other.content_.data(),
                      other.content_.size());
@@ -85,7 +85,7 @@ public:
     }
 
     String& operator += (char t) {
-        G_ASSERT(content_.size() > 0);
+        E4ASSERT(content_.size() > 0);
         content_.resize(content_.size() - 1); // cut the trailing zero
         content_.push_back(t);
         content_.push_back('\0');

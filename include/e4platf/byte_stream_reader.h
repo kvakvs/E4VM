@@ -23,12 +23,12 @@ public:
     }
 
     // Advance by 1 byte, assert its value equal to 'value'
-    void assert_byte(Uint8 value) { G_ASSERT(value == read_byte()); }
+    void assert_byte(Uint8 value) { E4ASSERT(value == read_byte()); }
 
     template<class T>
     void assert_and_advance(const T* content, ByteSize sz) {
-        if (not have(sz)) { G_FAIL("bsr: not enough data to a&a"); }
-        G_ASSERT(0 == ::memcmp(content, ptr_, sz.bytes()));
+        if (not have(sz)) { E4FAIL("bsr: not enough data to a&a"); }
+        E4ASSERT(0 == ::memcmp(content, ptr_, sz.bytes()));
         ptr_ += sz.bytes();
     }
 
@@ -40,7 +40,7 @@ public:
     template<class StoredType>
     void assert_have(GenericSize<StoredType> want_have) const {
         auto have_remaining = end_ - ptr_;
-        G_ASSERT_GTE(have_remaining,
+        E4ASSERT_GTE(have_remaining,
                      static_cast<SignedWord>(want_have.bytes()));
     }
 
@@ -85,7 +85,7 @@ public:
             if (safety_limit) {
                 safety_limit--;
             } else {
-                G_FAIL("Varint too long");
+                E4FAIL("Varint too long");
             }
         }
         return result;
@@ -96,7 +96,7 @@ public:
         assert_have(sz);
 
         String result(reinterpret_cast<const char *>(ptr_), sz.bytes());
-//        dprintf("read_v_str: %s\n", result.c_str());
+//        E4LOG("read_v_str: %s\n", result.c_str());
         ptr_ += sz.bytes();
         return result;
     }
