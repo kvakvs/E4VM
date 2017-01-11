@@ -35,7 +35,7 @@ class Term;
 //
 class BoxHeaderWord {
 private:
-    const PrimaryTag primary_tag_:TAG1_TAG_BITS;
+    PrimaryTag primary_tag_:TAG1_TAG_BITS;
     BoxTag tag_:BOXED_TAG_BITS;   // least-significant goes first
     Word val_:BOXED_VALUE_BITS;
 public:
@@ -66,6 +66,7 @@ public:
     template<class T>
     static BoxHeaderWord* setup_a_box(T* memory, BoxTag bt, Word val) {
         auto hword = reinterpret_cast<BoxHeaderWord *>(memory);
+        hword->primary_tag_ = PrimaryTag::Header;
         hword->set_tag(bt);
         hword->set_val(val);
         return hword;

@@ -1,6 +1,8 @@
+DEBUG_EMU=cmake-build-debug/e4emu-debug
+
 .PHONY: gdb
 gdb: compile
-	gdb cmake-build-debug/gleam_d
+	gdb ${DEBUG_EMU}
 
 .PHONY: compile
 compile:
