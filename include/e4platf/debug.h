@@ -48,13 +48,13 @@ E4_NORETURN void failf(const char *format, ...);
         }
     #define E4IF_NODEBUG(X)
 
-    #define E4TODO(what)                                                \
-        e4::failf(BOLDYELLOW "TODO:" RESET " %s (%s:%d)\n", what,       \
-            __FILE__, __LINE__);
+    #define E4TODO(T)                                           \
+        e4::failf(BOLDYELLOW "TODO:" RESET " %s (%s:%d)\n",     \
+            T, __FILE__, __LINE__);
 
-    #define E4FAIL(T) e4::failf(BOLDRED "FAIL:" RESET       \
-            " %s:%d -- " BOLDYELLOW #T "\n" RESET,          \
-             __FILE__, __LINE__);
+    #define E4FAIL(T) e4::failf(BOLDRED "FAIL:" RESET           \
+            " %s:%d -- " BOLDYELLOW "%s\n" RESET,               \
+            T, __FILE__, __LINE__);
 
     // Choose a debug value in debug build
     #define E4CHOICE(DEBUG, NODEBUG) ((void)(NODEBUG), DEBUG)
@@ -69,8 +69,8 @@ E4_NORETURN void failf(const char *format, ...);
     #define E4ASSERT(C) (void)(C)
     #define E4ASSERT_GTE(A, B) (void)(A), (void)(B)
     #define E4IF_NODEBUG(X) X
-    #define E4TODO(what) e4::failf("TODO %s\n", what);
-    #define E4FAIL(T) e4::failf("FAIL" #T "\n");
+    #define E4TODO(T) e4::failf("TODO:%s\n", T);
+    #define E4FAIL(T) e4::failf("FAIL:%s\n", T);
 
     // Choose a nodebug value in release
     #define E4CHOICE(DEBUG, NODEBUG) ((void)(DEBUG), NODEBUG)

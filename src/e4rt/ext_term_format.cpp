@@ -3,6 +3,7 @@
 // PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 //
 
+#include "e4rt/messages.h"
 #include "e4rt/binary.h"
 #include "e4rt/ext_term_format.h"
 
@@ -61,7 +62,7 @@ Term ExtTerm::make_pid(VM& vm, Term sysname, Word id, Word serial,
     E4TODO("distribution support pid etf");
 #endif
     // distribution disabled, no want remote pids
-    throw err::FeatureMissing("ERL_DIST");
+    throw err::FeatureMissing(e4err::no_feat_erldist);
 }
 
 Term ExtTerm::read_tuple(VM& vm, Heap& heap, tool::Reader& r, Word arity) {
@@ -179,13 +180,13 @@ Term ExtTerm::read(VM &vm, Heap &heap, tool::Reader &r) {
             } else {  // hardware bits = 32
 #if E4FEATURE_BIGNUM
                 if (Term::is_big(n)) {
-                    E4TODO("construct bignum etf");
+                    E4TODO("constr bignum etf");
                 } else {
                     return Term::make_small(n);
                 }
 #else
                 // no bignum, and hardware bits not enough: much fail here
-                throw err::FeatureMissing("BIGNUM");
+                throw err::FeatureMissing(e4err::no_feat_bignum);
 #endif
             }  // hardware bits = 32
         }      // integer_ext
@@ -200,7 +201,7 @@ Term ExtTerm::read(VM &vm, Heap &heap, tool::Reader &r) {
 #else
         case Tag::OldFloatStringExt:
         case Tag::IeeeFloatExt:
-            throw err::FeatureMissing("FLOAT");
+            throw err::FeatureMissing(e4err::no_feat_float);
 #endif
 
         case Tag::AtomUtf8Ext:  // fall through
@@ -248,7 +249,7 @@ Term ExtTerm::read(VM &vm, Heap &heap, tool::Reader &r) {
                 // return read_map(heap, r);
                 throw err::TODO("etf MAPS");
 #else
-                throw err::FeatureMissing("MAPS");
+                throw err::FeatureMissing(e4err::no_feat_maps);
 #endif
 
         case Tag::NilExt:
@@ -268,13 +269,13 @@ Term ExtTerm::read(VM &vm, Heap &heap, tool::Reader &r) {
 #if E4FEATURE_BIGNUM
                 throw err::FeatureMissing("BIGNUM");
 #else
-                throw err::TODO("BIGNUM");
+                throw err::FeatureMissing(e4err::no_feat_bignum);
 #endif
 
         case Tag::DistHeader:
         case Tag::AtomCacheRef:
             // Std::fmt("invalid ETF value tag %d\n", t);
-            throw err::ExternalTerm("bad etf tag");
+            throw err::ExternalTerm(e4err::etf_bad_tag);
     }  // switch tag
 
     E4LOG1("read etf: tag %d\n", static_cast<int>(t));

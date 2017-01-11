@@ -9,6 +9,8 @@
 #include "e4platf/types.h"
 #include "e4platf/conf.h"
 #include "e4platf/debug.h"
+#include "e4platf/messages.h"
+
 #include "e4std/view.h"
 
 namespace e4 { namespace tool {
@@ -27,7 +29,9 @@ public:
 
     template<class T>
     void assert_and_advance(const T* content, ByteSize sz) {
-        if (not have(sz)) { E4FAIL("bsr: not enough data to a&a"); }
+        if (not have(sz)) {
+            E4FAIL(platferr::r_data_exhausted);
+        }
         E4ASSERT(0 == ::memcmp(content, ptr_, sz.bytes()));
         ptr_ += sz.bytes();
     }
@@ -85,7 +89,7 @@ public:
             if (safety_limit) {
                 safety_limit--;
             } else {
-                E4FAIL("Varint too long");
+                E4FAIL(platferr::r_varint_too_long);
             }
         }
         return result;

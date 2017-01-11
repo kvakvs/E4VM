@@ -67,7 +67,7 @@ set(E4_RUNTIME_SOURCES
         src/e4rt/module.cpp
         src/e4rt/term.cpp
         src/e4rt/vm.cpp
-        )
+        include/e4rt/messages.h)
 
 ## Helpers and OS abstraction library
 set(E4_PLATF_SOURCES
