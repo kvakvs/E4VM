@@ -5,9 +5,19 @@
 #pragma once
 
 #include <stdio.h>
+
+#include "e4std/string.h"
+#include "e4std/vector.h"
 #include "e4platf/types.h"
 
-namespace e4 {
+namespace platf { namespace fs {
+
+using e4::Uint8;
+using e4::Count;
+using e4std::String;
+using e4std::Vector;
+
+DECL_EXCEPTION(Filesystem)
 
 #if E4FEATURE_FS
 class File {
@@ -52,8 +62,11 @@ public:
         return result;
     }
 }; // class File
-
 #endif // E4FEATURE_FS
 
-} // ns e4
+// If Filesystem feature is enabled: this will scan search paths and find 'fn'
+// Otherwise: Will check if the file is present in statically linked files
+Vector<Uint8> read(const Vector<String>& search_paths, const char* fn);
+
+}} // ns platf::fs
 

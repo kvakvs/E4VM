@@ -11,8 +11,8 @@
 
 namespace e4 {
 
-void CodeManager::load_file(VM &vm, const char *fn) {
-    auto data = File::read_file(fn);
+void CodeManager::load(VM &vm, const char *fn) {
+    auto data = platf::fs::read(paths_, fn);
     auto m = new Module(vm);
     m->load(e4std::BoxView<Uint8>(data));
     vm.modules_.add(m);

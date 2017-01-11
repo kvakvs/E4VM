@@ -79,7 +79,7 @@ set(E4_PLATF_SOURCES
         include/e4platf/types.h
         src/e4platf/debug.cpp
         src/e4platf/mem.cpp
-        )
+        src/e4platf/fs.cpp)
 
 # A minimal replacement for C++ stuff which we don't link
 set(E4_STD_SOURCES

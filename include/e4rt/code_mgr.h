@@ -18,15 +18,23 @@ class VM;
 class CodeManager {
 private:
     Map<Word, Module*> mods_;
+    // Code search paths, starting with "."
+    Vector<String> paths_;
+
 public:
     explicit CodeManager() : mods_() {
         // TODO: load preloaded modules
+        paths_.push_back(String("."));
     }
 
-    void load_file(VM& vm, const char* fn);
+    void load(VM& vm, const char* name);
 
     void add(Module* m) {
         mods_.insert(m->name().get_raw(), m);
+    }
+
+    void path_add(const String &p) {
+        paths_.push_back(p);
     }
 };
 

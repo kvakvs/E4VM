@@ -7,6 +7,7 @@
 
 int main(int /*argc*/, const char ** /*argv [] */) {
     e4::VM vm;
-    vm.modules_.load_file(vm, "e4compile/priv/test1.e4b");
+    vm.modules_.path_add("e4compile/priv");
+    vm.modules_.load(vm, "test1.e4b");
     return 0;
 }

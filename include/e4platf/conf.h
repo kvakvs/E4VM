@@ -45,15 +45,15 @@ constexpr bool DEBUG_MODE = (E4DEBUG != 0);
     constexpr bool LITTLE_ENDIAN = not BIG_ENDIAN;
 
 
-#define DECL_EXCEPTION(NAME)                            \
-    class NAME: public e4std::RuntimeError {            \
-    public:                                             \
-        NAME(const char* e): e4std::RuntimeError(e) {}  \
-        virtual const char* what() const noexcept;      \
+#define DECL_EXCEPTION(NAME)                                    \
+    class NAME##Error: public e4std::RuntimeError {             \
+    public:                                                     \
+        NAME##Error(const char* e): e4std::RuntimeError(e) {}   \
+        virtual const char* what() const noexcept;              \
     };
-#define IMPL_EXCEPTION(NAME)                        \
-    const char* NAME::what() const noexcept {       \
-        return e4std::RuntimeError::what();         \
+#define IMPL_EXCEPTION(NAME)                            \
+    const char* NAME##Error::what() const noexcept {    \
+        return e4std::RuntimeError::what();             \
     }
 #define DECL_IMPL_EXCEPTION(NAME) DECL_EXCEPTION(NAME) IMPL_EXCEPTION(NAME)
 
