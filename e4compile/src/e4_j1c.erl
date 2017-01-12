@@ -35,6 +35,10 @@ compile2(Prog0 = #j1prog{}, []) -> Prog0;
 
 %% --- special words ---
 
+compile2(Prog0 = #j1prog{}, [#f_export{fn=Fn, arity=Arity} | Tail]) ->
+    Prog1 = prog_add_export(Prog0, Fn, Arity),
+    compile2(Prog1, Tail);
+
 %% NEW FUNCTION -- : MFA ... ;
 compile2(Prog0 = #j1prog{}, [<<":">>, ?F_LIT_FUNA, Fn, Arity | Tail]) ->
     Prog1 = prog_add_word(Prog0, #k_local{name=Fn, arity=Arity}),
@@ -165,13 +169,10 @@ update_patch_table(Prog0 = #j1prog{pc=PC, patch_table=PTab}, Offset) ->
     {Prog1, PatchId} = prog_cond_pop(Prog0),
     Prog1#j1prog{patch_table=orddict:store(PatchId, PC + Offset, PTab)}.
 
-%% @ doc Formats MFArity as a string, substitutes current module name if it was
-%% set to "."
-%%local_to_word(Prog0, <<"'.">>, Fn, Arity) ->
-%%    mfa_to_word(Prog0, Prog0#j1prog.mod, Fn, Arity).
-%%
-%%mfa_to_word(#k_atom{val=Mod}, #k_atom{val=Fn}, Arity) ->
-%%    iolist_to_binary(io_lib:format("~s:~s/~p", [Mod, Fn, Arity])).
+prog_add_export(Prog0 = #j1prog{exports=Expt}, Fun, Arity) ->
+    {Prog1, _} = atom_index_or_create(Prog0, Fun),
+    Prog1#j1prog{exports=[{Fun, Arity} | Expt]}.
+
 
 %% @doc Adds a word to the dictionary, records current program length (program
 %% counter position) as the word address.

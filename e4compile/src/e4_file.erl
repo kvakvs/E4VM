@@ -12,7 +12,8 @@ to_iolist(Prog = #j1prog{}) ->
         section("CODE", Compr, encode_code(Compr, Prog)),
         section("LTRL", Compr, encode_literals(Compr, Prog)),
         section("ATOM", Compr, encode_atoms(Compr, Prog)),
-        section("WORD", Compr, encode_words(Compr, Prog))
+        section("EXPT", Compr, encode_exports(Compr, Prog))
+%%        section("WORD", Compr, encode_words(Compr, Prog))
     ],
     [
         "E4J1", e4_encode:varint(iolist_size(Content)), Content
@@ -53,29 +54,43 @@ encode_atoms(Compr, #j1prog{atoms=AtomTab}) ->
     Enc1 = encode_block(Compr, AtomTab2),
     iolist_to_binary(Enc1).
 
-encode_word_fun(#j1prog{atoms=Atoms}, {Fn, Ar}, PC) ->
-    AtomId = orddict:fetch(Fn, Atoms),
-    <<0,
-      (e4_encode:varint(AtomId))/binary,
-      (e4_encode:varint(as_int(Ar)))/binary,
-      (e4_encode:varint(PC))/binary>>;
-encode_word_fun(#j1prog{atoms=Atoms}, Name, PC) when is_binary(Name) ->
-    AtomId = orddict:fetch(Name, Atoms),
-    <<1,
-      (e4_encode:varint(AtomId))/binary,
-      (e4_encode:varint(PC))/binary>>.
+%%encode_word_fun(#j1prog{atoms=Atoms}, {Fn, Ar}, PC) ->
+%%    AtomId = orddict:fetch(Fn, Atoms),
+%%    <<0,
+%%      (e4_encode:varint(AtomId))/binary,
+%%      (e4_encode:varint(as_int(Ar)))/binary,
+%%      (e4_encode:varint(PC))/binary>>;
+%%encode_word_fun(#j1prog{atoms=Atoms}, Name, PC) when is_binary(Name) ->
+%%    AtomId = orddict:fetch(Name, Atoms),
+%%    <<1,
+%%      (e4_encode:varint(AtomId))/binary,
+%%      (e4_encode:varint(PC))/binary>>.
+%%
+%%encode_words(Compr, Prog = #j1prog{dict=WordTab}) ->
+%%    WordTab1 = lists:keysort(2, WordTab),
+%%    WordTab2 = [
+%%        e4_encode:varint(length(WordTab1)),
+%%        [encode_word_fun(Prog, FunA, PC) || {FunA, PC} <- WordTab1]
+%%    ],
+%%    Enc1 = encode_block(Compr, WordTab2),
+%%    iolist_to_binary(Enc1).
 
-encode_words(Compr, Prog = #j1prog{dict=WordTab}) ->
-    WordTab1 = lists:keysort(2, WordTab),
-    WordTab2 = [
-        e4_encode:varint(length(WordTab1)),
-        [encode_word_fun(Prog, FunA, PC) || {FunA, PC} <- WordTab1]
-    ],
-    Enc1 = encode_block(Compr, WordTab2),
-    iolist_to_binary(Enc1).
+as_int(I) when is_binary(I) -> binary_to_integer(I).
 
 encode_code(Compr, #j1prog{output=Code}) ->
     Code2 = encode_block(Compr, Code),
     iolist_to_binary(Code2).
 
-as_int(I) when is_binary(I) -> binary_to_integer(I).
+encode_export_fun(#j1prog{atoms=Atoms}, Name, Arity) when is_binary(Name) ->
+    AtomId = orddict:fetch(Name, Atoms),
+    <<(e4_encode:varint(AtomId))/binary,
+      (e4_encode:varint(Arity))/binary>>.
+
+encode_exports(Compr, Prog = #j1prog{exports=Expt}) ->
+    ExpTab1 = lists:keysort(2, Expt),
+    ExpTab2 = [
+        e4_encode:varint(length(ExpTab1)),
+        [encode_export_fun(Prog, Fun, Arity) || {Fun, Arity} <- ExpTab1]
+    ],
+    Enc1 = encode_block(Compr, ExpTab2),
+    iolist_to_binary(Enc1).

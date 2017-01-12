@@ -125,6 +125,9 @@
 -record(f_include, {filename="" :: string()}).
 -type f_include() :: #f_include{}.
 
+-record(f_export, {fn :: binary(), arity = 0 :: integer()}).
+-type f_export() :: #f_export{}.
+
 %% Literal codes, not really opcodes - processed at source load time
 -define(F_LIT_FUNA,     <<"'FUNA">>).   % Fun/Arity local literal
 -define(F_LIT_MFA,      <<"'MFA">>).    % M:F/Arity remote literal

@@ -24,12 +24,13 @@
 %%module_new() -> #f_mod_pass1{}.
 
 -spec process(k_mdef()) -> f_block().
-process(#k_mdef{name=Name, exports=_Exps, attributes=_Attr, body=Body}) ->
+process(#k_mdef{name=Name, exports=Exps, attributes=_Attr, body=Body}) ->
     Block0 = e4_f1:block(
         [
             e4_f1:comment("begin mod ~s", [Name]),
             e4_f1:include("forth-lib/e4core.e4"),
-            e4_f1:comment("MODULE ~s", [Name])
+            e4_f1:comment("MODULE ~s", [Name]),
+            lists:map(fun process_export/1, Exps)
         ],
         [],
         [e4_f1:comment("end mod ~s", [Name])]),
@@ -39,6 +40,8 @@ process(#k_mdef{name=Name, exports=_Exps, attributes=_Attr, body=Body}) ->
 %%              [color:on_white(color:black(" PASS 1 ")),
 %%               e4_print_ic:format_ic(Out, 0)]),
     Out.
+
+process_export({F, Arity}) -> [e4_f1:export(F, Arity)].
 
 %%p(L) -> e4_print_ic:format_core_forth(L, 0).
 

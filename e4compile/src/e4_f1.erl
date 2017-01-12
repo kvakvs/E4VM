@@ -7,8 +7,8 @@
       'and'/1, 'if'/2, 'if'/3, block/0, block/1, block/3, block/4, comment/1,
       comment/2, equals/2, lit/1, match_two_values/2, nil/0, eval/1,
       store/1, tuple/1, var/1, element/2, unless/2, mark_alias/2,
-      mark_new_arg/1, make_mfarity/3, primop/2, include/1,
-      make_tmp/2, emit/2
+      mark_new_arg/1, make_mfarity/3, primop/2, include/1, make_tmp/2, emit/2,
+      export/2
 ]).
 
 -include_lib("compiler/src/core_parse.hrl").
@@ -214,3 +214,5 @@ emit_x_into_y(Nested, Blk) when is_list(Nested) ->
 emit_x_into_y(ForthOp, Blk = #f_block{code=Code}) ->
     Blk#f_block{code=Code ++ [ForthOp]}.
 
+export(F, Arity) ->
+    #f_export{fn=atom_to_binary(F, utf8), arity=Arity}.

@@ -76,6 +76,10 @@ format_op(#k_remote{mod=M, name=F, arity=A}) ->
     io_lib:format("mfarity:~s,~s,~s", [format_op(M), format_op(F), str(A)]);
 format_op(#f_include{filename=F}) ->
     io_lib:format("~s(~s)", [color:whiteb("include"), F]);
+
+format_op(#f_export{fn=N, arity=A}) ->
+    io_lib:format("~s(~s/~p)", [color:redb("EXPORT"), color:whiteb(str(N)), A]);
+
 format_op(#k_var{name=Var}) -> Var; % binary
 format_op(Other) ->
     ?COMPILE_ERROR("format_op: unknown ~p", [Other]).

@@ -58,6 +58,7 @@
     mod :: atom(),
     dict = orddict:new() :: orddict:orddict(binary() | tuple(), integer()),
     dict_nif = orddict:new() :: orddict:orddict(binary(), integer()),
+    exports = [] :: [{binary(), integer()}],
 
     %% a literal value is the key, and the index in the lit table is the value
     lit_id = 0 :: integer(),
