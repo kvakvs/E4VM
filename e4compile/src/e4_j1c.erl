@@ -175,10 +175,16 @@ update_patch_table(Prog0 = #j1prog{pc=PC, patch_table=PTab}, Offset) ->
 
 %% @doc Adds a word to the dictionary, records current program length (program
 %% counter position) as the word address.
--spec prog_add_word(j1prog(), Word :: binary()) -> j1prog().
-prog_add_word(Prog0 = #j1prog{pc=PC, dict=Dict}, Word) ->
+-spec prog_add_word(j1prog(), FA :: k_local() | binary()) -> j1prog().
+prog_add_word(Prog0 = #j1prog{pc=PC, dict=Dict},
+              #k_local{name=#k_atom{val=Fn}, arity=Arity}) ->
+    Dict1 = orddict:store({Fn, Arity}, PC, Dict),
+    {Prog1, _} = atom_index_or_create(Prog0, Fn),
+    Prog1#j1prog{dict=Dict1};
+prog_add_word(Prog0 = #j1prog{pc=PC, dict=Dict}, Word) when is_binary(Word) ->
     Dict1 = orddict:store(Word, PC, Dict),
-    Prog0#j1prog{dict=Dict1}.
+    {Prog1, _} = atom_index_or_create(Prog0, Word),
+    Prog1#j1prog{dict=Dict1}.
 
 %% @doc Adds a NIF name to the dictionary, does not register any other data
 %% just marks the name as existing.

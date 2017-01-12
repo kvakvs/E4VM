@@ -13,10 +13,10 @@ varint(N) when N < 0 -> erlang:error("varint: n<0");
 varint(N) when N =< 127 -> <<0:1, N:7>>; % last byte
 varint(N) ->
     Bytes = [<<0:1, (N rem 128):7>>, varint_with_bit(N bsr 7)],
-    lists:reverse(Bytes).
+    iolist_to_binary(lists:reverse(Bytes)).
 
 %% @doc Same as varint with high bit always set
 varint_with_bit(N) when N =< 127 -> <<1:1, N:7>>; % last byte
 varint_with_bit(N) ->
     Bytes = [<<1:1, (N rem 128):7>>, varint_with_bit(N bsr 7)],
-    lists:reverse(Bytes).
+    iolist_to_binary(lists:reverse(Bytes)).

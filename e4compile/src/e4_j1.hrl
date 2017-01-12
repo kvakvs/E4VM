@@ -56,7 +56,7 @@
 %% Output of the J1 forth compiler (J1C Pass 1)
 -record(j1prog, {
     mod :: atom(),
-    dict = orddict:new() :: orddict:orddict(binary(), integer()),
+    dict = orddict:new() :: orddict:orddict(binary() | tuple(), integer()),
     dict_nif = orddict:new() :: orddict:orddict(binary(), integer()),
 
     %% a literal value is the key, and the index in the lit table is the value
