@@ -6,11 +6,16 @@
 #pragma once
 
 #include <stddef.h>
-//#include <utility>
+#include "e4std/stuff.h"
 
 namespace platf {
 
 struct SingleAlloc {
+    template <class Type, class... Args>
+    static Type* alloc_class(Args&&... args) {
+        return new Type(e4std::forward<Args>(args)...);
+    }
+
     template<class T>
     static void free(T* p) {
         if (p) { delete p; }

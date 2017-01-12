@@ -9,15 +9,15 @@
 
 namespace e4std {
 
-template<class T> struct remove_reference       { typedef T type; };
-template<class T> struct remove_reference<T &>  { typedef T type; };
-template<class T> struct remove_reference<T &&> { typedef T type; };
+//template<class T> struct remove_reference       { typedef T type; };
+//template<class T> struct remove_reference<T &>  { typedef T type; };
+//template<class T> struct remove_reference<T &&> { typedef T type; };
 
 // This somehow doesn't really work
-template<typename T>
-inline typename remove_reference<T>::type&& move(T&& arg) {
-    return static_cast<typename remove_reference<T>::type&&>(arg);
-}
+//template<typename T>
+//inline typename remove_reference<T>::type&& move(T&& arg) {
+//    return static_cast<typename remove_reference<T>::type&&>(arg);
+//}
 
 // Copy stuff algorithm
 template<class InputIt, class OutputIt>
@@ -74,6 +74,9 @@ void move_objects(ValueType* first, ValueType* last, ValueType* dst) {
     }
 }
 
+//
+// std::runtime_error
+//
 class RuntimeError {
 private:
     const char* err_ = nullptr;
@@ -85,5 +88,19 @@ public:
 
     virtual const char* what() const noexcept { return err_; }
 };
+
+//
+// std::forward
+//
+template<typename T>
+struct identity {
+    typedef T type;
+};
+
+template<typename T>
+T&&
+forward(typename identity<T>::type&& param) {
+    return static_cast<typename identity<T>::type&&>(param);
+}
 
 } // ns e4std

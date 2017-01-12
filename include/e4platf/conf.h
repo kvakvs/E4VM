@@ -6,6 +6,10 @@
 
 namespace e4 {
 
+//
+//====== BEGIN FEATURES ======
+//
+
 #ifndef E4FEATURE_FS
 #   define E4FEATURE_FS 0
 #endif
@@ -30,6 +34,15 @@ constexpr bool FEATURE_BIGNUM = (E4FEATURE_BIGNUM != 0);
 #   define E4FEATURE_MAPS 0
 #endif
 constexpr bool FEATURE_MAPS = (E4FEATURE_MAPS != 0);
+
+#ifndef E4FEATURE_HOTCODELOAD
+#   define E4FEATURE_HOTCODELOAD 0
+#endif
+constexpr bool FEATURE_HOTCODELOAD = (E4FEATURE_HOTCODELOAD != 0);
+
+//
+//====== END FEATURES ======
+//
 
 constexpr bool DEBUG_MODE = (E4DEBUG != 0);
 

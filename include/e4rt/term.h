@@ -193,7 +193,6 @@ public:
 //        constexpr Word short_pid_get_value() const {
 //            return imm_val_;
 //        }
-
 };
 
 static_assert(sizeof(Term) == sizeof(Word),

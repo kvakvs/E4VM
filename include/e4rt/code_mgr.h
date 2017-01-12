@@ -10,6 +10,7 @@
 
 #include "e4rt/module.h"
 #include "e4rt/term.h"
+#include "e4rt/term_as_map_key.h"
 
 namespace e4 {
 
@@ -17,9 +18,8 @@ class VM;
 
 class CodeManager {
 private:
-    Map<Word, Module*> mods_;
-    // Code search paths, starting with "."
-    Vector<String> paths_;
+    Map<Term, Module*> mods_;
+    Vector<String> paths_; // Code search paths, starting with "."
 
 public:
     explicit CodeManager() : mods_() {
@@ -29,8 +29,11 @@ public:
 
     void load(VM& vm, const char* name);
 
-    void add(Module* m) {
-        mods_.insert(m->name().get_raw(), m);
+    void add(Module* m);
+
+    const Module* find(Term name) const {
+        auto node = mods_.find(name);
+        return node ? node->value_ : nullptr;
     }
 
     void path_add(const String &p) {

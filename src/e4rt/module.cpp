@@ -51,7 +51,6 @@ void Module::load(const e4std::BoxView<Uint8> &data) {
             // Literals table
             Vector<Term> literals;
             load_literals(section_view, literals);
-            // TODO: GC on module unload or drop heap completely
         }
 
         bsr.advance(section_sz);

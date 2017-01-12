@@ -18,4 +18,19 @@ void CodeManager::load(VM &vm, const char *fn) {
     vm.modules_.add(m);
 }
 
+void CodeManager::add(Module* m) {
+    auto mname = m->name();
+    auto old_m = mods_.find(mname);
+#if E4FEATURE_HOTCODELOAD
+    if (old_m) {
+        // Unload old module or rotate?
+        E4TODO("Module unload/duplicate load")
+    }
+#else
+    delete old_m->value_;
+    mods_.remove(mname);
+#endif
+    mods_.insert(mname, m);
+}
+
 } // ns e4

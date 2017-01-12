@@ -24,7 +24,18 @@ struct MapNode {
             : key_(k), value_(v), left_(left), right_(right) {}
 };
 
-template <class KeyType, class ValueType>
+// Override this for your beautiful key type
+template <class KeyType>
+bool compare_equal(const KeyType& a, const KeyType& b) {
+    return a == b;
+}
+// Override this for your beautiful key type
+template <class KeyType>
+bool compare_less(const KeyType& a, const KeyType& b) {
+    return a < b;
+}
+
+template <class KeyType, class ValueType, class Allocator = platf::SingleAlloc>
 class Map {
 public:
     using NodeType = MapNode<KeyType, ValueType>;
@@ -39,7 +50,7 @@ public:
             insert_helper(root_, key, val);
         } else {
             // TODO: use alloc class in g_platf/mem.h
-            root_ = new NodeType(key, val);
+            root_ = Allocator::template alloc_class<NodeType>(key, val);
         }
     }
 
@@ -55,22 +66,22 @@ public:
         return remove_helper(nullptr, root_, key);
     }
 
-    NodeType* find(const KeyType& key) {
+    NodeType* find(const KeyType& key) const {
         return find_helper(root_, key);
     }
 
 private:
     void insert_helper(NodeType* root,
                        const KeyType& key, const ValueType& val) {
-        if (key < root->key_) {
+        if (compare_less(key, root->key_)) {
             if (not root->left_) {
-                root->left_ = new NodeType(key, val);
+                root->left_ = Allocator::template alloc_class<NodeType>(key, val);
             } else {
                 insert_helper(root->left_, key, val);
             }
         } else {
             if (not root->right_) {
-                root->right_ = new NodeType(key, val);
+                root->right_ = Allocator::template alloc_class<NodeType>(key, val);
             } else {
                 insert_helper(root->right_, key, val);
             }
@@ -96,7 +107,7 @@ private:
     bool remove_helper(NodeType* parent, NodeType* current,
                        const KeyType& key) {
         if (not current) { return false; }
-        if (current->key_ == key) {
+        if (compare_equal(current->key_, key)) {
             if (not current->left_ || not current->right_) {
                 NodeType* t = current->left_;
                 if (current->right_) { t = current->right_; }
@@ -119,22 +130,22 @@ private:
                 valid_sub->key_ = u;
                 return remove_helper(current, current->right_, u);
             }
-            delete current;
+            Allocator::free(current);
             return true;
         }
 
-        if (key < current->key_) {
+        if (compare_less(key, current->key_)) {
             return remove_helper(current, current->left_, key);
         } else {
             return remove_helper(current, current->right_, key);
         }
     }
 
-    NodeType* find_helper(NodeType* current, KeyType key) {
+    NodeType* find_helper(NodeType* current, KeyType key) const {
         if (not current) { return nullptr; }
-        if (current->key_ == key) { return current; }
+        if (compare_equal(current->key_, key)) { return current; }
 
-        if (key < current->key_) {
+        if (compare_less(key, current->key_)) {
             return find_helper(current->left_, key);
         } else {
             return find_helper(current->right_, key);
