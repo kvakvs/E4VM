@@ -1,7 +1,9 @@
 #include "e4platf/fs.h"
 //#include "e4platf/conf.h"
 
+#if E4FEATURE_FS
 #include <sys/stat.h>
+#endif
 
 namespace platf { namespace fs {
 
@@ -17,6 +19,7 @@ Vector<Uint8> read(const Vector<String>& search_paths, const char* fn) {
     }
     throw FilesystemError("not found");
 #else
+    // TODO: For data in const memory return a boxview instead?
     E4TODO("Registry of statically linked files");
 #endif
 }
