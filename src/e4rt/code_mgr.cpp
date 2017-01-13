@@ -14,7 +14,7 @@ namespace e4 {
 void CodeManager::load(VM &vm, const char *fn) {
     auto data = platf::fs::read(paths_, fn);
     auto m = new Module(vm);
-    m->load(e4std::BoxView<Uint8>(data));
+    m->load(ByteView(data));
     vm.modules_.add(m);
 }
 
@@ -27,7 +27,9 @@ void CodeManager::add(Module* m) {
         E4TODO("Module unload/duplicate load")
     }
 #else
-    delete old_m->value_;
+    if (old_m) {
+        delete old_m->value_;
+    }
     mods_.remove(mname);
 #endif
     mods_.insert(mname, m);

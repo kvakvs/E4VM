@@ -98,8 +98,11 @@ set(EMU_SOURCES
         src/main.cpp
         )
 
-set(COMPILER_OPTIONS_REL -Oz -g0 -DE4DEBUG=0)
-set(COMPILER_OPTIONS_DEBUG -Os -g -ggdb -DE4DEBUG=1)
+set(COMPILER_OPTIONS_REL
+        -Oz -g0 -DE4DEBUG=0)
+
+set(COMPILER_OPTIONS_DEBUG
+        -Os -g -ggdb -DE4DEBUG=1 -fno-inline)
 
 add_library(e4_runtime  ${E4_RUNTIME_SOURCES})
 add_library(e4_platform ${E4_PLATF_SOURCES})

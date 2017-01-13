@@ -75,16 +75,18 @@ encode_atoms(Compr, #j1prog{atoms=AtomTab}) ->
 %%    Enc1 = encode_block(Compr, WordTab2),
 %%    iolist_to_binary(Enc1).
 
-as_int(I) when is_binary(I) -> binary_to_integer(I).
-
 encode_code(Compr, #j1prog{output=Code}) ->
     Code2 = encode_block(Compr, Code),
     iolist_to_binary(Code2).
 
-encode_export_fun(#j1prog{atoms=Atoms}, Name, Arity) when is_binary(Name) ->
-    AtomId = orddict:fetch(Name, Atoms),
-    <<(e4_encode:varint(AtomId))/binary,
-      (e4_encode:varint(Arity))/binary>>.
+encode_export_fun(#j1prog{atoms=Atoms, dict=Dict}, Name, Arity)
+    when is_binary(Name) ->
+        AtomId = orddict:fetch(Name, Atoms),
+        Offset = orddict:fetch({Name, Arity}, Dict),
+        io:format("write export ~s/~p at ~p~n", [Name, Arity, Offset]),
+        <<(e4_encode:varint(AtomId))/binary,
+          (e4_encode:varint(Arity))/binary,
+          (e4_encode:varint(Offset))/binary>>.
 
 encode_exports(Compr, Prog = #j1prog{exports=Expt}) ->
     ExpTab1 = lists:keysort(2, Expt),

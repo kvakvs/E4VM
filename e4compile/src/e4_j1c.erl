@@ -171,15 +171,17 @@ update_patch_table(Prog0 = #j1prog{pc=PC, patch_table=PTab}, Offset) ->
 
 prog_add_export(Prog0 = #j1prog{exports=Expt}, Fun, Arity) ->
     {Prog1, _} = atom_index_or_create(Prog0, Fun),
-    Prog1#j1prog{exports=[{Fun, Arity} | Expt]}.
+    Expt1 = [{Fun, Arity} | Expt],
+    Prog1#j1prog{exports=Expt1}.
 
+as_int(I) when is_binary(I) -> binary_to_integer(I).
 
 %% @doc Adds a word to the dictionary, records current program length (program
 %% counter position) as the word address.
 -spec prog_add_word(j1prog(), FA :: k_local() | binary()) -> j1prog().
 prog_add_word(Prog0 = #j1prog{pc=PC, dict=Dict},
               #k_local{name=#k_atom{val=Fn}, arity=Arity}) ->
-    Dict1 = orddict:store({Fn, Arity}, PC, Dict),
+    Dict1 = orddict:store({Fn, as_int(Arity)}, PC, Dict),
     {Prog1, _} = atom_index_or_create(Prog0, Fn),
     Prog1#j1prog{dict=Dict1};
 prog_add_word(Prog0 = #j1prog{pc=PC, dict=Dict}, Word) when is_binary(Word) ->

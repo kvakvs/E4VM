@@ -32,12 +32,19 @@ public:
 
     const ValueType* data() const { return data_.get(); }
 
+    bool empty() const { return size_ == 0; }
+
     ::size_t size() const { return size_; }
 
     ::size_t capacity() const { return capacity_; }
 
     void clear() {
         resize(0);
+    }
+
+    const ValueType& operator[] (::size_t i) const {
+        E4ASSERT(i < size());
+        return data_.get()[i];
     }
 
     void push_back(const ValueType& v) {

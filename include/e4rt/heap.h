@@ -27,6 +27,8 @@ public:
         return (capacity_ - htop_) >= want_size;
     }
 
+    bool empty() const { return htop_ == 0; }
+
     ConsCell* allocate_cons() {
         E4LOG("heap: alloc cons\n");
         return reinterpret_cast<ConsCell*>(allocate_raw_words(2));

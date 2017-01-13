@@ -20,8 +20,10 @@ constexpr const char *SIG_CODE = "CODE";    // code section tag
 //constexpr const char *SIG_CODE_GZ = "code"; // gzipped
 constexpr const char *SIG_LTRL = "LTRL";    // literals section tag
 //constexpr const char *SIG_LTRL_GZ = "ltrl"; // gzipped
+constexpr const char *SIG_EXPT = "EXPT";    // exports section tag
+//constexpr const char *SIG_EXPT_GZ = "expt"; // gzipped
 
-void Module::load(const e4std::BoxView<Uint8> &data) {
+void Module::load(const ByteView& data) {
     tool::Reader bsr(data);
 
     bsr.assert_and_advance(SIG_MODULE, ByteSize(4));
@@ -29,51 +31,63 @@ void Module::load(const e4std::BoxView<Uint8> &data) {
     bsr.assert_have(all_sz);
 
     char section_sig[5] = {0, 0, 0, 0, 0};
+    Vector<Term> atoms_t; // after loaded, will be used in exports
 
     while (bsr.have(ByteSize(SIG_SIZE))) {
         bsr.read<char>(section_sig, SIG_SIZE);
         ByteSize section_sz(bsr.read_varint_u<Word>());
-        auto section_view = e4std::BoxView<Uint8>(bsr.pos(), section_sz.bytes());
+        auto section_view = ByteView(bsr.pos(), section_sz.bytes());
 
         if (not ::memcmp(section_sig, SIG_ATOMS, SIG_SIZE)) {
+            //
             // Atoms table
+            //
             Vector<String> atoms;
             load_atoms(section_view, /*out*/ atoms);
             name_ = vm_.add_atom(atoms.front());
             for (const auto &a: atoms) {
-                vm_.add_atom(a);
+                atoms_t.push_back(vm_.add_atom(a));
             }
         } else if (not ::memcmp(section_sig, SIG_CODE, SIG_SIZE)) {
+            //
             // Code
+            //
             code_.resize(section_sz.bytes());
             ::memcpy(code_.data(), bsr.pos(), section_sz.bytes());
+
+            // TODO: set up literal refs in code
         } else if (not ::memcmp(section_sig, SIG_LTRL, SIG_SIZE)) {
+            //
             // Literals table
-            Vector<Term> literals;
-            load_literals(section_view, literals);
+            //
+            E4ASSERT(literals_.empty());
+            E4ASSERT(literal_heap_.empty());
+            load_literals(section_view);
+        } else if (not ::memcmp(section_sig, SIG_EXPT, SIG_SIZE)) {
+            load_exports(section_view, atoms_t);
+        } else {
+            E4FAIL("Unknown section");
         }
 
         bsr.advance(section_sz);
     }
     // TODO: set up atom refs in code
-    // TODO: set up literal refs in code
 }
 
-void Module::load_literals(const e4std::BoxView<Uint8> &adata,
-                           Vector<Term>& result) {
+void Module::load_literals(const ByteView& adata) {
     tool::Reader bsr(adata);
     Word n = bsr.read_varint_u<Word>();
-    result.clear();
-    result.reserve(n);
+    literals_.reserve(n);
 
     for (Word i = 0; i < n; ++i) {
-        result.push_back(ExtTerm::read_with_marker(vm_, literals_, bsr));
+        const auto lit = ExtTerm::read_with_marker(vm_, literal_heap_, bsr);
+        literals_.push_back(lit);
     }
 }
 
 // Reads atom table and populates a string vector. Does not populate
 // the global atom table.
-void Module::load_atoms(const e4std::BoxView<Uint8> &adata,
+void Module::load_atoms(const ByteView& adata,
                         Vector<String> &result) {
     tool::Reader bsr(adata);
     Word n = bsr.read_varint_u<Word>();
@@ -82,6 +96,23 @@ void Module::load_atoms(const e4std::BoxView<Uint8> &adata,
 
     for (Word i = 0; i < n; ++i) {
         result.push_back(bsr.read_varlength_string());
+    }
+}
+
+void Module::load_exports(const ByteView& adata,
+                          const Vector<Term>& atoms_lookup) {
+    tool::Reader bsr(adata);
+    Word n = bsr.read_varint_u<Word>();
+    exports_.reserve(n);
+
+    for (Word i = 0; i < n; ++i) {
+        auto fn_atom_index = bsr.read_varint_u<Word>();
+        E4ASSERT(atoms_lookup.size() > fn_atom_index);
+
+        Export ex(atoms_lookup[fn_atom_index],
+                  bsr.read_varint_u<Word>(),
+                  bsr.read_varint_u<Word>());
+        exports_.push_back(ex);
     }
 }
 
