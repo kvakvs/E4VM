@@ -110,11 +110,11 @@ public:
     // Generic Box Utilities
     //
 
-    bool is_immediate() const {
+    constexpr bool is_immediate() const {
         return as_imm_.primary_tag_ == PrimaryTag::Immediate;
     }
 
-    bool is_boxed() const {
+    constexpr bool is_boxed() const {
         return as_primary_.tag_ == PrimaryTag::Boxed;
     }
 

@@ -41,7 +41,7 @@ public:
     }
 
     // Create a box in memory, set up its first word with boxtag and value bits
-    BoxHeaderWord* allocate_box(WordSize want_size, BoxTag bt, Word val) {
+    BoxHeaderWord* allocate_box(WordSize want_size, BoxTag::Type bt, Word val) {
         E4LOG1("heap: alloc box %zu w\n", want_size.units());
         Word* box = allocate_raw_words(want_size.units() + 1);
         return BoxHeaderWord::setup_a_box(box, bt, val);

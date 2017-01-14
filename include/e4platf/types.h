@@ -31,6 +31,8 @@ namespace e4 {
     #error E4_BITS_PER_WORD other than 32/64 not supported yet
 #endif
     constexpr Word BITS_PER_WORD = sizeof(Word) * 8;
+    static_assert(sizeof(void*) <= sizeof(Word),
+                  "A pointer type won't fit the word type");
 
     // Ensure that casting to word will not lose any bits
     template <typename ContainerType, typename ValueType>

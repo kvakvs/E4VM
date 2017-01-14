@@ -7,7 +7,7 @@ namespace e4 {
 // primary tag bits
 constexpr Word TAG1_TAG_BITS = 2;
 constexpr Word TAG1_VALUE_BITS = BITS_PER_WORD - TAG1_TAG_BITS;
-constexpr Word TAG1_VALUE_MASK = (~0ULL) << TAG1_TAG_BITS;
+constexpr Word TAG1_VALUE_MASK = (Word)(~0ULL) << TAG1_TAG_BITS;
 
 namespace PrimaryTag {
 typedef enum {

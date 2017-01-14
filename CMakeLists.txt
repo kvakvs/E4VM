@@ -1,40 +1,18 @@
 cmake_minimum_required(VERSION 3.5)
 
-option(USE_RTEMS  "Use RTEMS build toolset and libraries" ON)
-set(RTEMS_ARCH "i386")
-set(RTEMS_BSP  "pc386")
-set(RTEMS_DIR  "$ENV{HOME}/EMB/rtems/4.12")
-set(E4_BITS_PER_WORD    32)
+option(USE_RTEMS "Enable crosscompiling for RTEMS" ON)
+set(CMAKE_BUILD_TYPE Debug)
+set(E4_PLATF_NAME linux-x64)
+
+if(USE_RTEMS)
+    #set(CMAKE_TOOLCHAIN_FILE Toolchain-i386-pc386.cmake)
+    include(Platform-i386-pc386.cmake)
+endif(USE_RTEMS)
 
 option(COMPILATION_INTERMEDIATE_RESULTS "Dump asm and preprocessed files" OFF)
 
 project(E4VM)
 set(CMAKE_CXX_STANDARD 14)
-
-#i386-rtems4.12-gcc --pipe -B/home/kv/EMB/rtems/4.12/i386-rtems4.12/pc386/lib/ -specs bsp_specs -qrtems   -Wall  -O2 -g -ffunction-sections -fdata-sections    -mtune=i386       -c   -o o-optimize/test.o test.c
-#i386-rtems4.12-gcc --pipe -B/home/kv/EMB/rtems/4.12/i386-rtems4.12/pc386/lib/ -specs bsp_specs -qrtems   -Wall  -O2 -g -ffunction-sections -fdata-sections    -mtune=i386      -Wl,--gc-sections -Wl,-Ttext,0x00100000   -mtune=i386   -o o-optimize/hello.exe  o-optimize/test.o
-#i386-rtems4.12-nm -g -n o-optimize/hello.exe > o-optimize/hello.num
-#i386-rtems4.12-size o-optimize/hello.exe
-#   text	   data	    bss	    dec	    hex	filename
-# 178173	   9948	  23068	 211189	  338f5	o-optimize/hello.exe
-#i386-rtems4.12-objcopy -O elf32-i386 --remove-section=.comment --remove-section=.note --strip-unneeded o-optimize/hello.exe o-optimize/hello.nxe
-#i386-rtems4.12-objcopy -O binary o-optimize/hello.nxe o-optimize/hello.bin
-#/home/kv/EMB/rtems/4.12/i386-rtems4.12/pc386/build-tools/bin2boot -v o-optimize/hello.ralf 0x00097E00 /home/kv/EMB/rtems/4.12/i386-rtems4.12/pc386/lib/start16.bin 0x00097C00 0 o-optimize/hello.bin 0x00100000 0
-#header address       0x00097e00, its memory size 0x00000200
-#first  image address 0x00097c00, its memory size 0x00000200
-#second image address 0x00100000, its memory size 0x0002f000
-#rm -f o-optimize/hello.nxe
-
-if(USE_RTEMS)
-#    include(CMakeForceCompiler)
-    set(CMAKE_SYSTEM_NAME         ${RTEMS_BSP})
-    set(CMAKE_SYSTEM_PROCESSOR    ${RTEMS_ARCH})
-
-    set(CMAKE_C_COMPILER "${RTEMS_DIR}/bin/${RTEMS_ARCH}-rtems4.12-gcc")
-    set(CMAKE_CXX_COMPILER "${RTEMS_DIR}/bin/${RTEMS_ARCH}-rtems4.12-g++")
-#    cmake_force_c_compiler(${CMAKE_C_COMPILER}     GNU)
-#    cmake_force_cxx_compiler(${CMAKE_CXX_COMPILER} GNU)
-endif(USE_RTEMS)
 
 ## We do not use standard C++ library here, but we DO use C++ startup/exit code
 add_definitions(-nostdinc++)
@@ -138,41 +116,41 @@ target_compile_options(e4_std-debug      PUBLIC ${COMPILER_OPTIONS_DEBUG})
 ##
 add_executable(e4emu-debug ${EMU_SOURCES})
 target_link_libraries(e4emu-debug
-        e4_runtime-debug e4_platform-debug e4_std-debug ${MUSL_LIBS})
+        e4_runtime-debug e4_platform-debug e4_std-debug)
 target_compile_options(e4emu-debug PUBLIC ${COMPILER_OPTIONS_DEBUG})
 
 ##
 ## Static Optimized Release
 ##
-add_executable(e4emu-x64 ${EMU_SOURCES})
-target_link_libraries(e4emu-x64 e4_runtime e4_platform e4_std ${MUSL_LIBS})
-target_compile_options(e4emu-x64 PUBLIC ${COMPILER_OPTIONS_REL})
+#add_executable(e4emu-x64 ${EMU_SOURCES})
+#target_link_libraries(e4emu-x64 e4_runtime e4_platform e4_std ${MUSL_LIBS})
+#target_compile_options(e4emu-x64 PUBLIC ${COMPILER_OPTIONS_REL})
 
 if (COMPILATION_INTERMEDIATE_RESULTS)
-        target_compile_options(e4_std           PUBLIC -save-temps)
-        target_compile_options(e4_platform      PUBLIC -save-temps)
-        target_compile_options(e4_runtime       PUBLIC -save-temps)
+#    target_compile_options(e4_std           PUBLIC -save-temps)
+#    target_compile_options(e4_platform      PUBLIC -save-temps)
+#    target_compile_options(e4_runtime       PUBLIC -save-temps)
 
-        target_compile_options(e4_std-debug      PUBLIC -save-temps)
-        target_compile_options(e4_platform-debug PUBLIC -save-temps)
-        target_compile_options(e4_runtime-debug  PUBLIC -save-temps)
+    target_compile_options(e4_std-debug      PUBLIC -save-temps)
+    target_compile_options(e4_platform-debug PUBLIC -save-temps)
+    target_compile_options(e4_runtime-debug  PUBLIC -save-temps)
 
-        target_compile_options(e4emu-debug      PUBLIC -save-temps)
+    target_compile_options(e4emu-debug      PUBLIC -save-temps)
 endif()
 
 ##
 ## Link Flags
 ## -static-libgcc -static-libstdc++ -static -flto
 ##
-set_target_properties(e4emu-x64 e4emu-debug
-        PROPERTIES LINK_FLAGS "-flto -static-libgcc -static-libstdc++ -static")
-set_target_properties(e4emu-x64
-        PROPERTIES LINK_FLAGS "-s ")
+set_target_properties(e4emu-debug
+        PROPERTIES LINK_FLAGS ${E4_LINK_OPTS})
+#set_target_properties(e4emu-x64
+#        PROPERTIES LINK_FLAGS "-s ${E4_LINK_OPTS}")
 
-if (CUSTOM_STDLIB)
-        set_target_properties(e4emu-x64 e4emu-debug
-                PROPERTIES LINK_FLAGS "-nostdlib")
-endif(CUSTOM_STDLIB)
+#if (CUSTOM_STDLIB)
+#    set_target_properties(e4emu-debug PROPERTIES LINK_FLAGS "-nostdlib")
+#    set_target_properties(e4emu-debug PROPERTIES LINK_FLAGS "-nostdlib")
+#endif(CUSTOM_STDLIB)
 
 ##
 ## PVS-Studio Static Checker
