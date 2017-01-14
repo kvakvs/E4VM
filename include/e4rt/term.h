@@ -32,24 +32,25 @@ class Term {
 private:
     // Term representation as primary_tag:2 + value in the remaining bits
     struct PrimaryTaggedWord {
-        PrimaryTag tag_:TAG1_TAG_BITS;
+        PrimaryTag::Type tag_:TAG1_TAG_BITS;
         Word val_:TAG1_VALUE_BITS;
 
         PrimaryTaggedWord() {}
 
-        constexpr PrimaryTaggedWord(PrimaryTag pt, Word v)
+        constexpr PrimaryTaggedWord(PrimaryTag::Type pt, Word v)
                 : tag_(pt), val_(v) {}
     };
 
     // Represents term as primary_tag:2 + immediate_tag:4 + value
     struct ImmediateTaggedWord {
-        PrimaryTag primary_tag_:TAG1_TAG_BITS;
-        ImmediateTag imm_tag_:IMM1_TAG_BITS;
+        PrimaryTag::Type primary_tag_:TAG1_TAG_BITS;
+        ImmediateTag::Type imm_tag_:IMM1_TAG_BITS;
         Word val_:IMM1_VALUE_BITS;
 
         ImmediateTaggedWord() {}
 
-        constexpr ImmediateTaggedWord(PrimaryTag pt, ImmediateTag it,
+        constexpr ImmediateTaggedWord(PrimaryTag::Type pt,
+                                      ImmediateTag::Type it,
                                       Word v)
                 : primary_tag_(pt), imm_tag_(it), val_(v) {}
     };
@@ -58,7 +59,7 @@ private:
     // primary_tag:2 + immediate_tag:4=0x1 + value which overlays 3 bits of
     // the immediate tag, hence why it is only 1 bit and is always true
     struct SmallTaggedImmediateWord {
-        PrimaryTag primary_tag_:TAG1_TAG_BITS;
+        PrimaryTag::Type primary_tag_:TAG1_TAG_BITS;
         bool imm_tag_:1;
         SignedWord val_:(TAG1_VALUE_BITS - 1);
 
@@ -88,10 +89,12 @@ public:
     explicit Term(ConsCell* cell_ptr)
             : as_primary_(PrimaryTag::Cons, ptr_to_val1(cell_ptr)) {}
 
-    explicit constexpr Term(PrimaryTag pt, ImmediateTag itag, Word val2)
+    explicit constexpr Term(PrimaryTag::Type pt,
+                            ImmediateTag::Type itag,
+                            Word val2)
             : as_imm_(pt, itag, val2) {}
 
-    explicit constexpr Term(PrimaryTag pt, Word val1)
+    explicit constexpr Term(PrimaryTag::Type pt, Word val1)
             : as_primary_(pt, val1) {}
 
     // Get raw word

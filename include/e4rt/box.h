@@ -10,7 +10,8 @@
 
 namespace e4 {
 
-enum class BoxTag: Word {
+namespace BoxTag {
+typedef enum {
     Tuple,
     PositiveBignum,
     NegativeBignum,
@@ -26,7 +27,8 @@ enum class BoxTag: Word {
     RCBinary,
     MatchContext,
     SubBinary,
-};
+} Type;
+} // BoxTag
 
 class Term;
 
@@ -35,19 +37,19 @@ class Term;
 //
 class BoxHeaderWord {
 private:
-    PrimaryTag primary_tag_:TAG1_TAG_BITS;
-    BoxTag tag_:BOXED_TAG_BITS;   // least-significant goes first
+    PrimaryTag::Type primary_tag_:TAG1_TAG_BITS;
+    BoxTag::Type tag_:BOXED_TAG_BITS;   // least-significant goes first
     Word val_:BOXED_VALUE_BITS;
 public:
-    constexpr BoxHeaderWord(BoxTag t, Word val)
+    constexpr BoxHeaderWord(BoxTag::Type t, Word val)
             : primary_tag_(PrimaryTag::Header), tag_(t), val_(val) {}
 
-    void set_tag(BoxTag t) {
+    void set_tag(BoxTag::Type t) {
         E4ASSERT(primary_tag_ == PrimaryTag::Header);
         tag_ = t;
     }
 
-    BoxTag tag() const {
+    BoxTag::Type tag() const {
         E4ASSERT(primary_tag_ == PrimaryTag::Header);
         return tag_;
     }
@@ -64,7 +66,7 @@ public:
 
     // Given a pointer to whatever T* setup first word
     template<class T>
-    static BoxHeaderWord* setup_a_box(T* memory, BoxTag bt, Word val) {
+    static BoxHeaderWord* setup_a_box(T* memory, BoxTag::Type bt, Word val) {
         auto hword = reinterpret_cast<BoxHeaderWord *>(memory);
         hword->primary_tag_ = PrimaryTag::Header;
         hword->set_tag(bt);
@@ -91,7 +93,7 @@ public:
 
     void set_element(Word z_index, Word val) { data_[z_index] = val; }
 
-    BoxTag tag() const { return header_.tag(); }
+    BoxTag::Type tag() const { return header_.tag(); }
 
     Word val() const { return header_.val(); }
 };

@@ -1,51 +1,66 @@
 cmake_minimum_required(VERSION 3.5)
-project(E4VM)
 
+option(USE_RTEMS  "Use RTEMS build toolset and libraries" ON)
+set(RTEMS_ARCH "i386")
+set(RTEMS_BSP  "pc386")
+set(RTEMS_DIR  "$ENV{HOME}/EMB/rtems/4.12")
+set(E4_BITS_PER_WORD    32)
+
+option(COMPILATION_INTERMEDIATE_RESULTS "Dump asm and preprocessed files" OFF)
+
+project(E4VM)
 set(CMAKE_CXX_STANDARD 14)
 
-option(CUSTOM_STDLIB "Use MUSL C library and custom build of libc++"
-        OFF)
-option(COMPILATION_INTERMEDIATE_RESULTS "Dump asm and preprocessed files"
-        OFF)
+#i386-rtems4.12-gcc --pipe -B/home/kv/EMB/rtems/4.12/i386-rtems4.12/pc386/lib/ -specs bsp_specs -qrtems   -Wall  -O2 -g -ffunction-sections -fdata-sections    -mtune=i386       -c   -o o-optimize/test.o test.c
+#i386-rtems4.12-gcc --pipe -B/home/kv/EMB/rtems/4.12/i386-rtems4.12/pc386/lib/ -specs bsp_specs -qrtems   -Wall  -O2 -g -ffunction-sections -fdata-sections    -mtune=i386      -Wl,--gc-sections -Wl,-Ttext,0x00100000   -mtune=i386   -o o-optimize/hello.exe  o-optimize/test.o
+#i386-rtems4.12-nm -g -n o-optimize/hello.exe > o-optimize/hello.num
+#i386-rtems4.12-size o-optimize/hello.exe
+#   text	   data	    bss	    dec	    hex	filename
+# 178173	   9948	  23068	 211189	  338f5	o-optimize/hello.exe
+#i386-rtems4.12-objcopy -O elf32-i386 --remove-section=.comment --remove-section=.note --strip-unneeded o-optimize/hello.exe o-optimize/hello.nxe
+#i386-rtems4.12-objcopy -O binary o-optimize/hello.nxe o-optimize/hello.bin
+#/home/kv/EMB/rtems/4.12/i386-rtems4.12/pc386/build-tools/bin2boot -v o-optimize/hello.ralf 0x00097E00 /home/kv/EMB/rtems/4.12/i386-rtems4.12/pc386/lib/start16.bin 0x00097C00 0 o-optimize/hello.bin 0x00100000 0
+#header address       0x00097e00, its memory size 0x00000200
+#first  image address 0x00097c00, its memory size 0x00000200
+#second image address 0x00100000, its memory size 0x0002f000
+#rm -f o-optimize/hello.nxe
 
-if (CUSTOM_STDLIB)
-        ## MUSL
-        set(MUSL_libc           /usr/local/musl)
-        set(MUSL_libc_inc       /usr/local/musl/include)
-        set(MUSL_libc_lib       /usr/local/musl/lib)
-        set(MUSL_LIBS           c c++ c++abi)
+if(USE_RTEMS)
+#    include(CMakeForceCompiler)
+    set(CMAKE_SYSTEM_NAME         ${RTEMS_BSP})
+    set(CMAKE_SYSTEM_PROCESSOR    ${RTEMS_ARCH})
 
-        add_definitions(-B${CMAKE_SOURCE_DIR}/musl
-                -nostdinc
-                --sysroot "${MUSL_libc}"
-                -isystem "${MUSL_libc_inc}"
-                )
-        link_directories(${MUSL_libc_lib})
-
-        ##
-        ## Custom libc++
-        ##
-        link_directories(${CMAKE_SOURCE_DIR}/../LLVM/_build/lib)
-endif(CUSTOM_STDLIB)
+    set(CMAKE_C_COMPILER "${RTEMS_DIR}/bin/${RTEMS_ARCH}-rtems4.12-gcc")
+    set(CMAKE_CXX_COMPILER "${RTEMS_DIR}/bin/${RTEMS_ARCH}-rtems4.12-g++")
+#    cmake_force_c_compiler(${CMAKE_C_COMPILER}     GNU)
+#    cmake_force_cxx_compiler(${CMAKE_CXX_COMPILER} GNU)
+endif(USE_RTEMS)
 
 ## We do not use standard C++ library here, but we DO use C++ startup/exit code
 add_definitions(-nostdinc++)
+
+## Self-Config
+#include(CheckTypeSize)
+#check_type_size("void*"    E4_VOIDP_SIZE LANGUAGE C)
+#math(EXPR E4_BITS_PER_WORD ${E4_VOIDP_SIZE}*8)
 
 ##
 ##
 include_directories(${CMAKE_SOURCE_DIR}/include)
 add_definitions(
         -DE4FEATURE_FS=1
-        -DE4_WORD_SIZE=64
+        -DE4_BITS_PER_WORD=${E4_BITS_PER_WORD}
         )
 add_definitions(
         -std=c++17
         -fno-rtti -fno-unroll-loops
-        -Weverything -Wall -Werror
-        -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-gnu-anonymous-struct
-        -Wno-zero-length-array -Wno-nested-anon-types
-        -Wno-format-nonliteral -Wno-global-constructors
+        -Werror
 )
+#--- clang ---
+#        -Weverything -Wall -Werror
+#        -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-gnu-anonymous-struct
+#        -Wno-zero-length-array -Wno-nested-anon-types
+#        -Wno-format-nonliteral -Wno-global-constructors
 
 ## Erlang Runtime system for E4VM: types, bifs, memory etc
 ## Minus the VM itself this later can become a runtime library for compiled Erl
@@ -99,10 +114,10 @@ set(EMU_SOURCES
         )
 
 set(COMPILER_OPTIONS_REL
-        -Oz -g0 -DE4DEBUG=0)
+        -Os -g0 -DE4DEBUG=0)
 
 set(COMPILER_OPTIONS_DEBUG
-        -Os -g -ggdb -DE4DEBUG=1 -fno-inline)
+        -O0 -g -ggdb -DE4DEBUG=1 -fno-inline)
 
 add_library(e4_runtime  ${E4_RUNTIME_SOURCES})
 add_library(e4_platform ${E4_PLATF_SOURCES})
