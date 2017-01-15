@@ -26,9 +26,6 @@ SET(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
 SET(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 SET(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 
-# These get passed via G++ anyway, so use -Wl,...
-set(E4_LINK_OPTS "-Wl,--gc-sections -Wl,-Ttext,0x00100000")
-
 #i386-rtems4.12-gcc --pipe -B/home/kv/EMB/rtems/4.12/i386-rtems4.12/pc386/lib/
 #       -specs bsp_specs -qrtems   -Wall  -O2 -g -ffunction-sections -fdata-sections
 #       -mtune=i386       -c   -o o-optimize/test.o test.c
@@ -47,14 +44,12 @@ set(E4_LINK_OPTS "-Wl,--gc-sections -Wl,-Ttext,0x00100000")
 #second image address 0x00100000, its memory size 0x0002f000
 #rm -f o-optimize/hello.nxe
 
-add_definitions(
-        --pipe -B${RTEMS_DIR}/${RTEMS_ARCH}-rtems4.12/${RTEMS_BSP}/lib/
-        -specs bsp_specs
-        -qrtems
-        -ffunction-sections -fdata-sections
-        -mtune=${RTEMS_ARCH} -D__i386__
-        )
-#
+set(E4_COMPILE_OPTS "--pipe -B${RTEMS_DIR}/${RTEMS_ARCH}-rtems4.12/${RTEMS_BSP}/lib/ -specs bsp_specs")
+set(E4_COMPILE_OPTS "${E4_COMPILE_OPTS} -qrtems -ffunction-sections -fdata-sections -mtune=${RTEMS_ARCH}")
+#  -D__i386__
+
+add_definitions(${E4_COMPILE_OPTS})
+
 #set(RTEMS_EXTRA_SOURCES
 #        ${RTEMS_KERNEL_BSP_LIB_DIR}/start.o
 #        ${RTEMS_XXX_LIB_DIR}/crtbegin.o
@@ -65,3 +60,6 @@ include_directories(
         ${RTEMS_DIR}/${RTEMS_ARCH}-rtems4.12/${RTEMS_BSP}/lib/include
         ${RTEMS_DIR}/${RTEMS_ARCH}-rtems4.12/include
         )
+
+# These get passed via G++ anyway, so use -Wl,...
+set(E4_LINK_OPTS "-Wl,--gc-sections -Wl,-Ttext,0x00100000 ${E4_COMPILE_OPTS}")

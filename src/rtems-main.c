@@ -6,7 +6,7 @@
 #include <stdlib.h>
 
 rtems_task Init(rtems_task_argument argument);
-void e4_rtems_main();
+extern void e4_rtems_main();
 
 rtems_task Init(rtems_task_argument argument) {
     e4_rtems_main();

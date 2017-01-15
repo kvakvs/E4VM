@@ -87,9 +87,12 @@ set(E4_STD_SOURCES
         )
 
 if(USE_RTEMS)
-    set(EMU_SOURCES src/rtems-main.c)
+    set(EMU_SOURCES
+            src/rtems-main.cpp
+            src/rtems-main.c)
 else()
-    set(EMU_SOURCES src/main.cpp)
+    set(EMU_SOURCES
+            src/main.cpp)
 endif(USE_RTEMS)
 
 set(COMPILER_OPTIONS_REL
@@ -156,6 +159,7 @@ set_target_properties(e4emu-debug
 ##
 ## PVS-Studio Static Checker
 ##
+if(NOT USE_RTEMS)
 include(PVS-Studio.cmake)
 pvs_studio_add_target(
         TARGET          analyze ALL
@@ -167,3 +171,4 @@ pvs_studio_add_target(
         C_FLAGS         ${PREPROCESSOR_ADDITIONAL_FLAGS}
         CONFIG          "${CMAKE_SOURCE_DIR}/PVS-Studio.cfg"
         )
+endif(NOT USE_RTEMS)

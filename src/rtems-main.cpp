@@ -11,5 +11,4 @@ extern "C" void e4_rtems_main() {
 
     vm.modules_.path_add(String("e4compile/priv"));
     vm.modules_.load(vm, "test1.e4b");
-    return 0;
 }

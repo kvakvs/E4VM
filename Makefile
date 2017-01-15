@@ -6,7 +6,7 @@ gdb: compile
 
 .PHONY: compile
 compile:
-	cd cmake-build-debug && $(MAKE) -j; cd ..
+	cd cmake-build-debug && $(MAKE) -j && cd ..
 
 .PHONY: lic-add
 lic-add:
@@ -31,3 +31,12 @@ plog:
 valgrind: compile
 	valgrind --log-file=valgrind.log \
 		cmake-build-debug/gleam_d
+
+# Take emulator compiled for i386 rtems and run it under QEMU
+.PHONY: rtems-run
+rtems-run:
+	qemu-system-i386 \
+	    -machine pc \
+	    -kernel ${DEBUG_EMU} \
+	    -display sdl -vga std \
+	    -serial stdio
