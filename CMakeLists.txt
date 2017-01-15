@@ -15,7 +15,7 @@ project(E4VM)
 set(CMAKE_CXX_STANDARD 14)
 
 ## We do not use standard C++ library here, but we DO use C++ startup/exit code
-add_definitions(-nostdinc++)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -nostdinc++ -std=c++14 -fno-rtti")
 
 ## Self-Config
 #include(CheckTypeSize)
@@ -30,8 +30,7 @@ add_definitions(
         -DE4_BITS_PER_WORD=${E4_BITS_PER_WORD}
         )
 add_definitions(
-        -std=c++17
-        -fno-rtti -fno-unroll-loops
+         -fno-unroll-loops
         -Werror
 )
 #--- clang ---
@@ -87,9 +86,11 @@ set(E4_STD_SOURCES
         src/e4std/stuff.cpp
         )
 
-set(EMU_SOURCES
-        src/main.cpp
-        )
+if(USE_RTEMS)
+    set(EMU_SOURCES src/rtems-main.c)
+else()
+    set(EMU_SOURCES src/main.cpp)
+endif(USE_RTEMS)
 
 set(COMPILER_OPTIONS_REL
         -Os -g0 -DE4DEBUG=0)

@@ -1,9 +1,9 @@
 set(RTEMS_ARCH "i386")
 set(RTEMS_BSP  "pc386")
 set(RTEMS_DIR  "$ENV{HOME}/EMB/rtems/4.12")
-#set(RTEMS_TOOLS_BSP_DIR ${RTEMS_DIR}/${ARCH}-rtems4.12/lib)
+#set(RTEMS_TOOLS_BSP_DIR ${RTEMS_DIR}/${RTEMS_ARCH}-rtems4.12/lib)
 #set(RTEMS_KERNEL_BSP_LIB_DIR ${RTEMS_DIR}/${RTEMS_ARCH}-rtems4.12/${RTEMS_BSP}/lib)
-#set(RTEMS_GCC_LIB_DIR        "${RTEMS_ROOT_PATH}/4.12/lib/gcc/${ARCH}-rtems4.12/6.3.0")
+#set(RTEMS_GCC_LIB_DIR        "${RTEMS_ROOT_PATH}/4.12/lib/gcc/${RTEMS_ARCH}-rtems4.12/6.3.0")
 
 set(CMAKE_SYSTEM_NAME       Linux-GNU-CXX)
 #set(CMAKE_SYSTEM_PROCESSOR  ${RTEMS_ARCH})
@@ -52,7 +52,7 @@ add_definitions(
         -specs bsp_specs
         -qrtems
         -ffunction-sections -fdata-sections
-        -mtune=${RTEMS_ARCH}
+        -mtune=${RTEMS_ARCH} -D__i386__
         )
 #
 #set(RTEMS_EXTRA_SOURCES
@@ -61,3 +61,7 @@ add_definitions(
 #        ${RTEMS_XXX_LIB_DIR}/crtend.o
 #        ${RTEMS_XXX_LIB_DIR}/crti.o
 #        )
+include_directories(
+        ${RTEMS_DIR}/${RTEMS_ARCH}-rtems4.12/${RTEMS_BSP}/lib/include
+        ${RTEMS_DIR}/${RTEMS_ARCH}-rtems4.12/include
+        )
