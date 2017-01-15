@@ -34,9 +34,20 @@ valgrind: compile
 
 # Take emulator compiled for i386 rtems and run it under QEMU
 .PHONY: rtems-run
-rtems-run:
+rtems-run: qemu-disk/disk.img
 	qemu-system-i386 \
 	    -machine pc \
 	    -kernel ${DEBUG_EMU} \
 	    -display sdl -vga std \
+	    -hda qemu-disk/disk.img \
 	    -serial stdio
+
+# Automatic target is called when disk image is required for the first time
+# TODO: make it depend on the files we want on it
+qemu-disk/disk.img:
+	qemu-disk/make-image.sh
+
+# Doesn't really work needs extra commands to be typed
+.PHONY: rtems-gdb
+rtems-gdb: compile
+	i386-rtems4.12-gdb ${DEBUG_EMU}

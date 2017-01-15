@@ -88,11 +88,13 @@ set(E4_STD_SOURCES
 
 if(USE_RTEMS)
     set(EMU_SOURCES
-            src/rtems-main.cpp
-            src/rtems-main.c)
+            src/e4platf/rtems/rtems-main.cpp
+            src/e4platf/rtems/rtems-main.c
+            )
 else()
     set(EMU_SOURCES
-            src/main.cpp)
+            src/main.cpp
+            )
 endif(USE_RTEMS)
 
 set(COMPILER_OPTIONS_REL
