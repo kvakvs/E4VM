@@ -9,6 +9,6 @@ extern "C" void e4_rtems_main() {
     e4::VM vm;
     using e4std::String;
 
-    vm.modules_.path_add(String("e4compile/priv"));
+    vm.modules_.path_add(String("/mnt"));
     vm.modules_.load(vm, "test1.e4b");
 }

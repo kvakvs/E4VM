@@ -16,6 +16,7 @@ set(CMAKE_CXX_STANDARD 14)
 
 ## We do not use standard C++ library here, but we DO use C++ startup/exit code
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -nostdinc++ -std=c++14 -fno-rtti")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
 
 ## Self-Config
 #include(CheckTypeSize)
@@ -122,7 +123,7 @@ target_compile_options(e4_std-debug      PUBLIC ${COMPILER_OPTIONS_DEBUG})
 ##
 add_executable(e4emu-debug ${EMU_SOURCES})
 target_link_libraries(e4emu-debug
-        e4_runtime-debug e4_platform-debug e4_std-debug)
+        e4_runtime-debug e4_platform-debug e4_std-debug ${E4_RTEMS_LIBS})
 target_compile_options(e4emu-debug PUBLIC ${COMPILER_OPTIONS_DEBUG})
 
 ##

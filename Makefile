@@ -38,14 +38,17 @@ rtems-run: qemu-disk/disk.img
 	qemu-system-i386 \
 	    -machine pc \
 	    -kernel ${DEBUG_EMU} \
-	    -display sdl -vga std \
-	    -hda qemu-disk/disk.img \
-	    -serial stdio
+	    -sdl -no-reboot \
+	    -hda qemu-disk/disk.img
+
+#	    -drive file=qemu-disk/disk.img,format=raw,index=0,media=disk
+#	    -hda fat:qemu-disk
+#	    -fsdev local,id=hda,security_model=none,path=/dev/hda
 
 # Automatic target is called when disk image is required for the first time
 # TODO: make it depend on the files we want on it
 qemu-disk/disk.img:
-	qemu-disk/make-image.sh
+	cd qemu-disk && make-image.sh && cd ..
 
 # Doesn't really work needs extra commands to be typed
 .PHONY: rtems-gdb

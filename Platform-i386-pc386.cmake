@@ -46,7 +46,7 @@ SET(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 
 set(E4_COMPILE_OPTS "--pipe -B${RTEMS_DIR}/${RTEMS_ARCH}-rtems4.12/${RTEMS_BSP}/lib/ -specs bsp_specs")
 set(E4_COMPILE_OPTS "${E4_COMPILE_OPTS} -qrtems -ffunction-sections -fdata-sections -mtune=${RTEMS_ARCH}")
-#  -D__i386__
+set(E4_COMPILE_OPTS "${E4_COMPILE_OPTS} -D_BSD_SOURCE=1")
 
 add_definitions(${E4_COMPILE_OPTS})
 
@@ -62,4 +62,6 @@ include_directories(
         )
 
 # These get passed via G++ anyway, so use -Wl,...
-set(E4_LINK_OPTS "-Wl,--gc-sections -Wl,-Ttext,0x00100000 ${E4_COMPILE_OPTS}")
+#set(E4_LINK_OPTS "-Wl,--defsym -Wl,HeapSize=0x100000")
+set(E4_LINK_OPTS "${E4_LINK_OPTS} -Wl,--gc-sections -Wl,-Ttext,0x00100000 ${E4_COMPILE_OPTS}")
+set(E4_RTEMS_LIBS rtemscpu)
