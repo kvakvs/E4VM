@@ -39,10 +39,9 @@ rtems-run: qemu-disk/disk.img
 	    -machine pc \
 	    -kernel ${DEBUG_EMU} \
 	    -sdl -no-reboot \
-	    -hda qemu-disk/disk.img
-
+#	    -hda fat:e4compile/priv
+#	    -hda qemu-disk/disk.img
 #	    -drive file=qemu-disk/disk.img,format=raw,index=0,media=disk
-#	    -hda fat:qemu-disk
 #	    -fsdev local,id=hda,security_model=none,path=/dev/hda
 
 # Automatic target is called when disk image is required for the first time
