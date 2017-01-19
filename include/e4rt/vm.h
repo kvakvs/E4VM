@@ -40,11 +40,28 @@ public:
 
     explicit VM() : binary_heap_(1024) {}
 
+    //
+    // Atom storage stuff
+    //
     Term add_atom(const String& atom_name);
+    const char* find_atom(Term atom) const;
+
     Node* dist_this_node();
 
+    //
+    // Process and pid stuff
+    //
     Process* spawn(Term parent_pid, const MFArgs& mfargs);
     Term make_pid();
+
+#if E4DEBUG
+    void print(Term t) const;
+#endif
+
+private:
+#if E4DEBUG
+    void print_imm(Term t) const;
+#endif
 };
 
 } // ns e4

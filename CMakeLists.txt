@@ -88,7 +88,7 @@ set(COMPILER_OPTIONS_REL
     -Os -g0 -DE4DEBUG=0)
 
 set(COMPILER_OPTIONS_DEBUG
-    -Os -g -ggdb -DE4DEBUG=1 -fno-inline)
+    -O0 -g -ggdb -DE4DEBUG=1 -fno-inline)
 
 if (BUILD_RELEASE)
     add_library(e4_runtime ${E4_RUNTIME_SOURCES})

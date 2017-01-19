@@ -118,6 +118,11 @@ void Module::load_exports(const ByteView& adata,
     exports_.sort(Export::compare_pvoid);
 }
 
+Export* Module::find_export(const MFArity& mfa) const {
+    Export exp(mfa.fun_, mfa.arity_, 0);
+    return exports_.binary_search(&exp, Export::compare_pvoid);
+}
+
 int Export::compare_pvoid(const void* a, const void* b) {
     auto pa = static_cast<const Export*>(a);
     auto pb = static_cast<const Export*>(b);

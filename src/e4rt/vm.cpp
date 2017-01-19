@@ -51,8 +51,8 @@ Process* VM::spawn(Term parent_pid, const MFArgs& mfargs) {
     auto pid = make_pid();
 
     using platf::SingleAlloc;
-    auto proc = SingleAlloc::alloc_class<Process>(pid);
-    auto apply_res = proc->apply(*this, mfargs);
+    auto proc = SingleAlloc::alloc_class<Process>(*this, pid);
+    auto apply_res = proc->apply(mfargs);
     apply_res.assert();
 
     processes_.insert(pid, proc);
@@ -65,5 +65,46 @@ Term VM::make_pid() {
     E4ASSERT(processes_.find(t) == nullptr);
     return t;
 }
+
+#if E4DEBUG
+void VM::print(Term t) const {
+    switch (t.as_primary_.tag_) {
+        case primary_tag::Immediate: {
+            print_imm(t);
+        } break;
+        case primary_tag::Boxed: {} break;
+        case primary_tag::Header: {} break;
+        case primary_tag::Cons: {} break;
+    }
+}
+#endif // DEBUG
+
+#if E4DEBUG
+void VM::print_imm(Term t) const {
+    switch (t.as_imm_.imm_tag_) {
+        case immediate_tag::Atom: {
+            debug_printf("'%s'", find_atom(t));
+        } break;
+        case immediate_tag::SmallInt: {} break;
+        case immediate_tag::ShortPid: {} break;
+        case immediate_tag::ShortPort: {} break;
+        case immediate_tag::FpRegister: {} break;
+        case immediate_tag::Catch: {} break;
+        case immediate_tag::XRegister: {} break;
+        case immediate_tag::YRegister: {} break;
+        case immediate_tag::Special: {} break;
+    }
+}
+
+const char* VM::find_atom(Term atom) const {
+    E4ASSERT(atom.is_atom());
+    auto node = atoms_.find(atom);
+    if (!node) {
+        return "?atom";
+    }
+    return node->value_;
+}
+
+#endif // DEBUG
 
 } // ns e4

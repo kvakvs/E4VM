@@ -2,8 +2,9 @@
 // This is an open source non-commercial project. Dear PVS-Studio, please check it.
 // PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 //
-
+#include <stdio.h>
 #include "e4rt/box.h"
+#include "e4rt/vm.h"
 #include "e4rt/term.h"
 
 namespace e4 {
@@ -18,5 +19,15 @@ Term Term::make_tuple(TupleBoxHeader *tuple_box) {
 }
 
 TupleBoxHeader::operator Term() const { return Term::box_wrap(this); }
+
+#if E4DEBUG
+void MFArgs::print(const VM& vm) const {
+    ::printf("MFArgs(");
+    vm.print(mod_);
+    ::printf(",");
+    vm.print(fun_);
+    ::printf(")");
+}
+#endif // DEBUG
 
 } // ns e4

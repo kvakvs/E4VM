@@ -52,10 +52,7 @@ public:
 
     Term name() const { return name_; }
 
-    Export* find_export(const MFArity& mfa) const {
-        Export exp(mfa.fun_, mfa.arity_, 0);
-        return exports_.binary_search(&exp, Export::compare_pvoid);
-    }
+    Export* find_export(const MFArity& mfa) const;
 
 private:
     void load_atoms(const ByteView& adata, Vector<String>& out);

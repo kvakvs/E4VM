@@ -43,25 +43,25 @@ private:
     Word val_:BOXED_VALUE_BITS;
 public:
     constexpr BoxHeaderWord(BoxTag t, Word val)
-            : primary_tag_(PrimaryTag::Header), tag_(t), val_(val) {}
+            : primary_tag_(primary_tag::Header), tag_(t), val_(val) {}
 
     void set_tag(BoxTag t) {
-        E4ASSERT(primary_tag_ == PrimaryTag::Header);
+        E4ASSERT(primary_tag_ == primary_tag::Header);
         tag_ = t;
     }
 
     BoxTag tag() const {
-        E4ASSERT(primary_tag_ == PrimaryTag::Header);
+        E4ASSERT(primary_tag_ == primary_tag::Header);
         return tag_;
     }
 
     void set_val(Word a) {
-        E4ASSERT(primary_tag_ == PrimaryTag::Header);
+        E4ASSERT(primary_tag_ == primary_tag::Header);
         val_ = a;
     }
 
     Word val() const {
-        E4ASSERT(primary_tag_ == PrimaryTag::Header);
+        E4ASSERT(primary_tag_ == primary_tag::Header);
         return val_;
     }
 
@@ -69,7 +69,7 @@ public:
     template<class T>
     static BoxHeaderWord* setup_a_box(T* memory, BoxTag bt, Word val) {
         auto hword = reinterpret_cast<BoxHeaderWord *>(memory);
-        hword->primary_tag_ = PrimaryTag::Header;
+        hword->primary_tag_ = primary_tag::Header;
         hword->set_tag(bt);
         hword->set_val(val);
         return hword;

@@ -73,19 +73,20 @@ private:
         SmallTaggedImmediateWord() {}
 
         explicit constexpr SmallTaggedImmediateWord(SignedWord val)
-                : primary_tag_(PrimaryTag::Immediate), imm_tag_(true),
+                : primary_tag_(primary_tag::Immediate), imm_tag_(true),
                   val_(val) {}
     };
 
+    // contains zero arity tuple header. Use box_wrap() on address of this
+    static TupleBoxHeader empty_tuple_;
+
+public:
     union {
         Word raw_;
         PrimaryTaggedWord as_primary_;
         ImmediateTaggedWord as_imm_;
         SmallTaggedImmediateWord as_small_;
     };
-
-    // contains zero arity tuple header. Use box_wrap() on address of this
-    static TupleBoxHeader empty_tuple_;
 
 public:
     // Construct any term from a raw word
@@ -94,7 +95,7 @@ public:
     Term() : raw_(0) {}
 
     explicit Term(ConsCell* cell_ptr)
-            : as_primary_(PrimaryTag::Cons, ptr_to_val1(cell_ptr)) {}
+            : as_primary_(primary_tag::Cons, ptr_to_val1(cell_ptr)) {}
 
     explicit constexpr Term(PrimaryTag pt, ImmediateTag itag, Word val2)
             : as_imm_(pt, itag, val2) {}
@@ -108,7 +109,7 @@ public:
     // Construct an atom from atom index
     static Term make_atom(Word a) {
         E4ASSERT(a < (1UL << IMM1_VALUE_BITS));
-        return Term(PrimaryTag::Immediate, ImmediateTag::Atom, a);
+        return Term(primary_tag::Immediate, immediate_tag::Atom, a);
     }
 
     //
@@ -116,11 +117,15 @@ public:
     //
 
     bool is_immediate() const {
-        return as_imm_.primary_tag_ == PrimaryTag::Immediate;
+        return as_imm_.primary_tag_ == primary_tag::Immediate;
+    }
+
+    bool is_atom() const {
+        return as_imm_.imm_tag_ == immediate_tag::Atom;
     }
 
     bool is_boxed() const {
-        return as_primary_.tag_ == PrimaryTag::Boxed;
+        return as_primary_.tag_ == primary_tag::Boxed;
     }
 
     // A pointer with 2 bits trimmed to fit into val1_ of a term
@@ -133,7 +138,7 @@ public:
 
     template<typename T>
     static Term box_wrap(T* ptr) {
-        return Term(PrimaryTag::Boxed, ptr_to_val1(ptr));
+        return Term(primary_tag::Boxed, ptr_to_val1(ptr));
     }
 
     BoxHeaderWord* unbox() const {
@@ -153,7 +158,7 @@ public:
     //
     static Term make_small(SignedWord s) {
         // TODO: Maybe can be optimized by providing an appropriate ctor
-        Term result(PrimaryTag::Immediate, 0);
+        Term result(primary_tag::Immediate, 0);
         result.as_small_.val_ = s;
         return result;
     }
@@ -179,11 +184,11 @@ public:
 
     // Data arg is created using Term::make_pid_data
     static Term make_short_pid(Word data) {
-        return Term(PrimaryTag::Immediate, ImmediateTag::ShortPid, data);
+        return Term(primary_tag::Immediate, immediate_tag::ShortPid, data);
     }
 
     constexpr bool is_short_pid() const {
-        return is_immediate() && as_imm_.imm_tag_ == ImmediateTag::ShortPid;
+        return is_immediate() && as_imm_.imm_tag_ == immediate_tag::ShortPid;
     }
 
     bool is_remote_pid() const {
@@ -201,12 +206,12 @@ static_assert(sizeof(Term) == sizeof(Word),
               "Term must have size of 1 word");
 
 // TODO: This belongs to Immediate2 namespace
-constexpr Term NIL = Term(PrimaryTag::Immediate,
-                          ImmediateTag::Special, 0);
+constexpr Term NIL = Term(primary_tag::Immediate,
+                          immediate_tag::Special, 0);
 
 // TODO: This belongs to Immediate2 namespace
-constexpr Term NON_VALUE = Term(PrimaryTag::Immediate,
-                                ImmediateTag::Special, 1);
+constexpr Term NON_VALUE = Term(primary_tag::Immediate,
+                                immediate_tag::Special, 1);
 
 class ConsCell {
 public:
@@ -227,6 +232,7 @@ public:
 };
 
 using e4std::ArrayRef;
+class VM;
 
 class MFArgs {
 public:
@@ -239,6 +245,10 @@ public:
     MFArity as_mfarity() const {
         return MFArity(mod_, fun_, args_.count());
     }
+
+#if E4DEBUG
+    void print(const VM& vm) const;
+#endif
 };
 
 } // ns e4

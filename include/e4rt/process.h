@@ -20,16 +20,17 @@ private:
     // VM runtime context
     CodeAddress pc_;
     Heap heap_;
+    VM& vm_;
 
 public:
     Process() = delete;
-    explicit Process(Term pid)
-            : pid_(pid), pc_(), heap_(INIT_PROCESS_HEAP) {}
+    explicit Process(VM& vm, Term pid)
+            : pid_(pid), pc_(), heap_(INIT_PROCESS_HEAP), vm_(vm) {}
 
     // Sets arguments and enters mfarity with args, does not wait for execution
     // but just sets instruction pointer instead
     E4_NODISCARD VoidResult
-    apply(const e4::VM& vm, const MFArgs& mfargs);
+    apply(const MFArgs& mfargs);
 };
 
 } // ns e4
