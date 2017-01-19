@@ -14,4 +14,14 @@ class Array {
 
 };
 
+// A non-owning pointer with size (element count)
+template <class ValueType>
+class ArrayRef {
+    ValueType* ptr_;
+    ::size_t count_;
+public:
+    ArrayRef() = default;
+    ArrayRef(ValueType* p, ::size_t count): ptr_(p), count_(count) {}
+};
+
 } // ns e4std

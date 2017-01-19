@@ -212,4 +212,24 @@ public:
     Term tail_;
 };
 
+using Arity = Word; // TODO: Use a smaller type but alignment will eat it away
+
+class MFArity {
+public:
+    Term mod_;
+    Term fun_;
+    Arity arity_;
+};
+
+using e4std::ArrayRef;
+
+class MFArgs {
+public:
+    Term mod_;
+    Term fun_;
+    ArrayRef<Term> args_;
+    MFArgs(Term m, Term f, const ArrayRef<Term>& args)
+            : mod_(m), fun_(f), args_(args) {}
+};
+
 } // ns e4

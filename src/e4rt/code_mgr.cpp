@@ -11,11 +11,12 @@
 
 namespace e4 {
 
-void CodeManager::load(VM &vm, const char *fn) {
+Term CodeManager::load(VM &vm, const char *fn) {
     auto data = platf::fs::read(paths_, fn);
     auto m = new Module(vm);
     m->load(ByteView(data));
     vm.modules_.add(m);
+    return m->name();
 }
 
 void CodeManager::add(Module* m) {

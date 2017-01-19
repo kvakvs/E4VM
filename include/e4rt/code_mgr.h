@@ -27,7 +27,7 @@ public:
         paths_.push_back(String("."));
     }
 
-    void load(VM& vm, const char* name);
+    Term load(VM& vm, const char* name);
 
     void add(Module* m);
 

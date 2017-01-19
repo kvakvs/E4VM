@@ -4,6 +4,8 @@
 //
 
 #include "e4rt/vm.h"
+//#include "e4platf/mem.h"
+#include "e4rt/process.h"
 
 namespace e4 {
 
@@ -20,7 +22,7 @@ Term VM::add_atom(const String &atom_name) {
     auto rev_i = atoms_reverse_.find(atom_namei);
     if (rev_i) {
         // duplicate
-        return Term::make_atom(rev_i->value_);
+        return rev_i->value_;
     }
     E4ASSERT(fits_in<Word>(atoms_.size())); // 64bit machine with 32bit words
     Word atom_id = static_cast<Word>(atoms_.size());
@@ -30,9 +32,10 @@ Term VM::add_atom(const String &atom_name) {
     CString interned_name(atom_interned_names_.back().c_str());
 
     // Add atom to direct lookup and reverse lookup table
-    atoms_.insert(atom_id, interned_name);
-    atoms_reverse_.insert(interned_name, atom_id);
-    return Term::make_atom(atom_id);
+    auto a = Term::make_atom(atom_id);
+    atoms_.insert(a, interned_name);
+    atoms_reverse_.insert(interned_name, a);
+    return a;
 }
 
 Node *VM::dist_this_node() {
@@ -40,6 +43,26 @@ Node *VM::dist_this_node() {
     E4TODO("implement Node and this node variable")
 #endif
     return this_node_;
+}
+
+Process* VM::spawn(Term parent_pid, const MFArgs& mfargs) {
+    (void)parent_pid;
+
+    auto pid = make_pid();
+
+    using platf::SingleAlloc;
+    auto proc = SingleAlloc::alloc_class<Process>(pid);
+    proc->apply(*this, mfargs);
+
+    processes_.insert(pid, proc);
+    return nullptr;
+}
+
+Term VM::make_pid() {
+    auto t = Term::make_short_pid(pid_counter_++);
+    // TODO: implement wrap when word counter overflows
+    E4ASSERT(processes_.find(t) == nullptr);
+    return t;
 }
 
 } // ns e4

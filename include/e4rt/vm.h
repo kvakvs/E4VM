@@ -7,6 +7,7 @@
 #include "e4rt/code_mgr.h"
 #include "e4rt/dist.h"
 
+#include "e4std/array.h"
 #include "e4std/string.h"
 
 namespace e4 {
@@ -17,14 +18,21 @@ DECL_EXCEPTION(Scheduler)
 DECL_EXCEPTION(CodeServer)
 DECL_EXCEPTION(Process)
 
+class Process;
+using e4std::ArrayRef;
+
 // Erlang-Forth Abstract Machine (E4VM)
 class VM {
 private:
     // Stores all atom names once
     Vector<String> atom_interned_names_;
-    Map<Word, CString> atoms_;
-    Map<CString, Word> atoms_reverse_;
+    Map<Term, CString> atoms_;
+    Map<CString, Term> atoms_reverse_;
+
     Node* this_node_ = nullptr;
+
+    Word pid_counter_ = 0;
+    Map<Term, Process*> processes_;
 
 public:
     CodeManager modules_;
@@ -34,6 +42,9 @@ public:
 
     Term add_atom(const String& atom_name);
     Node* dist_this_node();
+
+    Process* spawn(Term parent_pid, const MFArgs& mfargs);
+    Term make_pid();
 };
 
 } // ns e4

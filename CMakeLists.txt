@@ -60,8 +60,12 @@ set(E4_RUNTIME_SOURCES
         include/e4rt/dist.h
         include/e4rt/ext_term_format.h
         include/e4rt/heap.h
+        include/e4rt/messages.h
         include/e4rt/module.h
+        src/e4rt/process.cpp
+        include/e4rt/process.h
         include/e4rt/term.h
+        include/e4rt/term_as_map_key.h
         include/e4rt/term_tag.h
         include/e4rt/vm.h
         src/e4rt/binary.cpp
@@ -70,7 +74,7 @@ set(E4_RUNTIME_SOURCES
         src/e4rt/module.cpp
         src/e4rt/term.cpp
         src/e4rt/vm.cpp
-        include/e4rt/messages.h include/e4rt/term_as_map_key.h)
+        )
 
 ## Helpers and OS abstraction library
 set(E4_PLATF_SOURCES
@@ -81,8 +85,9 @@ set(E4_PLATF_SOURCES
         include/e4platf/mem.h
         include/e4platf/types.h
         src/e4platf/debug.cpp
+        src/e4platf/fs.cpp
         src/e4platf/mem.cpp
-        src/e4platf/fs.cpp)
+        )
 
 # A minimal replacement for C++ stuff which we don't link
 set(E4_STD_SOURCES

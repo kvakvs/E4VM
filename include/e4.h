@@ -7,3 +7,4 @@
 #include "e4platf/types.h"
 
 #include "e4rt/vm.h"
+#include "e4rt/term.h"
