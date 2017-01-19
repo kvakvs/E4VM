@@ -7,6 +7,8 @@
 // A custom, badly written replacement for C++ Map (using < for node ordering)
 //
 
+#include "e4std/free_fun.h"
+
 namespace e4std {
 
 template<class KeyType, class ValueType>
@@ -23,17 +25,6 @@ struct MapNode {
             MapNode* left, MapNode* right)
             : key_(k), value_(v), left_(left), right_(right) {}
 };
-
-// Override this for your beautiful key type
-template <class KeyType>
-bool compare_equal(const KeyType& a, const KeyType& b) {
-    return a == b;
-}
-// Override this for your beautiful key type
-template <class KeyType>
-bool compare_less(const KeyType& a, const KeyType& b) {
-    return a < b;
-}
 
 template <class KeyType, class ValueType, class Allocator = platf::SingleAlloc>
 class Map {

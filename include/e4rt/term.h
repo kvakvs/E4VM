@@ -219,6 +219,9 @@ public:
     Term mod_;
     Term fun_;
     Arity arity_;
+
+    MFArity() = delete;
+    MFArity(Term m, Term f, Arity a): mod_(m), fun_(f), arity_(a) {}
 };
 
 using e4std::ArrayRef;
@@ -230,6 +233,10 @@ public:
     ArrayRef<Term> args_;
     MFArgs(Term m, Term f, const ArrayRef<Term>& args)
             : mod_(m), fun_(f), args_(args) {}
+
+    MFArity as_mfarity() const {
+        return MFArity(mod_, fun_, args_.count());
+    }
 };
 
 } // ns e4

@@ -17,11 +17,17 @@ class Array {
 // A non-owning pointer with size (element count)
 template <class ValueType>
 class ArrayRef {
+private:
     ValueType* ptr_;
     ::size_t count_;
+
 public:
     ArrayRef() = default;
     ArrayRef(ValueType* p, ::size_t count): ptr_(p), count_(count) {}
+
+    ::size_t count() const { return count_; }
+    const ValueType* first() const { return ptr_; }
+    ValueType* first() { return ptr_; }
 };
 
 } // ns e4std

@@ -10,6 +10,7 @@ option(CUSTOM_STDLIB "Use MUSL C library and custom build of libc++"
         OFF)
 option(COMPILATION_INTERMEDIATE_RESULTS "Dump asm and preprocessed files"
         OFF)
+set(BUILD_RELEASE 0)
 
 if (CUSTOM_STDLIB)
         ## MUSL
@@ -100,7 +101,7 @@ set(E4_STD_SOURCES
         include/e4std/vector.h
         include/e4std/view.h
         src/e4std/stuff.cpp
-        )
+        include/e4std/complicated.h include/e4std/free_fun.h src/e4std/vector.cpp)
 
 set(EMU_SOURCES
         src/main.cpp
@@ -112,12 +113,14 @@ set(COMPILER_OPTIONS_REL
 set(COMPILER_OPTIONS_DEBUG
         -Os -g -ggdb -DE4DEBUG=1 -fno-inline)
 
-add_library(e4_runtime  ${E4_RUNTIME_SOURCES})
-add_library(e4_platform ${E4_PLATF_SOURCES})
-add_library(e4_std      ${E4_STD_SOURCES})
-target_compile_options(e4_runtime  PUBLIC ${COMPILER_OPTIONS_REL})
-target_compile_options(e4_platform PUBLIC ${COMPILER_OPTIONS_REL})
-target_compile_options(e4_std      PUBLIC ${COMPILER_OPTIONS_REL})
+if(BUILD_RELEASE)
+        add_library(e4_runtime  ${E4_RUNTIME_SOURCES})
+        add_library(e4_platform ${E4_PLATF_SOURCES})
+        add_library(e4_std      ${E4_STD_SOURCES})
+        target_compile_options(e4_runtime  PUBLIC ${COMPILER_OPTIONS_REL})
+        target_compile_options(e4_platform PUBLIC ${COMPILER_OPTIONS_REL})
+        target_compile_options(e4_std      PUBLIC ${COMPILER_OPTIONS_REL})
+endif(BUILD_RELEASE)
 
 add_library(e4_runtime-debug  ${E4_RUNTIME_SOURCES})
 add_library(e4_platform-debug ${E4_PLATF_SOURCES})
@@ -137,14 +140,18 @@ target_compile_options(e4emu-debug PUBLIC ${COMPILER_OPTIONS_DEBUG})
 ##
 ## Static Optimized Release
 ##
-add_executable(e4emu-x64 ${EMU_SOURCES})
-target_link_libraries(e4emu-x64 e4_runtime e4_platform e4_std ${MUSL_LIBS})
-target_compile_options(e4emu-x64 PUBLIC ${COMPILER_OPTIONS_REL})
+if(BUILD_RELEASE)
+        add_executable(e4emu-x64 ${EMU_SOURCES})
+        target_link_libraries(e4emu-x64 e4_runtime e4_platform e4_std ${MUSL_LIBS})
+        target_compile_options(e4emu-x64 PUBLIC ${COMPILER_OPTIONS_REL})
+endif(BUILD_RELEASE)
 
 if (COMPILATION_INTERMEDIATE_RESULTS)
-        target_compile_options(e4_std           PUBLIC -save-temps)
-        target_compile_options(e4_platform      PUBLIC -save-temps)
-        target_compile_options(e4_runtime       PUBLIC -save-temps)
+        if(BUILD_RELEASE)
+                target_compile_options(e4_std           PUBLIC -save-temps)
+                target_compile_options(e4_platform      PUBLIC -save-temps)
+                target_compile_options(e4_runtime       PUBLIC -save-temps)
+        endif(BUILD_RELEASE)
 
         target_compile_options(e4_std-debug      PUBLIC -save-temps)
         target_compile_options(e4_platform-debug PUBLIC -save-temps)
@@ -157,10 +164,12 @@ endif()
 ## Link Flags
 ## -static-libgcc -static-libstdc++ -static -flto
 ##
-set_target_properties(e4emu-x64 e4emu-debug
+set_target_properties(e4emu-debug
         PROPERTIES LINK_FLAGS "-flto -static-libgcc -static-libstdc++ -static")
-set_target_properties(e4emu-x64
-        PROPERTIES LINK_FLAGS "-s ")
+if(BUILD_RELEASE)
+        set_target_properties(e4emu-x64
+                PROPERTIES LINK_FLAGS "-s -flto -static-libgcc -static-libstdc++ -static")
+endif(BUILD_RELEASE)
 
 if (CUSTOM_STDLIB)
         set_target_properties(e4emu-x64 e4emu-debug
@@ -176,7 +185,7 @@ pvs_studio_add_target(
         OUTPUT FORMAT   tasklist
         PREPROCESSOR    gcc
         LOG             "PVS-report.tasks"
-        ANALYZE         e4_runtime e4_platform e4emu-debug
+        ANALYZE         e4_runtime-debug e4_platform-debug e4emu-debug
         CXX_FLAGS       ${PREPROCESSOR_ADDITIONAL_FLAGS}
         C_FLAGS         ${PREPROCESSOR_ADDITIONAL_FLAGS}
         CONFIG          "${CMAKE_SOURCE_DIR}/PVS-Studio.cfg"

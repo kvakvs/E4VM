@@ -114,6 +114,23 @@ void Module::load_exports(const ByteView& adata,
                   bsr.read_varint_u<Word>());
         exports_.push_back(ex);
     }
+    exports_.sort(Export::compare_pvoid);
+}
+
+int Export::compare_pvoid(const void* a, const void* b) {
+    auto pa = static_cast<const Export*>(a);
+    auto pb = static_cast<const Export*>(b);
+
+    if (e4std::compare_less(pa->fun_, pb->fun_)) {
+        return -1;
+    } else if (e4std::compare_equal(pa->fun_, pb->fun_)) {
+        if (pa->arity_ < pb->arity_) {
+            return -1;
+        } else if (pa->arity_ == pb->arity_) {
+            return 0;
+        }
+    }
+    return 1;
 }
 
 } // ns e4

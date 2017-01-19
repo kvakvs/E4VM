@@ -52,7 +52,8 @@ Process* VM::spawn(Term parent_pid, const MFArgs& mfargs) {
 
     using platf::SingleAlloc;
     auto proc = SingleAlloc::alloc_class<Process>(pid);
-    proc->apply(*this, mfargs);
+    auto apply_res = proc->apply(*this, mfargs);
+    apply_res.assert();
 
     processes_.insert(pid, proc);
     return nullptr;

@@ -26,6 +26,9 @@ public:
     Word offset_;
     explicit Export(): Export(NON_VALUE, 0, 0) {}
     Export(Term f, Word a, Word offs): fun_(f), arity_(a), offset_(offs) {}
+
+    // Compares two exports as void* vs void*, returns -1 if a<b, 1 if a>b, or 0
+    static int compare_pvoid(const void* a, const void* b);
 };
 
 class Module {
@@ -45,6 +48,11 @@ public:
     void load(const ByteView& data);
 
     Term name() const { return name_; }
+
+    Export* find_export(const MFArity& mfa) const {
+        Export exp(mfa.fun_, mfa.arity_, 0);
+        return exports_.binary_search(&exp, Export::compare_pvoid);
+    }
 
 private:
     void load_atoms(const ByteView& adata, Vector<String>& out);

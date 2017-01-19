@@ -8,13 +8,24 @@
 // platform memory allocation tools
 //
 #include "e4std/ptr.h"
+#include "e4std/free_fun.h"
+
 #include "e4platf/debug.h"
 
 #include <string.h>
+#include <stdlib.h>
 
 namespace e4std {
 
 static constexpr ::size_t VECTOR_MIN_GROWTH = 4;
+
+namespace impl {
+
+// A typeless search algorithm
+//void* binary_search(const void* from, const void* to, ::size_t stride,
+//                    const void* sample, VoidpCompareFun cmp);
+
+} // ns impl
 
 template<class ValueType>
 class Vector {
@@ -61,6 +72,8 @@ public:
         change_capacity(capacity);
     }
 
+    // TODO: Move out of the template, generalize
+    // TODO: Can make free destroy/construct funs
     void resize(::size_t newlength) {
         // TODO: call dtors on elements?
         if (newlength <= capacity_) { // avoid realloc just shrink or grow
@@ -68,8 +81,8 @@ public:
 
             auto datap = data_.get();
             for (auto i = size_; i < newlength; ++i) {
-                datap[i].~ValueType();
-                datap[i] = ValueType();
+                e4std::destruct(datap + i);
+                e4std::construct_in(datap + i);
             }
             return;
         }
@@ -120,6 +133,7 @@ public:
             return *this;
         }
         V& operator*() const { return *ptr_; }
+        const void* as_cpvoid() const { return static_cast<const void*>(ptr_); }
     };
     using Iterator = TIterator<ValueType>;
     using ConstIterator = TIterator<const ValueType>;
@@ -132,20 +146,39 @@ public:
 
     ConstIterator end() const { return ConstIterator(data_.get() + size_); }
 
+    ValueType* binary_search(const ValueType* val, VoidpCompareFun cmp) const {
+        return static_cast<ValueType*>(
+                ::bsearch(static_cast<const void*>(val),
+                          static_cast<const void*>(data_.get()),
+                          size(),
+                          sizeof(ValueType),
+                          cmp)
+        );
+    }
+
+    void sort(VoidpCompareFun cmp) {
+        ::qsort(static_cast<void*>(data_.get()),
+                size(),
+                sizeof(ValueType),
+                cmp);
+    }
+
 private:
     // Growth strategy! +25% or 4 cells, whatever is smaller
     ::size_t grow(::size_t old_capacity) {
         return e4std::max((old_capacity * 5) / 4, VECTOR_MIN_GROWTH);
     }
 
+    // TODO: Move out of the template, generalize
+    // TODO: Can make free destroy/construct funs
     void change_capacity(::size_t newcap) {
         if (newcap <= capacity_) { return; }
         E4ASSERT(newcap > size_);
         auto newdata = e4std::make_array<ValueType>(newcap);
         if (size_) {
             e4std::move_objects<ValueType>(data_.get(),
-                                         data_.get() + size_,
-                                         newdata.get());
+                                           data_.get() + size_,
+                                           newdata.get());
         }
 
         // Fill the new cells with default values

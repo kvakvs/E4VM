@@ -12,5 +12,9 @@ DEFERR(no_feat_erldist, E4CHOICE("Erlang Distribution feature is disabled", "F:D
 
 DEFERR(etf_bad_tag,     E4CHOICE("Bad tag encountered while reading ext term format", "E:ETF1"))
 
+DEFERR(proc_not_exist,  E4CHOICE("Process pid not found", "P:NEX"))
+
+DEFERR(code_undef,      E4CHOICE("Function is not found or not exported", "C:NDEF"))
+
 #undef DEFERR
 } // ns e4err
