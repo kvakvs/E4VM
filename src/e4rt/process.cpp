@@ -7,17 +7,20 @@
 
 namespace e4 {
 
-MaybeError Process::apply(const e4::VM& vm, const MFArgs& mfargs) {
+VoidResult Process::apply(const e4::VM& vm, const MFArgs& mfargs) {
     auto mod = vm.modules_.find(mfargs.mod_);
     if (!mod) {
-        return MaybeError::fail(e4err::proc_not_exist);
+        return VoidResult::fail(e4err::proc_not_exist);
     }
 
     auto pexport = mod->find_export(mfargs.as_mfarity());
     if (!pexport) {
-        return MaybeError::fail(e4err::code_undef);
+        return VoidResult::fail(e4err::code_undef);
     }
-    return MaybeError::success();
+
+    // TODO: Set call arguments
+    // TODO: jump
+    return VoidResult::success();
 }
 
 } // ns e4

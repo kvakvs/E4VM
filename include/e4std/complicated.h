@@ -4,14 +4,17 @@
 //
 #pragma once
 
+// Functional style error handling (Maybe/VoidResult) and
+// type unions (Either/Option)
+//
 namespace e4std {
 
-class MaybeError {
+class VoidResult {
     const char* what_;
-    explicit MaybeError(const char* w): what_(w) {}
+    explicit VoidResult(const char* w): what_(w) {}
 public:
-    static MaybeError success() { return MaybeError(nullptr); }
-    static MaybeError fail(const char* w) { return MaybeError(w); }
+    static VoidResult success() { return VoidResult(nullptr); }
+    static VoidResult fail(const char* w) { return VoidResult(w); }
     bool is_success() const { return what_ == nullptr; }
     bool is_fail() const { return what_ != nullptr; }
     const char* get_fail() const { return what_; }

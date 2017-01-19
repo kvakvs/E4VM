@@ -19,13 +19,8 @@ namespace e4std {
 
 static constexpr ::size_t VECTOR_MIN_GROWTH = 4;
 
-namespace impl {
-
-// A typeless search algorithm
-//void* binary_search(const void* from, const void* to, ::size_t stride,
-//                    const void* sample, VoidpCompareFun cmp);
-
-} // ns impl
+//namespace impl {
+//} // ns impl
 
 template<class ValueType>
 class Vector {
@@ -145,6 +140,9 @@ public:
     ConstIterator begin() const { return ConstIterator(data_.get()); }
 
     ConstIterator end() const { return ConstIterator(data_.get() + size_); }
+    //
+    // end iterator stuff
+    //
 
     ValueType* binary_search(const ValueType* val, VoidpCompareFun cmp) const {
         return static_cast<ValueType*>(

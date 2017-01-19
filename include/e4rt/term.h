@@ -28,6 +28,14 @@ namespace dist {
     constexpr Creation INTERNAL_CREATION = 255;
 }  // ns dist
 
+namespace pid {
+    static constexpr Word PID_ID_SIZE = 15;
+    static constexpr Word PID_DATA_SIZE = 28; // for 32bit maximum
+    static constexpr Word PID_SERIAL_SIZE = (PID_DATA_SIZE - PID_ID_SIZE);
+    static_assert(PID_DATA_SIZE + BOXED_TAG_BITS <= BITS_PER_WORD,
+                  "Pid does not fit the machine Word");
+} // ns pid
+
 class Term {
 private:
     // Term representation as primary_tag:2 + value in the remaining bits
@@ -157,22 +165,16 @@ public:
 #if E4FEATURE_ERLDIST
 #error TODO: pids need attention in distributed mode
 #endif
-    static constexpr Word PID_ID_SIZE = 15;
-    static constexpr Word PID_DATA_SIZE = 28; // for 32bit maximum
-    static constexpr Word PID_SERIAL_SIZE = (PID_DATA_SIZE - PID_ID_SIZE);
-    static_assert(PID_DATA_SIZE + BOXED_TAG_BITS <= BITS_PER_WORD,
-                  "Pid does not fit the machine Word");
-
     static constexpr bool is_valid_pid_id(Word x) {
-        return x < (1 << PID_ID_SIZE) - 1;
+        return x < (1 << pid::PID_ID_SIZE) - 1;
     }
 
     static constexpr bool is_valid_pid_serial(Word x) {
-        return x < (1 << PID_SERIAL_SIZE) - 1;
+        return x < (1 << pid::PID_SERIAL_SIZE) - 1;
     }
 
     static constexpr Word make_pid_data(Word ser, Word num) {
-        return static_cast<Word>(ser << PID_ID_SIZE | num);
+        return static_cast<Word>(ser << pid::PID_ID_SIZE | num);
     }
 
     // Data arg is created using Term::make_pid_data

@@ -6,24 +6,29 @@
 
 #include "e4rt/vm.h"
 #include "e4rt/term.h"
+#include "e4rt/bytecode.h"
 #include "e4std/complicated.h"
 
 namespace e4 {
-using e4std::MaybeError;
+using e4std::VoidResult;
+
+constexpr Word INIT_PROCESS_HEAP = 64; // first size for process heap (words)
 
 class Process {
 private:
     Term pid_;
-    // TODO: vm runtime context
+    // VM runtime context
+    CodeAddress pc_;
+    Heap heap_;
 
 public:
     Process() = delete;
-    Process(Term pid): pid_(pid) {
-    }
+    explicit Process(Term pid)
+            : pid_(pid), pc_(), heap_(INIT_PROCESS_HEAP) {}
 
     // Sets arguments and enters mfarity with args, does not wait for execution
     // but just sets instruction pointer instead
-    E4_NODISCARD MaybeError
+    E4_NODISCARD VoidResult
     apply(const e4::VM& vm, const MFArgs& mfargs);
 };
 

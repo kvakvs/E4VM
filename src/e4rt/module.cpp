@@ -114,6 +114,7 @@ void Module::load_exports(const ByteView& adata,
                   bsr.read_varint_u<Word>());
         exports_.push_back(ex);
     }
+    // We then use binary search so better this be sorted
     exports_.sort(Export::compare_pvoid);
 }
 

@@ -9,6 +9,7 @@
 #include "e4rt/term.h"
 #include "e4rt/heap.h"
 #include "e4rt/module.h"
+#include "e4rt/bytecode.h"
 
 #include "e4std/view.h"
 
@@ -23,9 +24,11 @@ class Export {
 public:
     Term fun_;
     Word arity_;
-    Word offset_;
+    Word offset_; // how far from the module code start
+
     explicit Export(): Export(NON_VALUE, 0, 0) {}
-    Export(Term f, Word a, Word offs): fun_(f), arity_(a), offset_(offs) {}
+
+    Export(Term f, Word a, Word offs) : fun_(f), arity_(a), offset_(offs) {}
 
     // Compares two exports as void* vs void*, returns -1 if a<b, 1 if a>b, or 0
     static int compare_pvoid(const void* a, const void* b);

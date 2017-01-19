@@ -10,7 +10,8 @@
 
 namespace e4 {
 
-enum class BoxTag: Word {
+namespace box_tag {
+typedef enum {
     Tuple,
     PositiveBignum,
     NegativeBignum,
@@ -26,7 +27,9 @@ enum class BoxTag: Word {
     RCBinary,
     MatchContext,
     SubBinary,
-};
+} Type;
+} // ns box_tag;
+using BoxTag = box_tag::Type;
 
 class Term;
 
