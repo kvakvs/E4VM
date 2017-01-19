@@ -22,11 +22,10 @@ TupleBoxHeader::operator Term() const { return Term::box_wrap(this); }
 
 #if E4DEBUG
 void MFArgs::print(const VM& vm) const {
-    ::printf("MFArgs(");
     vm.print(mod_);
-    ::printf(",");
+    ::printf(":");
     vm.print(fun_);
-    ::printf(")");
+    ::printf("/%zu", args_.count());
 }
 #endif // DEBUG
 

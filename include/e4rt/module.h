@@ -32,6 +32,10 @@ public:
 
     // Compares two exports as void* vs void*, returns -1 if a<b, 1 if a>b, or 0
     static int compare_pvoid(const void* a, const void* b);
+
+#if E4DEBUG
+    void print(const VM& vm) const;
+#endif // DEBUG
 };
 
 class Module {

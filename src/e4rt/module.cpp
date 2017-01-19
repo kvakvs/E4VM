@@ -3,6 +3,7 @@
 // PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 //
 
+#include <stdio.h>
 #include "e4platf/byte_stream_reader.h"
 
 #include "e4rt/module.h"
@@ -119,6 +120,10 @@ void Module::load_exports(const ByteView& adata,
 }
 
 Export* Module::find_export(const MFArity& mfa) const {
+    for (auto e: exports_) {
+        e.print(vm_);
+        ::puts("");
+    }
     Export exp(mfa.fun_, mfa.arity_, 0);
     return exports_.binary_search(&exp, Export::compare_pvoid);
 }
@@ -126,6 +131,10 @@ Export* Module::find_export(const MFArity& mfa) const {
 int Export::compare_pvoid(const void* a, const void* b) {
     auto pa = static_cast<const Export*>(a);
     auto pb = static_cast<const Export*>(b);
+
+    ::printf("cmp(%zu/%zu, %zu/%zu)\n",
+             pa->fun_.get_raw(), pa->arity_,
+             pb->fun_.get_raw(), pb->arity_);
 
     if (e4std::compare_less(pa->fun_, pb->fun_)) {
         return -1;
@@ -138,5 +147,12 @@ int Export::compare_pvoid(const void* a, const void* b) {
     }
     return 1;
 }
+
+#if E4DEBUG
+void Export::print(const VM& vm) const {
+    vm.print(fun_);
+    ::printf("/%zu", arity_);
+}
+#endif // DEBUG
 
 } // ns e4

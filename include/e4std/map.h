@@ -53,6 +53,12 @@ public:
         return depth_helper(this->root_);
     }
 
+    using VisitorFun = void (*)(const void* k, const void* v, void* extra);
+    void visit_nodes(VisitorFun fn, void* extra) const {
+        return visit_nodes_helper(root_, fn, extra);
+    }
+
+
     bool remove(const KeyType& key) {
         return remove_helper(nullptr, root_, key);
     }
@@ -84,6 +90,17 @@ private:
         else {
             return 1 + count_nodes_helper(root->left_) +
                    count_nodes_helper(root->right_);
+        }
+    }
+
+    void visit_nodes_helper(const NodeType* root,
+                            VisitorFun eachfn,
+                            void* extra) const {
+        if (not root) { return; }
+        else {
+            eachfn(&root->key_, &root->value_, extra);
+            visit_nodes_helper(root->left_, eachfn, extra);
+            visit_nodes_helper(root->right_, eachfn, extra);
         }
     }
 

@@ -138,6 +138,7 @@ public:
     }
 
     operator const char*() const { return s_; }
+    const char* str() const { return s_; }
 
     CString& operator=(const CString& other) {
         s_ = other.s_;

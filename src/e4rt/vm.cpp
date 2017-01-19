@@ -3,6 +3,7 @@
 // PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 //
 
+#include <stdio.h>
 #include "e4rt/vm.h"
 //#include "e4platf/mem.h"
 #include "e4rt/process.h"
@@ -103,6 +104,18 @@ const char* VM::find_atom(Term atom) const {
         return "?atom";
     }
     return node->value_;
+}
+
+static void print_atoms_helper(const void* k, const void* v, void* extra) {
+    auto pk = static_cast<const Term*>(k);
+    auto pv = static_cast<const CString*>(v);
+    auto vm = static_cast<VM*>(extra);
+    vm->print(*pk);
+    ::printf(" => %s\n", pv->str());
+}
+
+void VM::print_atoms() const {
+    atoms_.visit_nodes(print_atoms_helper, const_cast<VM*>(this));
 }
 
 #endif // DEBUG

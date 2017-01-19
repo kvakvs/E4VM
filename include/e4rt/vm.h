@@ -56,11 +56,8 @@ public:
 
 #if E4DEBUG
     void print(Term t) const;
-#endif
-
-private:
-#if E4DEBUG
     void print_imm(Term t) const;
+    void print_atoms() const;
 #endif
 };
 
