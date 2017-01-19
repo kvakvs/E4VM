@@ -55,8 +55,6 @@ constexpr bool DEBUG_MODE = (E4DEBUG != 0);
 #   define G_BIGENDIAN 1
     constexpr bool BIG_ENDIAN = true;
 #endif
-    constexpr bool LITTLE_ENDIAN = not BIG_ENDIAN;
-
 
 #define DECL_EXCEPTION(NAME)                                    \
     class NAME##Error: public e4std::RuntimeError {             \
@@ -71,5 +69,29 @@ constexpr bool DEBUG_MODE = (E4DEBUG != 0);
 #define DECL_IMPL_EXCEPTION(NAME) DECL_EXCEPTION(NAME) IMPL_EXCEPTION(NAME)
 
 #define E4_NORETURN __attribute__((noreturn))
+
+#if __has_cpp_attribute(nodiscard)
+    #define E4_NODISCARD [[nodiscard]]
+#elif __has_cpp_attribute(gnu::warn_unused_result)
+    #define E4_NODISCARD [[gnu::warn_unused_result]]
+#else
+    #define E4_NODISCARD
+#endif
+
+#if __has_cpp_attribute(maybe_unused)
+    #define E4_MAYBE_UNUSED [[maybe_unused]]
+#elif __has_cpp_attribute(gnu::unused)
+    #define E4_MAYBE_UNUSED [[gnu::unused]]
+#else
+    #define E4_MAYBE_UNUSED(X)
+#endif
+
+#if __has_cpp_attribute(fallthrough)
+    #define E4_FALLTHROUGH [[fallthrough]]
+#elif __has_cpp_attribute(clang::fallthrough)
+    #define E4_FALLTHROUGH [[clang::fallthrough]]
+#else
+    #define E4_FALLTHROUGH
+#endif
 
 } // ns e4

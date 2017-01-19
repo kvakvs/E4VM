@@ -29,7 +29,7 @@ public:
 
     bool empty() const { return htop_ == 0; }
 
-    ConsCell* allocate_cons() {
+    E4_NODISCARD ConsCell* allocate_cons() {
         E4LOG("heap: alloc cons\n");
         return reinterpret_cast<ConsCell*>(allocate_raw_words(2));
     }
@@ -41,13 +41,15 @@ public:
     }
 
     // Create a box in memory, set up its first word with boxtag and value bits
-    BoxHeaderWord* allocate_box(WordSize want_size, BoxTag bt, Word val) {
+    E4_NODISCARD BoxHeaderWord* allocate_box(WordSize want_size,
+                                             BoxTag bt,
+                                             Word val) {
         E4LOG1("heap: alloc box %zu w\n", want_size.units());
         Word* box = allocate_raw_words(want_size.units() + 1);
         return BoxHeaderWord::setup_a_box(box, bt, val);
     }
 
-    TupleBoxHeader* allocate_tuple_box(Word arity) {
+    E4_NODISCARD TupleBoxHeader* allocate_tuple_box(Word arity) {
         return reinterpret_cast<TupleBoxHeader*>(
                 allocate_box(WordSize(arity), BoxTag::Tuple, arity));
     }

@@ -3,6 +3,9 @@ project(E4VM)
 
 set(CMAKE_CXX_STANDARD 14)
 
+set(CMAKE_C_COMPILER /usr/bin/clang)
+set(CMAKE_CXX_COMPILER /usr/bin/clang++)
+
 option(CUSTOM_STDLIB "Use MUSL C library and custom build of libc++"
         OFF)
 option(COMPILATION_INTERMEDIATE_RESULTS "Dump asm and preprocessed files"

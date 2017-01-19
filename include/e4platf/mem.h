@@ -6,13 +6,15 @@
 #pragma once
 
 #include <stddef.h>
+#include "e4platf/conf.h"
 #include "e4std/stuff.h"
 
 namespace platf {
 
 struct SingleAlloc {
     template <class Type, class... Args>
-    static Type* alloc_class(Args&&... args) {
+    E4_NODISCARD static Type*
+    alloc_class(Args&&... args) {
         return new Type(e4std::forward<Args>(args)...);
     }
 
@@ -24,7 +26,8 @@ struct SingleAlloc {
 
 struct ArrayAlloc {
     template<class T>
-    static T* alloc(::size_t sz) {
+    E4_NODISCARD static T*
+    alloc(::size_t sz) {
         return new T[sz];
     }
 
