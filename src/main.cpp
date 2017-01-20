@@ -17,5 +17,7 @@ int main(int /*argc*/, const char ** /*argv [] */) {
     auto root_proc = vm.spawn(e4::NON_VALUE, mfargs);
     (void)root_proc;
 
+    vm.run();
+
     return 0;
 }

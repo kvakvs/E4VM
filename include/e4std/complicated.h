@@ -10,7 +10,7 @@
 namespace e4std {
 
 class VoidResult {
-    const char* what_;
+    const char* what_ = nullptr;
     explicit VoidResult(const char* w): what_(w) {}
 public:
     static VoidResult success() { return VoidResult(nullptr); }
@@ -29,12 +29,11 @@ public:
     }
 };
 
-template <class ValueType>
-class Maybe {
-    ValueType   val_;
-    bool        have_value_ = false;
-public:
-};
-
+//template <class ValueType>
+//class Maybe {
+//    ValueType   val_;
+//    bool        have_value_ = false;
+//public:
+//};
 
 } // ns e4std

@@ -5,11 +5,12 @@
 #pragma once
 
 #include "e4rt/code_mgr.h"
+#include "e4rt/atom_store.h"
+#include "e4rt/scheduler.h"
 #include "e4rt/dist.h"
 
 #include "e4std/array.h"
 #include "e4std/string.h"
-#include "atom_store.h"
 
 namespace e4 {
 
@@ -30,14 +31,14 @@ private:
 
     Node* this_node_ = nullptr;
 
-    Word pid_counter_ = 0;
-    Map<Term, Process*> processes_;
+    Scheduler sched_;
 
 public:
     CodeManager modules_;
     Heap binary_heap_;
 
     explicit VM() : binary_heap_(1024) {}
+    void run();
 
     //
     // Atom storage stuff
@@ -51,7 +52,6 @@ public:
     // Process and pid stuff
     //
     Process* spawn(Term parent_pid, const MFArgs& mfargs);
-    Term make_pid();
 
 #if E4DEBUG
     void print(Term t) const;

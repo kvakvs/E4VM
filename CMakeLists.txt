@@ -55,7 +55,7 @@ set(E4_RUNTIME_SOURCES
     src/e4rt/process.cpp
     src/e4rt/term.cpp
     src/e4rt/vm.cpp
-    )
+    src/e4rt/scheduler.cpp include/e4rt/scheduler.h)
 
 ## Helpers and OS abstraction library
 set(E4_PLATF_SOURCES
@@ -82,9 +82,10 @@ set(E4_STD_SOURCES
     include/e4std/stuff.h
     include/e4std/vector.h
     include/e4std/view.h
+    src/e4std/free_fun.cpp
     src/e4std/stuff.cpp
     src/e4std/vector.cpp
-    src/e4std/free_fun.cpp)
+    )
 
 set(EMU_SOURCES
     src/main.cpp

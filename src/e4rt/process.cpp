@@ -13,7 +13,7 @@ VoidResult Process::apply(const MFArgs& mfargs) {
         return VoidResult::fail(e4err::proc_not_exist);
     }
 
-//    mfargs.print(vm_);
+    mfargs.print(vm_);
     auto pexport = mod->find_export(mfargs.as_mfarity());
     if (!pexport) {
         return VoidResult::fail(e4err::code_undef);
@@ -26,8 +26,7 @@ VoidResult Process::apply(const MFArgs& mfargs) {
         stack_.push_term(*arg);
     }
 
-    // TODO: jump
-    pc_ = mod->get_export_address(*pexport);
+    jump(mod->get_export_address(*pexport));
     return VoidResult::success();
 }
 

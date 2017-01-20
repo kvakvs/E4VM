@@ -43,22 +43,15 @@ Node *VM::dist_this_node() {
 Process* VM::spawn(Term parent_pid, const MFArgs& mfargs) {
     (void)parent_pid;
 
-    auto pid = make_pid();
+    auto pid = sched_.make_pid();
 
     using platf::SingleAlloc;
     auto proc = SingleAlloc::alloc_class<Process>(*this, pid);
     auto apply_res = proc->apply(mfargs);
     apply_res.assert();
 
-    processes_.insert(pid, proc);
+    sched_.register_proc(proc);
     return nullptr;
-}
-
-Term VM::make_pid() {
-    auto t = Term::make_short_pid(pid_counter_++);
-    // TODO: implement wrap when word counter overflows
-    E4ASSERT(processes_.find(t) == nullptr);
-    return t;
 }
 
 #if E4DEBUG
@@ -94,6 +87,19 @@ void VM::print_imm(Term t) const {
 const char* VM::find_atom(Term atom) const {
     E4ASSERT(atom.is_atom());
     return atoms_.find(atom);
+}
+
+void VM::run() {
+    auto proc = sched_.next();
+    auto& context_ = proc->context_;
+    auto instr = context_.fetch();
+    switch (instr.op_.instr_tag_) {
+        case j1_instr_tag::ALU: {} break;
+        case j1_instr_tag::JUMP: {} break;
+        case j1_instr_tag::JUMP_COND: {} break;
+        case j1_instr_tag::CALL: {} break;
+        case j1_instr_tag::LITERAL: {} break;
+    }
 }
 
 //static void print_atoms_helper(const void* k, const void* v, void* extra) {
