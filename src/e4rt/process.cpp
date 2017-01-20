@@ -19,8 +19,15 @@ VoidResult Process::apply(const MFArgs& mfargs) {
         return VoidResult::fail(e4err::code_undef);
     }
 
-    // TODO: Set call arguments
+    // Reverse order: push args
+    auto arg_first = mfargs.args_.first();
+    for (const Term* arg = arg_first + mfargs.args_.count();
+         arg != arg_first; --arg) {
+        stack_.push_term(*arg);
+    }
+
     // TODO: jump
+    pc_ = mod->get_export_address(*pexport);
     return VoidResult::success();
 }
 

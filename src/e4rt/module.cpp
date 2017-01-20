@@ -128,6 +128,10 @@ Export* Module::find_export(const MFArity& mfa) const {
     return exports_.binary_search(&exp, Export::compare_pvoid);
 }
 
+CodeAddress Module::get_export_address(const Export& exp) const {
+    return CodeAddress(code_.data() + exp.offset_);
+}
+
 int Export::compare_pvoid(const void* a, const void* b) {
     auto pa = static_cast<const Export*>(a);
     auto pb = static_cast<const Export*>(b);

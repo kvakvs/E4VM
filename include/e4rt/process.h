@@ -12,6 +12,33 @@
 namespace e4 {
 using e4std::VoidResult;
 
+class Stack {
+private:
+    Vector<Word> cells_;
+public:
+    Stack() = default;
+    // Will grow using vector realloc
+    void push_term(Term t) {
+        push(t.get_raw());
+    }
+
+    void push(Word w) {
+        cells_.push_back(w);
+    }
+
+    // Will shrink size but not shrink memory
+    Word pop() {
+        E4ASSERT(not cells_.empty());
+        auto val = cells_.back();
+        cells_.resize(cells_.size() - 1);
+        return val;
+    }
+
+    Term pop_term() {
+        return Term(pop());
+    }
+};
+
 constexpr Word INIT_PROCESS_HEAP = 64; // first size for process heap (words)
 
 class Process {
@@ -20,6 +47,7 @@ private:
     // VM runtime context
     CodeAddress pc_;
     Heap heap_;
+    Stack stack_;
     VM& vm_;
 
 public:

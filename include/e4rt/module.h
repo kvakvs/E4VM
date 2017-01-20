@@ -24,7 +24,7 @@ class Export {
 public:
     Term fun_;
     Word arity_;
-    Word offset_; // how far from the module code start
+    Word offset_; // how far from the module code start, in 16bit words
 
     explicit Export(): Export(NON_VALUE, 0, 0) {}
 
@@ -41,7 +41,7 @@ public:
 class Module {
 private:
     Term name_ = NON_VALUE; // atom name
-    Vector<Uint8> code_;
+    Vector<J1Opcode> code_;
 
     Vector<Term> literals_;
     Heap literal_heap_;
@@ -57,6 +57,9 @@ public:
     Term name() const { return name_; }
 
     Export* find_export(const MFArity& mfa) const;
+
+    // Adds code start to export offset
+    CodeAddress get_export_address(const Export& exp) const;
 
 private:
     void load_atoms(const ByteView& adata, Vector<String>& out);

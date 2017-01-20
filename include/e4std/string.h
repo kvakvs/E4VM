@@ -116,36 +116,4 @@ public:
     const char* c_str() const { return content_.data(); }
 };
 
-//
-// A C string wrapper which can compare itself with other C strings but does
-// not own its data.
-//
-/*
-class CString {
-private:
-    const char* s_;
-public:
-    CString() : s_(nullptr) {}
-
-    CString(CString&& other) = delete;
-
-    CString(const CString& other) : s_(other.s_) {}
-
-    explicit CString(const char* s) : s_(s) {
-    }
-
-    bool operator<(const CString& other) const {
-        return ::strcmp(s_, other.s_) < 0;
-    }
-
-    operator const char*() const { return s_; }
-    const char* str() const { return s_; }
-
-    CString& operator=(const CString& other) {
-        s_ = other.s_;
-        return *this;
-    }
-};
-*/
-
 } // ns e4std

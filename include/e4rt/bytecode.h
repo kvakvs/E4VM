@@ -8,10 +8,10 @@ using J1Opcode = ::uint16_t;
 
 class CodeAddress {
 public:
-    J1Opcode* ptr_ = nullptr;
+    const J1Opcode* ptr_ = nullptr;
 public:
     CodeAddress() = default;
-    explicit CodeAddress(J1Opcode* p): ptr_(p) {}
+    explicit CodeAddress(const J1Opcode* p): ptr_(p) {}
 };
 
 } // ns e4
