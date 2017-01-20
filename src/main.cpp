@@ -13,7 +13,7 @@ int main(int /*argc*/, const char ** /*argv [] */) {
     auto mod_name = vm.modules_.load(vm, "test1.e4b");
 
     e4::MFArgs mfargs(mod_name, mod_name, e4std::ArrayRef<e4::Term>());
-    vm.print_atoms();
+//    vm.print_atoms();
     auto root_proc = vm.spawn(e4::NON_VALUE, mfargs);
     (void)root_proc;
 

@@ -18,6 +18,8 @@ Term Term::make_tuple(TupleBoxHeader *tuple_box) {
     return box_wrap(tuple_box);
 }
 
+bool Term::is_value() const { return raw_ != NON_VALUE.raw_; }
+
 TupleBoxHeader::operator Term() const { return Term::box_wrap(this); }
 
 #if E4DEBUG

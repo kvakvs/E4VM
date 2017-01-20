@@ -13,7 +13,7 @@ VoidResult Process::apply(const MFArgs& mfargs) {
         return VoidResult::fail(e4err::proc_not_exist);
     }
 
-    mfargs.print(vm_);
+//    mfargs.print(vm_);
     auto pexport = mod->find_export(mfargs.as_mfarity());
     if (!pexport) {
         return VoidResult::fail(e4err::code_undef);

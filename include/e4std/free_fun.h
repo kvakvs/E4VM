@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string.h>
+
 namespace e4std {
 
 // C style C++ constructor without args: constructs a class of some type in dst
@@ -23,15 +25,19 @@ void construct_in(Type* t) {
 
 // Override this for your beautiful key type
 template <class Type>
-bool compare_equal(const Type& a, const Type& b) {
+bool compare_equal(const Type a, const Type b) {
     return a == b;
 }
+template<>
+bool compare_equal(const char* a, const char* b);
 
 // Override this for your beautiful key type
 template <class Type>
-bool compare_less(const Type& a, const Type& b) {
+bool compare_less(const Type a, const Type b) {
     return a < b;
 }
+template<>
+bool compare_less(const char* a, const char* b);
 
 // C style comparison function which returns -1 if a<b, 1 if a>b else 0
 using VoidpCompareFun = int (*)(const void* a, const void* b);

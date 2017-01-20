@@ -9,6 +9,7 @@
 
 #include "e4std/array.h"
 #include "e4std/string.h"
+#include "atom_store.h"
 
 namespace e4 {
 
@@ -25,9 +26,7 @@ using e4std::ArrayRef;
 class VM {
 private:
     // Stores all atom names once
-    Vector<String> atom_interned_names_;
-    Map<Term, CString> atoms_;
-    Map<CString, Term> atoms_reverse_;
+    AtomStore atoms_;
 
     Node* this_node_ = nullptr;
 
@@ -57,7 +56,7 @@ public:
 #if E4DEBUG
     void print(Term t) const;
     void print_imm(Term t) const;
-    void print_atoms() const;
+//    void print_atoms() const;
 #endif
 };
 

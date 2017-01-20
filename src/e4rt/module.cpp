@@ -120,10 +120,10 @@ void Module::load_exports(const ByteView& adata,
 }
 
 Export* Module::find_export(const MFArity& mfa) const {
-    for (auto e: exports_) {
-        e.print(vm_);
-        ::puts("");
-    }
+//    for (auto e: exports_) {
+//        e.print(vm_);
+//        ::puts("");
+//    }
     Export exp(mfa.fun_, mfa.arity_, 0);
     return exports_.binary_search(&exp, Export::compare_pvoid);
 }
@@ -132,9 +132,9 @@ int Export::compare_pvoid(const void* a, const void* b) {
     auto pa = static_cast<const Export*>(a);
     auto pb = static_cast<const Export*>(b);
 
-    ::printf("cmp(%zu/%zu, %zu/%zu)\n",
-             pa->fun_.get_raw(), pa->arity_,
-             pb->fun_.get_raw(), pb->arity_);
+//    ::printf("cmp(%zu/%zu, %zu/%zu)\n",
+//             pa->fun_.get_raw(), pa->arity_,
+//             pb->fun_.get_raw(), pb->arity_);
 
     if (e4std::compare_less(pa->fun_, pb->fun_)) {
         return -1;

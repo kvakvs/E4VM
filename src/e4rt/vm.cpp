@@ -17,25 +17,19 @@ IMPL_EXCEPTION(CodeServer)
 IMPL_EXCEPTION(Process)
 
 Term VM::add_atom(const String &atom_name) {
-    CString atom_namei(atom_name.c_str());
+    auto atom_name_s = atom_name.c_str();
 
     // Try find atom (already exists)
-    auto rev_i = atoms_reverse_.find(atom_namei);
-    if (rev_i) {
-        // duplicate
-        return rev_i->value_;
+    auto exists = atoms_.find(atom_name_s);
+    if (exists.is_value()) { // duplicate
+        return exists;
     }
     E4ASSERT(fits_in<Word>(atoms_.size())); // 64bit machine with 32bit words
     Word atom_id = static_cast<Word>(atoms_.size());
 
-    // Add name to interned names and use only pointer to it in dicts
-    atom_interned_names_.push_back(atom_name);
-    CString interned_name(atom_interned_names_.back().c_str());
-
     // Add atom to direct lookup and reverse lookup table
     auto a = Term::make_atom(atom_id);
-    atoms_.insert(a, interned_name);
-    atoms_reverse_.insert(interned_name, a);
+    atoms_.insert(a, atom_name_s);
     return a;
 }
 
@@ -99,24 +93,20 @@ void VM::print_imm(Term t) const {
 
 const char* VM::find_atom(Term atom) const {
     E4ASSERT(atom.is_atom());
-    auto node = atoms_.find(atom);
-    if (!node) {
-        return "?atom";
-    }
-    return node->value_;
+    return atoms_.find(atom);
 }
 
-static void print_atoms_helper(const void* k, const void* v, void* extra) {
-    auto pk = static_cast<const Term*>(k);
-    auto pv = static_cast<const CString*>(v);
-    auto vm = static_cast<VM*>(extra);
-    vm->print(*pk);
-    ::printf(" => %s\n", pv->str());
-}
-
-void VM::print_atoms() const {
-    atoms_.visit_nodes(print_atoms_helper, const_cast<VM*>(this));
-}
+//static void print_atoms_helper(const void* k, const void* v, void* extra) {
+//    auto pk = static_cast<const Term*>(k);
+//    auto pv = static_cast<const CString*>(v);
+//    auto vm = static_cast<VM*>(extra);
+//    vm->print(*pk);
+//    ::printf(" => %s\n", pv->str());
+//}
+//
+//void VM::print_atoms() const {
+//    atoms_.visit_nodes(print_atoms_helper, const_cast<VM*>(this));
+//}
 
 #endif // DEBUG
 

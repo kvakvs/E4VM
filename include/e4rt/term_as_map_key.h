@@ -9,12 +9,12 @@
 namespace e4std {
 
 template<>
-inline bool compare_equal(const e4::Term& a, const e4::Term& b) {
+inline bool compare_equal(const e4::Term a, const e4::Term b) {
     return a.get_raw() == b.get_raw();
 }
 
 template<>
-inline bool compare_less(const e4::Term& a, const e4::Term& b) {
+inline bool compare_less(const e4::Term a, const e4::Term b) {
     return a.get_raw() < b.get_raw();
 }
 

@@ -63,7 +63,7 @@ namespace e4 {
     using Map = e4std::Map<TKey, TValue>;
 
     using String = e4std::String;
-    using CString = e4std::CString;
+//    using CString = e4std::CString;
 
     template <class Type>
     using UniquePtr = e4std::UniquePtr<Type>;

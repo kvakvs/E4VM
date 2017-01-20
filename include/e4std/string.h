@@ -120,6 +120,7 @@ public:
 // A C string wrapper which can compare itself with other C strings but does
 // not own its data.
 //
+/*
 class CString {
 private:
     const char* s_;
@@ -145,6 +146,6 @@ public:
         return *this;
     }
 };
-
+*/
 
 } // ns e4std

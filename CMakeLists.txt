@@ -32,27 +32,30 @@ add_definitions(
 ## Minus the VM itself this later can become a runtime library for compiled Erl
 set(E4_RUNTIME_SOURCES
     include/e4.h
+    include/e4rt/atom_store.h
     include/e4rt/binary.h
     include/e4rt/box.h
+    include/e4rt/bytecode.h
     include/e4rt/code_mgr.h
     include/e4rt/dist.h
     include/e4rt/ext_term_format.h
     include/e4rt/heap.h
     include/e4rt/messages.h
     include/e4rt/module.h
-    src/e4rt/process.cpp
     include/e4rt/process.h
     include/e4rt/term.h
     include/e4rt/term_as_map_key.h
     include/e4rt/term_tag.h
     include/e4rt/vm.h
+    src/e4rt/atom_store.cpp
     src/e4rt/binary.cpp
     src/e4rt/code_mgr.cpp
     src/e4rt/ext_term_format.cpp
     src/e4rt/module.cpp
+    src/e4rt/process.cpp
     src/e4rt/term.cpp
     src/e4rt/vm.cpp
-    include/e4rt/bytecode.h)
+    )
 
 ## Helpers and OS abstraction library
 set(E4_PLATF_SOURCES
@@ -67,9 +70,11 @@ set(E4_PLATF_SOURCES
     src/e4platf/mem.cpp
     )
 
-# A minimal replacement for C++ stuff which we don't link
+# Minimal badly written replacements for C++ stuff optimized for size
 set(E4_STD_SOURCES
     include/e4std/array.h
+    include/e4std/complicated.h
+    include/e4std/free_fun.h
     include/e4std/map.h
     include/e4std/ptr.h
     include/e4std/sizes.h
@@ -78,7 +83,8 @@ set(E4_STD_SOURCES
     include/e4std/vector.h
     include/e4std/view.h
     src/e4std/stuff.cpp
-    include/e4std/complicated.h include/e4std/free_fun.h src/e4std/vector.cpp)
+    src/e4std/vector.cpp
+    src/e4std/free_fun.cpp)
 
 set(EMU_SOURCES
     src/main.cpp
