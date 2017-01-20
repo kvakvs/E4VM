@@ -23,7 +23,7 @@ VoidResult Process::apply(const MFArgs& mfargs) {
     auto arg_first = mfargs.args_.first();
     for (const Term* arg = arg_first + mfargs.args_.count();
          arg != arg_first; --arg) {
-        stack_.push_term(*arg);
+        context_.ds_.push_term(*arg);
     }
 
     jump(mod->get_export_address(*pexport));

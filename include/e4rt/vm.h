@@ -26,11 +26,8 @@ using e4std::ArrayRef;
 // Erlang-Forth Abstract Machine (E4VM)
 class VM {
 private:
-    // Stores all atom names once
     AtomStore atoms_;
-
     Node* this_node_ = nullptr;
-
     Scheduler sched_;
 
 public:
@@ -39,6 +36,7 @@ public:
 
     explicit VM() : binary_heap_(1024) {}
     void run();
+    inline void run_alu(J1Opcode instr);
 
     //
     // Atom storage stuff

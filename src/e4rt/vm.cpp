@@ -99,12 +99,36 @@ void VM::run() {
     auto& context_ = proc->context_;
     auto instr = context_.fetch();
     switch (instr.op_.instr_tag_) {
-        case j1_instr_tag::ALU: {} break;
-        case j1_instr_tag::JUMP: {} break;
-        case j1_instr_tag::JUMP_COND: {} break;
-        case j1_instr_tag::CALL: {} break;
-//        case j1_instr_tag::LITERAL: {} break;
+        case j1_instr_tag::ALU: {
+            run_alu(instr);
+        } break;
+
+        case j1_instr_tag::LITERAL: {
+            // TODO: implement literal values longer than 15 bits signed
+            auto val = instr.lit_.val_;
+            context_.ds_.push((Word)val);
+        } break;
+
+        case j1_instr_tag::JUMP: {
+            // TODO: Remap jmp destinations on code load or implement relative jumps
+            proc->jump_offset(instr.jmp_.offset_);
+        } break;
+
+        case j1_instr_tag::JUMP_COND: {
+            if (context_.ds_.pop() == 0) {
+                proc->jump_offset(instr.jmp_.offset_);
+            }
+        } break;
+
+        case j1_instr_tag::CALL: {
+            context_.rs_.push(context_.pc_.as_word());
+            proc->jump_offset(instr.jmp_.offset_);
+        } break;
     }
+}
+
+inline void VM::run_alu(J1Opcode instr) {
+
 }
 
 //static void print_atoms_helper(const void* k, const void* v, void* extra) {

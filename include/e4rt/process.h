@@ -48,7 +48,6 @@ class Process {
 private:
     Term pid_;
     Heap heap_;
-    Stack stack_;
     VM& vm_;
 
 public:
@@ -56,6 +55,8 @@ public:
     class RuntimeContext {
     public:
         CodeAddress pc_;
+        Stack ds_;      // data stack
+        Stack rs_;      // return stack
         RuntimeContext() = default;
 
         J1Opcode fetch() {
@@ -82,6 +83,11 @@ public:
     void jump(CodeAddress newpc) {
         E4LOG1("[proc] jump 0x%zx\n", newpc.ptr_);
         context_.pc_ = newpc;
+    }
+
+    void jump_offset(SignedWord offs) {
+        E4LOG1("[proc] jump-rel 0x%zd\n", offs);
+        context_.pc_ += offs;
     }
 };
 
