@@ -3,11 +3,10 @@ project(E4VM)
 
 set(CMAKE_CXX_STANDARD 14)
 
-set(CMAKE_C_COMPILER /usr/bin/clang)
-set(CMAKE_CXX_COMPILER /usr/bin/clang++)
+set(CMAKE_C_COMPILER    /usr/bin/clang)
+set(CMAKE_CXX_COMPILER  /usr/bin/clang++)
 
 set(COMPILATION_INTERMEDIATE_RESULTS    0)
-set(BUILD_RELEASE                       0)
 
 ## We do not use standard C++ library here, but we DO use C++ startup/exit code
 add_definitions(-nostdinc++)
@@ -91,81 +90,53 @@ set(EMU_SOURCES
     src/main.cpp
     )
 
-set(COMPILER_OPTIONS_REL
-    -Os -g0 -DE4DEBUG=0)
+if(CMAKE_BUILD_TYPE MATCHES Debug)
+    add_definitions(-O0 -g -ggdb -DE4DEBUG=1 -fno-inline)
+else()
+    add_definitions(-Os -g0 -DE4DEBUG=0)
+endif()
 
-set(COMPILER_OPTIONS_DEBUG
-    -O0 -g -ggdb -DE4DEBUG=1 -fno-inline)
 
-if (BUILD_RELEASE)
-    add_library(e4_runtime ${E4_RUNTIME_SOURCES})
-    add_library(e4_platform ${E4_PLATF_SOURCES})
-    add_library(e4_std ${E4_STD_SOURCES})
-    target_compile_options(e4_runtime PUBLIC ${COMPILER_OPTIONS_REL})
-    target_compile_options(e4_platform PUBLIC ${COMPILER_OPTIONS_REL})
-    target_compile_options(e4_std PUBLIC ${COMPILER_OPTIONS_REL})
-endif (BUILD_RELEASE)
+add_library(e4_runtime  ${E4_RUNTIME_SOURCES})
+add_library(e4_platform ${E4_PLATF_SOURCES})
+add_library(e4_std      ${E4_STD_SOURCES})
+#target_compile_options(e4_runtime   PUBLIC ${COMPILER_OPTIONS_DEBUG})
+#target_compile_options(e4_platform  PUBLIC ${COMPILER_OPTIONS_DEBUG})
+#target_compile_options(e4_std       PUBLIC ${COMPILER_OPTIONS_DEBUG})
 
-add_library(e4_runtime-debug ${E4_RUNTIME_SOURCES})
-add_library(e4_platform-debug ${E4_PLATF_SOURCES})
-add_library(e4_std-debug ${E4_STD_SOURCES})
-target_compile_options(e4_runtime-debug PUBLIC ${COMPILER_OPTIONS_DEBUG})
-target_compile_options(e4_platform-debug PUBLIC ${COMPILER_OPTIONS_DEBUG})
-target_compile_options(e4_std-debug PUBLIC ${COMPILER_OPTIONS_DEBUG})
-
-##
-## Static Debug
-##
-add_executable(e4emu-debug ${EMU_SOURCES})
-target_link_libraries(e4emu-debug
-    e4_runtime-debug e4_platform-debug e4_std-debug ${MUSL_LIBS})
-target_compile_options(e4emu-debug PUBLIC ${COMPILER_OPTIONS_DEBUG})
-
-##
-## Static Optimized Release
-##
-if (BUILD_RELEASE)
-    add_executable(e4emu-x64 ${EMU_SOURCES})
-    target_link_libraries(e4emu-x64 e4_runtime e4_platform e4_std ${MUSL_LIBS})
-    target_compile_options(e4emu-x64 PUBLIC ${COMPILER_OPTIONS_REL})
-endif (BUILD_RELEASE)
+add_executable(e4emu ${EMU_SOURCES})
+target_link_libraries(e4emu
+    e4_runtime e4_platform e4_std)
+#target_compile_options(e4emu PUBLIC ${COMPILER_OPTIONS_DEBUG})
 
 if (COMPILATION_INTERMEDIATE_RESULTS)
-    if (BUILD_RELEASE)
-        target_compile_options(e4_std PUBLIC -save-temps)
-        target_compile_options(e4_platform PUBLIC -save-temps)
-        target_compile_options(e4_runtime PUBLIC -save-temps)
-    endif (BUILD_RELEASE)
+    target_compile_options(e4_std       PUBLIC -save-temps)
+    target_compile_options(e4_platform  PUBLIC -save-temps)
+    target_compile_options(e4_runtime   PUBLIC -save-temps)
 
-    target_compile_options(e4_std-debug PUBLIC -save-temps)
-    target_compile_options(e4_platform-debug PUBLIC -save-temps)
-    target_compile_options(e4_runtime-debug PUBLIC -save-temps)
+    target_compile_options(e4emu-debug  PUBLIC -save-temps)
+endif()
 
-    target_compile_options(e4emu-debug PUBLIC -save-temps)
-endif ()
-
-##
-## Link Flags
 ## -static-libgcc -static-libstdc++ -static -flto
-##
-set_target_properties(e4emu-debug
-    PROPERTIES LINK_FLAGS "-flto -static-libgcc -static-libstdc++ -static")
-if (BUILD_RELEASE)
-    set_target_properties(e4emu-x64
-        PROPERTIES LINK_FLAGS "-s -flto -static-libgcc -static-libstdc++ -static")
-endif (BUILD_RELEASE)
+if(CMAKE_BUILD_TYPE MATCHES Debug)
+    set_target_properties(e4emu
+        PROPERTIES LINK_FLAGS "-flto -static")
+else()
+    set_target_properties(e4emu
+        PROPERTIES LINK_FLAGS "-flto -static")
+endif()
 
 ##
 ## PVS-Studio Static Checker
 ##
-include(PVS-Studio.cmake)
-pvs_studio_add_target(
-    TARGET analyze ALL
-    OUTPUT FORMAT tasklist
-    PREPROCESSOR gcc
-    LOG "PVS-report.tasks"
-    ANALYZE e4_runtime-debug e4_platform-debug e4emu-debug
-    CXX_FLAGS ${PREPROCESSOR_ADDITIONAL_FLAGS}
-    C_FLAGS ${PREPROCESSOR_ADDITIONAL_FLAGS}
-    CONFIG "${CMAKE_SOURCE_DIR}/PVS-Studio.cfg"
-)
+#include(PVS-Studio.cmake)
+#pvs_studio_add_target(
+#    TARGET analyze ALL
+#    OUTPUT FORMAT tasklist
+#    PREPROCESSOR gcc
+#    LOG "PVS-report.tasks"
+#    ANALYZE e4_runtime-debug e4_platform-debug e4emu-debug
+#    CXX_FLAGS ${PREPROCESSOR_ADDITIONAL_FLAGS}
+#    C_FLAGS ${PREPROCESSOR_ADDITIONAL_FLAGS}
+#    CONFIG "${CMAKE_SOURCE_DIR}/PVS-Studio.cfg"
+#)

@@ -1,4 +1,4 @@
-DEBUG_EMU=cmake-build-debug/e4emu-debug
+DEBUG_EMU=cmake-build-debug/e4emu
 
 .PHONY: gdb
 gdb: compile

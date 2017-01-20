@@ -88,6 +88,7 @@ const char* VM::find_atom(Term atom) const {
     E4ASSERT(atom.is_atom());
     return atoms_.find(atom);
 }
+#endif // DEBUG
 
 void VM::run() {
     auto proc = sched_.next();
@@ -118,6 +119,5 @@ void VM::run() {
 //    atoms_.visit_nodes(print_atoms_helper, const_cast<VM*>(this));
 //}
 
-#endif // DEBUG
 
 } // ns e4
