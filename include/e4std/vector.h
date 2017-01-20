@@ -14,13 +14,36 @@
 
 #include <string.h>
 #include <stdlib.h>
+//#include <search.h>
 
 namespace e4std {
 
 static constexpr ::size_t VECTOR_MIN_GROWTH = 4;
 
-//namespace impl {
-//} // ns impl
+namespace impl {
+
+template <class V>
+class Iterator {
+private:
+    V* ptr_;
+public:
+    explicit Iterator(V* v): ptr_(v) {}
+    bool operator != (const Iterator& other) const {
+        return ptr_ != other.ptr_;
+    }
+
+    Iterator& operator++() {
+        ptr_++;
+        return *this;
+    }
+
+    void incr() { ptr_++; }
+
+    V& operator*() const { return *ptr_; }
+    const void* as_cpvoid() const { return static_cast<const void*>(ptr_); }
+};
+
+} // ns impl
 
 template<class ValueType>
 class Vector {
@@ -39,6 +62,26 @@ public:
     const ValueType* data() const { return data_.get(); }
 
     bool empty() const { return size_ == 0; }
+
+    // Perform linear search for value by pointer, pointer to each element
+    // is passed to compare function
+//    bool find(const ValueType* val, VoidpCompareFun cmp) const {
+//        return ::lsearch(
+//                static_cast<const void*>(val),
+//                static_cast<const void*>(data_.get()),
+//                size(),
+//                sizeof(ValueType),
+//                cmp);
+//    }
+
+    // Perform linear search for value by value, compare_equal is used
+    // (passing by value)
+    bool contains_val(const ValueType& val) const {
+        for (auto p = cbegin(); p != cend(); p.incr()) {
+            if (compare_equal(*p, val)) { return true; }
+        }
+        return false;
+    }
 
     ::size_t size() const { return size_; }
 
@@ -114,32 +157,17 @@ public:
     //
     // Iterator stuff
     //
-    template <class V>
-    class TIterator {
-    private:
-        V* ptr_;
-    public:
-        explicit TIterator(V* v): ptr_(v) {}
-        bool operator != (const TIterator& other) {
-            return ptr_ != other.ptr_;
-        }
-        TIterator& operator++() {
-            ptr_++;
-            return *this;
-        }
-        V& operator*() const { return *ptr_; }
-        const void* as_cpvoid() const { return static_cast<const void*>(ptr_); }
-    };
-    using Iterator = TIterator<ValueType>;
-    using ConstIterator = TIterator<const ValueType>;
+    using Iterator = impl::Iterator<ValueType>;
+    using ConstIterator = impl::Iterator<const ValueType>;
 
     Iterator begin() { return Iterator(data_.get()); }
-
     Iterator end() { return Iterator(data_.get() + size_); }
 
-    ConstIterator begin() const { return ConstIterator(data_.get()); }
+    ConstIterator begin() const { return cbegin(); }
+    ConstIterator end() const { return cend(); }
+    ConstIterator cbegin() const { return ConstIterator(data_.get()); }
+    ConstIterator cend() const { return ConstIterator(data_.get() + size_); }
 
-    ConstIterator end() const { return ConstIterator(data_.get() + size_); }
     //
     // end iterator stuff
     //

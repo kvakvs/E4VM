@@ -25,7 +25,7 @@ void construct_in(Type* t) {
 
 // Override this for your beautiful key type
 template <class Type>
-bool compare_equal(const Type a, const Type b) {
+bool compare_equal(Type a, Type b) {
     return a == b;
 }
 template<>
