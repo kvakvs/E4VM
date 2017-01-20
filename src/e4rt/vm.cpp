@@ -103,7 +103,7 @@ void VM::run() {
         case j1_instr_tag::JUMP: {} break;
         case j1_instr_tag::JUMP_COND: {} break;
         case j1_instr_tag::CALL: {} break;
-        case j1_instr_tag::LITERAL: {} break;
+//        case j1_instr_tag::LITERAL: {} break;
     }
 }
 

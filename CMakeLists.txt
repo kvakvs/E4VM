@@ -3,8 +3,10 @@ project(E4VM)
 
 set(CMAKE_CXX_STANDARD 14)
 
-set(CMAKE_C_COMPILER    /usr/bin/clang)
-set(CMAKE_CXX_COMPILER  /usr/bin/clang++)
+#set(CMAKE_C_COMPILER    /usr/bin/clang)
+#set(CMAKE_CXX_COMPILER  /usr/bin/clang++)
+set(CMAKE_C_COMPILER    /usr/bin/gcc)
+set(CMAKE_CXX_COMPILER  /usr/bin/g++)
 
 set(COMPILATION_INTERMEDIATE_RESULTS    0)
 
@@ -14,18 +16,6 @@ add_definitions(-nostdinc++)
 ##
 ##
 include_directories(${CMAKE_SOURCE_DIR}/include)
-add_definitions(
-    -DE4FEATURE_FS=1
-    -DE4_WORD_SIZE=64
-)
-add_definitions(
-    -std=c++17
-    -fno-rtti -fno-unroll-loops
-    -Weverything -Wall -Werror
-    -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-gnu-anonymous-struct
-    -Wno-zero-length-array -Wno-nested-anon-types
-    -Wno-format-nonliteral -Wno-global-constructors
-)
 
 ## Erlang Runtime system for E4VM: types, bifs, memory etc
 ## Minus the VM itself this later can become a runtime library for compiled Erl
@@ -96,18 +86,38 @@ else()
     add_definitions(-Os -g0 -DE4DEBUG=0)
 endif()
 
+add_definitions(
+    -DE4FEATURE_FS=1
+    -DE4_WORD_SIZE=64
+)
+add_definitions(
+    -std=c++17
+    -fno-rtti
+    -fno-exceptions
+    -fno-unroll-loops
+)
+add_definitions(
+    -Wall -Werror
+)
+
+if(CMAKE_CXX_COMPILER MATCHES clang)
+    add_definitions(
+        -Weverything
+        -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-gnu-anonymous-struct
+        -Wno-zero-length-array -Wno-nested-anon-types
+        -Wno-format-nonliteral -Wno-global-constructors
+    )
+else()
+    add_definitions(-ffunction-sections -Wl,--gc-sections)
+endif()
 
 add_library(e4_runtime  ${E4_RUNTIME_SOURCES})
 add_library(e4_platform ${E4_PLATF_SOURCES})
 add_library(e4_std      ${E4_STD_SOURCES})
-#target_compile_options(e4_runtime   PUBLIC ${COMPILER_OPTIONS_DEBUG})
-#target_compile_options(e4_platform  PUBLIC ${COMPILER_OPTIONS_DEBUG})
-#target_compile_options(e4_std       PUBLIC ${COMPILER_OPTIONS_DEBUG})
 
 add_executable(e4emu ${EMU_SOURCES})
 target_link_libraries(e4emu
     e4_runtime e4_platform e4_std)
-#target_compile_options(e4emu PUBLIC ${COMPILER_OPTIONS_DEBUG})
 
 if (COMPILATION_INTERMEDIATE_RESULTS)
     target_compile_options(e4_std       PUBLIC -save-temps)
@@ -123,7 +133,7 @@ if(CMAKE_BUILD_TYPE MATCHES Debug)
         PROPERTIES LINK_FLAGS "-flto -static")
 else()
     set_target_properties(e4emu
-        PROPERTIES LINK_FLAGS "-flto -static")
+        PROPERTIES LINK_FLAGS "-flto")
 endif()
 
 ##

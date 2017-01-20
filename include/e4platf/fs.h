@@ -58,7 +58,9 @@ public:
         result.resize(size);
 
         ::fseek(f_, 0, SEEK_SET);
-        ::fread(result.data(), size, 1, f_);
+        if (::fread(result.data(), size, 1, f_) != size) {
+            E4FAIL("read err");
+        }
         return result;
     }
 }; // class File

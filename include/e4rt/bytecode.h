@@ -10,7 +10,7 @@ typedef enum {
     JUMP_COND  = 1,
     CALL       = 2,
     ALU        = 3,
-    LITERAL    = 8,
+//    LITERAL    = 8,
 } Type;
 } // ns j1_instr_tag
 using J1InstrTag = j1_instr_tag::Type;

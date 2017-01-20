@@ -116,7 +116,7 @@ public:
     // Generic Box Utilities
     //
 
-    bool is_immediate() const {
+    constexpr bool is_immediate() const {
         return as_imm_.primary_tag_ == primary_tag::Immediate;
     }
 

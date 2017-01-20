@@ -1,5 +1,5 @@
 #include "e4platf/fs.h"
-//#include "e4platf/conf.h"
+#include "e4platf/messages.h"
 
 #if E4FEATURE_FS
 #include <sys/stat.h>
@@ -17,7 +17,7 @@ Vector<Uint8> read(const Vector<String>& search_paths, const char* fn) {
             return File::read_file(try_path.c_str());
         }
     }
-    throw FilesystemError("not found");
+    E4FAIL(platferr::fs_notfound);
 #else
     // TODO: For data in const memory return a boxview instead?
     E4TODO("Registry of statically linked files");
