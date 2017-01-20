@@ -91,6 +91,10 @@ const char* VM::find_atom(Term atom) const {
 
 void VM::run() {
     auto proc = sched_.next();
+    if (not proc) {
+        return; // nothing to do
+        // TODO: perform maintenance tasks, enter energy saving idle
+    }
     auto& context_ = proc->context_;
     auto instr = context_.fetch();
     switch (instr.op_.instr_tag_) {

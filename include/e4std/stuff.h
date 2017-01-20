@@ -7,6 +7,8 @@
 // Various algorithm and other stuff which did not deserve its own file yet
 //
 
+#define E4_MOVE(X) (static_cast<decltype(X)&&>(X))
+
 namespace e4std {
 
 //template<class T> struct remove_reference       { typedef T type; };
@@ -70,7 +72,7 @@ void fill(It first, It last, const T& value) {
 template<class ValueType>
 void move_objects(ValueType* first, ValueType* last, ValueType* dst) {
     for (; first != last; ++first, ++dst) {
-        *dst = static_cast<ValueType&&>(*first);
+        *dst = E4_MOVE(*first);
     }
 }
 
@@ -100,7 +102,7 @@ struct identity {
 template<typename T>
 T&&
 forward(typename identity<T>::type&& param) {
-    return static_cast<typename identity<T>::type&&>(param);
+    return E4_MOVE(param);
 }
 
 } // ns e4std

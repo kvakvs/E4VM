@@ -28,7 +28,7 @@ public:
 
     // Move ctor
     String(String&& mv) {
-        content_ = static_cast<Vector<char>&&>(mv.content_);
+        content_ = E4_MOVE(mv.content_);
     }
 
     void clear() {
@@ -38,7 +38,7 @@ public:
 
     // Move assignment
     String& operator =(String&& other) {
-        content_ = static_cast<Vector<char>&&>(other.content_);
+        content_ = E4_MOVE(other.content_);
         return *this;
     }
 
