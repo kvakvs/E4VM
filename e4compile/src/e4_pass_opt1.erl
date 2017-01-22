@@ -18,7 +18,8 @@ process(Forth) ->
 %%    io:format("~s~n~s~n", [color:redb("PASS4 OPT#1"), Output2]),
     Output1.
 
-%% TODO store(x) + retrieve(x) maybe add a custom opcode to write without consuming stack
+%% TODO store(x) + retrieve(x) maybe add a custom opcode to write without
+%% consuming stack
 %% TODO LD (something) LD again = can go with DUP
 %% TODO jump or call-tail + leave = remove leave or something
 %% TODO: enter(0) is omitted so also can omit leave maybe?

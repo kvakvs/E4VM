@@ -253,7 +253,7 @@ format_fun_name(Name, Arity) ->
 
 %% @doc Create an IF block which checks if Context variable(s) are a Type
 match_if_type(k_literal, _Context) ->
-    e4_f1:block(); % do nothing just proceed to value clause and compare directly
+    e4_f1:block(); % do nothing, proceed to value clause and compare directly
 match_if_type(Type, Context = #match_ctx{}) ->
     e4_f1:'if'(
         [e4_f1:eval(Context#match_ctx.select_var), make_type_check(Type)],
@@ -270,7 +270,7 @@ make_type_check(k_tuple)    -> <<".TUPLE?">>.
 %% values on the left match all values on the right.
 %% Code should be inserted inside this block by the caller.
 -spec emit_match(Scope :: [binary() | atom()],
-                 atom(), %k_tuple | k_cons | k_nil | k_float | k_atom | k_literal
+                 k_tuple | k_cons | k_nil | k_float | k_atom | k_literal,
                  _Lhs, _Rhs) -> forth_ic().
 emit_match(Scope, k_tuple, #k_tuple{es=LhsElements}, Rhs) ->
     %% Assuming Rhs is also a tuple, take elements from it and match against
