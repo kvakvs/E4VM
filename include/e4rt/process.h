@@ -44,28 +44,33 @@ public:
 
 constexpr Word INIT_PROCESS_HEAP = 64; // first size for process heap (words)
 
+// VM runtime context which gets swapped into VM loop and out
+class RuntimeContext {
+public:
+    CodeAddress pc_;
+    Stack ds_;      // data stack
+    Stack rs_;      // return stack
+    RuntimeContext() = default;
+
+    J1Opcode fetch() {
+        auto opcode = pc_.fetch();
+        // TODO: check code end/code range?
+        pc_.advance();
+        return opcode;
+    }
+};
+
 class Process {
 private:
     Term pid_;
     Heap heap_;
     VM& vm_;
+    // [pid()] -- linked processes
+    Term links_ = NIL;
+    // [pid()] -- processes which monitor this process
+    Term monitors_ = NIL;
 
 public:
-    // VM runtime context which gets swapped into VM loop and out
-    class RuntimeContext {
-    public:
-        CodeAddress pc_;
-        Stack ds_;      // data stack
-        Stack rs_;      // return stack
-        RuntimeContext() = default;
-
-        J1Opcode fetch() {
-            auto opcode = pc_.fetch();
-            // TODO: check code end/code range?
-            pc_.advance();
-            return opcode;
-        }
-    };
     RuntimeContext context_;
 
 public:
@@ -80,11 +85,13 @@ public:
     E4_NODISCARD VoidResult
     apply(const MFArgs& mfargs);
 
+    // TODO: maybe belongs to runtime context
     void jump(CodeAddress newpc) {
         E4LOG1("[proc] jump 0x%zx\n", newpc.ptr_);
         context_.pc_ = newpc;
     }
 
+    // TODO: maybe belongs to runtime context
     void jump_offset(SignedWord offs) {
         E4LOG1("[proc] jump-rel 0x%zd\n", offs);
         context_.pc_ += offs;

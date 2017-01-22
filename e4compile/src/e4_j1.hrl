@@ -49,12 +49,15 @@
 %% updatedduring the same 1st pass but possibly later.
 -record(j1patch, {
     id = 0 :: integer(),    % patch id to search later (equals PC value)
-    op = 0 :: integer()     % instruction to insert without address parth
+    op = 0 :: integer()     % instruction to insert without address part
 }).
 -type j1patch() :: #j1patch{}.
 
 %% Output of the J1 forth compiler (J1C Pass 1)
 -record(j1prog, {
+    labels = [] :: [{non_neg_integer(), non_neg_integer()}],
+    label_id = 0 :: non_neg_integer(), % counter to be used as label generator
+
     mod :: atom(),
     dict = orddict:new() :: orddict:orddict(binary() | tuple(), integer()),
     dict_nif = orddict:new() :: orddict:orddict(binary(), integer()),
@@ -71,7 +74,7 @@
     loopstack = [] :: [integer()],
     %% maps code address (where jump instruction is written) to another code
     %% address (jump destination) processed on the 2nd pass
-    patch_table = orddict:new() :: orddict:orddict(integer(), integer()),
+%%    patch_table = orddict:new() :: orddict:orddict(integer(), integer()),
 
     atom_id = 0 :: integer(),
     atoms = orddict:new() :: orddict:orddict(binary(), integer()),
@@ -80,5 +83,6 @@
     output = [] :: iolist()
 }).
 -type j1prog() :: #j1prog{}.
+-type j1label() :: non_neg_integer().
 
 -endif. % J1_HEADER

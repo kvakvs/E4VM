@@ -54,6 +54,9 @@ private:
 public:
     Vector() {}
 
+    Vector(::size_t init_size) {
+        resize(init_size);
+    }
     Vector(Vector&& other) = default;
     Vector& operator=(Vector&& other) = default;
 

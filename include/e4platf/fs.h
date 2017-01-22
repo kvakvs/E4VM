@@ -45,24 +45,9 @@ public:
         f_ = nullptr;
     }
 
-    static Vector<Uint8> read_file(const char* fn) {
-        File f(fn, "rb");
-        return f.read_file();
-    }
+    static Vector<Uint8> read_file(const char* fn);
 
-    Vector<Uint8> read_file() {
-        ::fseek(f_, 0, SEEK_END);
-        Count size = static_cast<Count>(::ftell(f_));
-
-        Vector<Uint8> result;
-        result.resize(size);
-
-        ::fseek(f_, 0, SEEK_SET);
-        if (::fread(result.data(), size, 1, f_) != size) {
-            E4FAIL("read err");
-        }
-        return result;
-    }
+    Vector<Uint8> read_file();
 }; // class File
 #endif // E4FEATURE_FS
 

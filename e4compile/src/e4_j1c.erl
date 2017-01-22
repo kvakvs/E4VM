@@ -19,8 +19,9 @@ compile(ModuleName, Input) ->
 
     %% Print the output
     Output = lists:reverse(Prog1#j1prog.output),
-    Patched = apply_patches(Output, Prog1#j1prog.patch_table, []),
-    Prog2 = Prog1#j1prog{output=Patched},
+    Prog2 = Prog1#j1prog{output=Output},
+    %Patched = apply_patches(Output, Prog1#j1prog.patch_table, []),
+    %Prog2 = Prog1#j1prog{output=Patched},
 
 %%    io:format("~s~n~s~n", [color:redb("J1C PASS 1"),
 %%                           format_j1c_pass1(Prog2, 0, Patched, [])]),
@@ -71,40 +72,44 @@ compile2(Prog0 = #j1prog{}, [#k_literal{val=L} | Tail]) -> % a preparsed literal
 
 %% --- Conditions ---
 compile2(Prog0 = #j1prog{}, [<<"IF">> | Tail]) ->
-    ZeroCondJump = j1_cond_jump(0),
-    Prog1 = emit_patch(Prog0, ZeroCondJump),
-    compile2(Prog1, Tail);
+    {F, Prog1} = begin_condition(Prog0),
+    Prog2 = emit(Prog1, j1_cond_jump(F)),
+    compile2(Prog2, Tail);
 compile2(Prog0 = #j1prog{}, [<<"UNLESS">> | Tail]) ->
     compile2(Prog0, [<<"INVERT">>, <<"IF">> | Tail]);
 compile2(Prog0 = #j1prog{}, [<<"THEN">> | Tail]) ->
-    Prog1 = update_patch_table(Prog0, 0),
+    Prog1 = cond_update_label(Prog0, 0),
     compile2(Prog1, Tail);
 compile2(Prog0 = #j1prog{}, [<<"ELSE">> | Tail]) ->
-    %% combine IF and THEN - add a patch table record for previous IF and create
-    %% a new #j1patch to jump over the code after ELSE
+    %% combine IF and THEN - update a label address for previous IF and create
+    %% a new label and jump instruction to jump over the code after ELSE
     %% IF[] ----------------> ELSE -------------> THEN[upd patchtable]
     %% #j1patch is emitted here  |                  |
     %% with conditional jump     |                  |
     %%                   patchtable is updated here |
     %%                   jump is emitted here       |
     %%                                             patchtable is updated here
-    Prog1 = update_patch_table(Prog0, 1),
-    UncondJump = j1_jump(0),
-    Prog2 = emit_patch(Prog1, UncondJump),
+    %%
+    %% Pop from the cond table, update label id with current PC
+    Prog1 = cond_update_label(Prog0, 1),
+    %% Make new label and create a jump to it
+    {F, Prog2} = begin_condition(Prog1),
+    Prog2 = emit(Prog1, j1_jump(F)),
+    %% Wait for THEN and do the same again to finalize the condition
     compile2(Prog2, Tail);
 
 %% --- Loops (started with a BEGIN) ---
 compile2(Prog0 = #j1prog{}, [<<"BEGIN">> | Tail]) ->
-    Prog1 = prog_loop_push(Prog0),
+    Prog1 = begin_loop(Prog0),
     compile2(Prog1, Tail);
 compile2(Prog0 = #j1prog{}, [<<"AGAIN">> | Tail]) -> % endless loop
     %% Just emit jump back to the BEGIN instruction
-    {Prog1, Begin} = prog_loop_pop(Prog0),
+    {Begin, Prog1} = end_loop(Prog0),
     Prog2 = emit(Prog1, j1_jump(Begin)),
     compile2(Prog2, Tail);
 compile2(Prog0 = #j1prog{}, [<<"UNTIL">> | Tail]) -> % conditional if-zero loop
     %% Emit conditional jump back to the BEGIN instruction
-    {Prog1, Begin} = prog_loop_pop(Prog0),
+    {Begin, Prog1} = end_loop(Prog0),
     Prog2 = emit(Prog1, j1_cond_jump(Begin)),
     compile2(Prog2, Tail);
 
@@ -130,49 +135,63 @@ compile2(Prog0 = #j1prog{}, [Word | Tail]) ->
 compile2(_Prog, [Other | _]) ->
     ?COMPILE_ERROR("E4 J1C: unknown op ~p", [Other]).
 
-j1_jump(Addr) ->
-    <<?J1INSTR_JUMP:?J1INSTR_WIDTH, Addr:?J1OP_INDEX_WIDTH>>.
+j1_jump(Label) ->
+    <<?J1INSTR_JUMP:?J1INSTR_WIDTH, Label:?J1OP_INDEX_WIDTH>>.
 
-j1_cond_jump(Addr) ->
-    <<?J1INSTR_JUMP_COND:?J1INSTR_WIDTH, Addr:?J1OP_INDEX_WIDTH>>.
+j1_cond_jump(Label) ->
+    <<?J1INSTR_JUMP_COND:?J1INSTR_WIDTH, Label:?J1OP_INDEX_WIDTH>>.
 
-%% @doc Pushes current code position onto the condition stack
--spec prog_cond_push(j1prog()) -> j1prog().
-prog_cond_push(Prog0 = #j1prog{pc=PC, condstack=CondStack}) ->
-    Prog0#j1prog{condstack=[PC | CondStack]}.
+%% @doc Create a label with current PC, and push its id onto condition stack.
+%% The value for the label will be updated once ELSE or THEN is reached
+-spec begin_condition(j1prog()) -> {j1label(), j1prog()}.
+begin_condition(Prog0 = #j1prog{condstack=CondStack}) ->
+    {F, Prog1} = create_label(Prog0),
+    {F, Prog1#j1prog{condstack=[F | CondStack]}}.
 
-%% @doc Pushes current code position onto the loop stack
--spec prog_loop_push(j1prog()) -> j1prog().
-prog_loop_push(Prog0 = #j1prog{pc=PC, loopstack=LoopStack}) ->
-    Prog0#j1prog{loopstack=[PC | LoopStack]}.
+%% @doc Creates a label with current PC and puts its id onto loop stack.
+%% The label will be used for jump once UNTIL or AGAIN is reached
+-spec begin_loop(j1prog()) -> {j1label(), j1prog()}.
+begin_loop(Prog0 = #j1prog{loopstack=LoopStack}) ->
+    {F, Prog1} = create_label(Prog0),
+    {F, Prog1#j1prog{loopstack=[F | LoopStack]}}.
 
--spec prog_cond_pop(j1prog()) -> {j1prog(), integer()}.
-prog_cond_pop(#j1prog{condstack=[]}) ->
+-spec end_condition(j1prog()) -> {j1prog(), integer()}.
+end_condition(#j1prog{condstack=[]}) ->
     ?COMPILE_ERROR("E4 J1C: ELSE or THEN have no matching IF");
-prog_cond_pop(Prog0 = #j1prog{condstack=[CSTop | CondStack]}) ->
-    {Prog0#j1prog{condstack=CondStack}, CSTop}.
+end_condition(Prog0 = #j1prog{condstack=[CSTop | CondStack]}) ->
+    {CSTop, Prog0#j1prog{condstack=CondStack}}.
 
--spec prog_loop_pop(j1prog()) -> {j1prog(), integer()}.
-prog_loop_pop(#j1prog{loopstack=[]}) ->
+-spec end_loop(j1prog()) -> {j1prog(), integer()}.
+end_loop(#j1prog{loopstack=[]}) ->
     ?COMPILE_ERROR("E4 J1C: AGAIN or UNTIL have no matching BEGIN");
-prog_loop_pop(Prog0 = #j1prog{loopstack=[LSTop | LoopStack]}) ->
-    {Prog0#j1prog{loopstack=LoopStack}, LSTop}.
+end_loop(Prog0 = #j1prog{loopstack=[LSTop | LoopStack]}) ->
+    {LSTop, Prog0#j1prog{loopstack=LoopStack}}.
 
-%% @doc Push PC onto cond stack + write j1patch{id=PC} in the output
-emit_patch(Prog0 = #j1prog{pc=PC}, Op) ->
-    Prog1 = prog_cond_push(Prog0),
-    emit(Prog1, #j1patch{op=Op, id=PC}).
+%% @ doc Push PC onto cond stack + write j1patch{id=PC} in the output
+%%emit_patch(Prog0 = #j1prog{pc=PC}, Op) ->
+%%    Prog1 = prog_cond_push(Prog0),
+%%    emit(Prog1, #j1patch{op=Op, id=PC}).
 
-%% @doc Pop a number from the cond stack and update program.patch_table with
-%% the PC+1 value. Next pass will apply these patches to the program.
-update_patch_table(Prog0 = #j1prog{pc=PC, patch_table=PTab}, Offset) ->
-    {Prog1, PatchId} = prog_cond_pop(Prog0),
-    Prog1#j1prog{patch_table=orddict:store(PatchId, PC + Offset, PTab)}.
+%% @doc Create a new label id to be placed in code (resolved at load time)
+create_label(Prog0 = #j1prog{labels = Labels, pc = PC, label_id = F0}) ->
+    {F0, Prog0#j1prog{
+        label_id = F0 + 1,
+        labels = [{F0, PC} | Labels]
+    }}.
 
-prog_add_export(Prog0 = #j1prog{exports=Expt}, Fun, Arity) ->
+%% @ doc Pop a label id from the cond stack and update #j1prog.labels with
+%% the PC+Offset value.
+cond_update_label(Prog0 = #j1prog{pc = PC, labels = Labels},
+                  Offset) ->
+    {F, Prog1} = end_condition(Prog0),
+    Prog1#j1prog{labels = orddict:store(F, PC + Offset, Labels)}.
+
+prog_add_export(Prog0 = #j1prog{exports = Expt},
+                Fun,
+                Arity) ->
     {Prog1, _} = atom_index_or_create(Prog0, Fun),
     Expt1 = [{Fun, Arity} | Expt],
-    Prog1#j1prog{exports=Expt1}.
+    Prog1#j1prog{exports = Expt1}.
 
 as_int(I) when is_binary(I) -> binary_to_integer(I).
 
@@ -221,9 +240,9 @@ emit_call(Prog0 = #j1prog{}, Index)
     emit(Prog0, <<?J1INSTR_CALL:?J1INSTR_WIDTH,
                   Index:?J1OP_INDEX_WIDTH/signed>>).
 
-emit(Prog0 = #j1prog{output=Out, pc=PC}, #j1patch{}=Patch) ->
-    Prog0#j1prog{output=[Patch | Out],
-                 pc=PC + 1};
+%%emit(Prog0 = #j1prog{output=Out, pc=PC}, #j1patch{}=Patch) ->
+%%    Prog0#j1prog{output=[Patch | Out],
+%%                 pc=PC + 1};
 emit(Prog0 = #j1prog{output=Out, pc=PC}, IOList) ->
     Prog0#j1prog{output=[IOList | Out],
                  pc=PC + 1}.
@@ -489,10 +508,10 @@ whereis_addr(#j1prog{dict_nif=Nifs}, Addr) when Addr < 0 ->
     end.
 
 %% @doc Additional pass resolves #j1patch inserts from PatchTab
-apply_patches([], _PatchTab, Accum) -> lists:reverse(Accum);
-apply_patches([#j1patch{op= <<Op:16>>, id=Id} | Tail], PatchTab, Accum) ->
-    Addr = orddict:fetch(Id, PatchTab),
-    NewOp = <<(Op bor Addr):16>>,
-    apply_patches(Tail, PatchTab, [NewOp | Accum]);
-apply_patches([H | Tail], PatchTab, Accum) ->
-    apply_patches(Tail, PatchTab, [H | Accum]).
+%%apply_patches([], _PatchTab, Accum) -> lists:reverse(Accum);
+%%apply_patches([#j1patch{op= <<Op:16>>, id=Id} | Tail], PatchTab, Accum) ->
+%%    Addr = orddict:fetch(Id, PatchTab),
+%%    NewOp = <<(Op bor Addr):16>>,
+%%    apply_patches(Tail, PatchTab, [NewOp | Accum]);
+%%apply_patches([H | Tail], PatchTab, Accum) ->
+%%    apply_patches(Tail, PatchTab, [H | Accum]).
