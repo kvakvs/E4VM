@@ -54,6 +54,7 @@ make_tmp(Value) ->
     end.
 
 %% TODO separate Cond from the rest of the arguments. How to optimize if true?
+'if'(X, Body) when is_list(Body) -> 'if'(X, block(Body));
 'if'(#k_literal{val='true'}, Body = #f_block{}) ->
     Body;
 'if'(Cond, Body = #f_block{}) ->

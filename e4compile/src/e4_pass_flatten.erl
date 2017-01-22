@@ -79,13 +79,13 @@ stack_frame_enter(0) -> [];
 stack_frame_enter(Sz) when is_integer(Sz) -> % #f_enter{size=Sz}.
     [e4_f1:lit(Sz), ?F_ENTER].
 
-stack_frame_leave(0) -> [];
+%%stack_frame_leave(0) -> [];
 stack_frame_leave(generic) ->
     %% generic leave assumes dynamic stack frame which can be dropped without
     %% knowing its size as a single data block, and collected by GC
-    ?F_LEAVE;
-stack_frame_leave(Sz) when is_integer(Sz) ->
-    [e4_f1:lit(Sz), ?F_LEAVE].
+    ?F_LEAVE.
+%%stack_frame_leave(Sz) when is_integer(Sz) ->
+%%    [e4_f1:lit(Sz), ?F_LEAVE].
 
 %% @doc Given a flat list of Forth words and some leftover tuples, convert all
 %% to Forth words (binary).

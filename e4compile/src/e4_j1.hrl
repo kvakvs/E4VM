@@ -38,8 +38,8 @@
     rpc = 0 :: 0..1,    % copy R (return stack top) to PC (program counter)
     tr = 0 :: 0..1,     % copy T (stack top) to R (return stack top)
     nti = 0 :: 0..1,    % indexed RAM access N->[T]
-    ds = 0 :: 0..3,     % 2 bits, signed increment of data stack
-    rs = 0 :: 0..3      % 2 bits, signed increment of return stack
+    ds = 0 :: -1..3,    % 2 bits, signed increment of data stack
+    rs = 0 :: -1..3     % 2 bits, signed increment of return stack
 }).
 -type alu() :: #alu{}.
 
@@ -47,11 +47,11 @@
 %% The second pass will find these patch instructions and replace them with
 %% machine code instruction (op | patch_table[id]) where the patch_table is
 %% updatedduring the same 1st pass but possibly later.
--record(j1patch, {
-    id = 0 :: integer(),    % patch id to search later (equals PC value)
-    op = 0 :: integer()     % instruction to insert without address part
-}).
--type j1patch() :: #j1patch{}.
+%%-record(j1patch, {
+%%    id = 0 :: integer(),    % patch id to search later (equals PC value)
+%%    op = 0 :: integer()     % instruction to insert without address part
+%%}).
+%%-type j1patch() :: #j1patch{}.
 
 %% Output of the J1 forth compiler (J1C Pass 1)
 -record(j1prog, {

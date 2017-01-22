@@ -13,9 +13,9 @@
 -import(e4_f1, [emit/2]).
 
 -record(match_ctx, {
-    match_vars= [] :: [k_var()],    % vars which appeared in #k_match{}
+    match_vars = [] :: [k_var()],   % vars which appeared in #k_match{}
     select_var,                     % focused var which appeared #k_select{}
-    type :: k_tuple | k_atom | k_int
+    type :: k_tuple | k_atom | k_int | k_float | k_nil | k_cons | k_literal
 }).
 -type match_ctx() :: #match_ctx{}.
 %%-type match_elem_group() :: k_match() | k_alt() | k_select() | k_type_clause()
@@ -162,32 +162,32 @@ process_code(Block0, #match_ctx{}, #k_put{arg=Arg, ret=Ret}) ->
 %%    io:format("k_put arg=~p ret=~p~n", [Arg, Ret]),
     emit(Block0, [e4_f1:eval(Arg), e4_f1:store(Ret)]);
 
-process_code(Block0 = #f_block{}, Ctx = #match_ctx{},
-             #k_alt{first=First, then=Then}) ->
-%%    io:format("k_alt first=~p~nthen=~p~n", [First, Then]),
+process_code(Block0 = #f_block{},
+             Ctx = #match_ctx{},
+             #k_alt{first = First, then = Then}) ->
     Alt0 = e4_f1:block(
         [e4_f1:comment("begin alt")],
         [],
         [e4_f1:comment("end alt")]),
     Alt1 = process_code(Alt0, Ctx, First),
-%%    p(Alt1),
-%%    io:format("Alt1 ~p~n", [Alt1]),
     Alt2 = process_code(Alt1, Ctx, Then),
     emit(Block0, Alt2);
 
-process_code(Block0, #match_ctx{}, #k_match{vars=Vars, body=Body, ret=Ret}) ->
+process_code(Block0,
+             #match_ctx{},
+             #k_match{vars = Vars, body = Body, ret = Ret}) ->
 %%    io:format("k_match vars=~p~n", [Vars]),
     Match0 = e4_f1:block(
         [e4_f1:comment("begin match")],
         [],
         [e4_f1:comment("end match")]),
-    Match1 = process_code(Match0, #match_ctx{match_vars=Vars}, Body),
+    Match1 = process_code(Match0, #match_ctx{match_vars = Vars}, Body),
     Match2 = emit(Match1, [e4_f1:store(Ret)]),
     emit(Block0, Match2);
 
-process_code(Block0 = #f_block{}, Context0 = #match_ctx{},
+process_code(Block0 = #f_block{},
+             Context0 = #match_ctx{},
              #k_select{var=Var, types=Types}) ->
-%%    io:format("k_select var=~p~ntypes=~p~n", [Var, Types]),
     Select0 = e4_f1:block(
         [e4_f1:comment("begin select")],
         [],
@@ -198,19 +198,18 @@ process_code(Block0 = #f_block{}, Context0 = #match_ctx{},
     Select1 = process_code(Select0, Context1, Types),
     emit(Block0, Select1);
 
-process_code(Block0 = #f_block{}, Context = #match_ctx{},
-            #k_type_clause{type=Type, values=Values}) ->
+process_code(Block0 = #f_block{},
+             Context = #match_ctx{},
+             #k_type_clause{type = Type, values = Values}) ->
 %%    io:format("k_type_clause t=~p~n  val=~p~n", [Type, Values]),
-    Type0 = match_if_type(Type, Context),
+    TypeBlock0 = match_if_type(Type, Context),
     Context1 = Context#match_ctx{type = Type},
-    Type1 = process_code(Type0, Context1, Values),
-    emit(Block0, Type1);
+    TypeBlock1 = process_code(TypeBlock0, Context1, Values),
+    emit(Block0, TypeBlock1);
 
 process_code(Block0 = #f_block{},
-             #match_ctx{select_var=Rhs, type=Type} = Context,
-             #k_val_clause{val=Lhs, body=Body}) ->
-%%    io:format("k_val_clause lhs=~999p~n"
-%%              "  rhs=~p~n  body=~p~n", [Lhs, Rhs, Body]),
+             #match_ctx{select_var = Rhs, type = Type} = Context,
+             #k_val_clause{val = Lhs, body = Body}) ->
     Val0 = e4_f1:block(
         [e4_f1:comment("begin val clause")],
         [],
@@ -271,7 +270,7 @@ make_type_check(k_tuple)    -> <<".TUPLE?">>.
 %% values on the left match all values on the right.
 %% Code should be inserted inside this block by the caller.
 -spec emit_match(Scope :: [binary() | atom()],
-                 k_tuple | k_cons | k_nil | k_float | k_atom | k_literal,
+                 atom(), %k_tuple | k_cons | k_nil | k_float | k_atom | k_literal
                  _Lhs, _Rhs) -> forth_ic().
 emit_match(Scope, k_tuple, #k_tuple{es=LhsElements}, Rhs) ->
     %% Assuming Rhs is also a tuple, take elements from it and match against

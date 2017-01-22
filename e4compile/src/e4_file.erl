@@ -27,11 +27,11 @@ bin_filename(F) ->
     RDot = string:rchr(F, $.),
     string:sub_string(F, 1, RDot) ++ "e4b".
 
-encode_tag(uncompressed, T) -> T;
-encode_tag(gzipped, T) -> string:to_lower(T).
+encode_tag(uncompressed, T) -> T.
+%%encode_tag(gzipped, T) -> string:to_lower(T).
 
-encode_block(uncompressed, D) -> D;
-encode_block(gzipped, D) -> [e4_encode:varint(iolist_size(D)), zlib:gzip(D)].
+encode_block(uncompressed, D) -> D.
+%%encode_block(gzipped, D) -> [e4_encode:varint(iolist_size(D)), zlib:gzip(D)].
 
 encode_literals(Compr, #j1prog{literals=LitTab}) ->
     LitTab1 = lists:keysort(2, LitTab),

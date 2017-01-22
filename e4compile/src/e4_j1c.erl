@@ -100,7 +100,7 @@ compile2(Prog0 = #j1prog{}, [<<"ELSE">> | Tail]) ->
 
 %% --- Loops (started with a BEGIN) ---
 compile2(Prog0 = #j1prog{}, [<<"BEGIN">> | Tail]) ->
-    Prog1 = begin_loop(Prog0),
+    {_F, Prog1} = begin_loop(Prog0),
     compile2(Prog1, Tail);
 compile2(Prog0 = #j1prog{}, [<<"AGAIN">> | Tail]) -> % endless loop
     %% Just emit jump back to the BEGIN instruction
@@ -130,10 +130,10 @@ compile2(Prog0 = #j1prog{}, [Word | Tail]) ->
                 not_found -> emit_base_word(Prog0, Word);
                 Index -> emit_call(Prog0, Index)
             end,
-    compile2(Prog1, Tail);
+    compile2(Prog1, Tail).
 
-compile2(_Prog, [Other | _]) ->
-    ?COMPILE_ERROR("E4 J1C: unknown op ~p", [Other]).
+%%compile2(_Prog, [Other | _]) ->
+%%    ?COMPILE_ERROR("E4 J1C: unknown op ~p", [Other]).
 
 j1_jump(Label) ->
     <<?J1INSTR_JUMP:?J1INSTR_WIDTH, Label:?J1OP_INDEX_WIDTH>>.
@@ -155,13 +155,13 @@ begin_loop(Prog0 = #j1prog{loopstack=LoopStack}) ->
     {F, Prog1} = create_label(Prog0),
     {F, Prog1#j1prog{loopstack=[F | LoopStack]}}.
 
--spec end_condition(j1prog()) -> {j1prog(), integer()}.
+-spec end_condition(j1prog()) -> {integer(), j1prog()}.
 end_condition(#j1prog{condstack=[]}) ->
     ?COMPILE_ERROR("E4 J1C: ELSE or THEN have no matching IF");
 end_condition(Prog0 = #j1prog{condstack=[CSTop | CondStack]}) ->
     {CSTop, Prog0#j1prog{condstack=CondStack}}.
 
--spec end_loop(j1prog()) -> {j1prog(), integer()}.
+-spec end_loop(j1prog()) -> {integer(), j1prog()}.
 end_loop(#j1prog{loopstack=[]}) ->
     ?COMPILE_ERROR("E4 J1C: AGAIN or UNTIL have no matching BEGIN");
 end_loop(Prog0 = #j1prog{loopstack=[LSTop | LoopStack]}) ->
@@ -269,6 +269,7 @@ emit_alu(Prog = #j1prog{}, #alu{op=Op0, tn=TN, rpc=RPC, tr=TR, nti=NTI,
             Rs:2, Ds:2>>,
     emit(Prog, Op1).
 
+-spec emit_base_word(j1prog(), binary() | f_comment()) -> j1prog().
 emit_base_word(Prog0, <<"+">>) ->
     emit_alu(Prog0, #alu{op=?J1OP_T_PLUS_N, ds=-1});
 emit_base_word(Prog0, <<"XOR">>) ->
@@ -366,8 +367,8 @@ emit_base_word(Prog0, <<"COPY">>) ->
 emit_base_word(Prog0, <<"NOOP">>) ->
     emit_alu(Prog0, #alu{op=?J1OP_T});
 
-emit_base_word(Prog0, Integer) when is_integer(Integer) ->
-    emit_lit(Prog0, integer, Integer);
+%%emit_base_word(Prog0, Integer) when is_integer(Integer) ->
+%%    emit_lit(Prog0, integer, Integer);
 emit_base_word(Prog0, #f_comment{}) -> Prog0; % skip comments
 emit_base_word(Prog0, <<First:8, _/binary>> = Word)
     when First >= $0 andalso First =< $9 orelse First =:= $-
@@ -442,9 +443,9 @@ format_j1c_pass1(Prog, Pc, [H | Tail], Accum) ->
         io_lib:format("~4.16.0B: ", [Pc]) | Accum
     ]).
 
-format_j1c_op(Prog, #j1patch{op=Op, id=Id}) ->
-    io_lib:format("~s id=~p (~s)~n", [color:yellowb("PATCH"), Id,
-                                      format_j1c_op(Prog, Op)]);
+%%format_j1c_op(Prog, #j1patch{op=Op, id=Id}) ->
+%%    io_lib:format("~s id=~p (~s)~n", [color:yellowb("PATCH"), Id,
+%%                                      format_j1c_op(Prog, Op)]);
 format_j1c_op(_Prog, <<1:1, Lit:(?J1BITS-1)/signed>>) ->
     io_lib:format("~s ~p~n", [color:blueb("LIT"), Lit]);
 format_j1c_op(Prog, <<?J1INSTR_CALL:?J1INSTR_WIDTH,

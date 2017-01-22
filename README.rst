@@ -17,15 +17,8 @@ See also: ``e4compiler/README.rst``
 The ultimate goal is to land on embedded devices (something like RTEMS?)
 but development naturally happens on x64 Linux.
 
-Building
---------
-
-**Optional step** (controlled by CMakeLists option CUSTOM_STDLIB, default off)
-
-Build and install musl: enter musl directory: `cd musl`, do `./configure`
-and then `sudo make install` this will build the library and output all the
-include and lib files into `/usr/local/musl/*` where the CMakeLists script
-expects them.
+Building on PC
+--------------
 
 Create a build directory, for example `mkdir build_`. Enter build directory:
 `cd build_`. Run CMake on it: `cmake ..` and then `make`.
