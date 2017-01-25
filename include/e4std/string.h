@@ -28,7 +28,7 @@ public:
 
     // Move ctor
     String(String&& mv) {
-        content_ = E4_MOVE(mv.content_);
+        content_ = std::move(mv.content_);
     }
 
     void clear() {
@@ -38,7 +38,7 @@ public:
 
     // Move assignment
     String& operator =(String&& other) {
-        content_ = E4_MOVE(other.content_);
+        content_ = std::move(other.content_);
         return *this;
     }
 

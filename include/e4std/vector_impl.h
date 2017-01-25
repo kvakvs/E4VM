@@ -63,8 +63,8 @@ protected:
     }
 
     // Growth strategy! +25% or 4 cells, whatever is smaller
-    ::size_t grow(::size_t old_capacity) {
-        return e4std::max((old_capacity * 5) / 4, VECTOR_MIN_GROWTH);
+    static ::size_t grow(::size_t old_capacity) {
+        return std::max((old_capacity * 5) / 4, VECTOR_MIN_GROWTH);
     }
 };
 

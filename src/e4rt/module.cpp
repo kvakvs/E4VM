@@ -120,6 +120,9 @@ void Module::load_exports(const ByteView& adata,
 
 Export* Module::find_export(const MFArity& mfa) const {
     Export exp(mfa.fun_, mfa.arity_, 0);
+#if E4DEBUG
+    exports_.for_each([this](const Export& e) { e.print(vm_); });
+#endif
     return exports_.binary_search(&exp, Export::compare_pvoid);
 }
 

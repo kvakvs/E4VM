@@ -17,7 +17,7 @@ using e4std::VoidResult;
 // TODO: some generic stack frame implementation for enter/leave. Dynamic heap frames?
 class Stack {
 private:
-    Vector<Word> cells_;
+    PODVector<Word> cells_;
 public:
     Stack() = default;
     // Will grow using vector realloc

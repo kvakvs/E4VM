@@ -23,7 +23,7 @@ public:
 #if E4DEBUG
         if (is_fail()) {
             E4ASSERT(what_);
-            e4::failf("MaybeErr: " RED "%s" RESET "\n", what_);
+            e4::failf(RED "%s" RESET "\n", what_);
         }
 #endif
     }

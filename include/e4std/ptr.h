@@ -26,7 +26,7 @@ public:
     explicit TUniquePtr(ValueType* p) : p_(p) {}
     TUniquePtr(const TUniquePtr& other) = delete;
 
-    TUniquePtr(TUniquePtr&& other): p_(E4_MOVE(other.p_)) {}
+    TUniquePtr(TUniquePtr&& other): p_(std::move(other.p_)) {}
 
     ~TUniquePtr() { release(); }
 

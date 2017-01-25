@@ -16,6 +16,8 @@
 #include <stdlib.h>
 #include "e4std/vector_impl.h"
 
+#include <functional>
+
 namespace e4std {
 
 static constexpr ::size_t VECTOR_MIN_GROWTH = 4;
@@ -56,7 +58,7 @@ private:
 public:
     Vector() {}
 
-    Vector(::size_t init_size) {
+    explicit Vector(::size_t init_size) {
         resize(init_size);
     }
     Vector(Vector&& other) = default;
@@ -181,27 +183,11 @@ public:
     // end iterator stuff
     //
 
-    ValueType* binary_search(const ValueType* val, VoidpCompareFun cmp) const {
-        return static_cast<ValueType*>(
-                ::bsearch(static_cast<const void*>(val),
-                          static_cast<const void*>(data_.get()),
-                          size(),
-                          sizeof(ValueType),
-                          cmp)
-        );
-    }
-
-    void sort(VoidpCompareFun cmp) {
-        ::qsort(static_cast<void*>(data_.get()),
-                size(),
-                sizeof(ValueType),
-                cmp);
-    }
 
 private:
     // Growth strategy! +25% or 4 cells, whatever is smaller
     ::size_t grow(::size_t old_capacity) {
-        return e4std::max((old_capacity * 5) / 4, VECTOR_MIN_GROWTH);
+        return std::max((old_capacity * 5) / 4, VECTOR_MIN_GROWTH);
     }
 
     // TODO: Move out of the template, generalize (vector_impl:change_capacity)
@@ -211,9 +197,7 @@ private:
         E4ASSERT(newcap > size_);
         auto newdata = e4std::make_array<ValueType>(newcap);
         if (size_) {
-            e4std::move_objects<ValueType>(data_.get(),
-                                           data_.get() + size_,
-                                           newdata.get());
+            std::move(data_.get(), data_.get() + size_, newdata.get());
         }
 
         // Fill the new cells with default values
@@ -238,7 +222,7 @@ public:
 
     PODVector() {}
 
-    PODVector(::size_t init_size) {
+    explicit PODVector(::size_t init_size) {
         resize(init_size);
     }
 
@@ -255,6 +239,8 @@ public:
     }
 
     bool empty() const { return size_ == 0; }
+
+    ::size_t size() const { return size_; }
 
     void resize(::size_t newsize) {
         VectorImpl::resize(sizeof(ValueType), newsize);
@@ -275,8 +261,85 @@ public:
     }
 
     void set(::size_t index, const ValueType& v) {
-        ValueType* datap = reinterpret_cast<ValueType*>(data_.get());
-        datap[index] = v;
+        // ValueType* datap = reinterpret_cast<ValueType*>(data_.get());
+        data()[index] = v;
+    }
+
+        ValueType& back() {
+        E4ASSERT(size_ > 0);
+        return *(data() + size_ - 1);
+    }
+
+    const ValueType& back() const {
+        E4ASSERT(size_ > 0);
+        return *(data_.get() + size_ - 1);
+    }
+
+    ValueType& front() {
+        E4ASSERT(size_ > 0);
+        return *data();
+    }
+
+    const ValueType& front() const {
+        E4ASSERT(size_ > 0);
+        return *data();
+    }
+
+    //
+    // Iterator stuff
+    //
+    using Iterator = impl::Iterator<ValueType>;
+    using ConstIterator = impl::Iterator<const ValueType>;
+
+    Iterator begin() { return Iterator(data_.get()); }
+
+    Iterator end() { return Iterator(data_.get() + size_); }
+
+    ConstIterator begin() const { return cbegin(); }
+
+    ConstIterator end() const { return cend(); }
+
+    ConstIterator cbegin() const { return ConstIterator(data()); }
+
+    ConstIterator cend() const { return ConstIterator(data() + size_); }
+
+    //
+    // Algorithms
+    //
+    ValueType* binary_search(const ValueType* val, VoidpCompareFun cmp) const {
+        return static_cast<ValueType*>(
+                ::bsearch(static_cast<const void*>(val),
+                          static_cast<const void*>(data_.get()),
+                          size(),
+                          sizeof(ValueType),
+                          cmp)
+        );
+    }
+
+    void sort(VoidpCompareFun cmp) {
+        ::qsort(static_cast<void*>(data_.get()),
+                size(),
+                sizeof(ValueType),
+                cmp);
+    }
+
+    using ForEachFun = std::function<void(ValueType&)>;
+    using ForEachFunConst = std::function<void(const ValueType&)>;
+
+    template <typename Fun>
+    void for_each(Fun fun) {
+        auto last = data() + size();
+        for (ValueType* p = data(); p != last; ++p) {
+            fun(*p);
+        }
+    }
+
+    template <typename Fun>
+    void for_each(Fun fun) const {
+        auto last = data() + size();
+        for (const ValueType* p = data(); p != last; ++p) {
+            fun(*p);
+        }
     }
 };
 

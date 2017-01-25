@@ -11,7 +11,7 @@ set(CMAKE_CXX_COMPILER  /usr/bin/g++)
 set(COMPILATION_INTERMEDIATE_RESULTS    0)
 
 ## We do not use standard C++ library here, but we DO use C++ startup/exit code
-add_definitions(-nostdinc++)
+#add_definitions(-nostdinc++)
 
 ##
 ##

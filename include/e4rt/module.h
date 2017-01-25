@@ -41,13 +41,12 @@ public:
 class Module {
 private:
     Term name_ = NON_VALUE; // atom name
-    // TODO: group Vector<> members on the process heap, have them preallocated
     PODVector<J1Opcode> code_;
     PODVector<Word> labels_; // labels table TODO: merge with code maybe?
 
     PODVector<Term> literals_;
     Heap literal_heap_;
-    Vector<Export> exports_;
+    PODVector<Export> exports_;
 
     VM& vm_;
 
