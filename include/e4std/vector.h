@@ -14,7 +14,7 @@
 
 #include <string.h>
 #include <stdlib.h>
-//#include <search.h>
+#include "e4std/vector_impl.h"
 
 namespace e4std {
 
@@ -22,13 +22,14 @@ static constexpr ::size_t VECTOR_MIN_GROWTH = 4;
 
 namespace impl {
 
-template <class V>
+template<class V>
 class Iterator {
 private:
     V* ptr_;
 public:
-    explicit Iterator(V* v): ptr_(v) {}
-    bool operator != (const Iterator& other) const {
+    explicit Iterator(V* v) : ptr_(v) {}
+
+    bool operator!=(const Iterator& other) const {
         return ptr_ != other.ptr_;
     }
 
@@ -40,6 +41,7 @@ public:
     void incr() { ptr_++; }
 
     V& operator*() const { return *ptr_; }
+
     const void* as_cpvoid() const { return static_cast<const void*>(ptr_); }
 };
 
@@ -94,7 +96,7 @@ public:
         resize(0);
     }
 
-    const ValueType& operator[] (::size_t i) const {
+    const ValueType& operator[](::size_t i) const {
         E4ASSERT(i < size());
         return data_.get()[i];
     }
@@ -113,7 +115,7 @@ public:
         change_capacity(capacity);
     }
 
-    // TODO: Move out of the template, generalize
+    // TODO: Move out of the template, generalize (vector_impl:VectorImpl)
     // TODO: Can make free destroy/construct funs
     void resize(::size_t newlength) {
         // TODO: call dtors on elements?
@@ -164,11 +166,15 @@ public:
     using ConstIterator = impl::Iterator<const ValueType>;
 
     Iterator begin() { return Iterator(data_.get()); }
+
     Iterator end() { return Iterator(data_.get() + size_); }
 
     ConstIterator begin() const { return cbegin(); }
+
     ConstIterator end() const { return cend(); }
+
     ConstIterator cbegin() const { return ConstIterator(data_.get()); }
+
     ConstIterator cend() const { return ConstIterator(data_.get() + size_); }
 
     //
@@ -198,7 +204,7 @@ private:
         return e4std::max((old_capacity * 5) / 4, VECTOR_MIN_GROWTH);
     }
 
-    // TODO: Move out of the template, generalize
+    // TODO: Move out of the template, generalize (vector_impl:change_capacity)
     // TODO: Can make free destroy/construct funs
     void change_capacity(::size_t newcap) {
         if (newcap <= capacity_) { return; }
@@ -218,6 +224,59 @@ private:
 
         data_.take_over(newdata);
         capacity_ = newcap;
+    }
+};
+
+//
+// Plain old data Vector. Ignores C++ construction, zeroes memory, very generic
+// Overhead 2x size_t + memory pointer
+//
+template <class ValueType>
+class PODVector: public impl::VectorImpl {
+public:
+    using VectorImpl = impl::VectorImpl;
+
+    PODVector() {}
+
+    PODVector(::size_t init_size) {
+        resize(init_size);
+    }
+
+    PODVector(PODVector&& other) = default;
+
+    PODVector& operator=(PODVector&& other) = default;
+
+    ValueType* data() {
+        return reinterpret_cast<ValueType*>(data_.get());
+    }
+
+    const ValueType* data() const {
+        return reinterpret_cast<const ValueType*>(data_.get());
+    }
+
+    bool empty() const { return size_ == 0; }
+
+    void resize(::size_t newsize) {
+        VectorImpl::resize(sizeof(ValueType), newsize);
+    }
+
+    void reserve(::size_t capacity) {
+        if (capacity <= capacity_) { return; }
+        VectorImpl::change_capacity(sizeof(ValueType), capacity);
+    }
+
+    void push_back(const ValueType& v) {
+        if (size_ >= capacity_) {
+            auto newcap = VectorImpl::grow(capacity_);
+            VectorImpl::change_capacity(sizeof(ValueType), newcap);
+        }
+        set(size_, v);
+        size_++;
+    }
+
+    void set(::size_t index, const ValueType& v) {
+        ValueType* datap = reinterpret_cast<ValueType*>(data_.get());
+        datap[index] = v;
     }
 };
 

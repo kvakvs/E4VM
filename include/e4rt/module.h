@@ -41,9 +41,11 @@ public:
 class Module {
 private:
     Term name_ = NON_VALUE; // atom name
-    Vector<J1Opcode> code_;
+    // TODO: group Vector<> members on the process heap, have them preallocated
+    PODVector<J1Opcode> code_;
+    PODVector<Word> labels_; // labels table TODO: merge with code maybe?
 
-    Vector<Term> literals_;
+    PODVector<Term> literals_;
     Heap literal_heap_;
     Vector<Export> exports_;
 
@@ -66,6 +68,7 @@ private:
     void load_literals(const ByteView& adata);
     void load_exports(const ByteView& adata,
                       const Vector<Term>& atoms_lookup);
+    void load_labels(const ByteView& adata);
 };
 
 } // ns e4

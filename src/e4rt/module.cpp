@@ -16,13 +16,10 @@ constexpr Word SIG_SIZE = 4; // module and section signature length
 constexpr const char *SIG_MODULE = "E4J1"; // Erl-Forth J1Forth Flavour
 
 constexpr const char *SIG_ATOMS = "ATOM";   // atoms section tag
-//constexpr const char *SIG_ATOMS_GZ = "atom"; // gzipped
 constexpr const char *SIG_CODE = "CODE";    // code section tag
-//constexpr const char *SIG_CODE_GZ = "code"; // gzipped
 constexpr const char *SIG_LTRL = "LTRL";    // literals section tag
-//constexpr const char *SIG_LTRL_GZ = "ltrl"; // gzipped
 constexpr const char *SIG_EXPT = "EXPT";    // exports section tag
-//constexpr const char *SIG_EXPT_GZ = "expt"; // gzipped
+constexpr const char *SIG_LABL = "LABL";    // labels section tag
 
 void Module::load(const ByteView& data) {
     tool::Reader bsr(data);
@@ -66,6 +63,8 @@ void Module::load(const ByteView& data) {
             load_literals(section_view);
         } else if (not ::memcmp(section_sig, SIG_EXPT, SIG_SIZE)) {
             load_exports(section_view, atoms_t);
+        } else if (not ::memcmp(section_sig, SIG_LABL, SIG_SIZE)) {
+            load_labels(section_view);
         } else {
             E4FAIL("Unknown section");
         }
@@ -120,10 +119,6 @@ void Module::load_exports(const ByteView& adata,
 }
 
 Export* Module::find_export(const MFArity& mfa) const {
-//    for (auto e: exports_) {
-//        e.print(vm_);
-//        ::puts("");
-//    }
     Export exp(mfa.fun_, mfa.arity_, 0);
     return exports_.binary_search(&exp, Export::compare_pvoid);
 }
@@ -132,13 +127,19 @@ CodeAddress Module::get_export_address(const Export& exp) const {
     return CodeAddress(code_.data() + exp.offset_);
 }
 
+void Module::load_labels(const ByteView& adata) {
+    tool::Reader bsr(adata);
+    Word n = bsr.read_varint_u<Word>();
+    labels_.reserve(n);
+
+    for (Word i = 0; i < n; ++i) {
+        labels_.push_back(bsr.read_varint_u<Word>());
+    }
+}
+
 int Export::compare_pvoid(const void* a, const void* b) {
     auto pa = static_cast<const Export*>(a);
     auto pb = static_cast<const Export*>(b);
-
-//    ::printf("cmp(%zu/%zu, %zu/%zu)\n",
-//             pa->fun_.get_raw(), pa->arity_,
-//             pb->fun_.get_raw(), pb->arity_);
 
     if (e4std::compare_less(pa->fun_, pb->fun_)) {
         return -1;

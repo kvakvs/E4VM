@@ -55,6 +55,8 @@ namespace e4 {
 
     template <class TType>
     using Vector = e4std::Vector<TType>;
+    template <class TType>
+    using PODVector = e4std::PODVector<TType>;
 
     template <class TType, Word ARRAY_SIZE>
     using Array = e4std::Array<TType, ARRAY_SIZE>;

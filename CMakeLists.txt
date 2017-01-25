@@ -74,7 +74,7 @@ set(E4_STD_SOURCES
     src/e4std/free_fun.cpp
     src/e4std/stuff.cpp
     src/e4std/vector.cpp
-    )
+    include/e4std/vector_impl.h)
 
 set(EMU_SOURCES
     src/main.cpp
