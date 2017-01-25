@@ -15,7 +15,6 @@
 
 namespace e4std {
 
-// TODO: array destructors? A separate class for this/some partial impl?
 template<class ValueType, class Allocator>
 class TUniquePtr {
 private:

@@ -23,12 +23,12 @@ using e4std::ByteView;
 class Export {
 public:
     Term fun_;
-    Word arity_;
     Word offset_; // how far from the module code start, in 16bit words
+    Arity arity_;
 
     explicit Export(): Export(NON_VALUE, 0, 0) {}
 
-    Export(Term f, Word a, Word offs) : fun_(f), arity_(a), offset_(offs) {}
+    Export(Term f, Arity a, Word offs) : fun_(f), offset_(offs), arity_(a) {}
 
     // Compares two exports as void* vs void*, returns -1 if a<b, 1 if a>b, or 0
     static int compare_pvoid(const void* a, const void* b);

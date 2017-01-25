@@ -107,11 +107,12 @@ void Module::load_exports(const ByteView& adata,
 
     for (Word i = 0; i < n; ++i) {
         auto fn_atom_index = bsr.read_varint_u<Word>();
-        E4ASSERT(atoms_lookup.size() > fn_atom_index);
 
-        Export ex(atoms_lookup[fn_atom_index],
-                  bsr.read_varint_u<Word>(),
-                  bsr.read_varint_u<Word>());
+        E4ASSERT(atoms_lookup.size() > fn_atom_index);
+        auto arity = bsr.read_varint_u<Arity>();
+        auto offset = bsr.read_varint_u<Word>();
+
+        Export ex(atoms_lookup[fn_atom_index], arity, offset);
         exports_.push_back(ex);
     }
     // We then use binary search so better this be sorted
@@ -120,9 +121,12 @@ void Module::load_exports(const ByteView& adata,
 
 Export* Module::find_export(const MFArity& mfa) const {
     Export exp(mfa.fun_, mfa.arity_, 0);
-#if E4DEBUG
-    exports_.for_each([this](const Export& e) { e.print(vm_); });
-#endif
+//#if E4DEBUG
+//    exports_.for_each([this](const Export& e) {
+//        e.print(vm_);
+//        ::puts("");
+//    });
+//#endif
     return exports_.binary_search(&exp, Export::compare_pvoid);
 }
 

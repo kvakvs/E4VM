@@ -326,16 +326,14 @@ public:
     using ForEachFun = std::function<void(ValueType&)>;
     using ForEachFunConst = std::function<void(const ValueType&)>;
 
-    template <typename Fun>
-    void for_each(Fun fun) {
+    void for_each(ForEachFun fun) {
         auto last = data() + size();
         for (ValueType* p = data(); p != last; ++p) {
             fun(*p);
         }
     }
 
-    template <typename Fun>
-    void for_each(Fun fun) const {
+    void for_each(ForEachFunConst fun) const {
         auto last = data() + size();
         for (const ValueType* p = data(); p != last; ++p) {
             fun(*p);
