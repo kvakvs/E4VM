@@ -58,7 +58,7 @@ private:
     static Node* get_node(VM& vm, Term /*sysname*/,
                           dist::Creation /*creation*/);
     static Term make_pid(VM& vm, Term sysname, Word id, Word serial,
-                         Uint8 creation);
+                         uint8_t creation);
     static Term read_tuple(VM& vm, Heap& heap, tool::Reader& r, Word arity);
     static Term read_string_ext(Heap& heap, tool::Reader& r);
     static Term read_list_ext(VM& vm, Heap& heap, tool::Reader& r);

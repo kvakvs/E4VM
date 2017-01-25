@@ -339,6 +339,20 @@ public:
             fun(*p);
         }
     }
+
+    // Perform linear search for value by value, compare_equal is used
+    // (passing by value)
+    bool contains_val(const ValueType& val) const {
+        for (auto p = cbegin(); p != cend(); p.incr()) {
+            if (compare_equal(*p, val)) { return true; }
+        }
+        return false;
+    }
+
+    const ValueType& operator[](::size_t i) const {
+        E4ASSERT(i < size());
+        return data()[i];
+    }
 };
 
 } // ns e4std

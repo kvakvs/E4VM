@@ -45,7 +45,7 @@ Node* ExtTerm::get_node(VM& vm, Term /*sysname*/, dist::Creation /*creation*/) {
 }
 
 Term ExtTerm::make_pid(VM& vm, Term sysname, Word id, Word serial,
-                       Uint8 creation) {
+                       uint8_t creation) {
     if (!Term::is_valid_pid_id(id) || !Term::is_valid_pid_serial(serial)) {
         E4FAIL(e4err::etf_bad_pid);
     }
@@ -148,12 +148,12 @@ Term ExtTerm::read_binary(VM &vm, Heap &heap, tool::Reader &r) {
     Word length = r.read_big_u32();
     if (length <= PROCBIN_THRESHOLD) {
         auto pbox = make_proc_binary(heap, ByteSize(length));
-        Uint8 *data = pbox->data_;
+        uint8_t *data = pbox->data_;
         r.read(data, length);
         return Term::box_wrap(pbox);
     }
     auto rcbox = make_rc_binary(vm, ByteSize(length));
-    Uint8 *data = rcbox->bin_->data_;
+    uint8_t *data = rcbox->bin_->data_;
     r.read(data, length);
     return Term::box_wrap(rcbox);
 }
@@ -233,7 +233,7 @@ Term ExtTerm::read(VM &vm, Heap &heap, tool::Reader &r) {
             Term node = read_tagged_atom_string(vm, r);
             Word id = r.read_big_u32();
             Word serial = r.read_big_u32();
-            Uint8 creation = r.read_byte();
+            uint8_t creation = r.read_byte();
             return make_pid(vm, node, id, serial, creation);
         }  // end reference_ext
 

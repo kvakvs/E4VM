@@ -51,7 +51,7 @@ Process* VM::spawn(Term parent_pid, const MFArgs& mfargs) {
     apply_res.assert();
 
     sched_.register_proc(proc);
-    return nullptr;
+    return proc;
 }
 
 #if E4DEBUG
@@ -90,14 +90,19 @@ const char* VM::find_atom(Term atom) const {
 }
 #endif // DEBUG
 
+#define VMDBG(T) e4::debug_printf("vm loop: " T "\n")
+
 void VM::run() {
     auto proc = sched_.next();
     if (not proc) {
+        VMDBG("idle");
         return; // nothing to do
         // TODO: perform maintenance tasks, enter energy saving idle
     }
+
     auto& context_ = proc->context_;
     auto instr = context_.fetch();
+
     switch (instr.op_.instr_tag_) {
         case j1_instr_tag::ALU: {
             run_alu(instr);

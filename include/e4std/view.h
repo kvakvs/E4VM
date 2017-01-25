@@ -37,6 +37,6 @@ public:
     const T *cend() const { return cbegin() + size_; }
 };
 
-using ByteView = BoxView<::uint8_t>;
+using ByteView = BoxView<uint8_t>;
 
 } // ns e4std

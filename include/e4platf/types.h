@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <stdint.h>
+#include <cstdint>
 
 #include "e4std/vector.h"
 #include "e4std/array.h"
@@ -20,12 +20,12 @@
 namespace e4 {
 
 #if E4_WORD_SIZE == 64
-    using Word = ::uint64_t;
-    using SignedWord = ::int64_t;
+    using Word = uint64_t;
+    using SignedWord = int64_t;
     constexpr Word BYTES_PER_WORD = 8;
 #elif E4_WORD_SIZE == 32
-    using Word = std::uint32_t;
-    using SignedWord = std::int32_t;
+    using Word = uint32_t;
+    using SignedWord = int32_t;
     constexpr Word BYTES_PER_WORD = 4;
 #else
     #error E4_WORD_SIZE other than 32/64 not supported yet
@@ -38,11 +38,6 @@ namespace e4 {
         return static_cast<ValueType>(static_cast<ContainerType>(i)) == i;
     }
 
-    using Uint8  = ::uint8_t;
-    using Uint16 = ::uint16_t;
-    using Uint32 = ::uint32_t;
-    using Uint64 = ::uint64_t;
-
     // count type
     using Count = Word;
     using SignedCount = SignedWord;
@@ -50,7 +45,7 @@ namespace e4 {
     // size types for byte and word arrays
     template <typename T, typename Storage = ::size_t>
     using GenericSize = e4std::GenericSize<T, Storage>;
-    using ByteSize = GenericSize<Uint8>;
+    using ByteSize = GenericSize<uint8_t>;
     using WordSize = GenericSize<Word>; // Word is same as Term
 
     template <class TType>

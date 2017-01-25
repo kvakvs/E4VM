@@ -21,7 +21,7 @@ namespace dist {
     // Creation in node specific data (pids, ports, refs)
     //
     constexpr Word CREATION_SIZE = 2;
-    using Creation = Uint8;
+    using Creation = uint8_t;
     // MAX value for the creation field in pid, port and reference
     constexpr Creation MAX_CREATION = (1 << CREATION_SIZE);
     constexpr Creation ORIG_CREATION = 0;

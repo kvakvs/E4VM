@@ -17,16 +17,16 @@ namespace e4 { namespace tool {
 
 class Reader {
 private:
-    const Uint8* ptr_;
-    const Uint8* end_;
+    const uint8_t* ptr_;
+    const uint8_t* end_;
 
 public:
-    explicit Reader(const e4std::BoxView<Uint8>& data)
+    explicit Reader(const e4std::BoxView<uint8_t>& data)
             : ptr_(data.cbegin()), end_(data.cend()) {
     }
 
     // Advance by 1 byte, assert its value equal to 'value'
-    void assert_byte(Uint8 value) { E4ASSERT(value == read_byte()); }
+    void assert_byte(uint8_t value) { E4ASSERT(value == read_byte()); }
 
     template<class T>
     void assert_and_advance(const T* content, ByteSize sz) {
@@ -49,7 +49,7 @@ public:
                      static_cast<SignedWord>(want_have.bytes()));
     }
 
-    const Uint8* pos() const { return ptr_; }
+    const uint8_t* pos() const { return ptr_; }
 
     // Looks ahead if next bytes are same as the 'sample'
     template<class StoredType>
@@ -64,7 +64,7 @@ public:
         ptr_ += sz.bytes();
     }
 
-    Uint8 read_byte() {
+    uint8_t read_byte() {
         assert_have(ByteSize(1));
         return *(ptr_++);
     }
@@ -82,7 +82,7 @@ public:
         int safety_limit = sizeof(T) + 1; // limit loop
         T result = 0;
         while (end_ > ptr_) {
-            Uint8 n = read_byte();
+            uint8_t n = read_byte();
             result <<= 7;
             result |= (n & 0x7F);
             if ((n & 0x80) == 0) { break; }

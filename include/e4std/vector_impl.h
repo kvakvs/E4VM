@@ -20,7 +20,7 @@ class VectorImpl {
 protected:
     ::size_t size_ = 0;
     ::size_t capacity_ = 0;
-    UniqueArrayPtr<::uint8_t> data_;
+    UniqueArrayPtr<uint8_t> data_;
 
     void resize(::size_t element_size, ::size_t newlength) {
         if (newlength <= capacity_) { // avoid realloc just shrink or grow
@@ -33,7 +33,7 @@ protected:
             return;
         }
         E4ASSERT(newlength > 0);
-        auto newdata = e4std::make_array<::uint8_t>(newlength * element_size);
+        auto newdata = e4std::make_array<uint8_t>(newlength * element_size);
         if (data_) { // there may possibly be empty src data
             E4ASSERT(newlength >= size_);
             ::memmove(newdata.get(), data_.get(), size_);
@@ -45,7 +45,7 @@ protected:
     void change_capacity(::size_t element_size, ::size_t newcap) {
         if (newcap <= capacity_) { return; }
         E4ASSERT(newcap > size_);
-        auto newdata = e4std::make_array<::uint8_t>(newcap * element_size);
+        auto newdata = e4std::make_array<uint8_t>(newcap * element_size);
         auto newdatap = newdata.get();
         if (size_) {
             auto datap = data_.get();

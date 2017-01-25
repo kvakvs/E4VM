@@ -9,7 +9,7 @@ namespace platf { namespace fs {
 
 IMPL_EXCEPTION(Filesystem)
 
-Vector<Uint8> read(const Vector<String>& search_paths, const char* fn) {
+Vector<uint8_t> read(const Vector<String>& search_paths, const char* fn) {
 #if E4FEATURE_FS
     for (auto &path: search_paths) {
         auto try_path = path + "/" + fn;
@@ -33,11 +33,11 @@ bool exists(String& path) {
 #endif
 }
 
-Vector<Uint8> File::read_file() {
+Vector<uint8_t> File::read_file() {
     ::fseek(f_, 0, SEEK_END);
     Count size = static_cast<Count>(::ftell(f_));
 
-    Vector<Uint8> result(size);
+    Vector<uint8_t> result(size);
 
     ::fseek(f_, 0, SEEK_SET);
     auto sz_read = ::fread(result.data(), 1, size, f_);
@@ -47,7 +47,7 @@ Vector<Uint8> File::read_file() {
     return result;
 }
 
-Vector<Uint8> File::read_file(const char* fn) {
+Vector<uint8_t> File::read_file(const char* fn) {
     File f(fn, "rb");
     return f.read_file();
 }

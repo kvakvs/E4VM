@@ -60,6 +60,11 @@ public:
     }
 };
 
+enum class ProcessPriority: uint8_t {
+    Normal,
+    High
+};
+
 class Process {
 private:
     Term pid_;
@@ -69,6 +74,7 @@ private:
     Term links_ = NIL;
     // [pid()] -- processes which monitor this process
     Term monitors_ = NIL;
+    ProcessPriority prio_ = ProcessPriority::Normal;
 
 public:
     RuntimeContext context_;
@@ -79,6 +85,8 @@ public:
             : pid_(pid), heap_(INIT_PROCESS_HEAP), vm_(vm), context_() {}
 
     Term self() const { return pid_; }
+
+    ProcessPriority priority() const { return prio_; }
 
     // Sets arguments and enters mfarity with args, does not wait for execution
     // but just sets instruction pointer instead

@@ -12,7 +12,6 @@
 
 namespace platf { namespace fs {
 
-using e4::Uint8;
 using e4::Count;
 using e4std::String;
 using e4std::Vector;
@@ -45,15 +44,15 @@ public:
         f_ = nullptr;
     }
 
-    static Vector<Uint8> read_file(const char* fn);
+    static Vector<uint8_t> read_file(const char* fn);
 
-    Vector<Uint8> read_file();
+    Vector<uint8_t> read_file();
 }; // class File
 #endif // E4FEATURE_FS
 
 // If Filesystem feature is enabled: this will scan search paths and find 'fn'
 // Otherwise: Will check if the file is present in statically linked files
-Vector<Uint8> read(const Vector<String>& search_paths, const char* fn);
+Vector<uint8_t> read(const Vector<String>& search_paths, const char* fn);
 
 bool exists(String& path);
 

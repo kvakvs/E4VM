@@ -16,7 +16,7 @@ constexpr Word PROCBIN_THRESHOLD = 50;
 class ProcBinaryBox {
 public:
     BoxHeaderWord header_;
-    Uint8 data_[0];
+    uint8_t data_[0];
 };
 
 // Refcounted binary on the separate heap
@@ -24,7 +24,7 @@ class RCBinary {
 public:
     Word size_;
     Word rc_; // ref count
-    Uint8 data_[0];
+    uint8_t data_[0];
 };
 
 // A process heap object holding refcount to an external RCBinary

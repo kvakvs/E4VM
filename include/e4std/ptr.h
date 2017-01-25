@@ -11,7 +11,7 @@
 #include "e4platf/mem.h"
 
 #include <stddef.h>
-#include <stdint.h>
+#include <cstdint>
 
 namespace e4std {
 

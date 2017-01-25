@@ -1,6 +1,6 @@
 #pragma once
 
-#include <stdint.h>
+#include <cstdint>
 
 namespace e4 {
 
@@ -23,13 +23,13 @@ public:
     J1AsOpcode {
         J1InstrTag  instr_tag_:3;
         bool        rpc_:1;
-        ::uint16_t  op_:4;
+        uint16_t  op_:4;
         bool        tn_:1;
         bool        tr_:1;
         bool        nti_:1;
         bool        unused_:1;
-        ::uint16_t  ds_:2;
-        ::uint16_t  rs_:2;
+        uint16_t  ds_:2;
+        uint16_t  rs_:2;
     };
 
     struct alignas(2)
@@ -40,18 +40,18 @@ public:
 
     struct alignas(2)
     J1AsJump {
-        ::uint16_t instr_:4; // skip instr tag 4 bits
+        uint16_t instr_:4; // skip instr tag 4 bits
         ::int16_t offset_:11;
     };
 
     union {
-        ::uint16_t raw_;
+        uint16_t raw_;
         J1AsOpcode op_;
         J1AsLiteral lit_;
         J1AsJump jmp_;
     };
 };
-static_assert(sizeof(J1Opcode) == sizeof(::uint16_t), "Opcode must be 16bit");
+static_assert(sizeof(J1Opcode) == sizeof(uint16_t), "Opcode must be 16bit");
 #pragma pack(pop)
 
 class CodeAddress {
