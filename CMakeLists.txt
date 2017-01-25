@@ -44,7 +44,7 @@ set(E4_RUNTIME_SOURCES
     src/e4rt/process.cpp
     src/e4rt/term.cpp
     src/e4rt/vm.cpp
-    src/e4rt/scheduler.cpp include/e4rt/scheduler.h)
+    src/e4rt/scheduler.cpp include/e4rt/scheduler.h src/e4rt/bytecode.cpp)
 
 ## Helpers and OS abstraction library
 set(E4_PLATF_SOURCES

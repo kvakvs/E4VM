@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include "e4platf/types.h"
 
 namespace e4 {
 
@@ -40,8 +41,8 @@ public:
 
     struct alignas(2)
     J1AsJump {
-        uint16_t instr_:4; // skip instr tag 4 bits
-        ::int16_t offset_:11;
+        uint16_t instr_:4;  // skip instr tag 4 bits
+        uint16_t addr_:12;  // jump address 12-bit
     };
 
     union {
@@ -55,24 +56,42 @@ static_assert(sizeof(J1Opcode) == sizeof(uint16_t), "Opcode must be 16bit");
 #pragma pack(pop)
 
 class CodeAddress {
-public:
-    const J1Opcode* ptr_ = nullptr;
+    Word index_ = 0;
+    // Start of code array used as the pointer base
+    static J1Opcode* base_;
+
 public:
     CodeAddress() = default;
-    explicit CodeAddress(const J1Opcode* p): ptr_(p) {}
+    explicit CodeAddress(Word offset): index_(offset) {}
+    explicit CodeAddress(const J1Opcode* p): index_(p - base_) {}
 
-    J1Opcode fetch() const { return *ptr_; }
+    static J1Opcode* base() { return base_; }
+
+    J1Opcode* ptr() { return base_ + index_; }
+
+    Word get_index() const { return index_; }
+
+    const J1Opcode* ptr() const { return base_ + index_; }
+
+    J1Opcode fetch() const { return *ptr(); }
 
     CodeAddress& operator += (SignedWord s) {
-        ptr_ += s;
+        index_ += s;
         return *this;
     }
 
     Word as_word() const {
-        return reinterpret_cast<Word>(ptr_);
+        return reinterpret_cast<Word>(index_);
     }
 
-    void advance() { ptr_++; }
+    void advance() { index_++; }
 };
+
+// Given next value after the command, joins them together as big endian
+// This is still not enough for a 32-bit address so we use implicit code
+// base address to make this offset smaller
+inline CodeAddress j1jump_addr(const J1Opcode jump, const J1Opcode next) {
+    return CodeAddress((jump.jmp_.addr_ << 16) + next.raw_);
+}
 
 } // ns e4

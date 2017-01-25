@@ -95,12 +95,12 @@ public:
 
     // TODO: maybe belongs to runtime context
     void jump(CodeAddress newpc) {
-        E4LOG1("[proc] jump 0x%zx\n", newpc.ptr_);
+        E4LOG1("[proc] jump 0x%zx\n", newpc.get_index());
         context_.pc_ = newpc;
     }
 
     // TODO: maybe belongs to runtime context
-    void jump_offset(SignedWord offs) {
+    void jump_label(SignedWord offs) {
         E4LOG1("[proc] jump-rel 0x%zd\n", offs);
         context_.pc_ += offs;
     }

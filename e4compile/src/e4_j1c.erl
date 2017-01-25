@@ -136,10 +136,14 @@ compile2(Prog0 = #j1prog{}, [Word | Tail]) ->
 %%    ?COMPILE_ERROR("E4 J1C: unknown op ~p", [Other]).
 
 j1_jump(Label) ->
-    <<?J1INSTR_JUMP:?J1INSTR_WIDTH, Label:?J1OP_INDEX_WIDTH>>.
+    %% Add extra 16 bits to label width. This will be replaced by an offset
+    %% in the VM during load time
+    <<?J1INSTR_JUMP:?J1INSTR_WIDTH, Label:(?J1OP_INDEX_WIDTH + 16)/big>>.
 
 j1_cond_jump(Label) ->
-    <<?J1INSTR_JUMP_COND:?J1INSTR_WIDTH, Label:?J1OP_INDEX_WIDTH>>.
+    %% Add extra 16 bits to label width. This will be replaced by an offset
+    %% in the VM during load time
+    <<?J1INSTR_JUMP_COND:?J1INSTR_WIDTH, Label:(?J1OP_INDEX_WIDTH + 16)/big>>.
 
 %% @doc Create a label with current PC, and push its id onto condition stack.
 %% The value for the label will be updated once ELSE or THEN is reached

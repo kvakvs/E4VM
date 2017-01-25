@@ -116,18 +116,18 @@ void VM::run() {
 
         case j1_instr_tag::JUMP: {
             // TODO: Remap jmp destinations on code load or implement relative jumps
-            proc->jump_offset(instr.jmp_.offset_);
+            proc->jump(j1jump_addr(instr, context_.fetch()));
         } break;
 
         case j1_instr_tag::JUMP_COND: {
             if (context_.ds_.pop() == 0) {
-                proc->jump_offset(instr.jmp_.offset_);
+                proc->jump(j1jump_addr(instr, context_.fetch()));
             }
         } break;
 
         case j1_instr_tag::CALL: {
             context_.rs_.push(context_.pc_.as_word());
-            proc->jump_offset(instr.jmp_.offset_);
+            proc->jump(j1jump_addr(instr, context_.fetch()));
         } break;
     }
 }
