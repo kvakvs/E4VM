@@ -12,14 +12,14 @@
 ]).
 
 -include_lib("compiler/src/core_parse.hrl").
--include("e4_forth.hrl").
--include("e4.hrl").
+-include_lib("e4c/include/forth.hrl").
+-include_lib("e4c/include/e4c.hrl").
 
 %% @doc Checks if expr is a simple variable or literal, then returns itself.
 %% Creates a tmp variable and assigns the value of Expr to it
 make_tmp(Block = #f_block{}, Value) ->
     %% If Value is fully known inside the block we can replace with a temporary
-    case e4_helper:is_value_known(Block, Value) of
+    case j1c_helper:is_value_known(Block, Value) of
         false -> make_tmp(Value); % has only known vars, literals or calls
         true  -> {Value, []}      % value cannot be bound to a temporary
     end.

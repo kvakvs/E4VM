@@ -4,7 +4,7 @@
 
 %% API
 -export([process/1]).
--include("e4_forth.hrl").
+-include_lib("e4c/include/forth.hrl").
 
 process(Forth) ->
     Output = optimize_code([], Forth),

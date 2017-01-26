@@ -1,14 +1,14 @@
 %%% @doc J1-like forth to binary compiler adjusted for Erlang needs with
 %%% added types, literals etc.
 
--module(e4_j1c).
+-module(j1c_pass_bin).
 
 %% API
 -export([compile/2, format_j1c_pass1/4]).
 
--include("e4_forth.hrl").
--include("e4_j1.hrl").
--include("e4.hrl").
+-include_lib("e4c/include/forth.hrl").
+-include_lib("e4c/include/e4c.hrl").
+-include_lib("j1c/include/j1.hrl").
 
 compile(ModuleName, Input) ->
     Prog0 = #j1prog{mod = ModuleName},

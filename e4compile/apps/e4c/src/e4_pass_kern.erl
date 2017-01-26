@@ -7,9 +7,9 @@
 
 -include_lib("compiler/src/core_parse.hrl").
 
--include("e4_kernel_erl.hrl").
--include("e4_forth.hrl").
--include("e4.hrl").
+-include_lib("e4c/include/kernel_erl.hrl").
+-include_lib("e4c/include/forth.hrl").
+-include_lib("e4c/include/e4c.hrl").
 -import(e4_f1, [emit/2]).
 
 -record(match_ctx, {
@@ -288,7 +288,7 @@ emit_match(Scope, k_tuple, #k_tuple{es=LhsElements}, Rhs) ->
     %% Now partition a list of [{L,R}, ... ] pairs into such, where L is
     %% known and can be compared and other, where L is an unbound name and
     %% will always match, producing a bound variable.
-    PartitionFun = fun({L, _R}) -> e4_helper:is_in_the_scope(Scope, L) end,
+    PartitionFun = fun({L, _R}) -> j1c_helper:is_in_the_scope(Scope, L) end,
     {ComparePairs, AssignPairs} = lists:partition(PartitionFun, VarPairs),
 
     %% Dump out the comparison-matching code
@@ -311,8 +311,8 @@ emit_match(Scope, k_cons, #k_cons{hd=LHead, tl=LTail}, Rhs) ->
     %% Assuming Rhs is also a cons, take [H|T] from it and match against
     %% left Head and Tail. Create new variables as needed.
 
-    LHeadExists = e4_helper:is_in_the_scope(Scope, LHead),
-    LTailExists = e4_helper:is_in_the_scope(Scope, LTail),
+    LHeadExists = j1c_helper:is_in_the_scope(Scope, LHead),
+    LTailExists = j1c_helper:is_in_the_scope(Scope, LTail),
 
     case LHeadExists of
         true ->

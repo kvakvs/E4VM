@@ -8,9 +8,9 @@
 -export([format_vars/1, alloc_var/3, add_alias/3,
          format_scope/1, emit/2, merge/2, retrieve/2, store/2]).
 
--include("e4_kernel_erl.hrl").
--include("e4_forth.hrl").
--include("e4.hrl").
+-include_lib("e4c/include/kernel_erl.hrl").
+-include_lib("e4c/include/forth.hrl").
+-include_lib("e4c/include/e4c.hrl").
 
 retrieve(#f_var_storage{} = Scope, Var) ->
     CfVar = e4_f1:var(Var),

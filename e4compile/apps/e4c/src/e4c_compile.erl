@@ -1,7 +1,7 @@
--module(e4_compiler).
+-module(e4c_compile).
 -export([process/1]).
 
--include("e4_forth.hrl").
+-include_lib("e4c/include/forth.hrl").
 
 %% @doc Takes filename as input, produces compiled BEAM AST and processes it
 process(F) ->
@@ -17,12 +17,12 @@ process(F) ->
                                    fun() -> e4_pass_opt1:process(FlatForth)
                                    end),
             J1Prog = e4:try_do("Pass5 - Compile to J1 opcodes",
-                               fun() -> e4_j1c:compile(M, FlatForth2) end),
+                               fun() -> j1c_pass_bin:compile(M, FlatForth2) end),
             e4:try_do("Save binary output",
                 fun() ->
-                    IOList = e4_file:to_iolist(J1Prog),
-                    file:write_file(e4_file:bin_filename(F),
-                            iolist_to_binary(IOList))
+                    IOList = j1c_file:to_iolist(J1Prog),
+                    file:write_file(j1c_file:bin_filename(F),
+                                    iolist_to_binary(IOList))
                 end);
         E ->
             io:format("~n~s: ~p~n", [F, E])

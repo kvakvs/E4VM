@@ -4,8 +4,10 @@
 
 %% API
 -export([process/1]).
--include("e4_forth.hrl").
--include("e4.hrl").
+
+-include_lib("e4c/include/forth.hrl").
+-include_lib("e4c/include/e4c.hrl").
+
 -import(e4_f1, [emit/2]).
 
 process(IC = #f_block{}) ->

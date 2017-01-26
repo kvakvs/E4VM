@@ -6,8 +6,9 @@
 
 %% API
 -export([process/1]).
--include("e4_forth.hrl").
--include("e4.hrl").
+
+-include_lib("e4c/include/forth.hrl").
+-include_lib("e4c/include/e4c.hrl").
 
 process(IC) ->
     Out0 = lists:flatten(transform(#f_var_storage{}, IC, [])), % flat list of IC
@@ -54,7 +55,7 @@ transform_op(Scope, #f_st{var=Var}) ->
     e4_f2:store(Scope, Var);
 transform_op(_Scope, #f_include{filename=F}) -> [
     e4_f1:comment("begin include ~s", [F]),
-    e4_forth_parse:parse(F),
+    j1c_parse:parse(F),
     e4_f1:comment("end include ~s", [F])
 ];
 %%transform_op(_Scope, X) when is_atom(X) ->

@@ -3,8 +3,8 @@
 
 -module(e4_print_ic).
 
--include("e4_forth.hrl").
--include("e4.hrl").
+-include_lib("e4c/include/forth.hrl").
+-include_lib("e4c/include/e4c.hrl").
 
 %% API
 -export([format_ic/2]).
