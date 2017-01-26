@@ -71,47 +71,47 @@ compile2(Prog0 = #j1prog{}, [#k_literal{val=L} | Tail]) -> % a preparsed literal
     compile2(Prog1, Tail);
 
 %% --- Conditions ---
-compile2(Prog0 = #j1prog{}, [<<"IF">> | Tail]) ->
-    {F, Prog1} = begin_condition(Prog0),
-    Prog2 = emit(Prog1, j1_cond_jump(F)),
-    compile2(Prog2, Tail);
-compile2(Prog0 = #j1prog{}, [<<"UNLESS">> | Tail]) ->
-    compile2(Prog0, [<<"INVERT">>, <<"IF">> | Tail]);
-compile2(Prog0 = #j1prog{}, [<<"THEN">> | Tail]) ->
-    Prog1 = cond_update_label(Prog0, 0),
-    compile2(Prog1, Tail);
-compile2(Prog0 = #j1prog{}, [<<"ELSE">> | Tail]) ->
-    %% combine IF and THEN - update a label address for previous IF and create
-    %% a new label and jump instruction to jump over the code after ELSE
-    %% IF[] ----------------> ELSE -------------> THEN[upd patchtable]
-    %% #j1patch is emitted here  |                  |
-    %% with conditional jump     |                  |
-    %%                   patchtable is updated here |
-    %%                   jump is emitted here       |
-    %%                                             patchtable is updated here
-    %%
-    %% Pop from the cond table, update label id with current PC
-    Prog1 = cond_update_label(Prog0, 1),
-    %% Make new label and create a jump to it
-    {F, Prog2} = begin_condition(Prog1),
-    Prog2 = emit(Prog1, j1_jump(F)),
-    %% Wait for THEN and do the same again to finalize the condition
-    compile2(Prog2, Tail);
-
-%% --- Loops (started with a BEGIN) ---
-compile2(Prog0 = #j1prog{}, [<<"BEGIN">> | Tail]) ->
-    {_F, Prog1} = begin_loop(Prog0),
-    compile2(Prog1, Tail);
-compile2(Prog0 = #j1prog{}, [<<"AGAIN">> | Tail]) -> % endless loop
-    %% Just emit jump back to the BEGIN instruction
-    {Begin, Prog1} = end_loop(Prog0),
-    Prog2 = emit(Prog1, j1_jump(Begin)),
-    compile2(Prog2, Tail);
-compile2(Prog0 = #j1prog{}, [<<"UNTIL">> | Tail]) -> % conditional if-zero loop
-    %% Emit conditional jump back to the BEGIN instruction
-    {Begin, Prog1} = end_loop(Prog0),
-    Prog2 = emit(Prog1, j1_cond_jump(Begin)),
-    compile2(Prog2, Tail);
+%%compile2(Prog0 = #j1prog{}, [<<"IF">> | Tail]) ->
+%%    {F, Prog1} = begin_condition(Prog0),
+%%    Prog2 = emit(Prog1, j1_cond_jump(F)),
+%%    compile2(Prog2, Tail);
+%%compile2(Prog0 = #j1prog{}, [<<"UNLESS">> | Tail]) ->
+%%    compile2(Prog0, [<<"INVERT">>, <<"IF">> | Tail]);
+%%compile2(Prog0 = #j1prog{}, [<<"THEN">> | Tail]) ->
+%%    Prog1 = cond_update_label(Prog0, 0),
+%%    compile2(Prog1, Tail);
+%%compile2(Prog0 = #j1prog{}, [<<"ELSE">> | Tail]) ->
+%%    %% combine IF and THEN - update a label address for previous IF and create
+%%    %% a new label and jump instruction to jump over the code after ELSE
+%%    %% IF[] ----------------> ELSE -------------> THEN[upd patchtable]
+%%    %% #j1patch is emitted here  |                  |
+%%    %% with conditional jump     |                  |
+%%    %%                   patchtable is updated here |
+%%    %%                   jump is emitted here       |
+%%    %%                                             patchtable is updated here
+%%    %%
+%%    %% Pop from the cond table, update label id with current PC
+%%    Prog1 = cond_update_label(Prog0, 1),
+%%    %% Make new label and create a jump to it
+%%    {F, Prog2} = begin_condition(Prog1),
+%%    Prog2 = emit(Prog1, j1_jump(F)),
+%%    %% Wait for THEN and do the same again to finalize the condition
+%%    compile2(Prog2, Tail);
+%%
+%%%% --- Loops (started with a BEGIN) ---
+%%compile2(Prog0 = #j1prog{}, [<<"BEGIN">> | Tail]) ->
+%%    {_F, Prog1} = begin_loop(Prog0),
+%%    compile2(Prog1, Tail);
+%%compile2(Prog0 = #j1prog{}, [<<"AGAIN">> | Tail]) -> % endless loop
+%%    %% Just emit jump back to the BEGIN instruction
+%%    {Begin, Prog1} = end_loop(Prog0),
+%%    Prog2 = emit(Prog1, j1_jump(Begin)),
+%%    compile2(Prog2, Tail);
+%%compile2(Prog0 = #j1prog{}, [<<"UNTIL">> | Tail]) -> % conditional if-zero loop
+%%    %% Emit conditional jump back to the BEGIN instruction
+%%    {Begin, Prog1} = end_loop(Prog0),
+%%    Prog2 = emit(Prog1, j1_cond_jump(Begin)),
+%%    compile2(Prog2, Tail);
 
 %% TODO: EQU, maybe VAR, ARR?
 
@@ -147,29 +147,29 @@ j1_cond_jump(Label) ->
 
 %% @doc Create a label with current PC, and push its id onto condition stack.
 %% The value for the label will be updated once ELSE or THEN is reached
--spec begin_condition(j1prog()) -> {j1label(), j1prog()}.
-begin_condition(Prog0 = #j1prog{condstack=CondStack}) ->
-    {F, Prog1} = create_label(Prog0),
-    {F, Prog1#j1prog{condstack=[F | CondStack]}}.
-
-%% @doc Creates a label with current PC and puts its id onto loop stack.
-%% The label will be used for jump once UNTIL or AGAIN is reached
--spec begin_loop(j1prog()) -> {j1label(), j1prog()}.
-begin_loop(Prog0 = #j1prog{loopstack=LoopStack}) ->
-    {F, Prog1} = create_label(Prog0),
-    {F, Prog1#j1prog{loopstack=[F | LoopStack]}}.
-
--spec end_condition(j1prog()) -> {integer(), j1prog()}.
-end_condition(#j1prog{condstack=[]}) ->
-    ?COMPILE_ERROR("E4 J1C: ELSE or THEN have no matching IF");
-end_condition(Prog0 = #j1prog{condstack=[CSTop | CondStack]}) ->
-    {CSTop, Prog0#j1prog{condstack=CondStack}}.
-
--spec end_loop(j1prog()) -> {integer(), j1prog()}.
-end_loop(#j1prog{loopstack=[]}) ->
-    ?COMPILE_ERROR("E4 J1C: AGAIN or UNTIL have no matching BEGIN");
-end_loop(Prog0 = #j1prog{loopstack=[LSTop | LoopStack]}) ->
-    {LSTop, Prog0#j1prog{loopstack=LoopStack}}.
+%%-spec begin_condition(j1prog()) -> {j1label(), j1prog()}.
+%%begin_condition(Prog0 = #j1prog{condstack=CondStack}) ->
+%%    {F, Prog1} = create_label(Prog0),
+%%    {F, Prog1#j1prog{condstack=[F | CondStack]}}.
+%%
+%%%% @doc Creates a label with current PC and puts its id onto loop stack.
+%%%% The label will be used for jump once UNTIL or AGAIN is reached
+%%-spec begin_loop(j1prog()) -> {j1label(), j1prog()}.
+%%begin_loop(Prog0 = #j1prog{loopstack=LoopStack}) ->
+%%    {F, Prog1} = create_label(Prog0),
+%%    {F, Prog1#j1prog{loopstack=[F | LoopStack]}}.
+%%
+%%-spec end_condition(j1prog()) -> {integer(), j1prog()}.
+%%end_condition(#j1prog{condstack=[]}) ->
+%%    ?COMPILE_ERROR("E4 J1C: ELSE or THEN have no matching IF");
+%%end_condition(Prog0 = #j1prog{condstack=[CSTop | CondStack]}) ->
+%%    {CSTop, Prog0#j1prog{condstack=CondStack}}.
+%%
+%%-spec end_loop(j1prog()) -> {integer(), j1prog()}.
+%%end_loop(#j1prog{loopstack=[]}) ->
+%%    ?COMPILE_ERROR("E4 J1C: AGAIN or UNTIL have no matching BEGIN");
+%%end_loop(Prog0 = #j1prog{loopstack=[LSTop | LoopStack]}) ->
+%%    {LSTop, Prog0#j1prog{loopstack=LoopStack}}.
 
 %% @ doc Push PC onto cond stack + write j1patch{id=PC} in the output
 %%emit_patch(Prog0 = #j1prog{pc=PC}, Op) ->
@@ -177,18 +177,18 @@ end_loop(Prog0 = #j1prog{loopstack=[LSTop | LoopStack]}) ->
 %%    emit(Prog1, #j1patch{op=Op, id=PC}).
 
 %% @doc Create a new label id to be placed in code (resolved at load time)
-create_label(Prog0 = #j1prog{labels = Labels, pc = PC, label_id = F0}) ->
-    {F0, Prog0#j1prog{
-        label_id = F0 + 1,
-        labels = [{F0, PC} | Labels]
-    }}.
+%%create_label(Prog0 = #j1prog{labels = Labels, pc = PC, label_id = F0}) ->
+%%    {F0, Prog0#j1prog{
+%%        label_id = F0 + 1,
+%%        labels = [{F0, PC} | Labels]
+%%    }}.
 
 %% @ doc Pop a label id from the cond stack and update #j1prog.labels with
 %% the PC+Offset value.
-cond_update_label(Prog0 = #j1prog{pc = PC, labels = Labels},
-                  Offset) ->
-    {F, Prog1} = end_condition(Prog0),
-    Prog1#j1prog{labels = orddict:store(F, PC + Offset, Labels)}.
+%%cond_update_label(Prog0 = #j1prog{pc = PC, labels = Labels},
+%%                  Offset) ->
+%%    {F, Prog1} = end_condition(Prog0),
+%%    Prog1#j1prog{labels = orddict:store(F, PC + Offset, Labels)}.
 
 prog_add_export(Prog0 = #j1prog{exports = Expt},
                 Fun,

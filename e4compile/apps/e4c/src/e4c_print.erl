@@ -1,7 +1,7 @@
 %%% @doc Print the nice indented colored intermediate code
 %%% @end
 
--module(e4_print_ic).
+-module(e4c_print).
 
 -include_lib("e4c/include/forth.hrl").
 -include_lib("e4c/include/e4c.hrl").

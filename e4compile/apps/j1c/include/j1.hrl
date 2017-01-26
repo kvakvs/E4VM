@@ -55,7 +55,7 @@
 
 %% Output of the J1 forth compiler (J1C Pass 1)
 -record(j1prog, {
-    labels = [] :: [{non_neg_integer(), non_neg_integer()}],
+    %labels = [] :: [{non_neg_integer(), non_neg_integer()}],
     label_id = 0 :: non_neg_integer(), % counter to be used as label generator
 
     mod :: atom(),
@@ -79,10 +79,19 @@
     atom_id = 0 :: integer(),
     atoms = orddict:new() :: orddict:orddict(binary(), integer()),
 
-    pc = 0 :: integer(),
+%%    pc = 0 :: integer(),
     output = [] :: iolist()
 }).
 -type j1prog() :: #j1prog{}.
--type j1label() :: non_neg_integer().
+
+-record(j1label, {
+    label :: non_neg_integer()
+}).
+-type j1label() :: #j1label{}.
+
+-record(j1jump, {
+    condition = false :: false | z,
+    label :: non_neg_integer()
+}).
 
 -endif. % J1_HEADER

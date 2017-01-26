@@ -10,7 +10,7 @@
 to_iolist(Prog = #j1prog{}) ->
     Compr = uncompressed, % value: uncompressed | gzipped
     Content = [
-        section("LABL", Compr, encode_labels(Compr, Prog)), % goes before code
+%%        section("LABL", Compr, encode_labels(Compr, Prog)), % goes before code
         section("CODE", Compr, encode_code(Compr, Prog)),
         section("LTRL", Compr, encode_literals(Compr, Prog)),
         section("ATOM", Compr, encode_atoms(Compr, Prog)),
@@ -78,11 +78,11 @@ encode_exports(Compr, Prog = #j1prog{exports=Expt}) ->
     Enc1 = encode_block(Compr, ExpTab2),
     iolist_to_binary(Enc1).
 
-encode_labels(Compr, #j1prog{labels=Labels}) ->
-    Labels1 = lists:keysort(1, Labels),
-    Labels2 = [
-        e4c:varint(length(Labels1)),
-        [e4c:varint(Offset) || {_Lbl, Offset} <- Labels1]
-    ],
-    Enc1 = encode_block(Compr, Labels2),
-    iolist_to_binary(Enc1).
+%%encode_labels(Compr, #j1prog{labels=Labels}) ->
+%%    Labels1 = lists:keysort(1, Labels),
+%%    Labels2 = [
+%%        e4c:varint(length(Labels1)),
+%%        [e4c:varint(Offset) || {_Lbl, Offset} <- Labels1]
+%%    ],
+%%    Enc1 = encode_block(Compr, Labels2),
+%%    iolist_to_binary(Enc1).
