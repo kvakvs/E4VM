@@ -1,8 +1,8 @@
 TESTFILE=gb_trees
 TESTFILE2=test1
 
-.PHONY: run
-run:
+.PHONY: run1
+run1:
 	rebar3 compile && ./e4c.sh priv/$(TESTFILE).erl
 .PHONY: run2
 run2:

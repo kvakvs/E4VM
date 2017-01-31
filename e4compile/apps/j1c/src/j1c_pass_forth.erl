@@ -10,21 +10,23 @@
 -include_lib("e4c/include/e4c.hrl").
 -include_lib("j1c/include/j1.hrl").
 
-compile(ModuleName, Input) ->
+compile(ModuleName, SrcForth) ->
     Prog0 = #j1prog{mod = ModuleName},
     % Module name should always be #0
     {Prog0A, _} = atom_index_or_create(Prog0, atom_to_binary(ModuleName, utf8)),
 
-    Prog1 = compile2(Prog0A, preprocess(Input, [])),
+    Prog1 = compile2(Prog0A, preprocess(SrcForth, [])),
 
     %% Print the output
-    Output = lists:reverse(Prog1#j1prog.output),
-    Prog2 = Prog1#j1prog{output=Output},
+    J1Forth = lists:reverse(Prog1#j1prog.output),
+    Prog2 = Prog1#j1prog{output = J1Forth},
     %Patched = apply_patches(Output, Prog1#j1prog.patch_table, []),
     %Prog2 = Prog1#j1prog{output=Patched},
 
-%%    io:format("~s~n~s~n", [color:redb("J1C PASS 1"),
-%%                           format_j1c_pass1(Prog2, 0, Patched, [])]),
+    file:write_file("j1c_pass_forth.txt",
+                    iolist_to_binary(io_lib:format("~p", [J1Forth]))),
+
+    io:format("~s~n~p~n", [color:redb("J1C PASS 1"), J1Forth]),
     Prog2.
 
 preprocess([], Acc) -> lists:flatten(lists:reverse(Acc));

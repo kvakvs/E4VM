@@ -15,6 +15,7 @@ logs
 _build
 .idea
 
-pass*.txt
+e4c_pass*.txt
+j1c_pass*.txt
 deps/*
 out/*

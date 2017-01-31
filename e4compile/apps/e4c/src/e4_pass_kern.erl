@@ -35,7 +35,8 @@ process(#k_mdef{name=Name, exports=Exps, attributes=_Attr, body=Body}) ->
         [],
         [e4_f1:comment("end mod ~s", [Name])]),
     Out = process_code(Block0, #match_ctx{}, Body),
-    file:write_file("pass1.txt", iolist_to_binary(io_lib:format("~p", [Out]))),
+    file:write_file("e4c_pass_kern.txt",
+                    iolist_to_binary(io_lib:format("~p", [Out]))),
 %%    io:format("~s~n~s~n",
 %%              [color:on_white(color:black(" PASS 1 ")),
 %%               e4_print_ic:format_ic(Out, 0)]),
@@ -356,9 +357,9 @@ emit_match(Scope, k_cons, #k_cons{hd=LHead, tl=LTail}, Rhs) ->
             end
     end;
 emit_match(_Scope, k_nil, _, R)    -> e4_f1:block([e4_f1:eval(R), ?F_IS_NIL]);
-%%emit_match(_Scope, k_float, L, R)  -> e4_f1:block(e4_f1:equals(L, R));
+emit_match(_Scope, k_float, L, R)  -> e4_f1:block(e4_f1:equals(L, R));
 emit_match(_Scope, k_int, L, R)    -> e4_f1:block(e4_f1:equals(L, R));
-%%emit_match(_Scope, k_atom, L, R)   -> e4_f1:block(e4_f1:equals(L, R));
+emit_match(_Scope, k_atom, L, R)   -> e4_f1:block(e4_f1:equals(L, R));
 emit_match(_Scope, k_literal, L, R) -> e4_f1:block(e4_f1:equals(L, R));
 emit_match(_Scope, _, #k_var{} = L, #k_var{} = R) ->
     e4_f1:block(e4_f1:equals(L, R));

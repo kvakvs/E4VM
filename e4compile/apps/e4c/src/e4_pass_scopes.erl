@@ -12,7 +12,8 @@
 
 process(IC = #f_block{}) ->
     Out = transform(IC),
-    file:write_file("pass2.txt", iolist_to_binary(io_lib:format("~p", [Out]))),
+    file:write_file("e4c_pass_scopes.txt",
+                    iolist_to_binary(io_lib:format("~p", [Out]))),
 %%    io:format("~s~n~s~n",
 %%              [color:on_white(color:black(" PASS 2 Scopes ")),
 %%               e4_print_ic:format_ic(Out, 0)]),

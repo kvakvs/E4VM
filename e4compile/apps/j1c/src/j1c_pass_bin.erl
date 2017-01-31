@@ -37,10 +37,12 @@ compile(Input = #j1prog{}) ->
     Prog1 = compile2(Prog0, Input#j1prog.output),
 
     %% Print the output
-    Output = lists:reverse(Prog1#j1bin_prog.output),
-    Prog2 = Prog1#j1bin_prog{output=Output},
+    Bin = lists:reverse(Prog1#j1bin_prog.output),
+    Prog2 = Prog1#j1bin_prog{output= Bin},
     %Patched = apply_patches(Output, Prog1#j1bin.patch_table, []),
     %Prog2 = Prog1#j1bin{output=Patched},
+    file:write_file("j1c_pass_bin.txt",
+                    iolist_to_binary(io_lib:format("~p", [Bin]))),
 
 %%    io:format("~s~n~s~n", [color:redb("J1C PASS 1"),
 %%                           format_j1c_pass1(Prog2, 0, Patched, [])]),
