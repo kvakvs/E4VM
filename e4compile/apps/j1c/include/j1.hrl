@@ -60,8 +60,21 @@
 %%-record(j1comment, {comment}).
 %%-type j1comment() :: #j1comment{}.
 
+-record(j1lit, {
+    id :: uint(),
+    debug :: any()
+}).
+-type j1lit() :: #j1lit{}.
+
+-record(j1atom, {
+    id :: uint(),
+    debug :: atom()
+}).
+-type j1atom() :: #j1atom{}.
+
 %% Output from the pass1 forth
--type j1forth_code() :: [j1forth_code()] | binary() | j1label() | j1jump().
+-type j1forth_code() :: [j1forth_code()] | binary() | j1label() | j1jump()
+                        | j1atom() | j1lit().
 
 %% Output from the pass forth to bin
 -type j1bin_code() :: [j1bin_code()] | binary().
@@ -108,17 +121,5 @@
     output = [] :: j1forth_code()
 }).
 -type j1prog() :: #j1prog{}.
-
--record(j1lit, {
-    id :: uint(),
-    debug :: any()
-}).
--type j1lit() :: #j1lit{}.
-
--record(j1atom, {
-    id :: uint(),
-    debug :: atom()
-}).
--type j1atom() :: #j1atom{}.
 
 -endif. % J1_HEADER

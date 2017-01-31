@@ -238,7 +238,10 @@ literal_index_or_create(Prog0 = #j1prog{lit_id=LitId, literals=Literals},
             {Prog0, Existing}
     end.
 
-emit_lit(Prog0 = #j1prog{}, atom, Word) when is_atom(Word) ->
+%%emit_lit(Prog0 = #j1prog{}, atom, Word) when is_atom(Word) ->
+%%    {Prog1, AIndex} = atom_index_or_create(Prog0, Word),
+%%    emit(Prog1, #j1atom{id = AIndex, debug = Word});
+emit_lit(Prog0 = #j1prog{}, atom, Word) when is_binary(Word) ->
     {Prog1, AIndex} = atom_index_or_create(Prog0, Word),
     emit(Prog1, #j1atom{id = AIndex, debug = Word});
 %%emit_lit(Prog0 = #j1prog{}, integer, X) ->

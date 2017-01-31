@@ -247,8 +247,12 @@ emit_base_word(Prog0, <<"COPY">>) ->
 emit_base_word(Prog0, <<"NOOP">>) ->
     emit_alu(Prog0, #j1alu{op=?J1OP_T});
 
+emit_base_word(Prog0, #j1atom{id = AtomId}) ->
+    %% TODO: Add bits to mark immediate atoms, ints etc or an arbitrary literal
+    emit(Prog0, <<1:1, AtomId:?J1_LITERAL_BITS>>);
+
 emit_base_word(_Prog, Word) ->
-    ?COMPILE_ERROR("E4 J1C Pass1: word is not defined: ~s",
+    ?COMPILE_ERROR("E4 J1C Pass1: word is not defined:~s",
                    [?COLOR_TERM(red, Word)]).
 
 %%%-----------------------------------------------------------------------------

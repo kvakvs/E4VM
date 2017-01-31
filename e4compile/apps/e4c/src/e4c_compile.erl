@@ -7,18 +7,18 @@
 process(F) ->
     case compile:file(F, [to_kernel, binary, report]) of
         {ok, M, Kernel} ->
-            IR1 = e4c:try_do("Pass1 - Kernel Erlang to IC",
+            IR1 = e4c:try_do("e4_pass_kern - Kernel Erlang to IC",
                              fun() -> e4_pass_kern:process(Kernel) end),
-            IR2 = e4c:try_do("Pass2 - Mark variable scopes",
+            IR2 = e4c:try_do("e4_pass_scopes - Mark variable scopes",
                              fun() -> e4_pass_scopes:process(IR1) end),
-            FlatForth = e4c:try_do("Pass3 - Convert IC to Forth",
+            FlatForth = e4c:try_do("e4_pass_flatten - Convert IC to Forth",
                                    fun() -> e4_pass_flatten:process(IR2) end),
-            FlatForth2 = e4c:try_do("Pass4 - Optimize",
+            FlatForth2 = e4c:try_do("e4_pass_opt1 - Optimize",
                                     fun() ->
                                         e4_pass_opt1:process(FlatForth) end),
-            J1Forth = e4c:try_do("Pass5 - Compile to J1 opcodes",
+            J1Forth = e4c:try_do("j1c_pass_forth - Compile to J1 opcodes",
                             fun() -> j1c_pass_forth:compile(M, FlatForth2) end),
-            J1Bin = e4c:try_do("Pass6 - Compile J1 IC to binary",
+            J1Bin = e4c:try_do("j1c_pass_bin - Compile J1 IC to binary",
                                fun() -> j1c_pass_bin:compile(J1Forth) end),
             e4c:try_do("Save binary output",
                        fun() ->
