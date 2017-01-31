@@ -8,7 +8,15 @@
 -behaviour(application).
 
 %% Application callbacks
--export([start/2, stop/1, arguments_loop/1, start/0, try_do/2, varint/1]).
+-export([
+    arguments_loop/1,
+    error/1,
+    start/0,
+    start/2,
+    stop/1,
+    try_do/2,
+    varint/1
+]).
 
 -include_lib("e4c/include/e4c.hrl").
 
@@ -51,12 +59,11 @@ try_do(What, Fun) ->
             erlang:throw(compile_failed); % chain the error out
         T:Err ->
             io:format("~n~s (~s): ~s~n"
-                      "~p~n",
-                      [color:red("E4: Failed"),
+                      "~s~n",
+                      [color:white("E4: Failed"),
                        color:yellow(What),
                        ?COLOR_TERM(redb, {T, Err}),
-                       erlang:get_stacktrace()
-                       %?COLOR_TERM(blackb, erlang:get_stacktrace())
+                       ?COLOR_TERM(blackb, erlang:get_stacktrace())
                       ]),
             erlang:throw(compile_failed)
     end.
@@ -75,3 +82,11 @@ varint_with_bit(N) when N =< 127 -> <<1:1, N:7>>; % last byte
 varint_with_bit(N) ->
     Bytes = [<<1:1, (N rem 128):7>>, varint_with_bit(N bsr 7)],
     iolist_to_binary(lists:reverse(Bytes)).
+
+error(header) ->
+    io:format("~n"
+              "+--------------------------------------------------------~n"
+              "| Error: ");
+error(footer) ->
+    io:format("~n"
+              "+--------------------------------------------------------").

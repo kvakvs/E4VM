@@ -92,6 +92,9 @@
 -type j1dict() :: orddict:orddict(binary() | tuple(), uint()).
 -type j1nif_dict() :: orddict:orddict(binary(), uint()).
 
+-record(j1comment, {comment :: any()}).
+-type j1comment() :: #j1comment{}.
+
 %% Output of the J1 forth compiler (J1C Pass 1)
 -record(j1prog, {
     %labels = [] :: [{non_neg_integer(), non_neg_integer()}],

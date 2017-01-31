@@ -193,7 +193,7 @@ primop(#c_literal{val=Primop}, Arity) -> primop(Primop, Arity);
 primop(match_fail, 1) ->
     <<"ERROR-CASE-CLAUSE">>;
 primop(Name, Arity) ->
-    ?COMPILE_ERROR("E4: Unknown primop ~p/~p", [Name, Arity]).
+    ?COMPILE_ERROR("Unknown primop ~p/~p", [Name, Arity]).
 
 include(F) -> #f_include{filename=F}.
 

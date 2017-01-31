@@ -115,8 +115,8 @@ compile2(Prog0 = #j1prog{}, [#k_literal{val = L} | Tail]) ->
     compile2(Prog1, Tail);
 
 %% Comment - pass through
-compile2(Prog0 = #j1prog{}, [C = #f_comment{} | Tail]) ->
-    compile2(emit(Prog0, [C]), Tail);
+compile2(Prog0 = #j1prog{}, [#f_comment{comment = C} | Tail]) ->
+    compile2(emit(Prog0, #j1comment{comment = C}), Tail);
 %% A binary, probably a word? Pass through
 compile2(Prog0 = #j1prog{}, [Bin | Tail]) when is_binary(Bin) ->
     compile2(emit(Prog0, [Bin]), Tail);
@@ -124,7 +124,7 @@ compile2(Prog0 = #j1prog{}, [Bin | Tail]) when is_binary(Bin) ->
 %% Nothing else worked, look for the word in our dictionaries and base words,
 %% maybe it is a literal, too
 compile2(_Prog0 = #j1prog{}, [Word | _Tail]) ->
-    ?COMPILE_ERROR("E4 J1C: Unexpected ~p", [Word]).
+    ?COMPILE_ERROR("Unexpected ~p", [Word]).
     %compile2(emit(Prog0, [Word]), Tail).
 
 %%%-----------------------------------------------------------------------------
@@ -139,21 +139,21 @@ begin_condition(Prog0 = #j1prog{condstack=CondStack}) ->
 %% @doc Creates a label with current PC and puts its id onto loop stack.
 %% The label will be used for jump once UNTIL or AGAIN is reached
 -spec begin_loop(j1prog()) -> {uint(), j1prog()}.
-begin_loop(Prog0 = #j1prog{loopstack=LoopStack}) ->
+begin_loop(Prog0 = #j1prog{loopstack = LoopStack}) ->
     {F, Prog1} = create_label(Prog0),
-    {F, Prog1#j1prog{loopstack=[F | LoopStack]}}.
+    {F, Prog1#j1prog{loopstack = [F | LoopStack]}}.
 
 -spec end_condition(j1prog()) -> {integer(), j1prog()}.
-end_condition(#j1prog{condstack=[]}) ->
-    ?COMPILE_ERROR("E4 J1C: ELSE or THEN have no matching IF");
-end_condition(Prog0 = #j1prog{condstack=[CSTop | CondStack]}) ->
-    {CSTop, Prog0#j1prog{condstack=CondStack}}.
+end_condition(#j1prog{condstack = []}) ->
+    ?COMPILE_ERROR("ELSE or THEN have no matching IF");
+end_condition(Prog0 = #j1prog{condstack = [CSTop | CondStack]}) ->
+    {CSTop, Prog0#j1prog{condstack = CondStack}}.
 
 -spec end_loop(j1prog()) -> {integer(), j1prog()}.
-end_loop(#j1prog{loopstack=[]}) ->
-    ?COMPILE_ERROR("E4 J1C: AGAIN or UNTIL have no matching BEGIN");
-end_loop(Prog0 = #j1prog{loopstack=[LSTop | LoopStack]}) ->
-    {LSTop, Prog0#j1prog{loopstack=LoopStack}}.
+end_loop(#j1prog{loopstack = []}) ->
+    ?COMPILE_ERROR("AGAIN or UNTIL have no matching BEGIN");
+end_loop(Prog0 = #j1prog{loopstack = [LSTop | LoopStack]}) ->
+    {LSTop, Prog0#j1prog{loopstack = LoopStack}}.
 
 %% @doc Create a new label id to be placed in code (resolved at load time)
 create_label(Prog0 = #j1prog{label_id = F0}) ->
@@ -182,41 +182,41 @@ as_int(I) when is_binary(I) -> binary_to_integer(I).
 %% @doc Adds a word to the dictionary, records current program length (program
 %% counter position) as the word address.
 -spec prog_add_word(j1prog(), FA :: k_local() | binary()) -> j1prog().
-prog_add_word(Prog0 = #j1prog{dict=Dict},
-              #k_local{name=#k_atom{val=Fn}, arity=Arity}) ->
+prog_add_word(Prog0 = #j1prog{dict = Dict},
+              #k_local{name = #k_atom{val = Fn}, arity = Arity}) ->
     {F, Prog1} = create_label(Prog0),
     Dict1 = orddict:store({Fn, as_int(Arity)}, F, Dict),
     {Prog2, _} = atom_index_or_create(Prog1, Fn),
-    Prog2#j1prog{dict=Dict1};
-prog_add_word(Prog0 = #j1prog{dict=Dict}, Word) when is_binary(Word) ->
+    Prog2#j1prog{dict = Dict1};
+prog_add_word(Prog0 = #j1prog{dict = Dict}, Word) when is_binary(Word) ->
     {F, Prog1} = create_label(Prog0),
     Dict1 = orddict:store(Word, F, Dict),
     {Prog2, _} = atom_index_or_create(Prog1, Word),
-    Prog2#j1prog{dict=Dict1}.
+    Prog2#j1prog{dict = Dict1}.
 
 %% @doc Adds a NIF name to the dictionary, does not register any other data
 %% just marks the name as existing.
 -spec prog_add_nif(j1prog(), Word :: binary(), Index :: neg_integer())
                   -> j1prog().
 prog_add_nif(#j1prog{}, Word, Index) when Index >= 0 ->
-    ?COMPILE_ERROR("E4 J1C: Bad NIF index ~p in :NIF directive ~p",
+    ?COMPILE_ERROR("Bad NIF index ~p in :NIF directive ~p",
                    [Index, Word]);
-prog_add_nif(Prog0 = #j1prog{dict_nif=Dict}, Word, Index) ->
+prog_add_nif(Prog0 = #j1prog{dict_nif = Dict}, Word, Index) ->
     Dict1 = orddict:store(Word, Index, Dict),
-    Prog0#j1prog{dict_nif=Dict1}.
+    Prog0#j1prog{dict_nif = Dict1}.
 
-emit(Prog0 = #j1prog{output=Out}, IOList) ->
-    Prog0#j1prog{output=[IOList | Out]}.
+emit(Prog0 = #j1prog{output = Out}, IOList) ->
+    Prog0#j1prog{output = [IOList | Out]}.
 
 %% @doc Looks up an atom in the atom table, returns its paired value or creates
 %% a new atom, assigns it next available index and returns it
-atom_index_or_create(Prog0 = #j1prog{atom_id=AtomId, atoms=Atoms}, Value)
+atom_index_or_create(Prog0 = #j1prog{atom_id = AtomId, atoms = Atoms}, Value)
     when is_binary(Value) ->
     case orddict:find(Value, Atoms) of
         error ->
             Prog1 = Prog0#j1prog{
-                atom_id=AtomId + 1,
-                atoms=orddict:store(Value, AtomId, Atoms)
+                atom_id = AtomId + 1,
+                atoms = orddict:store(Value, AtomId, Atoms)
             },
             {Prog1, AtomId};
         {ok, Existing} ->
@@ -225,13 +225,13 @@ atom_index_or_create(Prog0 = #j1prog{atom_id=AtomId, atoms=Atoms}, Value)
 
 %% @doc Looks up a literal in the literal table, returns its paired value or
 %% creates a new literal, assigns it next available index and returns it
-literal_index_or_create(Prog0 = #j1prog{lit_id=LitId, literals=Literals},
+literal_index_or_create(Prog0 = #j1prog{lit_id = LitId, literals = Literals},
                         Value) ->
     case orddict:find(Value, Literals) of
         error ->
             Prog1 = Prog0#j1prog{
-                lit_id=LitId + 1,
-                literals=orddict:store(Value, LitId, Literals)
+                lit_id = LitId + 1,
+                literals = orddict:store(Value, LitId, Literals)
             },
             {Prog1, LitId};
         {ok, Existing} ->
@@ -261,4 +261,4 @@ emit_lit(Prog0 = #j1prog{}, arbitrary, Lit) ->
     {Prog1, LIndex} = literal_index_or_create(Prog0, Lit),
     emit(Prog1, #j1lit{id = LIndex, debug = Lit}).
 
-eval(#k_atom{val=A}) -> erlang:binary_to_atom(A, utf8).
+eval(#k_atom{val = A}) -> erlang:binary_to_atom(A, utf8).

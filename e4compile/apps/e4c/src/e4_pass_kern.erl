@@ -235,7 +235,7 @@ process_code(Block0 = #f_block{},
     emit(Block1, MatchBlock1);
 
 process_code(#f_block{}, #match_ctx{}, X) ->
-    ?COMPILE_ERROR("E4Cerl: Unknown Core AST piece ~s~n",
+    ?COMPILE_ERROR("Unknown input AST piece ~s~n",
                    [?COLOR_TERM(red, X)]).
 
 %% @doc Transform list of variables, literals and expressions into something
