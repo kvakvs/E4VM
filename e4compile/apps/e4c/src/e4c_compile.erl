@@ -16,10 +16,10 @@ process(F) ->
             FlatForth2 = e4c:try_do("Pass4 - Optimize",
                                     fun() ->
                                         e4_pass_opt1:process(FlatForth) end),
-            J1IC = e4c:try_do("Pass5 - Compile to J1 opcodes",
-                          fun() -> j1c_pass_forth:compile(M, FlatForth2) end),
+            J1Forth = e4c:try_do("Pass5 - Compile to J1 opcodes",
+                            fun() -> j1c_pass_forth:compile(M, FlatForth2) end),
             J1Bin = e4c:try_do("Pass6 - Compile J1 IC to binary",
-                               fun() -> j1c_pass_bin:compile(M, J1IC) end),
+                               fun() -> j1c_pass_bin:compile(J1Forth) end),
             e4c:try_do("Save binary output",
                        fun() ->
                            IOList = j1c_file:to_iolist(J1Bin),

@@ -32,7 +32,10 @@
 -define(J1OP_DEPTH,         14).
 -define(J1OP_N_UNSIGNED_LESS_T, 15).
 
--record(alu, {
+-type uint() :: non_neg_integer().
+-type uint16() :: 0..65535.
+
+-record(j1alu, {
     op = 0 :: 0..15,    % one of ?J1OP_* macros.
     tn = 0 :: 0..1,     % copy T (stack top) -> N (next after stack top)
     rpc = 0 :: 0..1,    % copy R (return stack top) to PC (program counter)
@@ -41,7 +44,24 @@
     ds = 0 :: -1..3,    % 2 bits, signed increment of data stack
     rs = 0 :: -1..3     % 2 bits, signed increment of return stack
 }).
--type alu() :: #alu{}.
+-type j1alu() :: #j1alu{}.
+
+-record(j1label, {
+    label :: uint()
+}).
+-type j1label() :: #j1label{}.
+
+-record(j1jump, {
+    condition = false :: false | z,
+    label :: uint()
+}).
+-type j1jump() :: #j1jump{}.
+
+%%-record(j1comment, {comment}).
+%%-type j1comment() :: #j1comment{}.
+
+-type j1forth_code() :: [j1forth_code()] | binary() | j1label() | j1jump().
+-type j1bin_code() :: [j1bin_code()] | uint16().
 
 %% Patch instruction is inserted into the code during compilation.
 %% The second pass will find these patch instructions and replace them with
@@ -53,45 +73,37 @@
 %%}).
 %%-type j1patch() :: #j1patch{}.
 
+-type j1dict() :: orddict:orddict(binary() | tuple(), uint()).
+-type j1nif_dict() :: orddict:orddict(binary(), uint()).
+
 %% Output of the J1 forth compiler (J1C Pass 1)
 -record(j1prog, {
     %labels = [] :: [{non_neg_integer(), non_neg_integer()}],
-    label_id = 0 :: non_neg_integer(), % counter to be used as label generator
+    label_id = 0 :: uint(), % counter to be used as label generator
 
     mod :: atom(),
-    dict = orddict:new() :: orddict:orddict(binary() | tuple(), integer()),
-    dict_nif = orddict:new() :: orddict:orddict(binary(), integer()),
-    exports = [] :: [{binary(), integer()}],
+    dict = orddict:new() :: j1dict(),
+    dict_nif = orddict:new() :: j1nif_dict(),
+    exports = [] :: [{binary(), uint()}],
 
     %% a literal value is the key, and the index in the lit table is the value
     lit_id = 0 :: integer(),
-    literals = orddict:new() :: orddict:orddict(any(), integer()),
+    literals = orddict:new() :: orddict:orddict(any(), uint()),
 
     vars = orddict:new() :: orddict:orddict(),
     modules = orddict:new() :: orddict:orddict(),
 
-    condstack = [] :: [integer()],
-    loopstack = [] :: [integer()],
+    condstack = [] :: [uint()],
+    loopstack = [] :: [uint()],
     %% maps code address (where jump instruction is written) to another code
     %% address (jump destination) processed on the 2nd pass
 %%    patch_table = orddict:new() :: orddict:orddict(integer(), integer()),
 
-    atom_id = 0 :: integer(),
-    atoms = orddict:new() :: orddict:orddict(binary(), integer()),
+    atom_id = 0 :: uint(),
+    atoms = orddict:new() :: orddict:orddict(binary(), uint()),
 
-%%    pc = 0 :: integer(),
-    output = [] :: iolist()
+    output = [] :: j1forth_code()
 }).
 -type j1prog() :: #j1prog{}.
-
--record(j1label, {
-    label :: non_neg_integer()
-}).
--type j1label() :: #j1label{}.
-
--record(j1jump, {
-    condition = false :: false | z,
-    label :: non_neg_integer()
-}).
 
 -endif. % J1_HEADER

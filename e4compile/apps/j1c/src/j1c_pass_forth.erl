@@ -55,21 +55,6 @@ compile2(Prog0 = #j1prog{}, [<<":NIF">>, Name, Index0 | Tail]) ->
     Prog1 = prog_add_nif(Prog0, Name, Index1),
     compile2(Prog1, Tail);
 
-%%compile2(Prog0 = #j1prog{}, [<<";">> | Tail]) ->
-%%    Prog1 = emit_alu(Prog0, #alu{op=0, rpc=1, ds=2}),
-%%    compile2(Prog1, Tail);
-%%compile2(Prog0 = #j1prog{}, [?F_RET | Tail]) ->
-%%    Prog1 = emit_alu(Prog0, #alu{op=0, rpc=1, ds=2}),
-%%    compile2(Prog1, Tail);
-
-%% --- literals ---
-%%compile2(Prog0 = #j1prog{}, [#k_atom{val=Word} | Tail]) -> % atom follows
-%%    Prog1 = emit_lit(Prog0, atom, Word),
-%%    compile2(Prog1, Tail);
-%%compile2(Prog0 = #j1prog{}, [#k_literal{val=L} | Tail]) -> % a preparsed literal
-%%    Prog1 = emit_lit(Prog0, arbitrary, L),
-%%    compile2(Prog1, Tail);
-
 %% --- Conditions ---
 compile2(Prog0 = #j1prog{}, [<<"IF">> | Tail]) ->
     {F, Prog1} = begin_condition(Prog0),
@@ -126,25 +111,6 @@ compile2(Prog0 = #j1prog{}, [?F_LIT_FUNA, Fn, Arity | Tail]) ->
 %% maybe it is a literal, too
 compile2(Prog0 = #j1prog{}, [Word | Tail]) ->
     compile2(emit(Prog0, [Word]), Tail).
-%%    %% Possibly a word, try resolve
-%%    Prog1 = case prog_find_word(Prog0, Word) of
-%%                not_found -> emit_base_word(Prog0, Word);
-%%                Index -> emit_call(Prog0, Index)
-%%            end,
-%%    compile2(Prog1, Tail).
-
-%%compile2(_Prog, [Other | _]) ->
-%%    ?COMPILE_ERROR("E4 J1C: unknown op ~p", [Other]).
-
-%%j1_jump(Label) ->
-%%    %% Add extra 16 bits to label width. This will be replaced by an offset
-%%    %% in the VM during load time
-%%    <<?J1INSTR_JUMP:?J1INSTR_WIDTH, Label:(?J1OP_INDEX_WIDTH + 16)/big>>.
-%%
-%%j1_cond_jump(Label) ->
-%%    %% Add extra 16 bits to label width. This will be replaced by an offset
-%%    %% in the VM during load time
-%%    <<?J1INSTR_JUMP_COND:?J1INSTR_WIDTH, Label:(?J1OP_INDEX_WIDTH + 16)/big>>.
 
 %% @doc Create a label with current PC, and push its id onto condition stack.
 %% The value for the label will be updated once ELSE or THEN is reached
@@ -172,11 +138,6 @@ end_loop(#j1prog{loopstack=[]}) ->
 end_loop(Prog0 = #j1prog{loopstack=[LSTop | LoopStack]}) ->
     {LSTop, Prog0#j1prog{loopstack=LoopStack}}.
 
-%% @ doc Push PC onto cond stack + write j1patch{id=PC} in the output
-%%emit_patch(Prog0 = #j1prog{pc=PC}, Op) ->
-%%    Prog1 = prog_cond_push(Prog0),
-%%    emit(Prog1, #j1patch{op=Op, id=PC}).
-
 %% @doc Create a new label id to be placed in code (resolved at load time)
 create_label(Prog0 = #j1prog{label_id = F0}) ->
     Prog1 = emit(Prog0, #j1label{label = F0}),
@@ -187,8 +148,7 @@ create_label(Prog0 = #j1prog{label_id = F0}) ->
 
 %% @ doc Pop a label id from the cond stack and update #j1prog.labels with
 %% the PC+Offset value.
-cond_update_label(Prog0 = #j1prog{},
-                  Offset) ->
+cond_update_label(Prog0 = #j1prog{}, _Offset) ->
     {F, Prog1} = end_condition(Prog0),
     emit(Prog1, #j1label{label = F}).
 %%    Prog1#j1prog{labels = orddict:store(F, PC + Offset, Labels)}.
@@ -228,171 +188,8 @@ prog_add_nif(Prog0 = #j1prog{dict_nif=Dict}, Word, Index) ->
     Dict1 = orddict:store(Word, Index, Dict),
     Prog0#j1prog{dict_nif=Dict1}.
 
-
-%%%% @doc Looks up a word in the dictionary, returns its address or 'not_found'
-%%-spec prog_find_word(j1prog(), forth_word()) -> integer() | not_found.
-%%prog_find_word(#j1prog{dict_nif=Nifs, dict=Dict}, Word) ->
-%%    case orddict:find(Word, Nifs) of
-%%        {ok, Index} -> Index; % nifs have negative indexes
-%%        error ->
-%%            case orddict:find(Word, Dict) of
-%%                {ok, Index} -> Index;
-%%                error -> not_found
-%%            end
-%%    end.
-%%
-%%%% @doc Emits a CALL instruction with Index (signed) into the code.
-%%%% Negative indices point to NIF functions
-%%emit_call(Prog0 = #j1prog{}, Index)
-%%    when Index < 1 bsl ?J1OP_INDEX_WIDTH, Index > -(1 bsl ?J1OP_INDEX_WIDTH)
-%%    ->
-%%    emit(Prog0, <<?J1INSTR_CALL:?J1INSTR_WIDTH,
-%%                  Index:?J1OP_INDEX_WIDTH/signed>>).
-
-%%emit(Prog0 = #j1prog{output=Out, pc=PC}, #j1patch{}=Patch) ->
-%%    Prog0#j1prog{output=[Patch | Out],
-%%                 pc=PC + 1};
-emit(Prog0 = #j1prog{output=Out, pc=PC}, IOList) ->
-    Prog0#j1prog{output=[IOList | Out],
-                 pc=PC + 1}.
-
-%%-spec emit_alu(j1prog(), alu() | [alu()]) -> j1prog().
-%%emit_alu(Prog = #j1prog{}, ALUList) when is_list(ALUList) ->
-%%    lists:foldl(fun(ALU, P) -> emit_alu(P, ALU) end, Prog, ALUList);
-%%emit_alu(Prog = #j1prog{}, ALU = #alu{ds=-1}) ->
-%%    emit_alu(Prog, ALU#alu{ds=2});
-%%emit_alu(Prog = #j1prog{}, ALU = #alu{rs=-1}) ->
-%%    emit_alu(Prog, ALU#alu{rs=2});
-%%emit_alu(Prog = #j1prog{}, #alu{op=Op0, tn=TN, rpc=RPC, tr=TR, nti=NTI,
-%%                                ds=Ds, rs=Rs}) ->
-%%    %% Operation consists of 4 4-bit nibbles, tag goes first (3 bits) followed
-%%    %% by the RPC flag, then goes operation, then combination of TN,TR,NTI
-%%    %% flags and 1 unused bit, and then Ds/Rs 2 bits each
-%%    %%
-%%    %% 15 14 13 12 | 11 10 09 08 | 07 06 05 04 | 03 02 01 00 |
-%%    %% InstrTag RPC| Op--------- | TN TR NTI ? | DS--- RS--- |l
-%%    %%
-%%    Op1 = <<?J1INSTR_ALU:3, RPC:1,
-%%            Op0:4,
-%%            TN:1, TR:1, NTI:1, 0:1,
-%%            Rs:2, Ds:2>>,
-%%    emit(Prog, Op1).
-%%
-%%-spec emit_base_word(j1prog(), binary() | f_comment()) -> j1prog().
-%%emit_base_word(Prog0, <<"+">>) ->
-%%    emit_alu(Prog0, #alu{op=?J1OP_T_PLUS_N, ds=-1});
-%%emit_base_word(Prog0, <<"XOR">>) ->
-%%    emit_alu(Prog0, #alu{op=?J1OP_T_XOR_N, ds=-1});
-%%emit_base_word(Prog0, <<"AND">>) ->
-%%    emit_alu(Prog0, #alu{op=?J1OP_T_AND_N, ds=-1});
-%%emit_base_word(Prog0, <<"OR">>) ->
-%%    emit_alu(Prog0, #alu{op=?J1OP_T_OR_N, ds=-1});
-%%
-%%emit_base_word(Prog0, <<"INVERT">>) ->
-%%    emit_alu(Prog0, #alu{op=?J1OP_INVERT_T});
-%%
-%%emit_base_word(Prog0, <<"=">>) ->
-%%    emit_alu(Prog0, #alu{op=?J1OP_N_EQ_T, ds=-1});
-%%emit_base_word(Prog0, <<"<">>) ->
-%%    emit_alu(Prog0, #alu{op=?J1OP_N_LESS_T, ds=-1});
-%%emit_base_word(Prog0, <<"U<">>) ->
-%%    emit_alu(Prog0, #alu{op=?J1OP_N_UNSIGNED_LESS_T, ds=-1});
-%%
-%%emit_base_word(Prog0, <<"SWAP">>) -> % swap data stack top 2 elements
-%%    emit_alu(Prog0, #alu{op=?J1OP_N, tn=1});
-%%emit_base_word(Prog0, <<"DUP">>) -> % clone data stack top
-%%    emit_alu(Prog0, #alu{op=?J1OP_T, tn=1});
-%%emit_base_word(Prog0, <<"DROP">>) -> % drop top on data stack
-%%    emit_alu(Prog0, #alu{op=?J1OP_N, ds=-1});
-%%emit_base_word(Prog0, <<"OVER">>) -> % clone second on data stack
-%%    emit_alu(Prog0, #alu{op=?J1OP_N, tn=1, ds=1});
-%%emit_base_word(Prog0, <<"NIP">>) -> % drops second on data stack
-%%    emit_alu(Prog0, #alu{op=?J1OP_T, ds=-1});
-%%
-%%emit_base_word(Prog0, <<">R">>) -> % place onto Rstack
-%%    emit_alu(Prog0, #alu{op=?J1OP_N, tr=1, ds=-1, rs=1});
-%%emit_base_word(Prog0, <<"R>">>) -> % take from Rstack
-%%    emit_alu(Prog0, #alu{op=?J1OP_R, tn=1, ds=1, rs=-1});
-%%emit_base_word(Prog0, <<"R@">>) -> % read Rstack top
-%%    emit_alu(Prog0, #alu{op=?J1OP_R, tn=1, ds=1, rs=0});
-%%emit_base_word(Prog0, <<"@">>) -> % read address
-%%    emit_alu(Prog0, #alu{op=?J1OP_INDEX_T});
-%%emit_base_word(Prog0, <<"!">>) -> % write address
-%%    emit_alu(Prog0, [
-%%        #alu{op=?J1OP_T, ds=-1},
-%%        #alu{op=?J1OP_N, ds=-1}
-%%    ]);
-%%
-%%emit_base_word(Prog0, <<"DSP">>) -> % get stack depth
-%%    emit_alu(Prog0, #alu{op=?J1OP_DEPTH, tn=1, ds=1});
-%%
-%%emit_base_word(Prog0, <<"LSHIFT">>) ->
-%%    emit_alu(Prog0, #alu{op=?J1OP_N_LSHIFT_T, ds=-1});
-%%emit_base_word(Prog0, <<"RSHIFT">>) ->
-%%    emit_alu(Prog0, #alu{op=?J1OP_N_RSHIFT_T, ds=-1});
-%%emit_base_word(Prog0, <<"1-">>) -> % decrement stack top
-%%    emit_alu(Prog0, #alu{op=?J1OP_T_MINUS_1});
-%%emit_base_word(Prog0, <<"2R>">>) ->
-%%    emit_alu(Prog0, [
-%%        #alu{op=?J1OP_R, tn=1, ds=1, rs=-1},
-%%        #alu{op=?J1OP_R, tn=1, ds=1, rs=-1},
-%%        #alu{op=?J1OP_N, tn=1}
-%%    ]);
-%%emit_base_word(Prog0, <<"2>R">>) ->
-%%    emit_alu(Prog0, [
-%%        #alu{op=?J1OP_N, tn=1},
-%%        #alu{op=?J1OP_N, tr=1, ds=-1, rs=1},
-%%        #alu{op=?J1OP_N, tr=1, ds=-1, rs=1}
-%%    ]);
-%%emit_base_word(Prog0, <<"2R@">>) ->
-%%    emit_alu(Prog0, [
-%%        #alu{op=?J1OP_R, tn=1, ds=1, rs=-1},
-%%        #alu{op=?J1OP_R, tn=1, ds=1, rs=-1},
-%%        #alu{op=?J1OP_N, tn=1, ds=1},
-%%        #alu{op=?J1OP_N, tn=1, ds=1},
-%%        #alu{op=?J1OP_N, tr=1, ds=-1, rs=1},
-%%        #alu{op=?J1OP_N, tr=1, ds=-1, rs=1},
-%%        #alu{op=?J1OP_N, tn=1}
-%%    ]);
-%%emit_base_word(Prog0, <<"DUP@">>) ->
-%%    emit_alu(Prog0, #alu{op=?J1OP_INDEX_T, tn=1, ds=1});
-%%emit_base_word(Prog0, <<"DUP>R">>) ->
-%%    emit_alu(Prog0, #alu{op=?J1OP_T, tr=1, rs=1});
-%%emit_base_word(Prog0, <<"2DUPXOR">>) ->
-%%    emit_alu(Prog0, #alu{op=?J1OP_T_XOR_N, tn=1, ds=1});
-%%emit_base_word(Prog0, <<"2DUP=">>) ->
-%%    emit_alu(Prog0, #alu{op=?J1OP_N_EQ_T, tn=1, ds=1});
-%%emit_base_word(Prog0, <<"!NIP">>) ->
-%%    emit_alu(Prog0, #alu{op=?J1OP_T, nti=1, ds=-1});
-%%emit_base_word(Prog0, <<"2DUP!">>) ->
-%%    emit_alu(Prog0, #alu{op=?J1OP_T, nti=1});
-%%emit_base_word(Prog0, <<"UP1">>) ->
-%%    emit_alu(Prog0, #alu{op=?J1OP_T, ds=1});
-%%emit_base_word(Prog0, <<"DOWN1">>) ->
-%%    emit_alu(Prog0, #alu{op=?J1OP_T, ds=-1});
-%%emit_base_word(Prog0, <<"COPY">>) ->
-%%    emit_alu(Prog0, #alu{op=?J1OP_N});
-%%
-%%emit_base_word(Prog0, <<"NOOP">>) ->
-%%    emit_alu(Prog0, #alu{op=?J1OP_T});
-%%
-%%%%emit_base_word(Prog0, Integer) when is_integer(Integer) ->
-%%%%    emit_lit(Prog0, integer, Integer);
-%%emit_base_word(Prog0, #f_comment{}) -> Prog0; % skip comments
-%%emit_base_word(Prog0, <<First:8, _/binary>> = Word)
-%%    when First >= $0 andalso First =< $9 orelse First =:= $-
-%%    ->
-%%    case (catch binary_to_integer(Word)) of
-%%        X when is_integer(X) ->
-%%            emit_lit(Prog0, integer, X);
-%%        {'EXIT', {badarg, _}} ->
-%%            ?COMPILE_ERROR("E4 J1C Pass1: word is not defined: ~s",
-%%                           [?COLOR_TERM(red, Word)])
-%%    end;
-%%emit_base_word(_Prog, Word) ->
-%%    ?COMPILE_ERROR("E4 J1C Pass1: word is not defined: ~s",
-%%                   [?COLOR_TERM(red, Word)]).
-%%
+emit(Prog0 = #j1prog{output=Out}, IOList) ->
+    Prog0#j1prog{output=[IOList | Out]}.
 
 %% @doc Looks up an atom in the atom table, returns its paired value or creates
 %% a new atom, assigns it next available index and returns it
@@ -408,21 +205,21 @@ atom_index_or_create(Prog0 = #j1prog{atom_id=AtomId, atoms=Atoms}, Value)
         {ok, Existing} ->
             {Prog0, Existing}
     end.
-%%
-%%%% @doc Looks up a literal in the literal table, returns its paired value or
-%%%% creates a new literal, assigns it next available index and returns it
-%%literal_index_or_create(Prog0 = #j1prog{lit_id=LitId, literals=Literals},
-%%                        Value) ->
-%%    case orddict:find(Value, Literals) of
-%%        error ->
-%%            Prog1 = Prog0#j1prog{
-%%                lit_id=LitId + 1,
-%%                literals=orddict:store(Value, LitId, Literals)
-%%            },
-%%            {Prog1, LitId};
-%%        {ok, Existing} ->
-%%            {Prog0, Existing}
-%%    end.
+
+%% @doc Looks up a literal in the literal table, returns its paired value or
+%% creates a new literal, assigns it next available index and returns it
+literal_index_or_create(Prog0 = #j1prog{lit_id=LitId, literals=Literals},
+                        Value) ->
+    case orddict:find(Value, Literals) of
+        error ->
+            Prog1 = Prog0#j1prog{
+                lit_id=LitId + 1,
+                literals=orddict:store(Value, LitId, Literals)
+            },
+            {Prog1, LitId};
+        {ok, Existing} ->
+            {Prog0, Existing}
+    end.
 
 emit_lit(Prog0 = #j1prog{}, atom, Word) ->
     {Prog1, AIndex} = atom_index_or_create(Prog0, Word),
@@ -445,75 +242,3 @@ emit_lit(Prog0 = #j1prog{}, arbitrary, Lit) ->
     emit(Prog1, <<1:1, LIndex:?J1_LITERAL_BITS>>).
 
 eval(#k_atom{val=A}) -> erlang:binary_to_atom(A, utf8).
-
-%%format_j1c_pass1(_Prog, _Pc, [], Accum) -> lists:reverse(Accum);
-%%format_j1c_pass1(Prog, Pc, [H | Tail], Accum) ->
-%%    format_j1c_pass1(Prog, Pc+1, Tail, [
-%%        format_j1c_op(Prog, H),
-%%        io_lib:format("~4.16.0B: ", [Pc]) | Accum
-%%    ]).
-%%
-%%%%format_j1c_op(Prog, #j1patch{op=Op, id=Id}) ->
-%%%%    io_lib:format("~s id=~p (~s)~n", [color:yellowb("PATCH"), Id,
-%%%%                                      format_j1c_op(Prog, Op)]);
-%%format_j1c_op(_Prog, <<1:1, Lit:(?J1BITS-1)/signed>>) ->
-%%    io_lib:format("~s ~p~n", [color:blueb("LIT"), Lit]);
-%%format_j1c_op(Prog, <<?J1INSTR_CALL:?J1INSTR_WIDTH,
-%%                       Addr:?J1OP_INDEX_WIDTH/signed>>) ->
-%%    io_lib:format("~s ~s~n", [color:green("CALL"), whereis_addr(Prog, Addr)]);
-%%format_j1c_op(_Prog, <<?J1INSTR_JUMP:?J1INSTR_WIDTH,
-%%                Addr:?J1OP_INDEX_WIDTH/signed>>) ->
-%%    io_lib:format("~s ~4.16.0B~n", [color:green("JMP"), Addr]);
-%%format_j1c_op(_Prog, <<?J1INSTR_JUMP_COND:?J1INSTR_WIDTH,
-%%                Addr:?J1OP_INDEX_WIDTH/signed>>) ->
-%%    io_lib:format("~s ~4.16.0B~n", [color:green("JZ"), Addr]);
-%%format_j1c_op(_Prog, <<?J1INSTR_ALU:3, RPC:1, Op:4, TN:1, TR:1, NTI:1,
-%%                _Unused:1, Ds:2, Rs:2>>) ->
-%%    format_j1c_alu(RPC, Op, TN, TR, NTI, Ds, Rs);
-%%format_j1c_op(_Prog, <<Cmd:?J1BITS>>) ->
-%%    io_lib:format("?UNKNOWN ~4.16.0B~n", [Cmd]).
-%%
-%%format_j1c_alu(RPC, Op, TN, TR, NTI, Ds, Rs) ->
-%%    FormatOffset =
-%%        fun(_, 0) -> [];
-%%            (Prefix, 1) -> Prefix ++ "++";
-%%            (Prefix, 2) -> Prefix ++ "--"
-%%            end,
-%%    [
-%%        io_lib:format("~s", [color:red("ALU." ++ j1_op(Op))]),
-%%        case RPC of 0 -> []; _ -> " RET" end,
-%%        case TN of 0 -> []; _ -> " T->N" end,
-%%        case TR of 0 -> []; _ -> " T->R" end,
-%%        case NTI of 0 -> []; _ -> " [T]" end,
-%%        FormatOffset(" DS", Ds),
-%%        FormatOffset(" RS", Rs),
-%%        "\n"
-%%    ].
-%%
-%%j1_op(?J1OP_T)                  -> "T";
-%%j1_op(?J1OP_N)                  -> "N";
-%%j1_op(?J1OP_T_PLUS_N)           -> "T+N";
-%%j1_op(?J1OP_T_AND_N)            -> "T&N";
-%%j1_op(?J1OP_T_OR_N)             -> "T|N";
-%%j1_op(?J1OP_T_XOR_N)            -> "T^N";
-%%j1_op(?J1OP_INVERT_T)           -> "~T";
-%%j1_op(?J1OP_N_EQ_T)             -> "N==T";
-%%j1_op(?J1OP_N_LESS_T)           -> "N<T";
-%%j1_op(?J1OP_N_RSHIFT_T)         -> "N>>T";
-%%j1_op(?J1OP_T_MINUS_1)          -> "T-1";
-%%j1_op(?J1OP_R)                  -> "R";
-%%j1_op(?J1OP_INDEX_T)            -> "[T]";
-%%j1_op(?J1OP_N_LSHIFT_T)         -> "N<<T";
-%%j1_op(?J1OP_DEPTH)              -> "DEPTH";
-%%j1_op(?J1OP_N_UNSIGNED_LESS_T)  -> "UN<T".
-
-%%whereis_addr(#j1prog{dict=Words}, Addr) when Addr >= 0 ->
-%%    case lists:keyfind(Addr, 2, Words) of
-%%        {Name, _} -> io_lib:format("'~s'", [Name]);
-%%        false -> "?"
-%%    end;
-%%whereis_addr(#j1prog{dict_nif=Nifs}, Addr) when Addr < 0 ->
-%%    case lists:keyfind(Addr, 2, Nifs) of
-%%        {Name, _} -> io_lib:format("~s '~s'", [color:blackb("NIF"), Name]);
-%%        false -> "?"
-%%    end.
