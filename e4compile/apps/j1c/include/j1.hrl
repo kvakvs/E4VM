@@ -60,8 +60,11 @@
 %%-record(j1comment, {comment}).
 %%-type j1comment() :: #j1comment{}.
 
+%% Output from the pass1 forth
 -type j1forth_code() :: [j1forth_code()] | binary() | j1label() | j1jump().
--type j1bin_code() :: [j1bin_code()] | uint16().
+
+%% Output from the pass forth to bin
+-type j1bin_code() :: [j1bin_code()] | binary().
 
 %% Patch instruction is inserted into the code during compilation.
 %% The second pass will find these patch instructions and replace them with

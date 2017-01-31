@@ -15,7 +15,7 @@
 -record(match_ctx, {
     match_vars = [] :: [k_var()],   % vars which appeared in #k_match{}
     select_var,                     % focused var which appeared #k_select{}
-    type :: k_tuple | k_atom | k_int | k_float | k_nil | k_cons | k_literal
+    type = k_nil :: k_tuple | k_atom | k_int | k_float | k_nil | k_cons | k_literal
 }).
 -type match_ctx() :: #match_ctx{}.
 %%-type match_elem_group() :: k_match() | k_alt() | k_select() | k_type_clause()
@@ -356,9 +356,9 @@ emit_match(Scope, k_cons, #k_cons{hd=LHead, tl=LTail}, Rhs) ->
             end
     end;
 emit_match(_Scope, k_nil, _, R)    -> e4_f1:block([e4_f1:eval(R), ?F_IS_NIL]);
-emit_match(_Scope, k_float, L, R)  -> e4_f1:block(e4_f1:equals(L, R));
+%%emit_match(_Scope, k_float, L, R)  -> e4_f1:block(e4_f1:equals(L, R));
 emit_match(_Scope, k_int, L, R)    -> e4_f1:block(e4_f1:equals(L, R));
-emit_match(_Scope, k_atom, L, R)   -> e4_f1:block(e4_f1:equals(L, R));
+%%emit_match(_Scope, k_atom, L, R)   -> e4_f1:block(e4_f1:equals(L, R));
 emit_match(_Scope, k_literal, L, R) -> e4_f1:block(e4_f1:equals(L, R));
 emit_match(_Scope, _, #k_var{} = L, #k_var{} = R) ->
     e4_f1:block(e4_f1:equals(L, R));

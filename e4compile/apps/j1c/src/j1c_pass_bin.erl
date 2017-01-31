@@ -88,6 +88,7 @@ emit_call(Prog0 = #j1bin_prog{}, Index)
 %%emit(Prog0 = #j1bin{output=Out, pc=PC}, #j1patch{}=Patch) ->
 %%    Prog0#j1bin{output=[Patch | Out],
 %%                 pc=PC + 1};
+-spec emit(j1bin_prog(), binary()) -> j1bin_prog().
 emit(Prog0 = #j1bin_prog{output=Out, pc=PC}, IOList) ->
     Prog0#j1bin_prog{output=[IOList | Out],
                      pc=PC + 1}.
@@ -97,7 +98,7 @@ emit(Prog0 = #j1bin_prog{output=Out, pc=PC}, IOList) ->
     emit_alu(JBin, ALU).
 
 -spec emit_alu_f(j1bin_prog(), [j1alu()]) -> j1bin_prog().
-emit_alu_f(Prog = #j1bin_prog{}, ALUList) when is_list(ALUList) ->
+emit_alu_f(Prog = #j1bin_prog{}, ALUList) ->
     lists:foldl(fun '_emit_alu_fold_helper'/2, Prog, ALUList).
 
 -spec emit_alu(j1bin_prog(), j1alu()) -> j1bin_prog().

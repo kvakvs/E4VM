@@ -114,14 +114,14 @@ compile2(Prog0 = #j1prog{}, [Word | Tail]) ->
 
 %% @doc Create a label with current PC, and push its id onto condition stack.
 %% The value for the label will be updated once ELSE or THEN is reached
--spec begin_condition(j1prog()) -> {j1label(), j1prog()}.
+-spec begin_condition(j1prog()) -> {uint(), j1prog()}.
 begin_condition(Prog0 = #j1prog{condstack=CondStack}) ->
     {F, Prog1} = create_label(Prog0),
     {F, Prog1#j1prog{condstack=[F | CondStack]}}.
 
 %% @doc Creates a label with current PC and puts its id onto loop stack.
 %% The label will be used for jump once UNTIL or AGAIN is reached
--spec begin_loop(j1prog()) -> {j1label(), j1prog()}.
+-spec begin_loop(j1prog()) -> {uint(), j1prog()}.
 begin_loop(Prog0 = #j1prog{loopstack=LoopStack}) ->
     {F, Prog1} = create_label(Prog0),
     {F, Prog1#j1prog{loopstack=[F | LoopStack]}}.
@@ -221,11 +221,11 @@ literal_index_or_create(Prog0 = #j1prog{lit_id=LitId, literals=Literals},
             {Prog0, Existing}
     end.
 
-emit_lit(Prog0 = #j1prog{}, atom, Word) ->
-    {Prog1, AIndex} = atom_index_or_create(Prog0, Word),
-    emit(Prog1, <<1:1, AIndex:?J1_LITERAL_BITS>>);
-emit_lit(Prog0 = #j1prog{}, integer, X) ->
-    emit(Prog0, <<1:1, X:?J1_LITERAL_BITS/signed>>);
+%%emit_lit(Prog0 = #j1prog{}, atom, Word) ->
+%%    {Prog1, AIndex} = atom_index_or_create(Prog0, Word),
+%%    emit(Prog1, <<1:1, AIndex:?J1_LITERAL_BITS>>);
+%%emit_lit(Prog0 = #j1prog{}, integer, X) ->
+%%    emit(Prog0, <<1:1, X:?J1_LITERAL_BITS/signed>>);
 emit_lit(Prog0 = #j1prog{}, mfa, {M, F, A}) ->
     M1 = eval(M),
     F1 = eval(F),
@@ -236,9 +236,9 @@ emit_lit(Prog0 = #j1prog{}, funarity, {F, A}) ->
     F1 = eval(F),
     A1 = erlang:binary_to_integer(A),
     {Prog1, LIndex} = literal_index_or_create(Prog0, {'$FA', F1, A1}),
-    emit(Prog1, <<1:1, LIndex:?J1_LITERAL_BITS>>);
-emit_lit(Prog0 = #j1prog{}, arbitrary, Lit) ->
-    {Prog1, LIndex} = literal_index_or_create(Prog0, Lit),
     emit(Prog1, <<1:1, LIndex:?J1_LITERAL_BITS>>).
+%%emit_lit(Prog0 = #j1prog{}, arbitrary, Lit) ->
+%%    {Prog1, LIndex} = literal_index_or_create(Prog0, Lit),
+%%    emit(Prog1, <<1:1, LIndex:?J1_LITERAL_BITS>>).
 
 eval(#k_atom{val=A}) -> erlang:binary_to_atom(A, utf8).
