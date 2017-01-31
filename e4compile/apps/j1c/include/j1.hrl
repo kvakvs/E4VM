@@ -109,4 +109,16 @@
 }).
 -type j1prog() :: #j1prog{}.
 
+-record(j1lit, {
+    id :: uint(),
+    debug :: any()
+}).
+-type j1lit() :: #j1lit{}.
+
+-record(j1atom, {
+    id :: uint(),
+    debug :: atom()
+}).
+-type j1atom() :: #j1atom{}.
+
 -endif. % J1_HEADER

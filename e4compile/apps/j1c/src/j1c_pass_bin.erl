@@ -95,6 +95,8 @@ emit(Prog0 = #j1bin_prog{output=Out, pc=PC}, IOList) ->
     Prog0#j1bin_prog{output=[IOList | Out],
                      pc=PC + 1}.
 
+%%%-----------------------------------------------------------------------------
+
 -spec '_emit_alu_fold_helper'(j1alu(), j1bin_prog()) -> j1bin_prog().
 '_emit_alu_fold_helper'(ALU, JBin) ->
     emit_alu(JBin, ALU).
@@ -122,6 +124,8 @@ emit_alu(Prog = #j1bin_prog{}, #j1alu{op=Op0, tn=TN, rpc=RPC, tr=TR, nti=NTI,
             TN:1, TR:1, NTI:1, 0:1,
             Rs:2, Ds:2>>,
     emit(Prog, Op1).
+
+%%%-----------------------------------------------------------------------------
 
 -spec emit_base_word(j1bin_prog(), j1forth_code()) -> j1bin_prog().
 %%
@@ -247,6 +251,8 @@ emit_base_word(_Prog, Word) ->
     ?COMPILE_ERROR("E4 J1C Pass1: word is not defined: ~s",
                    [?COLOR_TERM(red, Word)]).
 
+%%%-----------------------------------------------------------------------------
+
 format_j1c_pass1(_Prog, _Pc, [], Accum) -> lists:reverse(Accum);
 format_j1c_pass1(Prog, Pc, [H | Tail], Accum) ->
     format_j1c_pass1(Prog, Pc+1, Tail, [
@@ -288,6 +294,8 @@ format_j1c_alu(RPC, Op, TN, TR, NTI, Ds, Rs) ->
         "\n"
     ].
 
+%%%-----------------------------------------------------------------------------
+
 j1_op(?J1OP_T)                  -> "T";
 j1_op(?J1OP_N)                  -> "N";
 j1_op(?J1OP_T_PLUS_N)           -> "T+N";
@@ -315,3 +323,23 @@ whereis_addr(#j1bin_prog{dict_nif=Nifs}, Addr) when Addr < 0 ->
         {Name, _} -> io_lib:format("~s '~s'", [color:blackb("NIF"), Name]);
         false -> "?"
     end.
+
+%%emit_lit(Prog0 = #j1prog{}, atom, Word) ->
+%%    {Prog1, AIndex} = atom_index_or_create(Prog0, Word),
+%%    emit(Prog1, <<1:1, AIndex:?J1_LITERAL_BITS>>);
+%%%%emit_lit(Prog0 = #j1prog{}, integer, X) ->
+%%%%    emit(Prog0, <<1:1, X:?J1_LITERAL_BITS/signed>>);
+%%emit_lit(Prog0 = #j1prog{}, mfa, {M, F, A}) ->
+%%    M1 = eval(M),
+%%    F1 = eval(F),
+%%    A1 = erlang:binary_to_integer(A),
+%%    {Prog1, LIndex} = literal_index_or_create(Prog0, {'$MFA', M1, F1, A1}),
+%%    emit(Prog1, <<1:1, LIndex:?J1_LITERAL_BITS>>);
+%%emit_lit(Prog0 = #j1prog{}, funarity, {F, A}) ->
+%%    F1 = eval(F),
+%%    A1 = erlang:binary_to_integer(A),
+%%    {Prog1, LIndex} = literal_index_or_create(Prog0, {'$FA', F1, A1}),
+%%    emit(Prog1, <<1:1, LIndex:?J1_LITERAL_BITS>>);
+%%emit_lit(Prog0 = #j1prog{}, arbitrary, Lit) ->
+%%    {Prog1, LIndex} = literal_index_or_create(Prog0, Lit),
+%%    emit(Prog1, <<1:1, LIndex:?J1_LITERAL_BITS>>).

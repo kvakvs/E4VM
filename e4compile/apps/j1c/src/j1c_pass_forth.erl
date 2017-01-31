@@ -34,10 +34,9 @@ preprocess([?F_LIT_ATOM, Word | T], Acc) ->
     preprocess(T, [#k_atom{val=Word} | Acc]);
 preprocess([H | T], Acc) -> preprocess(T, [H | Acc]).
 
+%%%-----------------------------------------------------------------------------
+
 compile2(Prog0 = #j1prog{}, []) -> Prog0;
-
-%% --- special words ---
-
 compile2(Prog0 = #j1prog{}, [#f_export{fn=Fn, arity=Arity} | Tail]) ->
     Prog1 = prog_add_export(Prog0, Fn, Arity),
     compile2(Prog1, Tail);
@@ -108,11 +107,27 @@ compile2(Prog0 = #j1prog{}, [?F_LIT_MFA, M, F, A | Tail]) -> % mfa literal
 compile2(Prog0 = #j1prog{}, [?F_LIT_FUNA, Fn, Arity | Tail]) ->
     Prog1 = emit_lit(Prog0, funarity, {Fn, Arity}),
     compile2(Prog1, Tail);
+compile2(Prog0 = #j1prog{}, [#k_atom{val = A} | Tail]) ->
+    Prog1 = emit_lit(Prog0, atom, A),
+    compile2(Prog1, Tail);
+compile2(Prog0 = #j1prog{}, [#k_literal{val = L} | Tail]) ->
+    Prog1 = emit_lit(Prog0, arbitrary, L),
+    compile2(Prog1, Tail);
+
+%% Comment - pass through
+compile2(Prog0 = #j1prog{}, [C = #f_comment{} | Tail]) ->
+    compile2(emit(Prog0, [C]), Tail);
+%% A binary, probably a word? Pass through
+compile2(Prog0 = #j1prog{}, [Bin | Tail]) when is_binary(Bin) ->
+    compile2(emit(Prog0, [Bin]), Tail);
 
 %% Nothing else worked, look for the word in our dictionaries and base words,
 %% maybe it is a literal, too
-compile2(Prog0 = #j1prog{}, [Word | Tail]) ->
-    compile2(emit(Prog0, [Word]), Tail).
+compile2(_Prog0 = #j1prog{}, [Word | _Tail]) ->
+    ?COMPILE_ERROR("E4 J1C: Unexpected ~p", [Word]).
+    %compile2(emit(Prog0, [Word]), Tail).
+
+%%%-----------------------------------------------------------------------------
 
 %% @doc Create a label with current PC, and push its id onto condition stack.
 %% The value for the label will be updated once ELSE or THEN is reached
@@ -142,8 +157,8 @@ end_loop(Prog0 = #j1prog{loopstack=[LSTop | LoopStack]}) ->
 
 %% @doc Create a new label id to be placed in code (resolved at load time)
 create_label(Prog0 = #j1prog{label_id = F0}) ->
-    Prog1 = emit(Prog0, #j1label{label = F0}),
-    {F0, Prog1#j1prog{
+    %Prog1 = emit(Prog0, #j1label{label = F0}),
+    {F0, Prog0#j1prog{
         label_id = F0 + 1
         %labels = [{F0, PC} | Labels]
     }}.
@@ -223,9 +238,9 @@ literal_index_or_create(Prog0 = #j1prog{lit_id=LitId, literals=Literals},
             {Prog0, Existing}
     end.
 
-%%emit_lit(Prog0 = #j1prog{}, atom, Word) ->
-%%    {Prog1, AIndex} = atom_index_or_create(Prog0, Word),
-%%    emit(Prog1, <<1:1, AIndex:?J1_LITERAL_BITS>>);
+emit_lit(Prog0 = #j1prog{}, atom, Word) when is_atom(Word) ->
+    {Prog1, AIndex} = atom_index_or_create(Prog0, Word),
+    emit(Prog1, #j1atom{id = AIndex, debug = Word});
 %%emit_lit(Prog0 = #j1prog{}, integer, X) ->
 %%    emit(Prog0, <<1:1, X:?J1_LITERAL_BITS/signed>>);
 emit_lit(Prog0 = #j1prog{}, mfa, {M, F, A}) ->
@@ -233,14 +248,14 @@ emit_lit(Prog0 = #j1prog{}, mfa, {M, F, A}) ->
     F1 = eval(F),
     A1 = erlang:binary_to_integer(A),
     {Prog1, LIndex} = literal_index_or_create(Prog0, {'$MFA', M1, F1, A1}),
-    emit(Prog1, <<1:1, LIndex:?J1_LITERAL_BITS>>);
+    emit(Prog1, #j1lit{id = LIndex, debug = {M, F, A}});
 emit_lit(Prog0 = #j1prog{}, funarity, {F, A}) ->
     F1 = eval(F),
     A1 = erlang:binary_to_integer(A),
     {Prog1, LIndex} = literal_index_or_create(Prog0, {'$FA', F1, A1}),
-    emit(Prog1, <<1:1, LIndex:?J1_LITERAL_BITS>>).
-%%emit_lit(Prog0 = #j1prog{}, arbitrary, Lit) ->
-%%    {Prog1, LIndex} = literal_index_or_create(Prog0, Lit),
-%%    emit(Prog1, <<1:1, LIndex:?J1_LITERAL_BITS>>).
+    emit(Prog1, #j1lit{id = LIndex, debug = {F, A}});
+emit_lit(Prog0 = #j1prog{}, arbitrary, Lit) ->
+    {Prog1, LIndex} = literal_index_or_create(Prog0, Lit),
+    emit(Prog1, #j1lit{id = LIndex, debug = Lit}).
 
 eval(#k_atom{val=A}) -> erlang:binary_to_atom(A, utf8).
