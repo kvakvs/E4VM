@@ -33,9 +33,8 @@ compile(Input = #j1prog{}) ->
         dict = Input#j1prog.dict,
         dict_nif = Input#j1prog.dict_nif
     },
-    io:format("~p~n", [Prog0]),
 
-    Prog1 = compile2(Prog0, Input#j1prog.output),
+    Prog1 = transform_op(Prog0, Input#j1prog.output),
 
     %% Print the output
     Bin = lists:reverse(Prog1#j1bin_prog.output),
@@ -51,38 +50,74 @@ compile(Input = #j1prog{}) ->
 
 %%%-----------------------------------------------------------------------------
 
-    -spec compile2(j1bin_prog(), j1forth_code()) -> j1bin_prog().
-compile2(Prog0 = #j1bin_prog{}, []) -> Prog0;
+-spec transform_op(j1bin_prog(), j1forth_code()) -> j1bin_prog().
+transform_op(Prog0 = #j1bin_prog{}, []) -> Prog0;
 
-%% --- special words ---
+transform_op(Prog0, [OpList | Tail]) when is_list(OpList) ->
+    Prog1 = lists:foldl(fun(Op, P0) -> transform_op(P0, [Op]) end,
+                        Prog0,
+                        OpList),
+    transform_op(Prog1, Tail);
 
-compile2(Prog0 = #j1bin_prog{}, [?F_RET | Tail]) ->
+transform_op(Prog0 = #j1bin_prog{}, [?F_RET | Tail]) ->
     Prog1 = emit_alu(Prog0, #j1alu{op = 0, rpc = 1, ds = 2}),
-    compile2(Prog1, Tail);
+    transform_op(Prog1, Tail);
 
 %% Nothing else worked, look for the word in our dictionaries and base words,
 %% maybe it is a literal, too
-compile2(Prog0 = #j1bin_prog{}, [Word | Tail]) ->
+transform_op(Prog0 = #j1bin_prog{}, [Word | Tail]) when is_binary(Word) ->
     %% Possibly a word, try resolve
     Prog1 = case prog_find_word(Prog0, Word) of
                 not_found -> emit_base_word(Prog0, Word);
                 Index -> emit_call(Prog0, Index)
             end,
-    compile2(Prog1, Tail).
+    transform_op(Prog1, Tail);
+
+transform_op(Prog0, [#j1comment{} | Tail]) ->
+    transform_op(Prog0, Tail);
+
+transform_op(Prog0, [#j1atom{id = AtomId} | Tail]) ->
+    %% TODO: Add bits to mark immediate atoms, ints etc or an arbitrary literal
+    Prog1 = emit(Prog0, <<1:1, AtomId:?J1_LITERAL_BITS>>),
+    transform_op(Prog1, Tail);
+
+transform_op(Prog0, [#j1jump{condition = Cond, label = F} | Tail]) ->
+    JType = case Cond of
+                false -> ?J1INSTR_JUMP;
+                z -> ?J1INSTR_JUMP_COND
+            end,
+    Prog1 = emit(Prog0, <<JType:?J1INSTR_WIDTH, F:?J1OP_INDEX_WIDTH>>),
+    Prog2 = emit(Prog1, <<0:16>>), % padding for long jump TODO?
+    transform_op(Prog2, Tail);
+
+transform_op(Prog0 = #j1bin_prog{pc = PC, labels = Labels, lpatches = Patch},
+             [#j1label{label = F} | Tail]) ->
+    Labels1 = orddict:store(F, PC, Labels),
+    Prog1 = Prog0#j1bin_prog{
+        labels = Labels1,
+        lpatches = [PC | Patch]
+    },
+    transform_op(Prog1, Tail);
+
+transform_op(_Prog, [Word | _Tail]) ->
+    ?COMPILE_ERROR1("Word is unexpected", Word).
+
 
 %%%-----------------------------------------------------------------------------
 
 %% @doc Looks up a word in the dictionary, returns its address or 'not_found'
 -spec prog_find_word(j1bin_prog(), forth_word()) -> integer() | not_found.
-prog_find_word(#j1bin_prog{dict_nif = NifDict, dict = Dict}, Word) ->
+prog_find_word(#j1bin_prog{dict_nif = NifDict, dict = Dict},
+               Word) when is_binary(Word) ->
     case orddict:find(Word, NifDict) of
-        {ok, Index} -> Index; % nifs have negative indexes
+        {ok, Index1} -> Index1; % nifs have negative indexes
         error ->
             case orddict:find(Word, Dict) of
-                {ok, Index} -> Index;
+                {ok, Index2} -> Index2;
                 error -> not_found
             end
-    end.
+    end;
+prog_find_word(_, _) -> not_found.
 
 %% @doc Emits a CALL instruction with Index (signed) into the code.
 %% Negative indices point to NIF functions
@@ -138,19 +173,6 @@ emit_alu(Prog = #j1bin_prog{}, #j1alu{op=Op0, tn=TN, rpc=RPC, tr=TR, nti=NTI,
 %%
 emit_base_word(Prog0, L) when is_list(L) ->
     lists:foldl(fun(Op, P0) -> emit_base_word(P0, Op) end, Prog0, L);
-emit_base_word(Prog0, #j1comment{}) -> Prog0;
-emit_base_word(Prog0, #j1jump{condition = Cond, label = F}) ->
-    JType = case Cond of
-                false -> ?J1INSTR_JUMP;
-                z -> ?J1INSTR_JUMP_COND
-            end,
-    Prog1 = emit(Prog0, <<JType:?J1INSTR_WIDTH, F:?J1OP_INDEX_WIDTH>>),
-    emit(Prog1, <<0:16>>); % padding for long jump TODO?
-
-emit_base_word(Prog0 = #j1bin_prog{pc = PC, labels = Labels, lpatches = Patch},
-               #j1label{label=F}) ->
-    Labels1 = orddict:store(F, PC, Labels),
-    Prog0#j1bin_prog{labels = Labels1, lpatches = [PC | Patch]};
 
 %%
 %% Words
@@ -252,12 +274,8 @@ emit_base_word(Prog0, <<"COPY">>) ->
 emit_base_word(Prog0, <<"NOOP">>) ->
     emit_alu(Prog0, #j1alu{op = ?J1OP_T});
 
-emit_base_word(Prog0, #j1atom{id = AtomId}) ->
-    %% TODO: Add bits to mark immediate atoms, ints etc or an arbitrary literal
-    emit(Prog0, <<1:1, AtomId:?J1_LITERAL_BITS>>);
-
 emit_base_word(_Prog, Word) ->
-    ?COMPILE_ERROR1("Word is not defined", Word).
+    ?COMPILE_ERROR1("Base word is not defined", Word).
 
 %%%-----------------------------------------------------------------------------
 

@@ -45,6 +45,9 @@ compile2(Prog0 = #j1prog{}, [#f_export{fn=Fn, arity=Arity} | Tail]) ->
 compile2(Prog0 = #j1prog{}, [<<":">>, ?F_LIT_FUNA, Fn, Arity | Tail]) ->
     Prog1 = prog_add_word(Prog0, #k_local{name=Fn, arity=Arity}),
     compile2(Prog1, Tail);
+compile2(Prog0 = #j1prog{}, [<<";">> | Tail]) ->
+    Prog1 = emit(Prog0, ?F_RET),
+    compile2(Prog1, Tail);
 
 compile2(Prog0 = #j1prog{}, [<<":MODULE">>, Name | Tail]) ->
     compile2(Prog0#j1prog{mod=Name}, Tail);
