@@ -7,7 +7,7 @@
 -include_lib("j1c/include/j1.hrl").
 -include_lib("e4c/include/forth.hrl").
 
-to_iolist(Prog = #j1prog{}) ->
+to_iolist(Prog = #j1bin_prog{}) ->
     Compr = uncompressed, % value: uncompressed | gzipped
     Content = [
 %%        section("LABL", Compr, encode_labels(Compr, Prog)), % goes before code
@@ -34,7 +34,7 @@ encode_tag(uncompressed, T) -> T.
 encode_block(uncompressed, D) -> D.
 %%encode_block(gzipped, D) -> [e4c:varint(iolist_size(D)), zlib:gzip(D)].
 
-encode_literals(Compr, #j1prog{literals=LitTab}) ->
+encode_literals(Compr, #j1bin_prog{literals=LitTab}) ->
     LitTab1 = lists:keysort(2, LitTab),
     LitTab2 = [
         e4c:varint(length(LitTab1)),
@@ -44,7 +44,7 @@ encode_literals(Compr, #j1prog{literals=LitTab}) ->
     Enc1 = encode_block(Compr, LitTab2),
     iolist_to_binary(Enc1).
 
-encode_atoms(Compr, #j1prog{atoms=AtomTab}) ->
+encode_atoms(Compr, #j1bin_prog{atoms=AtomTab}) ->
     AtomTab1 = lists:keysort(2, AtomTab),
     EncodeAtom = fun(Str) ->
             <<(e4c:varint(byte_size(Str)))/binary, Str/binary>>
@@ -56,11 +56,11 @@ encode_atoms(Compr, #j1prog{atoms=AtomTab}) ->
     Enc1 = encode_block(Compr, AtomTab2),
     iolist_to_binary(Enc1).
 
-encode_code(Compr, #j1prog{output=Code}) ->
+encode_code(Compr, #j1bin_prog{output=Code}) ->
     Code2 = encode_block(Compr, Code),
     iolist_to_binary(Code2).
 
-encode_export_fun(#j1prog{atoms=Atoms, dict=Dict}, Name, Arity)
+encode_export_fun(#j1bin_prog{atoms=Atoms, dict=Dict}, Name, Arity)
     when is_binary(Name) ->
         AtomId = orddict:fetch(Name, Atoms),
         Offset = orddict:fetch({Name, Arity}, Dict),
@@ -69,7 +69,7 @@ encode_export_fun(#j1prog{atoms=Atoms, dict=Dict}, Name, Arity)
           (e4c:varint(Arity))/binary,
           (e4c:varint(Offset))/binary>>.
 
-encode_exports(Compr, Prog = #j1prog{exports=Expt}) ->
+encode_exports(Compr, Prog = #j1bin_prog{exports=Expt}) ->
     ExpTab1 = lists:keysort(2, Expt),
     ExpTab2 = [
         e4c:varint(length(ExpTab1)),

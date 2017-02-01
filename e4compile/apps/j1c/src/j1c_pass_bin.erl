@@ -10,42 +10,38 @@
 -module(j1c_pass_bin).
 
 %% API
--export([compile/1, format_j1c_pass1/4]).
+-export([compile/1]).
 
 -include_lib("e4c/include/forth.hrl").
 -include_lib("e4c/include/e4c.hrl").
 -include_lib("j1c/include/j1.hrl").
 
-%% Output of J1C binary pass, contains copies of selected fields in #j1prog{}
--record(j1bin_prog, {
-    labels = orddict:new()      :: orddict:orddict(uint(), uint()),
-    lpatches = []               :: [integer()],
-
-    dict = orddict:new()        :: j1dict(),
-    dict_nif = orddict:new()    :: j1nif_dict(),
-    pc = 0                      :: integer(),
-    output = []                 :: j1bin_code()
-}).
--type j1bin_prog() :: #j1bin_prog{}.
-
-compile(Input = #j1prog{}) ->
+compile(Input = #j1prog{dict = IDict,
+                        dict_nif = IDictNif,
+                        literals = ILiterals,
+                        exports = IExports,
+                        atoms = IAtoms}) ->
     Prog0 = #j1bin_prog{
-        dict = Input#j1prog.dict,
-        dict_nif = Input#j1prog.dict_nif
+        dict     = IDict,
+        dict_nif = IDictNif,
+        literals = ILiterals,
+        exports  = IExports,
+        atoms    = IAtoms
     },
 
     Prog1 = process_words(Prog0, Input#j1prog.output),
 
     %% Print the output
     Bin = lists:reverse(Prog1#j1bin_prog.output),
-    Prog2 = Prog1#j1bin_prog{output= Bin},
+    Prog2 = Prog1#j1bin_prog{output = Bin},
+
     %Patched = apply_patches(Output, Prog1#j1bin.patch_table, []),
     %Prog2 = Prog1#j1bin{output=Patched},
     file:write_file("j1c_pass_bin.txt",
                     iolist_to_binary(io_lib:format("~p", [Bin]))),
 
-%%    io:format("~s~n~s~n", [color:redb("J1C PASS 1"),
-%%                           format_j1c_pass1(Prog2, 0, Patched, [])]),
+    io:format("~s~n~s~n", [color:redb("J1C PASS 1"),
+                           j1c_disasm:disasm(Prog2, Bin)]),
     Prog2.
 
 %%%-----------------------------------------------------------------------------
@@ -69,7 +65,7 @@ process_words(Prog0 = #j1bin_prog{}, [Word | Tail]) when is_binary(Word) ->
     %% First check if it is accidentally an integer
     case (catch erlang:binary_to_integer(Word)) of
         X when is_integer(X) ->
-            ProgA = emit_lit(Prog0, integer, X),
+            ProgA = emit_lit(Prog0, ?J1LIT_INTEGER, X),
             process_words(ProgA, Tail);
         {'EXIT', {badarg, _}} ->
             %% Possibly a word, try resolve
@@ -85,7 +81,11 @@ process_words(Prog0, [#j1comment{} | Tail]) ->
 
 process_words(Prog0, [#j1atom{id = AtomId} | Tail]) ->
     %% TODO: Add bits to mark immediate atoms, ints etc or an arbitrary literal
-    Prog1 = emit(Prog0, <<1:1, AtomId:?J1_LITERAL_BITS>>),
+    Prog1 = emit_lit(Prog0, ?J1LIT_ATOM, AtomId),
+    process_words(Prog1, Tail);
+
+process_words(Prog0, [#j1lit{id = LitId} | Tail]) ->
+    Prog1 = emit_lit(Prog0, ?J1LIT_LITERAL, LitId),
     process_words(Prog1, Tail);
 
 process_words(Prog0, [#j1jump{condition = Cond, label = F} | Tail]) ->
@@ -93,9 +93,9 @@ process_words(Prog0, [#j1jump{condition = Cond, label = F} | Tail]) ->
                 false -> ?J1INSTR_JUMP;
                 z -> ?J1INSTR_JUMP_COND
             end,
-    Prog1 = emit(Prog0, <<JType:?J1INSTR_WIDTH, F:?J1OP_INDEX_WIDTH>>),
-    Prog2 = emit(Prog1, <<0:16>>), % padding for long jump TODO?
-    process_words(Prog2, Tail);
+    Prog1 = emit(Prog0, <<JType:?J1INSTR_WIDTH,
+                          F:?J1OP_ADDR_WIDTH/big-signed>>),
+    process_words(Prog1, Tail);
 
 process_words(Prog0 = #j1bin_prog{pc = PC, labels = Labels, lpatches = Patch},
               [#j1label{label = F} | Tail]) ->
@@ -123,8 +123,7 @@ prog_find_word(#j1bin_prog{dict_nif = NifDict, dict = Dict},
                 {ok, Index2} -> Index2;
                 error -> not_found
             end
-    end;
-prog_find_word(_, _) -> not_found.
+    end.
 
 %% @doc Emits a CALL instruction with Index (signed) into the code.
 %% Negative indices point to NIF functions
@@ -132,7 +131,7 @@ emit_call(Prog0 = #j1bin_prog{}, Index)
     when Index < 1 bsl ?J1OP_INDEX_WIDTH, Index > -(1 bsl ?J1OP_INDEX_WIDTH)
     ->
     emit(Prog0, <<?J1INSTR_CALL:?J1INSTR_WIDTH,
-                  Index:?J1OP_INDEX_WIDTH/signed>>).
+                  Index:?J1OP_ADDR_WIDTH/big-signed>>).
 
 %%emit(Prog0 = #j1bin{output=Out, pc=PC}, #j1patch{}=Patch) ->
 %%    Prog0#j1bin{output=[Patch | Out],
@@ -286,80 +285,8 @@ emit_base_word(_Prog, Word) ->
 
 %%%-----------------------------------------------------------------------------
 
-format_j1c_pass1(_Prog, _Pc, [], Accum) -> lists:reverse(Accum);
-format_j1c_pass1(Prog, Pc, [H | Tail], Accum) ->
-    format_j1c_pass1(Prog, Pc + 1, Tail, [
-        format_j1c_op(Prog, H),
-        io_lib:format("~4.16.0B: ", [Pc]) | Accum
-    ]).
-
-format_j1c_op(_Prog, <<1:1, Lit:(?J1BITS - 1)/signed>>) ->
-    io_lib:format("~s ~p~n", [color:blueb("LIT"), Lit]);
-format_j1c_op(Prog, <<?J1INSTR_CALL:?J1INSTR_WIDTH,
-                      Addr:?J1OP_INDEX_WIDTH/signed>>) ->
-    io_lib:format("~s ~s~n", [color:green("CALL"), whereis_addr(Prog, Addr)]);
-format_j1c_op(_Prog, <<?J1INSTR_JUMP:?J1INSTR_WIDTH,
-                       Addr:?J1OP_INDEX_WIDTH/signed>>) ->
-    io_lib:format("~s ~4.16.0B~n", [color:green("JMP"), Addr]);
-format_j1c_op(_Prog, <<?J1INSTR_JUMP_COND:?J1INSTR_WIDTH,
-                       Addr:?J1OP_INDEX_WIDTH/signed>>) ->
-    io_lib:format("~s ~4.16.0B~n", [color:green("JZ"), Addr]);
-format_j1c_op(_Prog, <<?J1INSTR_ALU:3, RPC:1, Op:4, TN:1, TR:1, NTI:1,
-                       _Unused:1, Ds:2, Rs:2>>) ->
-    format_j1c_alu(RPC, Op, TN, TR, NTI, Ds, Rs);
-format_j1c_op(_Prog, <<Cmd:?J1BITS>>) ->
-    io_lib:format("?UNKNOWN ~4.16.0B~n", [Cmd]).
-
-format_j1c_alu(RPC, Op, TN, TR, NTI, Ds, Rs) ->
-    FormatOffset =
-        fun(_, 0) -> [];
-            (Prefix, 1) -> Prefix ++ "++";
-            (Prefix, 2) -> Prefix ++ "--"
-            end,
-    [
-        io_lib:format("~s", [color:red("ALU." ++ j1_op(Op))]),
-        case RPC of 0 -> []; _ -> " RET" end,
-        case TN of 0 -> []; _ -> " T->N" end,
-        case TR of 0 -> []; _ -> " T->R" end,
-        case NTI of 0 -> []; _ -> " [T]" end,
-        FormatOffset(" DS", Ds),
-        FormatOffset(" RS", Rs),
-        "\n"
-    ].
-
-%%%-----------------------------------------------------------------------------
-
-j1_op(?J1OP_T)                  -> "T";
-j1_op(?J1OP_N)                  -> "N";
-j1_op(?J1OP_T_PLUS_N)           -> "T+N";
-j1_op(?J1OP_T_AND_N)            -> "T&N";
-j1_op(?J1OP_T_OR_N)             -> "T|N";
-j1_op(?J1OP_T_XOR_N)            -> "T^N";
-j1_op(?J1OP_INVERT_T)           -> "~T";
-j1_op(?J1OP_N_EQ_T)             -> "N==T";
-j1_op(?J1OP_N_LESS_T)           -> "N<T";
-j1_op(?J1OP_N_RSHIFT_T)         -> "N>>T";
-j1_op(?J1OP_T_MINUS_1)          -> "T-1";
-j1_op(?J1OP_R)                  -> "R";
-j1_op(?J1OP_INDEX_T)            -> "[T]";
-j1_op(?J1OP_N_LSHIFT_T)         -> "N<<T";
-j1_op(?J1OP_DEPTH)              -> "DEPTH";
-j1_op(?J1OP_N_UNSIGNED_LESS_T)  -> "UN<T".
-
-whereis_addr(#j1bin_prog{dict = Words}, Addr) when Addr >= 0 ->
-    case lists:keyfind(Addr, 2, Words) of
-        {Name, _} -> io_lib:format("'~s'", [Name]);
-        false -> "?"
-    end;
-whereis_addr(#j1bin_prog{dict_nif = Nifs}, Addr) when Addr < 0 ->
-    case lists:keyfind(Addr, 2, Nifs) of
-        {Name, _} -> io_lib:format("~s '~s'", [color:blackb("NIF"), Name]);
-        false -> "?"
-    end.
-
-emit_lit(Prog0 = #j1bin_prog{}, integer, X) ->
-    emit(Prog0, {my_integer, X}).
-    %emit(Prog0, <<1:1, X:?J1_LITERAL_BITS/signed>>).
+emit_lit(Prog0 = #j1bin_prog{}, Type, X) ->
+    emit(Prog0, <<Type:?J1_LITERAL_TAG_BITS, X:?J1_LITERAL_BITS/big>>).
 
 %%emit_lit(Prog0 = #j1prog{}, atom, Word) ->
 %%    {Prog1, AIndex} = atom_index_or_create(Prog0, Word),

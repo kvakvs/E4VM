@@ -232,6 +232,7 @@ literal_index_or_create(Prog0 = #j1prog{lit_id = LitId, literals = Literals},
                         Value) ->
     case orddict:find(Value, Literals) of
         error ->
+%%            io:format("literal create ~p~n", [Value]),
             Prog1 = Prog0#j1prog{
                 lit_id = LitId + 1,
                 literals = orddict:store(Value, LitId, Literals)

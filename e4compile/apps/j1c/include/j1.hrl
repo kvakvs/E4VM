@@ -6,8 +6,11 @@
 
 -define(J1BITS, 16).
 -define(J1INSTR_WIDTH, 3).
--define(J1_LITERAL_BITS, (?J1BITS-1)). % how many bits remain after lit flag bit
+
 -define(J1OP_INDEX_WIDTH, (?J1BITS-?J1INSTR_WIDTH)).
+%% Extended by a 16bit word for jumps and calls
+-define(J1OP_ADDR_WIDTH, (?J1OP_INDEX_WIDTH + 16)).
+
 %% Bit values for the first nibble (Instruction type)
 -define(J1LITERAL,          8). % top bit set for literals
 -define(J1INSTR_JUMP,       0).
@@ -31,6 +34,13 @@
 -define(J1OP_N_LSHIFT_T,    13).
 -define(J1OP_DEPTH,         14).
 -define(J1OP_N_UNSIGNED_LESS_T, 15).
+
+%% Literal tag with value type + bits for literal body
+-define(J1_LITERAL_TAG_BITS, 3).
+-define(J1_LITERAL_BITS, (?J1BITS - ?J1_LITERAL_TAG_BITS)).
+-define(J1LIT_ATOM,     (4+0)).
+-define(J1LIT_LITERAL,  (4+1)).
+-define(J1LIT_INTEGER,  (4+2)).
 
 -type uint() :: non_neg_integer().
 -type uint16() :: 0..65535.
@@ -98,31 +108,47 @@
 %% Output of the J1 forth compiler (J1C Pass 1)
 -record(j1prog, {
     %labels = [] :: [{non_neg_integer(), non_neg_integer()}],
-    label_id = 0 :: uint(), % counter to be used as label generator
+    label_id = 0                :: uint(), % counter to be used as label generator
 
-    mod :: atom(),
-    dict = orddict:new() :: j1dict(),
-    dict_nif = orddict:new() :: j1nif_dict(),
-    exports = [] :: [{binary(), uint()}],
+    mod                         :: atom(),
+    dict = orddict:new()        :: j1dict(),
+    dict_nif = orddict:new()    :: j1nif_dict(),
+    exports = []                :: [{binary(), uint()}],
 
     %% a literal value is the key, and the index in the lit table is the value
-    lit_id = 0 :: integer(),
-    literals = orddict:new() :: orddict:orddict(any(), uint()),
+    lit_id = 0                  :: integer(),
+    literals = orddict:new()    :: orddict:orddict(any(), uint()),
 
-    vars = orddict:new() :: orddict:orddict(),
-    modules = orddict:new() :: orddict:orddict(),
+    vars = orddict:new()        :: orddict:orddict(),
+    modules = orddict:new()     :: orddict:orddict(),
 
-    condstack = [] :: [uint()],
-    loopstack = [] :: [uint()],
+    condstack = []              :: [uint()],
+    loopstack = []              :: [uint()],
     %% maps code address (where jump instruction is written) to another code
     %% address (jump destination) processed on the 2nd pass
 %%    patch_table = orddict:new() :: orddict:orddict(integer(), integer()),
 
-    atom_id = 0 :: uint(),
-    atoms = orddict:new() :: orddict:orddict(binary(), uint()),
+    atom_id = 0                 :: uint(),
+    atoms = orddict:new()       :: orddict:orddict(binary(), uint()),
 
-    output = [] :: j1forth_code()
+    output = []                 :: j1forth_code()
 }).
 -type j1prog() :: #j1prog{}.
+
+%% Output of J1C binary pass, contains copies of selected fields in #j1prog{}
+-record(j1bin_prog, {
+    labels = orddict:new()      :: orddict:orddict(uint(), uint()),
+    lpatches = []               :: [integer()],
+
+    literals = orddict:new()    :: orddict:orddict(any(), uint()),
+    exports = []                :: [{binary(), uint()}],
+    atoms = orddict:new()       :: orddict:orddict(binary(), uint()),
+
+    dict = orddict:new()        :: j1dict(),
+    dict_nif = orddict:new()    :: j1nif_dict(),
+    pc = 0                      :: integer(),
+    output = []                 :: j1bin_code()
+}).
+-type j1bin_prog() :: #j1bin_prog{}.
 
 -endif. % J1_HEADER
