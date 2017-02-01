@@ -7,16 +7,22 @@
 -define(J1BITS, 16).
 -define(J1INSTR_WIDTH, 3).
 
--define(J1OP_INDEX_WIDTH, (?J1BITS-?J1INSTR_WIDTH)).
+-define(J1OP_INDEX_WIDTH, (?J1BITS - ?J1INSTR_WIDTH)).
 %% Extended by a 16bit word for jumps and calls
 -define(J1OP_ADDR_WIDTH, (?J1OP_INDEX_WIDTH + 16)).
 
 %% Bit values for the first nibble (Instruction type)
--define(J1LITERAL,          8). % top bit set for literals
--define(J1INSTR_JUMP,       0).
--define(J1INSTR_JUMP_COND,  1).
--define(J1INSTR_CALL,       2).
--define(J1INSTR_ALU,        3).
+%% Literal tag with value type + bits for literal body
+-define(J1_LITERAL_TAG_BITS, 3).
+-define(J1_LITERAL_BITS, (?J1BITS - ?J1_LITERAL_TAG_BITS)).
+-define(J1LIT_ATOM,     (4+0)).
+-define(J1LIT_LITERAL,  (4+1)).
+-define(J1LIT_INTEGER,  (4+2)).
+-define(J1LITERAL,          4). % top bit set for literals, other bits set type
+-define(J1INSTR_JUMP,       0). % may be extended by 16 bit varint
+-define(J1INSTR_JUMP_COND,  1). % may be extended by 16 bit varint
+-define(J1INSTR_CALL,       2). % may be extended by 16 bit varint
+-define(J1INSTR_ALU,        3). % always 16 bit
 %% Bit values for the second nibble (Operation)
 -define(J1OP_T,             0).
 -define(J1OP_N,             1).
@@ -34,13 +40,6 @@
 -define(J1OP_N_LSHIFT_T,    13).
 -define(J1OP_DEPTH,         14).
 -define(J1OP_N_UNSIGNED_LESS_T, 15).
-
-%% Literal tag with value type + bits for literal body
--define(J1_LITERAL_TAG_BITS, 3).
--define(J1_LITERAL_BITS, (?J1BITS - ?J1_LITERAL_TAG_BITS)).
--define(J1LIT_ATOM,     (4+0)).
--define(J1LIT_LITERAL,  (4+1)).
--define(J1LIT_INTEGER,  (4+2)).
 
 -type uint() :: non_neg_integer().
 -type uint16() :: 0..65535.
