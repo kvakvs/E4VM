@@ -15,7 +15,7 @@ compile(ModuleName, SrcForth) ->
     % Module name should always be #0
     {Prog0A, _} = atom_index_or_create(Prog0, atom_to_binary(ModuleName, utf8)),
 
-    Prog1 = compile2(Prog0A, preprocess(SrcForth, [])),
+    Prog1 = process_words(Prog0A, preprocess(SrcForth, [])),
 
     %% Print the output
     J1Forth = lists:reverse(Prog1#j1prog.output),
@@ -36,40 +36,40 @@ preprocess([H | T], Acc) -> preprocess(T, [H | Acc]).
 
 %%%-----------------------------------------------------------------------------
 
-compile2(Prog0 = #j1prog{}, []) -> Prog0;
-compile2(Prog0 = #j1prog{}, [#f_export{fn=Fn, arity=Arity} | Tail]) ->
+process_words(Prog0 = #j1prog{}, []) -> Prog0;
+process_words(Prog0 = #j1prog{}, [#f_export{fn=Fn, arity=Arity} | Tail]) ->
     Prog1 = prog_add_export(Prog0, Fn, Arity),
-    compile2(Prog1, Tail);
+    process_words(Prog1, Tail);
 
 %% NEW FUNCTION -- : MFA ... ;
-compile2(Prog0 = #j1prog{}, [<<":">>, ?F_LIT_FUNA, Fn, Arity | Tail]) ->
+process_words(Prog0 = #j1prog{}, [<<":">>, ?F_LIT_FUNA, Fn, Arity | Tail]) ->
     Prog1 = prog_add_word(Prog0, #k_local{name=Fn, arity=Arity}),
-    compile2(Prog1, Tail);
-compile2(Prog0 = #j1prog{}, [<<";">> | Tail]) ->
+    process_words(Prog1, Tail);
+process_words(Prog0 = #j1prog{}, [<<";">> | Tail]) ->
     Prog1 = emit(Prog0, ?F_RET),
-    compile2(Prog1, Tail);
+    process_words(Prog1, Tail);
 
-compile2(Prog0 = #j1prog{}, [<<":MODULE">>, Name | Tail]) ->
-    compile2(Prog0#j1prog{mod=Name}, Tail);
-compile2(Prog0 = #j1prog{}, [<<":">>, Name | Tail]) ->
+process_words(Prog0 = #j1prog{}, [<<":MODULE">>, Name | Tail]) ->
+    process_words(Prog0#j1prog{mod=Name}, Tail);
+process_words(Prog0 = #j1prog{}, [<<":">>, Name | Tail]) ->
     Prog1 = prog_add_word(Prog0, Name),
-    compile2(Prog1, Tail);
-compile2(Prog0 = #j1prog{}, [<<":NIF">>, Name, Index0 | Tail]) ->
+    process_words(Prog1, Tail);
+process_words(Prog0 = #j1prog{}, [<<":NIF">>, Name, Index0 | Tail]) ->
     Index1 = binary_to_integer(Index0),
     Prog1 = prog_add_nif(Prog0, Name, Index1),
-    compile2(Prog1, Tail);
+    process_words(Prog1, Tail);
 
 %% --- Conditions ---
-compile2(Prog0 = #j1prog{}, [<<"IF">> | Tail]) ->
+process_words(Prog0 = #j1prog{}, [<<"IF">> | Tail]) ->
     {F, Prog1} = begin_condition(Prog0),
     Prog2 = emit(Prog1, #j1jump{label = F, condition = z}),
-    compile2(Prog2, Tail);
-compile2(Prog0 = #j1prog{}, [<<"UNLESS">> | Tail]) ->
-    compile2(Prog0, [<<"INVERT">>, <<"IF">> | Tail]);
-compile2(Prog0 = #j1prog{}, [<<"THEN">> | Tail]) ->
+    process_words(Prog2, Tail);
+process_words(Prog0 = #j1prog{}, [<<"UNLESS">> | Tail]) ->
+    process_words(Prog0, [<<"INVERT">>, <<"IF">> | Tail]);
+process_words(Prog0 = #j1prog{}, [<<"THEN">> | Tail]) ->
     Prog1 = cond_update_label(Prog0, 0),
-    compile2(Prog1, Tail);
-compile2(Prog0 = #j1prog{}, [<<"ELSE">> | Tail]) ->
+    process_words(Prog1, Tail);
+process_words(Prog0 = #j1prog{}, [<<"ELSE">> | Tail]) ->
     %% combine IF and THEN - update a label address for previous IF and create
     %% a new label and jump instruction to jump over the code after ELSE
     %% IF[] ----------------> ELSE -------------> THEN[upd patchtable]
@@ -85,48 +85,48 @@ compile2(Prog0 = #j1prog{}, [<<"ELSE">> | Tail]) ->
     {F, Prog2} = begin_condition(Prog1),
     Prog2 = emit(Prog1, #j1jump{label = F}),
     %% Wait for THEN and do the same again to finalize the condition
-    compile2(Prog2, Tail);
+    process_words(Prog2, Tail);
 
 %% --- Loops (started with a BEGIN) ---
-compile2(Prog0 = #j1prog{}, [<<"BEGIN">> | Tail]) ->
+process_words(Prog0 = #j1prog{}, [<<"BEGIN">> | Tail]) ->
     {_F, Prog1} = begin_loop(Prog0),
-    compile2(Prog1, Tail);
-compile2(Prog0 = #j1prog{}, [<<"AGAIN">> | Tail]) -> % endless loop
+    process_words(Prog1, Tail);
+process_words(Prog0 = #j1prog{}, [<<"AGAIN">> | Tail]) -> % endless loop
     %% Just emit jump back to the BEGIN instruction
     {Begin, Prog1} = end_loop(Prog0),
     Prog2 = emit(Prog1, #j1jump{label = Begin}),
-    compile2(Prog2, Tail);
-compile2(Prog0 = #j1prog{}, [<<"UNTIL">> | Tail]) -> % conditional if-zero loop
+    process_words(Prog2, Tail);
+process_words(Prog0 = #j1prog{}, [<<"UNTIL">> | Tail]) -> % conditional if-zero loop
     %% Emit conditional jump back to the BEGIN instruction
     {Begin, Prog1} = end_loop(Prog0),
     Prog2 = emit(Prog1, #j1jump{label = Begin}),
-    compile2(Prog2, Tail);
+    process_words(Prog2, Tail);
 
 %% TODO: EQU, maybe VAR, ARR?
 
-compile2(Prog0 = #j1prog{}, [?F_LIT_MFA, M, F, A | Tail]) -> % mfa literal
+process_words(Prog0 = #j1prog{}, [?F_LIT_MFA, M, F, A | Tail]) -> % mfa literal
     Prog1 = emit_lit(Prog0, mfa, {M, F, A}),
-    compile2(Prog1, Tail);
-compile2(Prog0 = #j1prog{}, [?F_LIT_FUNA, Fn, Arity | Tail]) ->
+    process_words(Prog1, Tail);
+process_words(Prog0 = #j1prog{}, [?F_LIT_FUNA, Fn, Arity | Tail]) ->
     Prog1 = emit_lit(Prog0, funarity, {Fn, Arity}),
-    compile2(Prog1, Tail);
-compile2(Prog0 = #j1prog{}, [#k_atom{val = A} | Tail]) ->
+    process_words(Prog1, Tail);
+process_words(Prog0 = #j1prog{}, [#k_atom{val = A} | Tail]) ->
     Prog1 = emit_lit(Prog0, atom, A),
-    compile2(Prog1, Tail);
-compile2(Prog0 = #j1prog{}, [#k_literal{val = L} | Tail]) ->
+    process_words(Prog1, Tail);
+process_words(Prog0 = #j1prog{}, [#k_literal{val = L} | Tail]) ->
     Prog1 = emit_lit(Prog0, arbitrary, L),
-    compile2(Prog1, Tail);
+    process_words(Prog1, Tail);
 
 %% Comment - pass through
-compile2(Prog0 = #j1prog{}, [#f_comment{comment = C} | Tail]) ->
-    compile2(emit(Prog0, #j1comment{comment = C}), Tail);
+process_words(Prog0 = #j1prog{}, [#f_comment{comment = C} | Tail]) ->
+    process_words(emit(Prog0, #j1comment{comment = C}), Tail);
 %% A binary, probably a word? Pass through
-compile2(Prog0 = #j1prog{}, [Bin | Tail]) when is_binary(Bin) ->
-    compile2(emit(Prog0, [Bin]), Tail);
+process_words(Prog0 = #j1prog{}, [Bin | Tail]) when is_binary(Bin) ->
+    process_words(emit(Prog0, [Bin]), Tail);
 
 %% Nothing else worked, look for the word in our dictionaries and base words,
 %% maybe it is a literal, too
-compile2(_Prog0 = #j1prog{}, [Word | _Tail]) ->
+process_words(_Prog0 = #j1prog{}, [Word | _Tail]) ->
     ?COMPILE_ERROR("Unexpected ~p", [Word]).
     %compile2(emit(Prog0, [Word]), Tail).
 

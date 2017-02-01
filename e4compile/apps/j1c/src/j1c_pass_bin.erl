@@ -34,7 +34,7 @@ compile(Input = #j1prog{}) ->
         dict_nif = Input#j1prog.dict_nif
     },
 
-    Prog1 = transform_op(Prog0, Input#j1prog.output),
+    Prog1 = process_words(Prog0, Input#j1prog.output),
 
     %% Print the output
     Bin = lists:reverse(Prog1#j1bin_prog.output),
@@ -50,56 +50,63 @@ compile(Input = #j1prog{}) ->
 
 %%%-----------------------------------------------------------------------------
 
--spec transform_op(j1bin_prog(), j1forth_code()) -> j1bin_prog().
-transform_op(Prog0 = #j1bin_prog{}, []) -> Prog0;
+-spec process_words(j1bin_prog(), j1forth_code()) -> j1bin_prog().
+process_words(Prog0 = #j1bin_prog{}, []) -> Prog0;
 
-transform_op(Prog0, [OpList | Tail]) when is_list(OpList) ->
-    Prog1 = lists:foldl(fun(Op, P0) -> transform_op(P0, [Op]) end,
+process_words(Prog0, [OpList | Tail]) when is_list(OpList) ->
+    Prog1 = lists:foldl(fun(Op, P0) -> process_words(P0, [Op]) end,
                         Prog0,
                         OpList),
-    transform_op(Prog1, Tail);
+    process_words(Prog1, Tail);
 
-transform_op(Prog0 = #j1bin_prog{}, [?F_RET | Tail]) ->
+process_words(Prog0 = #j1bin_prog{}, [?F_RET | Tail]) ->
     Prog1 = emit_alu(Prog0, #j1alu{op = 0, rpc = 1, ds = 2}),
-    transform_op(Prog1, Tail);
+    process_words(Prog1, Tail);
 
 %% Nothing else worked, look for the word in our dictionaries and base words,
 %% maybe it is a literal, too
-transform_op(Prog0 = #j1bin_prog{}, [Word | Tail]) when is_binary(Word) ->
-    %% Possibly a word, try resolve
-    Prog1 = case prog_find_word(Prog0, Word) of
-                not_found -> emit_base_word(Prog0, Word);
-                Index -> emit_call(Prog0, Index)
-            end,
-    transform_op(Prog1, Tail);
+process_words(Prog0 = #j1bin_prog{}, [Word | Tail]) when is_binary(Word) ->
+    %% First check if it is accidentally an integer
+    case (catch erlang:binary_to_integer(Word)) of
+        X when is_integer(X) ->
+            ProgA = emit_lit(Prog0, integer, X),
+            process_words(ProgA, Tail);
+        {'EXIT', {badarg, _}} ->
+            %% Possibly a word, try resolve
+            Prog1 = case prog_find_word(Prog0, Word) of
+                        not_found -> emit_base_word(Prog0, Word);
+                        Index -> emit_call(Prog0, Index)
+                    end,
+            process_words(Prog1, Tail)
+    end;
 
-transform_op(Prog0, [#j1comment{} | Tail]) ->
-    transform_op(Prog0, Tail);
+process_words(Prog0, [#j1comment{} | Tail]) ->
+    process_words(Prog0, Tail);
 
-transform_op(Prog0, [#j1atom{id = AtomId} | Tail]) ->
+process_words(Prog0, [#j1atom{id = AtomId} | Tail]) ->
     %% TODO: Add bits to mark immediate atoms, ints etc or an arbitrary literal
     Prog1 = emit(Prog0, <<1:1, AtomId:?J1_LITERAL_BITS>>),
-    transform_op(Prog1, Tail);
+    process_words(Prog1, Tail);
 
-transform_op(Prog0, [#j1jump{condition = Cond, label = F} | Tail]) ->
+process_words(Prog0, [#j1jump{condition = Cond, label = F} | Tail]) ->
     JType = case Cond of
                 false -> ?J1INSTR_JUMP;
                 z -> ?J1INSTR_JUMP_COND
             end,
     Prog1 = emit(Prog0, <<JType:?J1INSTR_WIDTH, F:?J1OP_INDEX_WIDTH>>),
     Prog2 = emit(Prog1, <<0:16>>), % padding for long jump TODO?
-    transform_op(Prog2, Tail);
+    process_words(Prog2, Tail);
 
-transform_op(Prog0 = #j1bin_prog{pc = PC, labels = Labels, lpatches = Patch},
-             [#j1label{label = F} | Tail]) ->
+process_words(Prog0 = #j1bin_prog{pc = PC, labels = Labels, lpatches = Patch},
+              [#j1label{label = F} | Tail]) ->
     Labels1 = orddict:store(F, PC, Labels),
     Prog1 = Prog0#j1bin_prog{
         labels = Labels1,
         lpatches = [PC | Patch]
     },
-    transform_op(Prog1, Tail);
+    process_words(Prog1, Tail);
 
-transform_op(_Prog, [Word | _Tail]) ->
+process_words(_Prog, [Word | _Tail]) ->
     ?COMPILE_ERROR1("Word is unexpected", Word).
 
 
@@ -350,11 +357,13 @@ whereis_addr(#j1bin_prog{dict_nif = Nifs}, Addr) when Addr < 0 ->
         false -> "?"
     end.
 
+emit_lit(Prog0 = #j1bin_prog{}, integer, X) ->
+    emit(Prog0, {my_integer, X}).
+    %emit(Prog0, <<1:1, X:?J1_LITERAL_BITS/signed>>).
+
 %%emit_lit(Prog0 = #j1prog{}, atom, Word) ->
 %%    {Prog1, AIndex} = atom_index_or_create(Prog0, Word),
 %%    emit(Prog1, <<1:1, AIndex:?J1_LITERAL_BITS>>);
-%%%%emit_lit(Prog0 = #j1prog{}, integer, X) ->
-%%%%    emit(Prog0, <<1:1, X:?J1_LITERAL_BITS/signed>>);
 %%emit_lit(Prog0 = #j1prog{}, mfa, {M, F, A}) ->
 %%    M1 = eval(M),
 %%    F1 = eval(F),
