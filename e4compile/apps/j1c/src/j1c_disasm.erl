@@ -10,11 +10,11 @@ disasm(Prog, Bin) ->
     unicode:characters_to_binary(Out, utf8).
 
 disasm(_Prog, _Pc, <<>>, Accum) -> lists:reverse(Accum);
-disasm(Prog, Pc, <<H:2/binary, Tail/binary>> = Data, Accum) ->
-%%    <<InstrTag:?J1INSTR_WIDTH, _:?J1OP_INDEX_WIDTH>> = H,
+disasm(Prog, Pc, <<H:2/binary, Tail/binary>>, Accum) ->
+    <<H1:16>> = H,
     disasm(Prog, Pc + 1, Tail, [
         format_j1c_op(Prog, H),
-        io_lib:format("~4.16.0B: ", [Pc]) | Accum
+        io_lib:format("[~4.16.0B] ~4.16.0B: ", [Pc, H1]) | Accum
     ]).
 
 %%% ---------------------------------------------------------------------------
@@ -25,9 +25,9 @@ format_j1c_op(_Prog, <<LitTag:?J1INSTR_WIDTH,
          orelse LitTag == ?J1LIT_ATOM
          orelse LitTag == ?J1LIT_LITERAL
     ->
-    LitType = fun(?J1LIT_ATOM) -> "atom";
-                 (?J1LIT_INTEGER) -> "int";
-                 (?J1LIT_LITERAL) -> "arbitrary" end,
+    LitType = fun(?J1LIT_ATOM) -> "A";
+                 (?J1LIT_INTEGER) -> "i";
+                 (?J1LIT_LITERAL) -> "L" end,
     io_lib:format("~s ~s: ~p~n", [color:blueb("LIT"), LitType(LitTag), Lit]);
 
 %% Format a normal opcode, 16bit

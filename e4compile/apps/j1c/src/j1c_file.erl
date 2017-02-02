@@ -64,7 +64,7 @@ encode_export_fun(#j1bin_prog{atoms=Atoms, dict=Dict}, Name, Arity)
     when is_binary(Name) ->
         AtomId = orddict:fetch(Name, Atoms),
         Offset = orddict:fetch({Name, Arity}, Dict),
-        io:format("write export ~s/~p at ~p~n", [Name, Arity, Offset]),
+%%        io:format("write export ~s/~p at ~p~n", [Name, Arity, Offset]),
         <<(e4c:varint(AtomId))/binary,
           (e4c:varint(Arity))/binary,
           (e4c:varint(Offset))/binary>>.
@@ -77,12 +77,3 @@ encode_exports(Compr, Prog = #j1bin_prog{exports=Expt}) ->
     ],
     Enc1 = encode_block(Compr, ExpTab2),
     iolist_to_binary(Enc1).
-
-%%encode_labels(Compr, #j1prog{labels=Labels}) ->
-%%    Labels1 = lists:keysort(1, Labels),
-%%    Labels2 = [
-%%        e4c:varint(length(Labels1)),
-%%        [e4c:varint(Offset) || {_Lbl, Offset} <- Labels1]
-%%    ],
-%%    Enc1 = encode_block(Compr, Labels2),
-%%    iolist_to_binary(Enc1).
