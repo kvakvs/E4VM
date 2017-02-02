@@ -180,7 +180,7 @@ var(Name) when is_atom(Name)    -> #k_var{name=atom_to_binary(Name, utf8)}.
 mark_new_arg(#k_var{} = V) -> #f_decl_arg{var=var(V)}.
 
 element(Index, Tuple) ->
-    [eval(Tuple), eval(Index), <<".GET-ELEMENT">>].
+    [eval(Tuple), eval(Index), ?F_GETELEMENT].
 
 make_mfarity('.', F, Arity) when is_atom(F) ->
     #k_local{name=F, arity=Arity};

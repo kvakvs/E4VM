@@ -89,12 +89,23 @@ process_words(Prog0, [#j1lit{id = LitId} | Tail]) ->
     process_words(Prog1, Tail);
 
 process_words(Prog0, [#j1ld{index = Index} | Tail]) ->
+    ?ASSERT(signed_value_fits(Index, ?J1OP_INDEX_WIDTH),
+            "LD opcode index is too large"),
     Prog1 = emit(Prog0, <<?J1INSTR_LD:?J1INSTR_WIDTH,
                           Index:?J1OP_INDEX_WIDTH/big-signed>>),
     process_words(Prog1, Tail);
 
 process_words(Prog0, [#j1st{index = Index} | Tail]) ->
+    ?ASSERT(signed_value_fits(Index, ?J1OP_INDEX_WIDTH),
+            "ST opcode index is too large"),
     Prog1 = emit(Prog0, <<?J1INSTR_ST:?J1INSTR_WIDTH,
+                          Index:?J1OP_INDEX_WIDTH/big-signed>>),
+    process_words(Prog1, Tail);
+
+process_words(Prog0, [#j1getelement{index = Index} | Tail]) ->
+    ?ASSERT(signed_value_fits(Index, ?J1OP_INDEX_WIDTH),
+            "Get-element opcode index is too large"),
+    Prog1 = emit(Prog0, <<?J1INSTR_GETELEMENT:?J1INSTR_WIDTH,
                           Index:?J1OP_INDEX_WIDTH/big-signed>>),
     process_words(Prog1, Tail);
 

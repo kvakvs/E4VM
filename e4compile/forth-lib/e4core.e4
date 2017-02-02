@@ -7,13 +7,13 @@
 :NIF .ENTER  -10 ( TODO: maybe allocate frame on dynamic heap? )
 :NIF .LEAVE  -11 ( TODO: if on dynamic heap maybe just let GC take it )
 :NIF .LEAVE0 -11 ( same as LEAVE, only one can be in the code )
-( :NIF .LD     -12 is ALU opcode now )
-( :NIF .ST     -13 is ALU opcode now )
-:NIF .APPLY  -14
-:NIF .CALL   -15
-:NIF .BIF    -16
-:NIF .JUMP   -17
-:NIF .CALL-TAIL -18
+( .LD is an instruction now )
+( .ST is an instruction now )
+:NIF .APPLY  -12
+:NIF .CALL   -13
+:NIF .BIF    -14
+( :NIF .JUMP   -15 )
+:NIF .CALL-TAIL -16
 
 ( ------ comparison tests ------ )
 :NIF ==     -20
@@ -21,9 +21,9 @@
 
 ( ------ tuple stuff ------ )
 :NIF .SET-ELEMENT       -30
-:NIF .GET-ELEMENT       -31
-:NIF .ALLOC-RAW-TUPLE   -32 ( allocate tuple but do not set its cells )
-:NIF .MAKE-TUPLE        -33 ( ... N -- Tuple , create from N values on stack )
+( .GET-ELEMENT is an instruction now )
+:NIF .ALLOC-RAW-TUPLE   -31 ( allocate tuple but do not set its cells )
+:NIF .MAKE-TUPLE        -32 ( ... N -- Tuple , create from N values on stack )
 
 ( ------ type tests ------ )
 :NIF .TUPLE?    -40

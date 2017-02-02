@@ -135,6 +135,7 @@
 -define(F_LIT_NIL,      <<".NIL">>).    % literal nil []
 
 %% Words and opcodes used for various stuff
+-define(F_GETELEMENT,   <<"GET-ELEMENT">>). % ( Tuple Index -- Element )
 -define(F_IS_NIL,       <<".NIL?">>).   % compare top with literal nil []
 -define(F_LD,           <<"LD">>).      % ALU opcode to load a variable or arg
 -define(F_ST,           <<"ST">>).      % ALU opcode to store a variable or arg

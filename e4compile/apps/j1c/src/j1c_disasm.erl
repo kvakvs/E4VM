@@ -16,6 +16,8 @@ disasm(Prog, Pc, <<H:2/binary, Tail/binary>> = Data, Accum) ->
         io_lib:format("~4.16.0B: ", [Pc]) | Accum
     ]).
 
+%%% ---------------------------------------------------------------------------
+
 format_j1c_op(_Prog, <<Type:?J1_LITERAL_TAG_BITS,
                        Lit:?J1_LITERAL_BITS/signed-big>>)
     when Type >= ?J1LITERAL
@@ -41,14 +43,22 @@ format_j1c_op(_Prog, <<?J1INSTR_ALU:?J1INSTR_WIDTH,
                        TN:1, TR:1, NTI:1,
                        Ds:2, Rs:2>>) ->
     format_j1c_alu(RPC, Op, TN, TR, NTI, Ds, Rs);
+
 format_j1c_op(_Prog, <<?J1INSTR_LD:?J1INSTR_WIDTH,
                       Index:?J1OP_INDEX_WIDTH/signed-big>>) ->
     io_lib:format("~s ~p~n", [color:green("LD"), Index]);
 format_j1c_op(_Prog, <<?J1INSTR_ST:?J1INSTR_WIDTH,
                        Index:?J1OP_INDEX_WIDTH/signed-big>>) ->
     io_lib:format("~s ~p~n", [color:green("ST"), Index]);
+
+format_j1c_op(_Prog, <<?J1INSTR_GETELEMENT:?J1INSTR_WIDTH,
+                       Index:?J1OP_INDEX_WIDTH/signed-big>>) ->
+    io_lib:format("~s ~p~n", [color:green("GET-ELEMENT"), Index]);
+
 format_j1c_op(_Prog, <<Cmd:?J1BITS>>) ->
     io_lib:format("?UNKNOWN ~4.16.0B~n", [Cmd]).
+
+%%% ---------------------------------------------------------------------------
 
 format_j1c_alu(RPC, Op, TN, TR, NTI, Ds, Rs) ->
     FormatOffset =

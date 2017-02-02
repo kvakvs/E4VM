@@ -123,6 +123,9 @@ process_words(Prog0 = #j1prog{}, [Var, ?F_LD | Tail]) ->
 process_words(Prog0 = #j1prog{}, [Var, ?F_ST | Tail]) ->
     Prog1 = emit(Prog0, #j1st{index = erlang:binary_to_integer(Var)}),
     process_words(Prog1, Tail);
+process_words(Prog0 = #j1prog{}, [Index, ?F_GETELEMENT | Tail]) ->
+    Prog1 = emit(Prog0, #j1getelement{index = erlang:binary_to_integer(Index)}),
+    process_words(Prog1, Tail);
 
 %% Comment - pass through
 process_words(Prog0 = #j1prog{}, [#f_comment{comment = C} | Tail]) ->

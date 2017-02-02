@@ -280,7 +280,7 @@ emit_match(Scope, k_tuple, #k_tuple{es=LhsElements}, Rhs) ->
         fun(I) ->
             %% Naive approach is to retrieve it every time. Rhs is a temporary
             %% for non trivial expressions so it should be fast enough
-            [e4_f1:eval(Rhs), e4_f1:lit(I), <<".GET-ELEMENT">>]
+            [e4_f1:eval(Rhs), e4_f1:lit(I), ?F_GETELEMENT]
         end,
         lists:seq(1, length(LhsElements))
     ),

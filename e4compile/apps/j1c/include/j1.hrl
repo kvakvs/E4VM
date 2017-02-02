@@ -14,10 +14,11 @@
 %% Literal tag with value type + bits for literal body
 -define(J1_LITERAL_TAG_BITS, 3).
 -define(J1_LITERAL_BITS, (?J1BITS - ?J1_LITERAL_TAG_BITS)).
+
 -define(J1LIT_ATOM,     (8+0)).
 -define(J1LIT_LITERAL,  (8+1)).
 -define(J1LIT_INTEGER,  (8+2)).
--define(J1LITERAL,          4). % top bit set for literals, other bits set type
+-define(J1LITERAL,          8). % top bit set for literals, other bits set type
 
 -define(J1INSTR_JUMP,       0). % may be extended by 16 bit varint
 -define(J1INSTR_JUMP_COND,  1). % may be extended by 16 bit varint
@@ -25,6 +26,7 @@
 -define(J1INSTR_ALU,        3). % always 16 bit
 -define(J1INSTR_LD,         4).
 -define(J1INSTR_ST,         5).
+-define(J1INSTR_GETELEMENT, 6).
 
 %% 4-bit values (ALU Operation)
 -define(J1ALU_T,             0).
@@ -48,9 +50,9 @@
 -type uint16() :: 0..65535.
 
 -record(j1alu, {
-    op = 0 :: 0..15,    % one of ?J1OP_* macros.
-    tn = 0 :: 0..1,     % copy T (stack top) -> N (next after stack top)
+    op = 0 :: 0..15,    % one of ?J1ALU_* macros.
     rpc = 0 :: 0..1,    % copy R (return stack top) to PC (program counter)
+    tn = 0 :: 0..1,     % copy T (stack top) -> N (next after stack top)
     tr = 0 :: 0..1,     % copy T (stack top) to R (return stack top)
     nti = 0 :: 0..1,    % indexed RAM access N->[T]
     ds = 0 :: -1..3,    % 2 bits, signed increment of data stack ds=2 == -1
@@ -67,6 +69,11 @@
     index :: integer()
 }).
 -type j1st() :: #j1st{}.
+
+-record(j1getelement, {
+    index :: uint16()
+}).
+-type j1getelement() :: #j1getelement{}.
 
 -record(j1label, {
     label :: uint()
