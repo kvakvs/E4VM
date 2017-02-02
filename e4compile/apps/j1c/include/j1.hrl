@@ -8,8 +8,6 @@
 -define(J1INSTR_WIDTH, 3).
 
 -define(J1OP_INDEX_WIDTH, (?J1BITS - ?J1INSTR_WIDTH)).
-%% Extended by a 16bit word for jumps and calls
--define(J1OP_ADDR_WIDTH, (?J1OP_INDEX_WIDTH + 16)).
 
 %% Bit values for the first nibble (Instruction type)
 %% Literal tag with value type + bits for literal body

@@ -94,7 +94,7 @@ process_words(Prog0, [#j1jump{condition = Cond, label = F} | Tail]) ->
                 z -> ?J1INSTR_JUMP_COND
             end,
     Prog1 = emit(Prog0, <<JType:?J1INSTR_WIDTH,
-                          F:?J1OP_ADDR_WIDTH/big-signed>>),
+                          F:?J1OP_INDEX_WIDTH/big-signed>>),
     process_words(Prog1, Tail);
 
 process_words(Prog0 = #j1bin_prog{pc = PC, labels = Labels, lpatches = Patch},
@@ -125,13 +125,19 @@ prog_find_word(#j1bin_prog{dict_nif = NifDict, dict = Dict},
             end
     end.
 
-%% @doc Emits a CALL instruction with Index (signed) into the code.
-%% Negative indices point to NIF functions
-emit_call(Prog0 = #j1bin_prog{}, Index)
-    when Index < 1 bsl ?J1OP_INDEX_WIDTH, Index > -(1 bsl ?J1OP_INDEX_WIDTH)
-    ->
+%% @doc Emits a CALL instruction with Label Index (signed) into the code.
+%% Negative indices point to NIF functions. Label indexes are resolved to
+%% relative offsets or addresses and possibly the value bits are extended in
+%% a later pass.
+emit_call(Prog0 = #j1bin_prog{}, Index) ->
+    ?ASSERT(signed_value_fits(Index, ?J1OP_INDEX_WIDTH),
+            "Label index for call instruction is too large"),
     emit(Prog0, <<?J1INSTR_CALL:?J1INSTR_WIDTH,
-                  Index:?J1OP_ADDR_WIDTH/big-signed>>).
+                  Index:?J1OP_INDEX_WIDTH/big-signed>>).
+
+signed_value_fits(Val, Bits) ->
+    <<OutVal:Bits/signed-big>> = <<Val:Bits/signed-big>>,
+    Val =:= OutVal.
 
 %%emit(Prog0 = #j1bin{output=Out, pc=PC}, #j1patch{}=Patch) ->
 %%    Prog0#j1bin{output=[Patch | Out],

@@ -10,35 +10,28 @@ disasm(Prog, Bin) ->
 
 disasm(_Prog, _Pc, <<>>, Accum) -> lists:reverse(Accum);
 disasm(Prog, Pc, <<H:2/binary, Tail/binary>> = Data, Accum) ->
-    <<InstrTag:?J1INSTR_WIDTH, _:?J1OP_INDEX_WIDTH>> = H,
-    case InstrTag of
-        ?J1INSTR_ALU ->
-            disasm(Prog, Pc + 1, Tail, [
-                format_j1c_op(Prog, H),
-                io_lib:format("~4.16.0B: ", [Pc]) | Accum
-            ]);
-        _ ->
-            <<H2:4/binary, Tail2/binary>> = Data,
-            disasm(Prog, Pc + 2, Tail2, [
-                format_j1c_large(Prog, H2),
-                io_lib:format("~4.16.0B: ", [Pc]) | Accum
-            ])
-    end.
+%%    <<InstrTag:?J1INSTR_WIDTH, _:?J1OP_INDEX_WIDTH>> = H,
+    disasm(Prog, Pc + 1, Tail, [
+        format_j1c_op(Prog, H),
+        io_lib:format("~4.16.0B: ", [Pc]) | Accum
+    ]).
 
-%% TODO: Refactor this into varint arg
-format_j1c_large(_Prog, <<Type:?J1_LITERAL_TAG_BITS,
-                          Lit:?J1_LITERAL_BITS/big>>) when Type >= ?J1LITERAL ->
-    io_lib:format("~s ~p~n", [color:blueb("LIT"), Lit]).
+format_j1c_op(_Prog, <<Type:?J1_LITERAL_TAG_BITS,
+                       Lit:?J1_LITERAL_BITS/big>>) when Type >= ?J1LITERAL ->
+    LitType = fun(?J1LIT_ATOM) -> "atom";
+        (?J1LIT_INTEGER) -> "int";
+        (?J1LIT_LITERAL) -> "arbitrary" end,
+    io_lib:format("~s ~s: ~p~n", [color:blueb("LIT"), LitType(Type), Lit]);
 
 %% Format a normal opcode, 16bit
 format_j1c_op(Prog, <<?J1INSTR_CALL:?J1INSTR_WIDTH,
-                      Addr:(?J1OP_INDEX_WIDTH + 16)/signed>>) ->
+                      Addr:?J1OP_INDEX_WIDTH/signed-big>>) ->
     io_lib:format("~s ~s~n", [color:green("CALL"), whereis_addr(Prog, Addr)]);
 format_j1c_op(_Prog, <<?J1INSTR_JUMP:?J1INSTR_WIDTH,
-                       Addr:?J1OP_INDEX_WIDTH/signed>>) ->
+                       Addr:?J1OP_INDEX_WIDTH/signed-big>>) ->
     io_lib:format("~s ~4.16.0B~n", [color:green("JMP"), Addr]);
 format_j1c_op(_Prog, <<?J1INSTR_JUMP_COND:?J1INSTR_WIDTH,
-                       Addr:?J1OP_INDEX_WIDTH/signed>>) ->
+                       Addr:?J1OP_INDEX_WIDTH/signed-big>>) ->
     io_lib:format("~s ~4.16.0B~n", [color:green("JZ"), Addr]);
 format_j1c_op(_Prog, <<?J1INSTR_ALU:3, RPC:1, Op:4, TN:1, TR:1, NTI:1,
                        _Unused:1, Ds:2, Rs:2>>) ->

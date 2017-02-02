@@ -27,4 +27,9 @@
         erlang:error(compile_error)
     end).
 
+-define(ASSERT(Cond, Msg), case (Cond) of
+                               true -> ok;
+                               _ -> ?COMPILE_ERROR(Msg)
+                           end).
+
 -endif. % E4_HRL
