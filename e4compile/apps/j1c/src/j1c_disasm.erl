@@ -17,7 +17,9 @@ disasm(Prog, Pc, <<H:2/binary, Tail/binary>> = Data, Accum) ->
     ]).
 
 format_j1c_op(_Prog, <<Type:?J1_LITERAL_TAG_BITS,
-                       Lit:?J1_LITERAL_BITS/big>>) when Type >= ?J1LITERAL ->
+                       Lit:?J1_LITERAL_BITS/signed-big>>)
+    when Type >= ?J1LITERAL
+    ->
     LitType = fun(?J1LIT_ATOM) -> "atom";
         (?J1LIT_INTEGER) -> "int";
         (?J1LIT_LITERAL) -> "arbitrary" end,
