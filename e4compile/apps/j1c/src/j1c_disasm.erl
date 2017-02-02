@@ -25,10 +25,10 @@ format_j1c_op(_Prog, <<LitTag:?J1INSTR_WIDTH,
          orelse LitTag == ?J1LIT_ATOM
          orelse LitTag == ?J1LIT_LITERAL
     ->
-    LitType = fun(?J1LIT_ATOM) -> "A";
-                 (?J1LIT_INTEGER) -> "i";
-                 (?J1LIT_LITERAL) -> "L" end,
-    io_lib:format("~s ~s: ~p~n", [color:blueb("LIT"), LitType(LitTag), Lit]);
+    LitType = fun(?J1LIT_ATOM) -> "𝔸";
+                 (?J1LIT_INTEGER) -> "𝕚";
+                 (?J1LIT_LITERAL) -> "𝕃" end,
+    io_lib:format("~s ~ts~B~n", [color:blueb("LIT"), LitType(LitTag), Lit]);
 
 %% Format a normal opcode, 16bit
 format_j1c_op(Prog, <<?J1INSTR_CALL:?J1INSTR_WIDTH,
@@ -69,9 +69,9 @@ format_j1c_op(_Prog, <<Cmd:?J1BITS>>) ->
     io_lib:format("?UNKNOWN ~4.16.0B~n", [Cmd]).
 
 annotate_ldst(I) when I =< 0 ->
-    io_lib:format("locals[~p]", [-I]);
+    io_lib:format("loc[~p]", [-I]);
 annotate_ldst(I) when I > 0 ->
-    io_lib:format("args[~p]", [I]).
+    io_lib:format("arg[~p]", [I]).
 
 %%% ---------------------------------------------------------------------------
 
