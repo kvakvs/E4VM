@@ -16,8 +16,12 @@ process(F) ->
             FlatForth2 = e4c:try_do("e4_pass_opt1 - Optimize",
                                     fun() ->
                                         e4_pass_opt1:process(FlatForth) end),
-            J1Forth = e4c:try_do("j1c_pass_forth - Compile to J1 opcodes",
-                            fun() -> j1c_pass_forth:compile(M, FlatForth2) end),
+            {J1Prog, J1Preprocessed} =
+                e4c:try_do("j1c_pp - Preprocess Forth",
+                    fun() -> j1c_pp:process(M, FlatForth2) end),
+            J1Forth = e4c:try_do(
+                "j1c_pass_forth - Compile to J1 opcodes",
+                fun() -> j1c_pass_forth:compile(J1Prog, J1Preprocessed) end),
             J1Bin = e4c:try_do("j1c_pass_bin - Compile J1 IC to binary",
                                fun() -> j1c_pass_bin:compile(J1Forth) end),
             e4c:try_do("Save binary output",

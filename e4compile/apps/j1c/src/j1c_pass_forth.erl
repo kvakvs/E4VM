@@ -10,43 +10,22 @@
 -include_lib("e4c/include/e4c.hrl").
 -include_lib("j1c/include/j1.hrl").
 
-compile(ModuleName, SrcForth) ->
-    Prog0 = #j1prog{mod = ModuleName},
-    % Module name should always be #0
-    {Prog0A, _} = atom_index_or_create(Prog0, atom_to_binary(ModuleName, utf8)),
-
-    Preprocessed = preprocess(SrcForth, []),
-%%    file:write_file("j1c_pass_forth-pre.txt",
-%%                    iolist_to_binary(io_lib:format("~p", [Preprocessed]))),
-
-    Prog1 = process_words(Prog0A, Preprocessed),
+compile(Prog0 = #j1prog{}, Preprocessed) ->
+    Prog3 = process_words(Prog0, Preprocessed),
 
     %% Print the output
-    J1Forth = lists:reverse(Prog1#j1prog.output),
-    Prog2 = Prog1#j1prog{output = J1Forth},
-    %Patched = apply_patches(Output, Prog1#j1prog.patch_table, []),
-    %Prog2 = Prog1#j1prog{output=Patched},
+    J1Forth = lists:reverse(Prog3#j1prog.output),
+    Prog4 = Prog3#j1prog{output = J1Forth},
 
     file:write_file("j1c_pass_forth.txt",
                     iolist_to_binary(io_lib:format("~p", [J1Forth]))),
 
     io:format("~s~n~p~n", [color:redb("J1C PASS 1"), J1Forth]),
-    Prog2.
-
-preprocess([], Acc) -> lists:flatten(lists:reverse(Acc));
-preprocess([?F_LIT_ATOM, Word | T], Acc) ->
-    preprocess(T, [#k_atom{val=Word} | Acc]);
-preprocess([H | T], Acc) -> preprocess(T, [H | Acc]).
+    Prog4.
 
 %%%-----------------------------------------------------------------------------
 
 process_words(Prog0 = #j1prog{}, []) -> Prog0;
-
-%%process_words(Prog0, [OpList | Tail]) when is_list(OpList) ->
-%%    Prog1 = lists:foldl(fun(Op, P0) -> process_words(P0, [Op]) end,
-%%                        Prog0,
-%%                        OpList),
-%%    process_words(Prog1, Tail);
 
 process_words(Prog0 = #j1prog{}, [?F_ERL_CALL | Tail]) ->
     Lit = 0,
@@ -124,19 +103,6 @@ process_words(Prog0 = #j1prog{}, [<<"UNTIL">> | Tail]) -> % conditional if-zero 
 
 %% TODO: EQU, maybe VAR, ARR?
 
-process_words(Prog0 = #j1prog{}, [?F_LIT_MFA, M, F, A | Tail]) -> % mfa literal
-    Prog1 = emit_lit(Prog0, mfa, {M, F, A}),
-    process_words(Prog1, Tail);
-process_words(Prog0 = #j1prog{}, [?F_LIT_FUNA, Fn, Arity | Tail]) ->
-    Prog1 = emit_lit(Prog0, funarity, {Fn, Arity}),
-    process_words(Prog1, Tail);
-process_words(Prog0 = #j1prog{}, [#k_atom{val = A} | Tail]) ->
-    Prog1 = emit_lit(Prog0, atom, A),
-    process_words(Prog1, Tail);
-process_words(Prog0 = #j1prog{}, [#k_literal{val = L} | Tail]) ->
-    Prog1 = emit_lit(Prog0, arbitrary, L),
-    process_words(Prog1, Tail);
-
 process_words(Prog0 = #j1prog{}, [Var, ?F_LD | Tail]) ->
     Prog1 = emit(Prog0, #j1ld{index = erlang:binary_to_integer(Var)}),
     process_words(Prog1, Tail);
@@ -160,6 +126,12 @@ process_words(Prog0 = #j1prog{}, [#f_comment{comment = C} | Tail]) ->
 %% A binary, probably a word? Pass through
 process_words(Prog0 = #j1prog{}, [Bin | Tail]) when is_binary(Bin) ->
     process_words(emit(Prog0, Bin), Tail);
+
+%% Atom or literal? Pass through
+process_words(Prog0 = #j1prog{}, [J = #j1atom{} | Tail]) ->
+    process_words(emit(Prog0, J), Tail);
+process_words(Prog0 = #j1prog{}, [J = #j1lit{} | Tail]) ->
+    process_words(emit(Prog0, J), Tail);
 
 %% Nothing else worked, look for the word in our dictionaries and base words,
 %% maybe it is a literal, too
@@ -213,7 +185,7 @@ cond_update_label(Prog0 = #j1prog{}, _Offset) ->
 prog_add_export(Prog0 = #j1prog{exports = Expt},
                 Fun,
                 Arity) ->
-    {Prog1, _} = atom_index_or_create(Prog0, Fun),
+    {Prog1, _} = j1c_prog:atom_index_or_create(Prog0, Fun),
     Expt1 = [{Fun, Arity} | Expt],
     Prog1#j1prog{exports = Expt1}.
 
@@ -226,12 +198,12 @@ prog_add_word(Prog0 = #j1prog{dict = Dict},
               #k_local{name = #k_atom{val = Fn}, arity = Arity}) ->
     {F, Prog1} = create_label(Prog0),
     Dict1 = orddict:store({Fn, as_int(Arity)}, F, Dict),
-    {Prog2, _} = atom_index_or_create(Prog1, Fn),
+    {Prog2, _} = j1c_prog:atom_index_or_create(Prog1, Fn),
     Prog2#j1prog{dict = Dict1};
 prog_add_word(Prog0 = #j1prog{dict = Dict}, Word) when is_binary(Word) ->
     {F, Prog1} = create_label(Prog0),
     Dict1 = orddict:store(Word, F, Dict),
-    {Prog2, _} = atom_index_or_create(Prog1, Word),
+    {Prog2, _} = j1c_prog:atom_index_or_create(Prog1, Word),
     Prog2#j1prog{dict = Dict1}.
 
 %% @doc Adds a NIF name to the dictionary, does not register any other data
@@ -247,59 +219,3 @@ prog_add_nif(Prog0 = #j1prog{dict_nif = Dict}, Word, Index) ->
 
 emit(Prog0 = #j1prog{output = Out}, IOList) ->
     Prog0#j1prog{output = [IOList | Out]}.
-
-%% @doc Looks up an atom in the atom table, returns its paired value or creates
-%% a new atom, assigns it next available index and returns it
-atom_index_or_create(Prog0 = #j1prog{atom_id = AtomId, atoms = Atoms}, Value)
-    when is_binary(Value) ->
-    case orddict:find(Value, Atoms) of
-        error ->
-            Prog1 = Prog0#j1prog{
-                atom_id = AtomId + 1,
-                atoms = orddict:store(Value, AtomId, Atoms)
-            },
-            {Prog1, AtomId};
-        {ok, Existing} ->
-            {Prog0, Existing}
-    end.
-
-%% @doc Looks up a literal in the literal table, returns its paired value or
-%% creates a new literal, assigns it next available index and returns it
-literal_index_or_create(Prog0 = #j1prog{lit_id = LitId, literals = Literals},
-                        Value) ->
-    case orddict:find(Value, Literals) of
-        error ->
-%%            io:format("literal create ~p~n", [Value]),
-            Prog1 = Prog0#j1prog{
-                lit_id = LitId + 1,
-                literals = orddict:store(Value, LitId, Literals)
-            },
-            {Prog1, LitId};
-        {ok, Existing} ->
-            {Prog0, Existing}
-    end.
-
-%%emit_lit(Prog0 = #j1prog{}, atom, Word) when is_atom(Word) ->
-%%    {Prog1, AIndex} = atom_index_or_create(Prog0, Word),
-%%    emit(Prog1, #j1atom{id = AIndex, debug = Word});
-emit_lit(Prog0 = #j1prog{}, atom, Word) when is_binary(Word) ->
-    {Prog1, AIndex} = atom_index_or_create(Prog0, Word),
-    emit(Prog1, #j1atom{id = AIndex, debug = Word});
-%%emit_lit(Prog0 = #j1prog{}, integer, X) ->
-%%    emit(Prog0, <<1:1, X:?J1_LITERAL_BITS/signed>>);
-emit_lit(Prog0 = #j1prog{}, mfa, {M, F, A}) ->
-    M1 = eval(M),
-    F1 = eval(F),
-    A1 = erlang:binary_to_integer(A),
-    {Prog1, LIndex} = literal_index_or_create(Prog0, {'$MFA', M1, F1, A1}),
-    emit(Prog1, #j1lit{id = LIndex, debug = {M, F, A}});
-emit_lit(Prog0 = #j1prog{}, funarity, {F, A}) ->
-    F1 = eval(F),
-    A1 = erlang:binary_to_integer(A),
-    {Prog1, LIndex} = literal_index_or_create(Prog0, {'$FA', F1, A1}),
-    emit(Prog1, #j1lit{id = LIndex, debug = {F, A}});
-emit_lit(Prog0 = #j1prog{}, arbitrary, Lit) ->
-    {Prog1, LIndex} = literal_index_or_create(Prog0, Lit),
-    emit(Prog1, #j1lit{id = LIndex, debug = Lit}).
-
-eval(#k_atom{val = A}) -> erlang:binary_to_atom(A, utf8).

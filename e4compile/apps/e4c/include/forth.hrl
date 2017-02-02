@@ -132,7 +132,7 @@
 -define(F_LIT_FUNA,     <<"'FUNA">>).   % Fun/Arity local literal
 -define(F_LIT_MFA,      <<"'MFA">>).    % M:F/Arity remote literal
 -define(F_LIT_ATOM,     <<"'ATOM">>).   % literal atom
--define(F_LIT_NIL,      <<".NIL">>).    % literal nil []
+-define(F_LIT_NIL,      <<"'NIL">>).    % literal nil []
 
 %% Words and opcodes used for various stuff
 -define(F_IS_NIL,       <<".NIL?">>).   % compare top with literal nil []
