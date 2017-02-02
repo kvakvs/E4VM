@@ -88,6 +88,16 @@ process_words(Prog0, [#j1lit{id = LitId} | Tail]) ->
     Prog1 = emit_lit(Prog0, ?J1LIT_LITERAL, LitId),
     process_words(Prog1, Tail);
 
+process_words(Prog0, [#j1ld{index = Index} | Tail]) ->
+    Prog1 = emit(Prog0, <<?J1INSTR_LD:?J1INSTR_WIDTH,
+                          Index:?J1OP_INDEX_WIDTH/big-signed>>),
+    process_words(Prog1, Tail);
+
+process_words(Prog0, [#j1st{index = Index} | Tail]) ->
+    Prog1 = emit(Prog0, <<?J1INSTR_ST:?J1INSTR_WIDTH,
+                          Index:?J1OP_INDEX_WIDTH/big-signed>>),
+    process_words(Prog1, Tail);
+
 process_words(Prog0, [#j1jump{condition = Cond, label = F} | Tail]) ->
     JType = case Cond of
                 false -> ?J1INSTR_JUMP;
@@ -162,19 +172,20 @@ emit_alu(Prog = #j1bin_prog{}, ALU = #j1alu{ds=-1}) ->
     emit_alu(Prog, ALU#j1alu{ds=2});
 emit_alu(Prog = #j1bin_prog{}, ALU = #j1alu{rs=-1}) ->
     emit_alu(Prog, ALU#j1alu{rs=2});
-emit_alu(Prog = #j1bin_prog{}, #j1alu{op=Op0, tn=TN, rpc=RPC, tr=TR, nti=NTI,
-                                      ds=Ds, rs=Rs}) ->
-    %% Operation consists of 4 4-bit nibbles, tag goes first (3 bits) followed
-    %% by the RPC flag, then goes operation, then combination of TN,TR,NTI
-    %% flags and 1 unused bit, and then Ds/Rs 2 bits each
+emit_alu(Prog = #j1bin_prog{}, #j1alu{op = Op0, rpc = RPC,
+                                      tn = TN, tr = TR, nti = NTI,
+                                      ds = Ds, rs = Rs}) ->
+    %% 15 14 13 12 | 11 10 09 08 |  07 06 05  04 | 03 02 01 00 |
+    %% InstrTag--- | Op--------- | RPC TN TR NTI | DS--- RS--- |l
     %%
-    %% 15 14 13 12 | 11 10 09 08 | 07 06 05 04 | 03 02 01 00 |
-    %% InstrTag RPC| Op--------- | TN TR NTI ? | DS--- RS--- |l
-    %%
-    Op1 = <<?J1INSTR_ALU:3, RPC:1,
-            Op0:4,
-            TN:1, TR:1, NTI:1, 0:1,
-            Rs:2, Ds:2>>,
+    Op1 = <<?J1INSTR_ALU:?J1INSTR_WIDTH/big,
+            Op0:?J1OPCODE_WIDTH/big,
+            RPC:1,
+            TN:1,
+            TR:1,
+            NTI:1,
+            Rs:2/big,
+            Ds:2/big>>,
     emit(Prog, Op1).
 
 %%%-----------------------------------------------------------------------------
@@ -190,101 +201,104 @@ emit_base_word(Prog0, L) when is_list(L) ->
 %% Words
 %%
 emit_base_word(Prog0, <<"+">>) ->
-    emit_alu(Prog0, #j1alu{op = ?J1OP_T_PLUS_N, ds = -1});
+    emit_alu(Prog0, #j1alu{op = ?J1ALU_T_PLUS_N, ds = -1});
 emit_base_word(Prog0, <<"XOR">>) ->
-    emit_alu(Prog0, #j1alu{op = ?J1OP_T_XOR_N, ds = -1});
+    emit_alu(Prog0, #j1alu{op = ?J1ALU_T_XOR_N, ds = -1});
 emit_base_word(Prog0, <<"AND">>) ->
-    emit_alu(Prog0, #j1alu{op = ?J1OP_T_AND_N, ds = -1});
+    emit_alu(Prog0, #j1alu{op = ?J1ALU_T_AND_N, ds = -1});
 emit_base_word(Prog0, <<"OR">>) ->
-    emit_alu(Prog0, #j1alu{op = ?J1OP_T_OR_N, ds = -1});
+    emit_alu(Prog0, #j1alu{op = ?J1ALU_T_OR_N, ds = -1});
 
 emit_base_word(Prog0, <<"INVERT">>) ->
-    emit_alu(Prog0, #j1alu{op = ?J1OP_INVERT_T});
+    emit_alu(Prog0, #j1alu{op = ?J1ALU_INVERT_T});
 
 emit_base_word(Prog0, <<"=">>) ->
-    emit_alu(Prog0, #j1alu{op = ?J1OP_N_EQ_T, ds = -1});
+    emit_alu(Prog0, #j1alu{op = ?J1ALU_N_EQ_T, ds = -1});
 emit_base_word(Prog0, <<"<">>) ->
-    emit_alu(Prog0, #j1alu{op = ?J1OP_N_LESS_T, ds = -1});
+    emit_alu(Prog0, #j1alu{op = ?J1ALU_N_LESS_T, ds = -1});
 emit_base_word(Prog0, <<"U<">>) ->
-    emit_alu(Prog0, #j1alu{op = ?J1OP_N_UNSIGNED_LESS_T, ds = -1});
+    emit_alu(Prog0, #j1alu{op = ?J1ALU_N_UNSIGNED_LESS_T, ds = -1});
 
 emit_base_word(Prog0, <<"SWAP">>) -> % swap data stack top 2 elements
-    emit_alu(Prog0, #j1alu{op = ?J1OP_N, tn = 1});
+    emit_alu(Prog0, #j1alu{op = ?J1ALU_N, tn = 1});
 emit_base_word(Prog0, <<"DUP">>) -> % clone data stack top
-    emit_alu(Prog0, #j1alu{op = ?J1OP_T, tn = 1});
+    emit_alu(Prog0, #j1alu{op = ?J1ALU_T, tn = 1});
 emit_base_word(Prog0, <<"DROP">>) -> % drop top on data stack
-    emit_alu(Prog0, #j1alu{op = ?J1OP_N, ds = -1});
+    emit_alu(Prog0, #j1alu{op = ?J1ALU_N, ds = -1});
 emit_base_word(Prog0, <<"OVER">>) -> % clone second on data stack
-    emit_alu(Prog0, #j1alu{op = ?J1OP_N, tn = 1, ds = 1});
+    emit_alu(Prog0, #j1alu{op = ?J1ALU_N, tn = 1, ds = 1});
 emit_base_word(Prog0, <<"NIP">>) -> % drops second on data stack
-    emit_alu(Prog0, #j1alu{op = ?J1OP_T, ds = -1});
+    emit_alu(Prog0, #j1alu{op = ?J1ALU_T, ds = -1});
 
 emit_base_word(Prog0, <<">R">>) -> % place onto Rstack
-    emit_alu(Prog0, #j1alu{op = ?J1OP_N, tr = 1, ds = -1, rs = 1});
+    emit_alu(Prog0, #j1alu{op = ?J1ALU_N, tr = 1, ds = -1, rs = 1});
 emit_base_word(Prog0, <<"R>">>) -> % take from Rstack
-    emit_alu(Prog0, #j1alu{op = ?J1OP_R, tn = 1, ds = 1, rs = -1});
+    emit_alu(Prog0, #j1alu{op = ?J1ALU_R, tn = 1, ds = 1, rs = -1});
 emit_base_word(Prog0, <<"R@">>) -> % read Rstack top
-    emit_alu(Prog0, #j1alu{op = ?J1OP_R, tn = 1, ds = 1, rs = 0});
+    emit_alu(Prog0, #j1alu{op = ?J1ALU_R, tn = 1, ds = 1, rs = 0});
 emit_base_word(Prog0, <<"@">>) -> % read address
-    emit_alu(Prog0, #j1alu{op = ?J1OP_INDEX_T});
+    emit_alu(Prog0, #j1alu{op = ?J1ALU_INDEX_T});
 emit_base_word(Prog0, <<"!">>) -> % write address
     emit_alu_f(Prog0, [
-        #j1alu{op = ?J1OP_T, ds = -1},
-        #j1alu{op = ?J1OP_N, ds = -1}
+        #j1alu{op = ?J1ALU_T, ds = -1},
+        #j1alu{op = ?J1ALU_N, ds = -1}
     ]);
 
 emit_base_word(Prog0, <<"DSP">>) -> % get stack depth
-    emit_alu(Prog0, #j1alu{op = ?J1OP_DEPTH, tn = 1, ds = 1});
+    emit_alu(Prog0, #j1alu{op = ?J1ALU_DEPTH, tn = 1, ds = 1});
 
 emit_base_word(Prog0, <<"LSHIFT">>) ->
-    emit_alu(Prog0, #j1alu{op = ?J1OP_N_LSHIFT_T, ds = -1});
+    emit_alu(Prog0, #j1alu{op = ?J1ALU_N_LSHIFT_T, ds = -1});
 emit_base_word(Prog0, <<"RSHIFT">>) ->
-    emit_alu(Prog0, #j1alu{op = ?J1OP_N_RSHIFT_T, ds = -1});
+    emit_alu(Prog0, #j1alu{op = ?J1ALU_N_RSHIFT_T, ds = -1});
 emit_base_word(Prog0, <<"1-">>) -> % decrement stack top
-    emit_alu(Prog0, #j1alu{op = ?J1OP_T_MINUS_1});
+    emit_alu(Prog0, #j1alu{op = ?J1ALU_T_MINUS_1});
 emit_base_word(Prog0, <<"2R>">>) ->
     emit_alu_f(Prog0, [
-        #j1alu{op = ?J1OP_R, tn = 1, ds = 1, rs = -1},
-        #j1alu{op = ?J1OP_R, tn = 1, ds = 1, rs = -1},
-        #j1alu{op = ?J1OP_N, tn = 1}
+        #j1alu{op = ?J1ALU_R, tn = 1, ds = 1, rs = -1},
+        #j1alu{op = ?J1ALU_R, tn = 1, ds = 1, rs = -1},
+        #j1alu{op = ?J1ALU_N, tn = 1}
     ]);
 emit_base_word(Prog0, <<"2>R">>) ->
     emit_alu_f(Prog0, [
-        #j1alu{op = ?J1OP_N, tn = 1},
-        #j1alu{op = ?J1OP_N, tr = 1, ds = -1, rs = 1},
-        #j1alu{op = ?J1OP_N, tr = 1, ds = -1, rs = 1}
+        #j1alu{op = ?J1ALU_N, tn = 1},
+        #j1alu{op = ?J1ALU_N, tr = 1, ds = -1, rs = 1},
+        #j1alu{op = ?J1ALU_N, tr = 1, ds = -1, rs = 1}
     ]);
 emit_base_word(Prog0, <<"2R@">>) ->
     emit_alu_f(Prog0, [
-        #j1alu{op = ?J1OP_R, tn = 1, ds = 1, rs = -1},
-        #j1alu{op = ?J1OP_R, tn = 1, ds = 1, rs = -1},
-        #j1alu{op = ?J1OP_N, tn = 1, ds = 1},
-        #j1alu{op = ?J1OP_N, tn = 1, ds = 1},
-        #j1alu{op = ?J1OP_N, tr = 1, ds = -1, rs = 1},
-        #j1alu{op = ?J1OP_N, tr = 1, ds = -1, rs = 1},
-        #j1alu{op = ?J1OP_N, tn = 1}
+        #j1alu{op = ?J1ALU_R, tn = 1, ds = 1, rs = -1},
+        #j1alu{op = ?J1ALU_R, tn = 1, ds = 1, rs = -1},
+        #j1alu{op = ?J1ALU_N, tn = 1, ds = 1},
+        #j1alu{op = ?J1ALU_N, tn = 1, ds = 1},
+        #j1alu{op = ?J1ALU_N, tr = 1, ds = -1, rs = 1},
+        #j1alu{op = ?J1ALU_N, tr = 1, ds = -1, rs = 1},
+        #j1alu{op = ?J1ALU_N, tn = 1}
     ]);
 emit_base_word(Prog0, <<"DUP@">>) ->
-    emit_alu(Prog0, #j1alu{op = ?J1OP_INDEX_T, tn = 1, ds = 1});
+    emit_alu(Prog0, #j1alu{op = ?J1ALU_INDEX_T, tn = 1, ds = 1});
 emit_base_word(Prog0, <<"DUP>R">>) ->
-    emit_alu(Prog0, #j1alu{op = ?J1OP_T, tr = 1, rs = 1});
+    emit_alu(Prog0, #j1alu{op = ?J1ALU_T, tr = 1, rs = 1});
 emit_base_word(Prog0, <<"2DUPXOR">>) ->
-    emit_alu(Prog0, #j1alu{op = ?J1OP_T_XOR_N, tn = 1, ds = 1});
+    emit_alu(Prog0, #j1alu{op = ?J1ALU_T_XOR_N, tn = 1, ds = 1});
 emit_base_word(Prog0, <<"2DUP=">>) ->
-    emit_alu(Prog0, #j1alu{op = ?J1OP_N_EQ_T, tn = 1, ds = 1});
+    emit_alu(Prog0, #j1alu{op = ?J1ALU_N_EQ_T, tn = 1, ds = 1});
 emit_base_word(Prog0, <<"!NIP">>) ->
-    emit_alu(Prog0, #j1alu{op = ?J1OP_T, nti = 1, ds = -1});
+    emit_alu(Prog0, #j1alu{op = ?J1ALU_T, nti = 1, ds = -1});
 emit_base_word(Prog0, <<"2DUP!">>) ->
-    emit_alu(Prog0, #j1alu{op = ?J1OP_T, nti = 1});
+    emit_alu(Prog0, #j1alu{op = ?J1ALU_T, nti = 1});
 emit_base_word(Prog0, <<"UP1">>) ->
-    emit_alu(Prog0, #j1alu{op = ?J1OP_T, ds = 1});
+    emit_alu(Prog0, #j1alu{op = ?J1ALU_T, ds = 1});
 emit_base_word(Prog0, <<"DOWN1">>) ->
-    emit_alu(Prog0, #j1alu{op = ?J1OP_T, ds = -1});
+    emit_alu(Prog0, #j1alu{op = ?J1ALU_T, ds = -1});
 emit_base_word(Prog0, <<"COPY">>) ->
-    emit_alu(Prog0, #j1alu{op = ?J1OP_N});
+    emit_alu(Prog0, #j1alu{op = ?J1ALU_N});
 
 emit_base_word(Prog0, <<"NOOP">>) ->
-    emit_alu(Prog0, #j1alu{op = ?J1OP_T});
+    emit_alu(Prog0, #j1alu{op = ?J1ALU_T});
+
+emit_base_word(Prog0, <<"NOOP">>) ->
+    emit_alu(Prog0, #j1alu{op = ?J1ALU_T});
 
 emit_base_word(_Prog, Word) ->
     ?COMPILE_ERROR1("Base word is not defined", Word).

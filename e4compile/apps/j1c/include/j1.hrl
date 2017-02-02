@@ -5,7 +5,8 @@
 -define(J1_HEADER, 1).
 
 -define(J1BITS, 16).
--define(J1INSTR_WIDTH, 3).
+-define(J1INSTR_WIDTH, 4).
+-define(J1OPCODE_WIDTH, 4).
 
 -define(J1OP_INDEX_WIDTH, (?J1BITS - ?J1INSTR_WIDTH)).
 
@@ -13,31 +14,35 @@
 %% Literal tag with value type + bits for literal body
 -define(J1_LITERAL_TAG_BITS, 3).
 -define(J1_LITERAL_BITS, (?J1BITS - ?J1_LITERAL_TAG_BITS)).
--define(J1LIT_ATOM,     (4+0)).
--define(J1LIT_LITERAL,  (4+1)).
--define(J1LIT_INTEGER,  (4+2)).
+-define(J1LIT_ATOM,     (8+0)).
+-define(J1LIT_LITERAL,  (8+1)).
+-define(J1LIT_INTEGER,  (8+2)).
 -define(J1LITERAL,          4). % top bit set for literals, other bits set type
+
 -define(J1INSTR_JUMP,       0). % may be extended by 16 bit varint
 -define(J1INSTR_JUMP_COND,  1). % may be extended by 16 bit varint
 -define(J1INSTR_CALL,       2). % may be extended by 16 bit varint
 -define(J1INSTR_ALU,        3). % always 16 bit
-%% Bit values for the second nibble (Operation)
--define(J1OP_T,             0).
--define(J1OP_N,             1).
--define(J1OP_T_PLUS_N,      2).
--define(J1OP_T_AND_N,       3).
--define(J1OP_T_OR_N,        4).
--define(J1OP_T_XOR_N,       5).
--define(J1OP_INVERT_T,      6).
--define(J1OP_N_EQ_T,        7).
--define(J1OP_N_LESS_T,      8).
--define(J1OP_N_RSHIFT_T,    9).
--define(J1OP_T_MINUS_1,     10).
--define(J1OP_R,             11).
--define(J1OP_INDEX_T,       12).
--define(J1OP_N_LSHIFT_T,    13).
--define(J1OP_DEPTH,         14).
--define(J1OP_N_UNSIGNED_LESS_T, 15).
+-define(J1INSTR_LD,         4).
+-define(J1INSTR_ST,         5).
+
+%% 4-bit values (ALU Operation)
+-define(J1ALU_T,             0).
+-define(J1ALU_N,             1).
+-define(J1ALU_T_PLUS_N,      2).
+-define(J1ALU_T_AND_N,       3).
+-define(J1ALU_T_OR_N,        4).
+-define(J1ALU_T_XOR_N,       5).
+-define(J1ALU_INVERT_T,      6).
+-define(J1ALU_N_EQ_T,        7).
+-define(J1ALU_N_LESS_T,      8).
+-define(J1ALU_N_RSHIFT_T,    9).
+-define(J1ALU_T_MINUS_1,     10).
+-define(J1ALU_R,             11).
+-define(J1ALU_INDEX_T,       12).
+-define(J1ALU_N_LSHIFT_T,    13).
+-define(J1ALU_DEPTH,         14).
+-define(J1ALU_N_UNSIGNED_LESS_T, 15).
 
 -type uint() :: non_neg_integer().
 -type uint16() :: 0..65535.
@@ -48,10 +53,20 @@
     rpc = 0 :: 0..1,    % copy R (return stack top) to PC (program counter)
     tr = 0 :: 0..1,     % copy T (stack top) to R (return stack top)
     nti = 0 :: 0..1,    % indexed RAM access N->[T]
-    ds = 0 :: -1..3,    % 2 bits, signed increment of data stack
-    rs = 0 :: -1..3     % 2 bits, signed increment of return stack
+    ds = 0 :: -1..3,    % 2 bits, signed increment of data stack ds=2 == -1
+    rs = 0 :: -1..3     % 2 bits, signed increment of return stack rs=2 == -1
 }).
 -type j1alu() :: #j1alu{}.
+
+-record(j1ld, {
+    index :: integer()
+}).
+-type j1ld() :: #j1ld{}.
+
+-record(j1st, {
+    index :: integer()
+}).
+-type j1st() :: #j1st{}.
 
 -record(j1label, {
     label :: uint()

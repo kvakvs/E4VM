@@ -35,9 +35,18 @@ format_j1c_op(_Prog, <<?J1INSTR_JUMP:?J1INSTR_WIDTH,
 format_j1c_op(_Prog, <<?J1INSTR_JUMP_COND:?J1INSTR_WIDTH,
                        Addr:?J1OP_INDEX_WIDTH/signed-big>>) ->
     io_lib:format("~s ~4.16.0B~n", [color:green("JZ"), Addr]);
-format_j1c_op(_Prog, <<?J1INSTR_ALU:3, RPC:1, Op:4, TN:1, TR:1, NTI:1,
-                       _Unused:1, Ds:2, Rs:2>>) ->
+format_j1c_op(_Prog, <<?J1INSTR_ALU:?J1INSTR_WIDTH,
+                       Op:?J1OPCODE_WIDTH,
+                       RPC:1,
+                       TN:1, TR:1, NTI:1,
+                       Ds:2, Rs:2>>) ->
     format_j1c_alu(RPC, Op, TN, TR, NTI, Ds, Rs);
+format_j1c_op(_Prog, <<?J1INSTR_LD:?J1INSTR_WIDTH,
+                      Index:?J1OP_INDEX_WIDTH/signed-big>>) ->
+    io_lib:format("~s ~p~n", [color:green("LD"), Index]);
+format_j1c_op(_Prog, <<?J1INSTR_ST:?J1INSTR_WIDTH,
+                       Index:?J1OP_INDEX_WIDTH/signed-big>>) ->
+    io_lib:format("~s ~p~n", [color:green("ST"), Index]);
 format_j1c_op(_Prog, <<Cmd:?J1BITS>>) ->
     io_lib:format("?UNKNOWN ~4.16.0B~n", [Cmd]).
 
@@ -60,26 +69,30 @@ format_j1c_alu(RPC, Op, TN, TR, NTI, Ds, Rs) ->
 
 %%%-----------------------------------------------------------------------------
 
-j1_op(?J1OP_T)                  -> "T";
-j1_op(?J1OP_N)                  -> "N";
-j1_op(?J1OP_T_PLUS_N)           -> "T+N";
-j1_op(?J1OP_T_AND_N)            -> "T&N";
-j1_op(?J1OP_T_OR_N)             -> "T|N";
-j1_op(?J1OP_T_XOR_N)            -> "T^N";
-j1_op(?J1OP_INVERT_T)           -> "~T";
-j1_op(?J1OP_N_EQ_T)             -> "N==T";
-j1_op(?J1OP_N_LESS_T)           -> "N<T";
-j1_op(?J1OP_N_RSHIFT_T)         -> "N>>T";
-j1_op(?J1OP_T_MINUS_1)          -> "T-1";
-j1_op(?J1OP_R)                  -> "R";
-j1_op(?J1OP_INDEX_T)            -> "[T]";
-j1_op(?J1OP_N_LSHIFT_T)         -> "N<<T";
-j1_op(?J1OP_DEPTH)              -> "DEPTH";
-j1_op(?J1OP_N_UNSIGNED_LESS_T)  -> "UN<T".
+j1_op(?J1ALU_T)                  -> "T";
+j1_op(?J1ALU_N)                  -> "N";
+j1_op(?J1ALU_T_PLUS_N)           -> "T+N";
+j1_op(?J1ALU_T_AND_N)            -> "T&N";
+j1_op(?J1ALU_T_OR_N)             -> "T|N";
+j1_op(?J1ALU_T_XOR_N)            -> "T^N";
+j1_op(?J1ALU_INVERT_T)           -> "~T";
+j1_op(?J1ALU_N_EQ_T)             -> "N==T";
+j1_op(?J1ALU_N_LESS_T)           -> "N<T";
+j1_op(?J1ALU_N_RSHIFT_T)         -> "N>>T";
+j1_op(?J1ALU_T_MINUS_1)          -> "T-1";
+j1_op(?J1ALU_R)                  -> "R";
+j1_op(?J1ALU_INDEX_T)            -> "[T]";
+j1_op(?J1ALU_N_LSHIFT_T)         -> "N<<T";
+j1_op(?J1ALU_DEPTH)              -> "DEPTH";
+j1_op(?J1ALU_N_UNSIGNED_LESS_T)  -> "UN<T".
 
 whereis_addr(#j1bin_prog{dict = Words}, Addr) when Addr >= 0 ->
+    io:format("~p~n", [Words]),
     case lists:keyfind(Addr, 2, Words) of
-        {Name, _} -> io_lib:format("'~s'", [Name]);
+        {{Name1, _Arity}, _Addr1} ->
+            io_lib:format("'~s'", [Name1]);
+        {Name2, _Addr2} when is_binary(Name2) ->
+            io_lib:format("'~s'", [Name2]);
         false -> "?"
     end;
 whereis_addr(#j1bin_prog{dict_nif = Nifs}, Addr) when Addr < 0 ->

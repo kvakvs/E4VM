@@ -117,6 +117,13 @@ process_words(Prog0 = #j1prog{}, [#k_literal{val = L} | Tail]) ->
     Prog1 = emit_lit(Prog0, arbitrary, L),
     process_words(Prog1, Tail);
 
+process_words(Prog0 = #j1prog{}, [Var, ?F_LD | Tail]) ->
+    Prog1 = emit(Prog0, #j1ld{index = erlang:binary_to_integer(Var)}),
+    process_words(Prog1, Tail);
+process_words(Prog0 = #j1prog{}, [Var, ?F_ST | Tail]) ->
+    Prog1 = emit(Prog0, #j1st{index = erlang:binary_to_integer(Var)}),
+    process_words(Prog1, Tail);
+
 %% Comment - pass through
 process_words(Prog0 = #j1prog{}, [#f_comment{comment = C} | Tail]) ->
     process_words(emit(Prog0, #j1comment{comment = C}), Tail);
