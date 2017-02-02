@@ -35,8 +35,9 @@ process(#k_mdef{name=Name, exports=Exps, attributes=_Attr, body=Body}) ->
         [],
         [e4_f1:comment("end mod ~s", [Name])]),
     Out = process_code(Block0, #match_ctx{}, Body),
-    file:write_file("e4c_pass_kern.txt",
-                    iolist_to_binary(io_lib:format("~p", [Out]))),
+%%    file:write_file("e4c_pass_kern.txt",
+%%                    iolist_to_binary(io_lib:format("~p", [Out]))),
+
 %%    io:format("~s~n~s~n",
 %%              [color:on_white(color:black(" PASS 1 ")),
 %%               e4_print_ic:format_ic(Out, 0)]),
@@ -133,13 +134,13 @@ process_code(Block0 = #f_block{}, #match_ctx{}, #k_return{args=Args}) ->
 process_code(Block0 = #f_block{}, #match_ctx{}, #k_enter{op=Op, args=Args}) ->
 %%    io:format("k_enter op=~p args=~p~n", [Op, Args]),
     Block1 = eval_args(Block0, Args),
-    emit(Block1, [Op, <<".CALL-TAIL">>]);
+    emit(Block1, [Op, ?F_ERL_TAIL_CALL]);
 
 process_code(Block0 = #f_block{}, #match_ctx{},
              #k_call{op=Op, args=Args, ret=Ret}) ->
 %%    io:format("k_call op=~p~n  args=~p~n  ret=~p~n", [Op, Args, Ret]),
     Block1 = eval_args(Block0, Args),
-    Block2 = emit(Block1, [e4_f1:eval(Op), <<".CALL">>]),
+    Block2 = emit(Block1, [e4_f1:eval(Op), ?F_ERL_CALL]),
     emit(Block2, e4_f1:store(Ret));
 
 process_code(Block0 = #f_block{}, #match_ctx{},
@@ -153,7 +154,7 @@ process_code(Block0 = #f_block{}, #match_ctx{},
              #k_test{op=Op, args=Args}) ->
     %% Emit args
     Block1 = eval_args(Block0, Args),
-    Block2 = emit(Block1, [e4_f1:eval(Op), <<".CALL">>]),
+    Block2 = emit(Block1, [e4_f1:eval(Op), ?F_ERL_CALL]),
 %%    case Inv of
 %%        true -> emit(Block2, <<".INVERT">>);
 %%        false -> Block2

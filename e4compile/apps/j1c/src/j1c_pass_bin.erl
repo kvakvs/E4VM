@@ -135,6 +135,15 @@ process_words(Prog0, [#j1leave{} | Tail]) ->
                           0:?J1OP_INDEX_WIDTH/big-signed>>),
     process_words(Prog1, Tail);
 
+process_words(Prog0, [#j1erl_call{lit = Lit} | Tail]) ->
+    Prog1 = emit(Prog0, <<?J1INSTR_ERL_CALL:?J1INSTR_WIDTH,
+                          Lit:?J1OP_INDEX_WIDTH/big-signed>>),
+    process_words(Prog1, Tail);
+process_words(Prog0, [#j1erl_tailcall{lit = Lit} | Tail]) ->
+    Prog1 = emit(Prog0, <<?J1INSTR_ERL_TAIL_CALL:?J1INSTR_WIDTH,
+                          Lit:?J1OP_INDEX_WIDTH/big-signed>>),
+    process_words(Prog1, Tail);
+
 process_words(Prog0, [#j1jump{condition = Cond, label = F} | Tail]) ->
     JType = case Cond of
                 false -> ?J1INSTR_JUMP;

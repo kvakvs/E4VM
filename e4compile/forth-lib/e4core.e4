@@ -4,16 +4,8 @@
 :NIF .NIL           -3
 
 ( ------ stack operations ------ )
-( :NIF .ENTER  -10 ) ( TODO: maybe allocate frame on dynamic heap? )
-( :NIF .LEAVE  -11 ) ( TODO: if on dynamic heap maybe just let GC take it )
-( :NIF .LEAVE0 -11 ) ( same as LEAVE, only one can be in the code )
-( .LD is an instruction now )
-( .ST is an instruction now )
 :NIF .APPLY  -12
-:NIF .CALL   -13
 :NIF .BIF    -14
-( :NIF .JUMP   -15 )
-:NIF .CALL-TAIL -16
 
 ( ------ comparison tests ------ )
 :NIF ==     -20
@@ -21,7 +13,6 @@
 
 ( ------ tuple stuff ------ )
 :NIF .SET-ELEMENT       -30
-( .GET-ELEMENT is an instruction now )
 :NIF .ALLOC-RAW-TUPLE   -31 ( allocate tuple but do not set its cells )
 :NIF .MAKE-TUPLE        -32 ( ... N -- Tuple , create from N values on stack )
 
@@ -45,7 +36,3 @@
 : ERROR-BADMATCH 'ATOM badmatch .ERROR ;
 : ERROR-BADARG 'ATOM badarg .ERROR ;
 : ERROR-CASE-CLAUSE 'ATOM case_clause .ERROR ;
-
-( OnFail X -- , jumps to OnFail if X is the nonvalue )
-( : ON-FAIL-JMP
-    .NONVALUE? IF .JUMP THEN ; )

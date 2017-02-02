@@ -137,11 +137,13 @@
 %% Words and opcodes used for various stuff
 -define(F_IS_NIL,       <<".NIL?">>).   % compare top with literal nil []
 
--define(F_GETELEMENT,   <<"GET-ELEMENT">>). % ( Tuple Index -- Element )
--define(F_LD,           <<"LD">>).      % ALU opcode to load a variable or arg
--define(F_ST,           <<"ST">>).      % ALU opcode to store a variable or arg
--define(F_ENTER,        <<"ENTER">>).   % instr to create a stack frame
--define(F_LEAVE,        <<"LEAVE">>).   % instr to drop a stack frame
--define(F_RET,          <<"RET">>).     % drops stack frame and returns
+-define(F_GETELEMENT,    <<"GET-ELEMENT">>). % ( Tuple Index -- Element )
+-define(F_LD,            <<"LD">>).      % ALU opcode to load a variable or arg
+-define(F_ST,            <<"ST">>).      % ALU opcode to store a variable or arg
+-define(F_ENTER,         <<"ENTER">>).   % instr to create a stack frame
+-define(F_LEAVE,         <<"LEAVE">>).   % instr to drop a stack frame
+-define(F_RET,           <<"RET">>).     % drops stack frame and returns
+-define(F_ERL_CALL,      <<"ERL-CALL">>).
+-define(F_ERL_TAIL_CALL, <<"ERL-TAIL-CALL">>).
 
 -endif. % E4_FORTH_HRL

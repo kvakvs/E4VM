@@ -25,10 +25,10 @@ format_j1c_op(_Prog, <<LitTag:?J1INSTR_WIDTH,
          orelse LitTag == ?J1LIT_ATOM
          orelse LitTag == ?J1LIT_LITERAL
     ->
-    LitType = fun(?J1LIT_ATOM) -> "𝔸";
-                 (?J1LIT_INTEGER) -> "𝕚";
-                 (?J1LIT_LITERAL) -> "𝕃" end,
-    io_lib:format("~s ~ts~B~n", [color:blueb("LIT"), LitType(LitTag), Lit]);
+    LitType = fun(?J1LIT_ATOM) -> "a";
+                 (?J1LIT_INTEGER) -> "i";
+                 (?J1LIT_LITERAL) -> "L" end,
+    io_lib:format("~s ~s:~B~n", [color:blueb("LIT"), LitType(LitTag), Lit]);
 
 %% Format a normal opcode, 16bit
 format_j1c_op(Prog, <<?J1INSTR_CALL:?J1INSTR_WIDTH,
@@ -56,14 +56,20 @@ format_j1c_op(_Prog, <<?J1INSTR_ST:?J1INSTR_WIDTH,
 
 format_j1c_op(_Prog, <<?J1INSTR_ENTER:?J1INSTR_WIDTH,
                        Size:?J1OP_INDEX_WIDTH/signed-big>>) ->
-    io_lib:format("~s ~p~n", [color:green("ENTER"), Size]);
+    io_lib:format("~s ~B~n", [color:green("ENTER"), Size]);
 format_j1c_op(_Prog, <<?J1INSTR_LEAVE:?J1INSTR_WIDTH,
                        0:?J1OP_INDEX_WIDTH/signed-big>>) ->
     io_lib:format("~s~n", [color:green("LEAVE")]);
 
 format_j1c_op(_Prog, <<?J1INSTR_GETELEMENT:?J1INSTR_WIDTH,
                        Index:?J1OP_INDEX_WIDTH/signed-big>>) ->
-    io_lib:format("~s ~p~n", [color:green("GET-ELEMENT"), Index]);
+    io_lib:format("~s ~B~n", [color:green("GET-ELEMENT"), Index]);
+format_j1c_op(_Prog, <<?J1INSTR_ERL_CALL:?J1INSTR_WIDTH,
+                       Index:?J1OP_INDEX_WIDTH/signed-big>>) ->
+    io_lib:format("~s~n", [color:green("ERL-CALL")]);
+format_j1c_op(_Prog, <<?J1INSTR_ERL_TAIL_CALL:?J1INSTR_WIDTH,
+                       Index:?J1OP_INDEX_WIDTH/signed-big>>) ->
+    io_lib:format("~s~n", [color:green("ERL-TAIL-CALL")]);
 
 format_j1c_op(_Prog, <<Cmd:?J1BITS>>) ->
     io_lib:format("?UNKNOWN ~4.16.0B~n", [Cmd]).
@@ -83,9 +89,9 @@ format_j1c_alu(RPC, Op, TN, TR, NTI, Ds, Rs) ->
     end,
     [
         io_lib:format("~s", [color:red("ALU." ++ j1_op(Op))]),
-        case RPC of 0 -> []; _ -> " R→PC" end,
-        case TN  of 0 -> []; _ -> " T→N" end,
-        case TR  of 0 -> []; _ -> " T→R" end,
+        case RPC of 0 -> []; _ -> " R->PC" end,
+        case TN  of 0 -> []; _ -> " T->N" end,
+        case TR  of 0 -> []; _ -> " T->R" end,
         case NTI of 0 -> []; _ -> " [T]" end,
         FormatOffset(" DS", Ds),
         FormatOffset(" RS", Rs),
@@ -103,11 +109,11 @@ j1_op(?J1ALU_T_XOR_N)            -> "T^N";
 j1_op(?J1ALU_INVERT_T)           -> "~T";
 j1_op(?J1ALU_N_EQ_T)             -> "N=T";
 j1_op(?J1ALU_N_LESS_T)           -> "N<T";
-j1_op(?J1ALU_N_RSHIFT_T)         -> "N»T";
+j1_op(?J1ALU_N_RSHIFT_T)         -> "N>>T";
 j1_op(?J1ALU_T_MINUS_1)          -> "T-1";
 j1_op(?J1ALU_R)                  -> "R";
 j1_op(?J1ALU_INDEX_T)            -> "[T]";
-j1_op(?J1ALU_N_LSHIFT_T)         -> "N«T";
+j1_op(?J1ALU_N_LSHIFT_T)         -> "N<<T";
 j1_op(?J1ALU_DEPTH)              -> "DEPTH";
 j1_op(?J1ALU_N_UNSIGNED_LESS_T)  -> "uN<T".
 

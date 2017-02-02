@@ -15,7 +15,11 @@ compile(ModuleName, SrcForth) ->
     % Module name should always be #0
     {Prog0A, _} = atom_index_or_create(Prog0, atom_to_binary(ModuleName, utf8)),
 
-    Prog1 = process_words(Prog0A, preprocess(SrcForth, [])),
+    Preprocessed = preprocess(SrcForth, []),
+%%    file:write_file("j1c_pass_forth-pre.txt",
+%%                    iolist_to_binary(io_lib:format("~p", [Preprocessed]))),
+
+    Prog1 = process_words(Prog0A, Preprocessed),
 
     %% Print the output
     J1Forth = lists:reverse(Prog1#j1prog.output),
@@ -37,6 +41,22 @@ preprocess([H | T], Acc) -> preprocess(T, [H | Acc]).
 %%%-----------------------------------------------------------------------------
 
 process_words(Prog0 = #j1prog{}, []) -> Prog0;
+
+%%process_words(Prog0, [OpList | Tail]) when is_list(OpList) ->
+%%    Prog1 = lists:foldl(fun(Op, P0) -> process_words(P0, [Op]) end,
+%%                        Prog0,
+%%                        OpList),
+%%    process_words(Prog1, Tail);
+
+process_words(Prog0 = #j1prog{}, [?F_ERL_CALL | Tail]) ->
+    Lit = 0,
+    Prog1 = emit(Prog0, #j1erl_call{lit = Lit}),
+    process_words(Prog1, Tail);
+process_words(Prog0 = #j1prog{}, [?F_ERL_TAIL_CALL | Tail]) ->
+    Lit = 0,
+    Prog1 = emit(Prog0, #j1erl_tailcall{lit = Lit}),
+    process_words(Prog1, Tail);
+
 process_words(Prog0 = #j1prog{}, [#f_export{fn=Fn, arity=Arity} | Tail]) ->
     Prog1 = prog_add_export(Prog0, Fn, Arity),
     process_words(Prog1, Tail);
@@ -136,9 +156,10 @@ process_words(Prog0 = #j1prog{}, [?F_LEAVE | Tail]) ->
 %% Comment - pass through
 process_words(Prog0 = #j1prog{}, [#f_comment{comment = C} | Tail]) ->
     process_words(emit(Prog0, #j1comment{comment = C}), Tail);
+
 %% A binary, probably a word? Pass through
 process_words(Prog0 = #j1prog{}, [Bin | Tail]) when is_binary(Bin) ->
-    process_words(emit(Prog0, [Bin]), Tail);
+    process_words(emit(Prog0, Bin), Tail);
 
 %% Nothing else worked, look for the word in our dictionaries and base words,
 %% maybe it is a literal, too

@@ -19,17 +19,20 @@
 -define(J1INSTR_JUMP_COND,  1). % may be extended by 16 bit varint
 -define(J1INSTR_CALL,       2). % may be extended by 16 bit varint
 -define(J1INSTR_ALU,        3). % always 16 bit
--define(J1INSTR_LD,         4).
--define(J1INSTR_ST,         5).
--define(J1INSTR_ENTER,      6).
--define(J1INSTR_LEAVE,      7).
 
--define(J1LITERAL,          8). % top bit set for literals, other bits set type
--define(J1LIT_ATOM,     (8+0)).
--define(J1LIT_LITERAL,  (8+1)).
--define(J1LIT_INTEGER,  (8+2)).
+-define(J1INSTR_ERL_TAIL_CALL, 4).
+-define(J1INSTR_ERL_CALL,      5).
 
--define(J1INSTR_GETELEMENT, 15).
+-define(J1INSTR_LD,         6). % value is 1.. for args or ..0 for stack frame
+-define(J1INSTR_ST,         7). % value is 1.. for args or ..0 for stack frame
+-define(J1INSTR_ENTER,      8). % value is stack frame size
+-define(J1INSTR_LEAVE,      9). % value is ignored
+-define(J1INSTR_GETELEMENT, 10). % ( Tuple Index -- Tuple[Index] )
+
+-define(J1LITERAL,          13).
+-define(J1LIT_ATOM,         (?J1LITERAL+0)).
+-define(J1LIT_LITERAL,      (?J1LITERAL+1)).
+-define(J1LIT_INTEGER,      (?J1LITERAL+2)).
 
 %% 4-bit values (ALU Operation)
 -define(J1ALU_T,             0).
@@ -63,20 +66,26 @@
 }).
 -type j1alu() :: #j1alu{}.
 
--record(j1ld, {index :: integer() }).
+-record(j1ld, { index :: integer() }).
 -type j1ld() :: #j1ld{}.
 
--record(j1st, {index :: integer() }).
+-record(j1st, { index :: integer() }).
 -type j1st() :: #j1st{}.
 
--record(j1getelement, {index :: uint16() }).
+-record(j1getelement, { index :: uint16() }).
 -type j1getelement() :: #j1getelement{}.
 
--record(j1enter, {size :: uint16() }).
+-record(j1enter, { size :: uint16() }).
 -type j1enter() :: #j1enter{}.
 
 -record(j1leave, {}).
 -type j1leave() :: #j1leave{}.
+
+-record(j1erl_call, { lit :: uint16() }).
+-type j1erl_call() :: #j1erl_call{}.
+
+-record(j1erl_tailcall, { lit :: uint16() }).
+-type j1erl_tailcall() :: #j1erl_tailcall{}.
 
 -record(j1label, {label :: uint() }).
 -type j1label() :: #j1label{}.
