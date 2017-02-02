@@ -12,13 +12,8 @@
 
 %% Bit values for the first nibble (Instruction type)
 %% Literal tag with value type + bits for literal body
--define(J1_LITERAL_TAG_BITS, 3).
--define(J1_LITERAL_BITS, (?J1BITS - ?J1_LITERAL_TAG_BITS)).
-
--define(J1LIT_ATOM,     (8+0)).
--define(J1LIT_LITERAL,  (8+1)).
--define(J1LIT_INTEGER,  (8+2)).
--define(J1LITERAL,          8). % top bit set for literals, other bits set type
+%%-define(J1_LITERAL_TAG_BITS, 4).
+%%-define(J1_LITERAL_BITS, (?J1BITS - ?J1_LITERAL_TAG_BITS)).
 
 -define(J1INSTR_JUMP,       0). % may be extended by 16 bit varint
 -define(J1INSTR_JUMP_COND,  1). % may be extended by 16 bit varint
@@ -26,7 +21,15 @@
 -define(J1INSTR_ALU,        3). % always 16 bit
 -define(J1INSTR_LD,         4).
 -define(J1INSTR_ST,         5).
--define(J1INSTR_GETELEMENT, 6).
+-define(J1INSTR_ENTER,      6).
+-define(J1INSTR_LEAVE,      7).
+
+-define(J1LITERAL,          8). % top bit set for literals, other bits set type
+-define(J1LIT_ATOM,     (8+0)).
+-define(J1LIT_LITERAL,  (8+1)).
+-define(J1LIT_INTEGER,  (8+2)).
+
+-define(J1INSTR_GETELEMENT, 15).
 
 %% 4-bit values (ALU Operation)
 -define(J1ALU_T,             0).
@@ -60,24 +63,22 @@
 }).
 -type j1alu() :: #j1alu{}.
 
--record(j1ld, {
-    index :: integer()
-}).
+-record(j1ld, {index :: integer() }).
 -type j1ld() :: #j1ld{}.
 
--record(j1st, {
-    index :: integer()
-}).
+-record(j1st, {index :: integer() }).
 -type j1st() :: #j1st{}.
 
--record(j1getelement, {
-    index :: uint16()
-}).
+-record(j1getelement, {index :: uint16() }).
 -type j1getelement() :: #j1getelement{}.
 
--record(j1label, {
-    label :: uint()
-}).
+-record(j1enter, {size :: uint16() }).
+-type j1enter() :: #j1enter{}.
+
+-record(j1leave, {}).
+-type j1leave() :: #j1leave{}.
+
+-record(j1label, {label :: uint() }).
 -type j1label() :: #j1label{}.
 
 -record(j1jump, {

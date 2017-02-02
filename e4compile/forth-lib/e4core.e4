@@ -4,9 +4,9 @@
 :NIF .NIL           -3
 
 ( ------ stack operations ------ )
-:NIF .ENTER  -10 ( TODO: maybe allocate frame on dynamic heap? )
-:NIF .LEAVE  -11 ( TODO: if on dynamic heap maybe just let GC take it )
-:NIF .LEAVE0 -11 ( same as LEAVE, only one can be in the code )
+( :NIF .ENTER  -10 ) ( TODO: maybe allocate frame on dynamic heap? )
+( :NIF .LEAVE  -11 ) ( TODO: if on dynamic heap maybe just let GC take it )
+( :NIF .LEAVE0 -11 ) ( same as LEAVE, only one can be in the code )
 ( .LD is an instruction now )
 ( .ST is an instruction now )
 :NIF .APPLY  -12

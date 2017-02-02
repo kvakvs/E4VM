@@ -45,7 +45,7 @@ format_scope(Scope) when is_list(Scope) ->
 %% @doc Given the current variable storage find the position of the variable.
 %% it can be argument on stack (pre existing) or belong to the stack frame.
 %% A stack frame looks like: arg3 arg2 arg1 |stack_base_pointer| var1 var2 ...
-%% which gives args positive values (forward in memory) and vars on frame
+%% which gives args positive values 1.. (forward in memory) and vars on frame
 %% negative values (back in memory), and stack grows back in memory too when
 %% more frames are needed.
 index_in_storage(Storage = #f_var_storage{aliases=Aliases},
@@ -71,9 +71,11 @@ index_in_storage(Storage = #f_var_storage{aliases=Aliases},
 index_in_storage2(#f_var_storage{stack_frame=StackFrame, args=Args},
                   CfVar = #k_var{}) ->
     case index_of(CfVar, Args) of
-        {ok, ArgIndex} -> {ok, ArgIndex};
+        %% Argument indexes start from 1
+        {ok, ArgIndex} -> {ok, ArgIndex + 1};
         not_found ->
             case index_of(CfVar, StackFrame) of
+                %% Frame variables start from 0..down
                 {ok, FrameIndex} -> {ok, -FrameIndex};
                 not_found -> not_found
             end

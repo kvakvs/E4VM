@@ -40,8 +40,9 @@ compile(Input = #j1prog{dict = IDict,
     file:write_file("j1c_pass_bin.txt",
                     iolist_to_binary(io_lib:format("~p", [Bin]))),
 
-    io:format("~s~n~s~n", [color:redb("J1C PASS 1"),
-                           j1c_disasm:disasm(Prog2, Bin)]),
+    io:format("~s~n"
+              "~s~n", [color:redb("J1C PASS 1"),
+                       j1c_disasm:disasm(Prog2, Bin)]),
     Prog2.
 
 %%%-----------------------------------------------------------------------------
@@ -54,6 +55,19 @@ process_words(Prog0, [OpList | Tail]) when is_list(OpList) ->
                         Prog0,
                         OpList),
     process_words(Prog1, Tail);
+
+process_words(Prog0 = #j1bin_prog{}, [#j1st{index = ST},
+                                      #j1ld{index = LD} | Tail])
+    when LD == ST ->
+    %% Optimize: eliminate st N + ld N pairs
+    process_words(Prog0, Tail);
+
+process_words(Prog0 = #j1bin_prog{}, [#j1st{index = ST},
+                                      #j1ld{index = LD1},
+                                      #j1ld{index = LD2} | Tail])
+    when LD2 == ST ->
+    %% Optimize: replace st N; ld M; ld N pairs with ld M; swap
+    process_words(Prog0, [#j1ld{index = LD1}, <<"SWAP">> | Tail]);
 
 process_words(Prog0 = #j1bin_prog{}, [?F_RET | Tail]) ->
     Prog1 = emit_alu(Prog0, #j1alu{op = 0, rpc = 1, ds = 2}),
@@ -107,6 +121,18 @@ process_words(Prog0, [#j1getelement{index = Index} | Tail]) ->
             "Get-element opcode index is too large"),
     Prog1 = emit(Prog0, <<?J1INSTR_GETELEMENT:?J1INSTR_WIDTH,
                           Index:?J1OP_INDEX_WIDTH/big-signed>>),
+    process_words(Prog1, Tail);
+
+process_words(Prog0, [#j1enter{size = Size} | Tail]) ->
+    ?ASSERT(signed_value_fits(Size, ?J1OP_INDEX_WIDTH),
+            "ENTER size is too large"),
+    Prog1 = emit(Prog0, <<?J1INSTR_ENTER:?J1INSTR_WIDTH,
+                          Size:?J1OP_INDEX_WIDTH/big-signed>>),
+    process_words(Prog1, Tail);
+
+process_words(Prog0, [#j1leave{} | Tail]) ->
+    Prog1 = emit(Prog0, <<?J1INSTR_LEAVE:?J1INSTR_WIDTH,
+                          0:?J1OP_INDEX_WIDTH/big-signed>>),
     process_words(Prog1, Tail);
 
 process_words(Prog0, [#j1jump{condition = Cond, label = F} | Tail]) ->
@@ -317,7 +343,7 @@ emit_base_word(_Prog, Word) ->
 %%%-----------------------------------------------------------------------------
 
 emit_lit(Prog0 = #j1bin_prog{}, Type, X) ->
-    emit(Prog0, <<Type:?J1_LITERAL_TAG_BITS, X:?J1_LITERAL_BITS/big>>).
+    emit(Prog0, <<Type:?J1OPCODE_WIDTH, X:?J1OP_INDEX_WIDTH/big>>).
 
 %%emit_lit(Prog0 = #j1prog{}, atom, Word) ->
 %%    {Prog1, AIndex} = atom_index_or_create(Prog0, Word),
