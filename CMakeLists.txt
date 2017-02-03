@@ -139,14 +139,14 @@ endif()
 ##
 ## PVS-Studio Static Checker
 ##
-#include(PVS-Studio.cmake)
-#pvs_studio_add_target(
-#    TARGET analyze ALL
-#    OUTPUT FORMAT tasklist
-#    PREPROCESSOR gcc
-#    LOG "PVS-report.tasks"
-#    ANALYZE e4_runtime-debug e4_platform-debug e4emu-debug
-#    CXX_FLAGS ${PREPROCESSOR_ADDITIONAL_FLAGS}
-#    C_FLAGS ${PREPROCESSOR_ADDITIONAL_FLAGS}
-#    CONFIG "${CMAKE_SOURCE_DIR}/PVS-Studio.cfg"
-#)
+include(PVS-Studio.cmake)
+pvs_studio_add_target(
+    TARGET analyze ALL
+    OUTPUT FORMAT tasklist
+    PREPROCESSOR gcc
+    LOG "PVS-report.tasks"
+    ANALYZE e4_runtime e4_platform e4_std e4emu
+    CXX_FLAGS ${PREPROCESSOR_ADDITIONAL_FLAGS}
+    C_FLAGS ${PREPROCESSOR_ADDITIONAL_FLAGS}
+    CONFIG "${CMAKE_SOURCE_DIR}/PVS-Studio.cfg"
+)

@@ -189,21 +189,23 @@ prog_add_export(Prog0 = #j1prog{exports = Expt},
     Expt1 = [{Fun, Arity} | Expt],
     Prog1#j1prog{exports = Expt1}.
 
+as_int(I) when is_integer(I) -> I;
 as_int(I) when is_binary(I) -> binary_to_integer(I).
 
 %% @doc Adds a word to the dictionary, records current program length (program
 %% counter position) as the word address.
 -spec prog_add_word(j1prog(), FA :: k_local() | binary()) -> j1prog().
-prog_add_word(Prog0 = #j1prog{dict = Dict},
-              #k_local{name = #k_atom{val = Fn}, arity = Arity}) ->
+prog_add_word(Prog0, #j1lit{debug = {?TAG_LIT_FUNARITY, F, Arity}}) ->
+    '_do_add_word'(Prog0, F, as_int(Arity));
+prog_add_word(Prog0, #k_local{name = #k_atom{val = Fn}, arity = Arity}) ->
+    '_do_add_word'(Prog0, Fn, as_int(Arity));
+prog_add_word(Prog0, Word) when is_binary(Word) ->
+    '_do_add_word'(Prog0, Word, 'F').
+
+'_do_add_word'(Prog0 = #j1prog{dict = Dict}, Fun, Arity) ->
     {F, Prog1} = create_label(Prog0),
-    Dict1 = orddict:store({Fn, as_int(Arity)}, F, Dict),
-    {Prog2, _} = j1c_prog:atom_index_or_create(Prog1, Fn),
-    Prog2#j1prog{dict = Dict1};
-prog_add_word(Prog0 = #j1prog{dict = Dict}, Word) when is_binary(Word) ->
-    {F, Prog1} = create_label(Prog0),
-    Dict1 = orddict:store(Word, F, Dict),
-    {Prog2, _} = j1c_prog:atom_index_or_create(Prog1, Word),
+    Dict1 = orddict:store({Fun, Arity}, F, Dict),
+    {Prog2, _} = j1c_prog:atom_index_or_create(Prog1, Fun),
     Prog2#j1prog{dict = Dict1}.
 
 %% @doc Adds a NIF name to the dictionary, does not register any other data

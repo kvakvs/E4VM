@@ -49,15 +49,17 @@ lit(Prog0 = #j1prog{}, atom, Word) when is_binary(Word) ->
 lit(Prog0 = #j1prog{}, mfa, {M, F, A1}) when is_integer(A1) ->
     M1 = eval(M),
     F1 = eval(F),
-    {Prog1, LIndex} = j1c_prog:literal_index_or_create(Prog0, {'$MFA', M1, F1, A1}),
+    {Prog1, LIndex} = j1c_prog:literal_index_or_create(
+        Prog0, {?TAG_LIT_MFARITY, M1, F1, A1}),
     {Prog1,
-     #j1lit{id = LIndex, debug = {mfa, M, F, A1}}
+     #j1lit{id = LIndex, debug = {?TAG_LIT_MFARITY, M, F, A1}}
     };
 lit(Prog0 = #j1prog{}, funarity, {F, A1}) when is_integer(A1) ->
     F1 = eval(F),
-    {Prog1, LIndex} = j1c_prog:literal_index_or_create(Prog0, {'$FA', F1, A1}),
+    {Prog1, LIndex} = j1c_prog:literal_index_or_create(
+        Prog0, {?TAG_LIT_FUNARITY, F1, A1}),
     {Prog1,
-     #j1lit{id = LIndex, debug = {funarity, F, A1}}
+     #j1lit{id = LIndex, debug = {?TAG_LIT_FUNARITY, F, A1}}
     };
 lit(Prog0 = #j1prog{}, arbitrary, Lit) ->
     {Prog1, LIndex} = j1c_prog:literal_index_or_create(Prog0, Lit),

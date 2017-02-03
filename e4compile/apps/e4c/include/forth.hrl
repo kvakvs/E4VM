@@ -146,4 +146,7 @@
 -define(F_ERL_CALL,      <<"ERL-CALL">>).
 -define(F_ERL_TAIL_CALL, <<"ERL-TAIL-CALL">>).
 
+-define(TAG_LIT_MFARITY,    '+mfa').
+-define(TAG_LIT_FUNARITY,   '+fa').
+
 -endif. % E4_FORTH_HRL

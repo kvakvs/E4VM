@@ -1,7 +1,7 @@
 :MODULE e4core
 :NIF .ERROR         -1 ( creates an error exception in the current process )
 :NIF .MAKE-MFARITY  -2
-:NIF .NIL           -3
+:NIF 'NIL           -3 ( -- [] , pushes a NIL literal on stack )
 
 ( ------ stack operations ------ )
 :NIF .APPLY  -12

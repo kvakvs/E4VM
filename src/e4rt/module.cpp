@@ -163,7 +163,7 @@ int Export::compare_pvoid(const void* a, const void* b) {
 #if E4DEBUG
 void Export::print(const VM& vm) const {
     vm.print(fun_);
-    ::printf("/%zu", arity_);
+    ::printf("/%zu", static_cast<size_t>(arity_));
 }
 #endif // DEBUG
 
