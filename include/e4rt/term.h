@@ -1,6 +1,6 @@
-/* * This is an open source non-commercial project. Dear PVS-Studio, please check it.
- * PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
- */
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
+//
 
 #pragma once
 
@@ -43,7 +43,7 @@ private:
         PrimaryTag tag_:TAG1_TAG_BITS;
         Word val_:TAG1_VALUE_BITS;
 
-        PrimaryTaggedWord() {}
+        PrimaryTaggedWord() {} //-V730
 
         constexpr PrimaryTaggedWord(PrimaryTag pt, Word v)
                 : tag_(pt), val_(v) {}
@@ -55,7 +55,7 @@ private:
         ImmediateTag imm_tag_:IMM1_TAG_BITS;
         Word val_:IMM1_VALUE_BITS;
 
-        ImmediateTaggedWord() {}
+        ImmediateTaggedWord() {} //-V730
 
         constexpr ImmediateTaggedWord(PrimaryTag pt, ImmediateTag it,
                                       Word v)
@@ -70,7 +70,7 @@ private:
         bool imm_tag_:1;
         SignedWord val_:(TAG1_VALUE_BITS - 1);
 
-        SmallTaggedImmediateWord() {}
+        SmallTaggedImmediateWord() {} //-V730
 
         explicit constexpr SmallTaggedImmediateWord(SignedWord val)
                 : primary_tag_(primary_tag::Immediate), imm_tag_(true),

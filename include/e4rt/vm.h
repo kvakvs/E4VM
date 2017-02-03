@@ -1,6 +1,6 @@
-/* * This is an open source non-commercial project. Dear PVS-Studio, please check it.
- * PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
- */
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
+//
 
 #pragma once
 
@@ -34,7 +34,8 @@ public:
     CodeManager modules_;
     Heap binary_heap_;
 
-    explicit VM() : binary_heap_(1024) {}
+    explicit VM() : binary_heap_(1024) {} //-V730
+
     void run();
     inline void run_alu(J1Opcode instr);
 

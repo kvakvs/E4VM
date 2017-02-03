@@ -24,6 +24,8 @@ private:
     Map<Term, Process*> processes_;
 
 public:
+    Scheduler() {}
+
     Term make_pid();
     void register_proc(Process* p);
     void schedule(Process* p);

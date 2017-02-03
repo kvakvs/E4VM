@@ -1,4 +1,8 @@
-#include "e4std/vector.h"
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
+//
+
+//#include "e4std/vector.h"
 
 namespace e4std {
 namespace impl {
