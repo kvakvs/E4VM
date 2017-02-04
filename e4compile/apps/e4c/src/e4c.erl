@@ -42,14 +42,19 @@ stop(_State) ->
 arguments_loop([]) ->
     io:format("~s~n", [color:greenb("E4: All arguments were processed")]),
     ok;
-arguments_loop([F | Tail]) ->
-    io:format("E4: Processing: ~p...~n", [F]),
+arguments_loop([InputPath | Tail]) ->
+    io:format("E4: Processing: ~p...~n", [InputPath]),
     try
-        try_do("top-level compiler invocation",
-               fun() -> e4c_compile:process(F) end),
+        %% Process Kernel to Forth transformation
+        {Mod, Tokens} = try_do("top-level E4C invocation",
+                               fun() -> e4c_compile:process(InputPath) end),
+        %% Process Forth tokens to Forth bytecode transformation
+        try_do("top-level J1C invocation",
+               fun() -> j1c_compile:process(InputPath, Mod, Tokens) end),
         arguments_loop(Tail)
     catch throw:compile_failed ->
-        io:format("~s - ~s~n", [color:yellow("E4: Compilation failed"), F])
+        io:format("~s - ~s~n", [color:yellow("E4: Compilation failed"),
+                                InputPath])
     end.
 
 try_do(What, Fun) ->
