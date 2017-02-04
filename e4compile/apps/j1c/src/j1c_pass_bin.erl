@@ -29,7 +29,7 @@ compile(Input = #j1prog{dict = IDict,
         atoms    = IAtoms
     },
 
-    Prog1 = process_words(Prog0, Input#j1prog.output),
+    Prog1 = process_words(Prog0, optimize(Input#j1prog.output, [])),
 
     %% Print the output
     Bin = lists:reverse(Prog1#j1bin_prog.output),
@@ -47,27 +47,48 @@ compile(Input = #j1prog{dict = IDict,
 
 %%%-----------------------------------------------------------------------------
 
+optimize([], Acc) -> lists:flatten(lists:reverse(Acc));
+
+optimize([#j1st{index = ST},
+          #j1ld{index = LD} | Tail], Acc) when LD == ST ->
+    %% Optimize: eliminate st N + ld N pairs
+    optimize(Tail, Acc);
+
+optimize([#j1st{index = ST},
+          #j1ld{index = LD1},
+          #j1ld{index = LD2} | Tail], Acc) when LD2 == ST ->
+    %% Optimize: replace
+    %% ST N; LD M; LD N
+    %% with LD M; SWAP
+    optimize(Tail, [[#j1ld{index = LD1}, <<"SWAP">>] | Acc]);
+
+optimize([#j1st{index = ST},
+          #j1lit{} = Lit,
+          #j1ld{index = LD} | Tail], Acc) when LD == ST ->
+    %% Optimize: replace
+    %% ST N; LIT; LD N
+    %% with LIT; SWAP
+    optimize(Tail, [[Lit, <<"SWAP">>] | Acc]);
+
+optimize([#j1st{index = ST},
+          #j1atom{} = Atom,
+          #j1ld{index = LD} | Tail], Acc) when LD == ST ->
+    %% Optimize: replace
+    %% ST N; ATOM; LD N
+    %% with ATOM; SWAP
+    optimize(Tail, [[Atom, <<"SWAP">>] | Acc]);
+
+optimize([H | Tail], Acc) -> optimize(Tail, [H | Acc]).
+
+%%%-----------------------------------------------------------------------------
+
 -spec process_words(j1bin_prog(), j1forth_code()) -> j1bin_prog().
 process_words(Prog0 = #j1bin_prog{}, []) -> Prog0;
-
 process_words(Prog0, [OpList | Tail]) when is_list(OpList) ->
     Prog1 = lists:foldl(fun(Op, P0) -> process_words(P0, [Op]) end,
                         Prog0,
                         OpList),
     process_words(Prog1, Tail);
-
-process_words(Prog0 = #j1bin_prog{}, [#j1st{index = ST},
-                                      #j1ld{index = LD} | Tail])
-    when LD == ST ->
-    %% Optimize: eliminate st N + ld N pairs
-    process_words(Prog0, Tail);
-
-process_words(Prog0 = #j1bin_prog{}, [#j1st{index = ST},
-                                      #j1ld{index = LD1},
-                                      #j1ld{index = LD2} | Tail])
-    when LD2 == ST ->
-    %% Optimize: replace st N; ld M; ld N pairs with ld M; swap
-    process_words(Prog0, [#j1ld{index = LD1}, <<"SWAP">> | Tail]);
 
 process_words(Prog0 = #j1bin_prog{}, [?F_RET | Tail]) ->
     Prog1 = emit_alu(Prog0, #j1alu{op = ?J1ALU_T, rpc = 1, ds = 2}),
@@ -121,17 +142,17 @@ process_words(Prog0, [#j1st{index = Index} | Tail]) ->
     process_words(Prog1, Tail);
 
 process_words(Prog0, [#j1getelement{index = Index} | Tail]) ->
-    ?ASSERT(signed_value_fits(Index, ?J1OP_INDEX_WIDTH),
+    ?ASSERT(unsigned_value_fits(Index, ?J1OP_INDEX_WIDTH),
             "Get-element opcode index is too large"),
     Prog1 = emit(Prog0, <<?J1INSTR_GETELEMENT:?J1INSTR_WIDTH,
-                          Index:?J1OP_INDEX_WIDTH/big-signed>>),
+                          Index:?J1OP_INDEX_WIDTH/big-unsigned>>),
     process_words(Prog1, Tail);
 
 process_words(Prog0, [#j1enter{size = Size} | Tail]) ->
-    ?ASSERT(signed_value_fits(Size, ?J1OP_INDEX_WIDTH),
+    ?ASSERT(unsigned_value_fits(Size, ?J1OP_INDEX_WIDTH),
             "ENTER size is too large"),
     Prog1 = emit(Prog0, <<?J1INSTR_ENTER:?J1INSTR_WIDTH,
-                          Size:?J1OP_INDEX_WIDTH/big-signed>>),
+                          Size:?J1OP_INDEX_WIDTH/big-unsigned>>),
     process_words(Prog1, Tail);
 
 %% LEAVE and LEAVE;RET
@@ -203,6 +224,10 @@ emit_call(Prog0 = #j1bin_prog{}, Index) ->
 
 signed_value_fits(Val, Bits) ->
     <<OutVal:Bits/signed-big>> = <<Val:Bits/signed-big>>,
+    Val =:= OutVal.
+
+unsigned_value_fits(Val, Bits) ->
+    <<OutVal:Bits/unsigned-big>> = <<Val:Bits/unsigned-big>>,
     Val =:= OutVal.
 
 %%emit(Prog0 = #j1bin{output=Out, pc=PC}, #j1patch{}=Patch) ->
@@ -365,6 +390,7 @@ emit_lit(Prog0 = #j1bin_prog{}, Type, X) ->
     emit(Prog0, <<Type:?J1INSTR_WIDTH, X:?J1OP_INDEX_WIDTH/big>>).
 
 emit_small_pos(Prog0 = #j1bin_prog{}, X) ->
+    ?ASSERT(unsigned_value_fits(X, ?J1INSTR_WIDTH)),
     emit(Prog0, <<?J1INSTR_SMALL_POS:?J1INSTR_WIDTH,
                   X:?J1INSTR_WIDTH/big-unsigned>>).
 

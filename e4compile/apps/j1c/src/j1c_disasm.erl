@@ -20,15 +20,12 @@ disasm(Prog, Pc, <<ByteOp:8, Tail/binary>>, Accum)
 disasm(Prog, Pc, <<H:2/binary, Tail/binary>>, Accum) ->
     <<H1:16>> = H,
     disasm(Prog, Pc + 1, Tail, [
-        format_j1c_op(Prog, H),
+        format_j1c_op16(Prog, H),
         io_lib:format("[~4.16.0B] ~4.16.0B: ", [Pc, H1]) | Accum
     ]).
 
 %%% ---------------------------------------------------------------------------
 
-%%format_j1c_byte_op(_Prog, <<?J1INSTR_ENTER:?J1INSTR_WIDTH,
-%%                       Size:?J1OP_INDEX_WIDTH/signed-big>>) ->
-%%    io_lib:format("~s ~B~n", [color:green("ENTER"), Size]);
 format_j1c_byte_op(_Prog, ?J1BYTE_INSTR_LEAVE) ->
     io_lib:format("~s~n", [color:green("LEAVE+RET")]);
 
@@ -45,8 +42,8 @@ format_j1c_byte_op(_Prog, Op) ->
 
 %%% ---------------------------------------------------------------------------
 
-format_j1c_op(_Prog, <<LitTag:?J1INSTR_WIDTH,
-                       Lit:?J1OP_INDEX_WIDTH/signed-big>>)
+format_j1c_op16(_Prog, <<LitTag:?J1INSTR_WIDTH,
+                         Lit:?J1OP_INDEX_WIDTH/signed-big>>)
     when LitTag == ?J1LIT_INTEGER
          orelse LitTag == ?J1LIT_ATOM
          orelse LitTag == ?J1LIT_LITERAL
@@ -56,35 +53,41 @@ format_j1c_op(_Prog, <<LitTag:?J1INSTR_WIDTH,
                  (?J1LIT_LITERAL) -> "L" end,
     io_lib:format("~s ~s:~B~n", [color:blueb("LIT"), LitType(LitTag), Lit]);
 
-format_j1c_op(_Prog, <<?J1INSTR_GETELEMENT:?J1INSTR_WIDTH,
-                       Index:?J1OP_INDEX_WIDTH/signed-big>>) ->
+format_j1c_op16(_Prog, <<?J1INSTR_ENTER:?J1INSTR_WIDTH,
+                         Size:?J1OP_INDEX_WIDTH/signed-big>>) ->
+    io_lib:format("~s ~B~n", [color:green("ENTER"), Size]);
+
+format_j1c_op16(_Prog, <<?J1INSTR_GETELEMENT:?J1INSTR_WIDTH,
+                         Index:?J1OP_INDEX_WIDTH/signed-big>>) ->
     io_lib:format("~s ~B~n", [color:green("GET-ELEMENT"), Index]);
 
 %% Format a normal opcode, 16bit
-format_j1c_op(Prog, <<?J1INSTR_CALL:?J1INSTR_WIDTH,
-                      Addr:?J1OP_INDEX_WIDTH/signed-big>>) ->
+format_j1c_op16(Prog, <<?J1INSTR_CALL:?J1INSTR_WIDTH,
+                        Addr:?J1OP_INDEX_WIDTH/signed-big>>) ->
     io_lib:format("~s ~s~n", [color:green("CALL"), whereis_addr(Prog, Addr)]);
-format_j1c_op(_Prog, <<?J1INSTR_JUMP:?J1INSTR_WIDTH,
-                       Addr:?J1OP_INDEX_WIDTH/signed-big>>) ->
+format_j1c_op16(_Prog, <<?J1INSTR_JUMP:?J1INSTR_WIDTH,
+                         Addr:?J1OP_INDEX_WIDTH/signed-big>>) ->
     io_lib:format("~s ~4.16.0B~n", [color:green("JMP"), Addr]);
-format_j1c_op(_Prog, <<?J1INSTR_JUMP_COND:?J1INSTR_WIDTH,
-                       Addr:?J1OP_INDEX_WIDTH/signed-big>>) ->
+format_j1c_op16(_Prog, <<?J1INSTR_JUMP_COND:?J1INSTR_WIDTH,
+                         Addr:?J1OP_INDEX_WIDTH/signed-big>>) ->
     io_lib:format("~s ~4.16.0B~n", [color:green("JZ"), Addr]);
-format_j1c_op(_Prog, <<?J1INSTR_ALU:?J1INSTR_WIDTH,
-                       Op:?J1OPCODE_WIDTH,
-                       RPC:1,
-                       TN:1, TR:1, NTI:1,
-                       Ds:2, Rs:2>>) ->
-    format_j1c_alu(RPC, Op, TN, TR, NTI, Ds, Rs);
+format_j1c_op16(_Prog, <<?J1INSTR_ALU:?J1INSTR_WIDTH,
+                         Op:?J1OPCODE_WIDTH,
+                         RPC:1,
+                         TN:1, TR:1, NTI:1,
+                         Ds:2, Rs:2>>) ->
+    [format_j1c_alu(#j1alu{rpc = RPC, op = Op, tn = TN, tr = TR,
+                           nti = NTI, ds = Ds, rs = Rs}),
+     "\n"];
 
-format_j1c_op(_Prog, <<?J1INSTR_LD:?J1INSTR_WIDTH,
-                      Index:?J1OP_INDEX_WIDTH/signed-big>>) ->
+format_j1c_op16(_Prog, <<?J1INSTR_LD:?J1INSTR_WIDTH,
+                         Index:?J1OP_INDEX_WIDTH/signed-big>>) ->
     io_lib:format("~s ~s~n", [color:green("LD"), annotate_ldst(Index)]);
-format_j1c_op(_Prog, <<?J1INSTR_ST:?J1INSTR_WIDTH,
-                       Index:?J1OP_INDEX_WIDTH/signed-big>>) ->
+format_j1c_op16(_Prog, <<?J1INSTR_ST:?J1INSTR_WIDTH,
+                         Index:?J1OP_INDEX_WIDTH/signed-big>>) ->
     io_lib:format("~s ~s~n", [color:green("ST"), annotate_ldst(Index)]);
 
-format_j1c_op(_Prog, <<Cmd:?J1BITS>>) ->
+format_j1c_op16(_Prog, <<Cmd:?J1BITS>>) ->
     io_lib:format("?UNKNOWN ~4.16.0B~n", [Cmd]).
 
 annotate_ldst(I) when I =< 0 ->
@@ -94,7 +97,10 @@ annotate_ldst(I) when I > 0 ->
 
 %%% ---------------------------------------------------------------------------
 
-format_j1c_alu(RPC, Op, TN, TR, NTI, Ds, Rs) ->
+format_j1c_alu(#j1alu{op = ?J1ALU_N, tn = 1}) ->
+    color:red("SWAP");
+format_j1c_alu(#j1alu{rpc = RPC, op = Op, tn = TN, tr = TR, nti = NTI,
+                      ds = Ds, rs = Rs}) ->
     FormatOffset =
     fun(_, 0) -> [];
         (Prefix, 1) -> Prefix ++ "++";
@@ -107,8 +113,7 @@ format_j1c_alu(RPC, Op, TN, TR, NTI, Ds, Rs) ->
         case TR  of 0 -> []; _ -> " T->R" end,
         case NTI of 0 -> []; _ -> " [T]" end,
         FormatOffset(" DS", Ds),
-        FormatOffset(" RS", Rs),
-        "\n"
+        FormatOffset(" RS", Rs)
     ].
 
 %%%-----------------------------------------------------------------------------
