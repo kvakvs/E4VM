@@ -13,8 +13,10 @@ process(InputPath, ModuleName, Input) ->
     J1Forth = e4c:try_do(
         "j1c_pass_forth - Compile to J1 opcodes",
         fun() -> j1c_pass_forth:compile(J1Prog, J1Preprocessed) end),
-    J1Bin = e4c:try_do("j1c_pass_bin - Compile J1 IC to binary",
-                       fun() -> j1c_pass_bin:compile(J1Forth) end),
+    J1Bin1 = e4c:try_do("j1c_pass_bin - Compile J1 IC to binary",
+                        fun() -> j1c_pass_bin:compile(J1Forth) end),
+    J1Bin = e4c:try_do("j1c_pass_link - J1 link label addresses",
+                       fun() -> j1c_pass_link:link(J1Bin1) end),
     e4c:try_do("Save binary output",
                fun() ->
                    IOList = j1c_file:to_iolist(J1Bin),

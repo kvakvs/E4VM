@@ -15,6 +15,7 @@
 -include_lib("e4c/include/forth.hrl").
 -include_lib("e4c/include/e4c.hrl").
 -include_lib("j1c/include/j1.hrl").
+-include_lib("j1c/include/j1binary.hrl").
 
 compile(Input = #j1prog{dict = IDict,
                         dict_nif = IDictNif,

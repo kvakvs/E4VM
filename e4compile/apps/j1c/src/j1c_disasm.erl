@@ -4,6 +4,7 @@
 -export([disasm/2]).
 
 -include_lib("j1c/include/j1.hrl").
+-include_lib("j1c/include/j1binary.hrl").
 
 disasm(Prog, Bin) ->
     Out = disasm(Prog, 0, iolist_to_binary(Bin), []),
@@ -11,10 +12,7 @@ disasm(Prog, Bin) ->
 
 disasm(_Prog, _Pc, <<>>, Accum) -> lists:reverse(Accum);
 disasm(Prog, Pc, <<ByteOp:8, Tail/binary>>, Accum)
-    when ByteOp bsr 4 == ?J1INSTR_SINGLE_BYTE
-         orelse ByteOp bsr 4 == ?J1INSTR_SMALL_POS
-         orelse ByteOp bsr 4 == ?J1INSTR_LD_SMALL
-         orelse ByteOp bsr 4 == ?J1INSTR_ST_SMALL ->
+    when ?IS_SINGLE_BYTE_OPCODE(ByteOp) ->
     disasm(Prog, Pc + 1, Tail, [
         format_j1c_byte_op(Prog, ByteOp),
         io_lib:format("[~4.16.0B]   ~2.16.0B: ", [Pc, ByteOp]) | Accum
@@ -98,7 +96,7 @@ format_j1c_op16(_Prog, <<?J1INSTR_ST:?J1INSTR_WIDTH,
                          Index:?J1OP_INDEX_WIDTH/signed-big>>) ->
     io_lib:format("~s ~s~n", [color:green("ST"), annotate_ldst(Index)]);
 
-format_j1c_op16(_Prog, <<Cmd:?J1BITS>>) ->
+format_j1c_op16(_Prog, <<Cmd:?J1LARGE_OPCODE_BITS>>) ->
     io_lib:format("?UNKNOWN ~4.16.0B~n", [Cmd]).
 
 annotate_ldst(I) when I =< 0 ->
