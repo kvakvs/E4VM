@@ -29,7 +29,8 @@ compile(Input = #j1prog{dict = IDict,
         atoms    = IAtoms
     },
 
-    Prog1 = process_words(Prog0, optimize(Input#j1prog.output, [])),
+    Prog1 = process_words(Prog0,
+                          j1c_optimize:optimize(Input#j1prog.output, [])),
 
     %% Print the output
     Bin = lists:reverse(Prog1#j1bin_prog.output),
@@ -47,41 +48,6 @@ compile(Input = #j1prog{dict = IDict,
 
 %%%-----------------------------------------------------------------------------
 
-optimize([], Acc) -> lists:flatten(lists:reverse(Acc));
-
-optimize([#j1st{index = ST},
-          #j1ld{index = LD} | Tail], Acc) when LD == ST ->
-    %% Optimize: eliminate st N + ld N pairs
-    optimize(Tail, Acc);
-
-optimize([#j1st{index = ST},
-          #j1ld{index = LD1},
-          #j1ld{index = LD2} | Tail], Acc) when LD2 == ST ->
-    %% Optimize: replace
-    %% ST N; LD M; LD N
-    %% with LD M; SWAP
-    optimize(Tail, [[#j1ld{index = LD1}, <<"SWAP">>] | Acc]);
-
-optimize([#j1st{index = ST},
-          #j1lit{} = Lit,
-          #j1ld{index = LD} | Tail], Acc) when LD == ST ->
-    %% Optimize: replace
-    %% ST N; LIT; LD N
-    %% with LIT; SWAP
-    optimize(Tail, [[Lit, <<"SWAP">>] | Acc]);
-
-optimize([#j1st{index = ST},
-          #j1atom{} = Atom,
-          #j1ld{index = LD} | Tail], Acc) when LD == ST ->
-    %% Optimize: replace
-    %% ST N; ATOM; LD N
-    %% with ATOM; SWAP
-    optimize(Tail, [[Atom, <<"SWAP">>] | Acc]);
-
-optimize([H | Tail], Acc) -> optimize(Tail, [H | Acc]).
-
-%%%-----------------------------------------------------------------------------
-
 -spec process_words(j1bin_prog(), j1forth_code()) -> j1bin_prog().
 process_words(Prog0 = #j1bin_prog{}, []) -> Prog0;
 process_words(Prog0, [OpList | Tail]) when is_list(OpList) ->
@@ -96,24 +62,15 @@ process_words(Prog0 = #j1bin_prog{}, [?F_RET | Tail]) ->
 
 %% Nothing else worked, look for the word in our dictionaries and base words,
 %% maybe it is a literal, too
-process_words(Prog0 = #j1bin_prog{}, [Word | Tail]) when is_binary(Word) ->
-    %% First check if it is accidentally an integer
-    case (catch erlang:binary_to_integer(Word)) of
-        X when is_integer(X) andalso X >= 0 andalso X =< 15 ->
-            %% special case for positive integer =< 15
-            ProgA = emit_small_pos(Prog0, X),
-            process_words(ProgA, Tail);
-        X when is_integer(X) ->
-            ProgA = emit_lit(Prog0, ?J1LIT_INTEGER, X),
-            process_words(ProgA, Tail);
-        {'EXIT', {badarg, _}} ->
-            %% Possibly a word, try resolve
-            Prog1 = case prog_find_word(Prog0, Word) of
-                        not_found -> emit_base_word(Prog0, Word);
-                        Index -> emit_call(Prog0, Index)
-                    end,
-            process_words(Prog1, Tail)
-    end;
+process_words(Prog0 = #j1bin_prog{}, [Int | Tail])
+    when is_integer(Int) andalso Int >= 0 andalso Int =< 15 ->
+        %% special case for positive integer =< 15
+        ProgA = emit_small_pos(Prog0, Int),
+        process_words(ProgA, Tail);
+process_words(Prog0 = #j1bin_prog{}, [Int | Tail])
+    when is_integer(Int) ->
+        ProgA = emit_lit(Prog0, ?J1LIT_INTEGER, Int),
+        process_words(ProgA, Tail);
 
 process_words(Prog0, [#j1comment{} | Tail]) ->
     process_words(Prog0, Tail);
@@ -130,15 +87,27 @@ process_words(Prog0, [#j1lit{id = LitId} | Tail]) ->
 process_words(Prog0, [#j1ld{index = Index} | Tail]) ->
     ?ASSERT(signed_value_fits(Index, ?J1OP_INDEX_WIDTH),
             "LD opcode index is too large"),
-    Prog1 = emit(Prog0, <<?J1INSTR_LD:?J1INSTR_WIDTH,
-                          Index:?J1OP_INDEX_WIDTH/big-signed>>),
+    Prog1 = case (signed_value_fits(Index, ?J1INSTR_WIDTH)) of
+                true ->
+                    emit(Prog0, <<?J1INSTR_LD_SMALL:?J1INSTR_WIDTH,
+                                  Index:?J1INSTR_WIDTH/signed>>);
+                false ->
+                    emit(Prog0, <<?J1INSTR_LD:?J1INSTR_WIDTH,
+                                  Index:?J1OP_INDEX_WIDTH/big-signed>>)
+            end,
     process_words(Prog1, Tail);
 
 process_words(Prog0, [#j1st{index = Index} | Tail]) ->
     ?ASSERT(signed_value_fits(Index, ?J1OP_INDEX_WIDTH),
             "ST opcode index is too large"),
-    Prog1 = emit(Prog0, <<?J1INSTR_ST:?J1INSTR_WIDTH,
-                          Index:?J1OP_INDEX_WIDTH/big-signed>>),
+    Prog1 = case signed_value_fits(Index, ?J1OP_INDEX_WIDTH) of
+                true ->
+                    emit(Prog0, <<?J1INSTR_ST_SMALL:?J1INSTR_WIDTH,
+                                  Index:?J1INSTR_WIDTH/signed>>);
+                false ->
+                    emit(Prog0, <<?J1INSTR_ST:?J1INSTR_WIDTH,
+                                  Index:?J1OP_INDEX_WIDTH/big-signed>>)
+            end,
     process_words(Prog1, Tail);
 
 process_words(Prog0, [#j1getelement{index = Index} | Tail]) ->
@@ -193,8 +162,16 @@ process_words(Prog0 = #j1bin_prog{pc = PC, labels = Labels, lpatches = Patch},
     },
     process_words(Prog1, Tail);
 
-process_words(_Prog, [Word | _Tail]) ->
-    ?COMPILE_ERROR1("Word is unexpected", Word).
+process_words(Prog0 = #j1bin_prog{}, [Word | Tail]) ->
+%% Possibly a word, try resolve
+    Prog1 = case prog_find_word(Prog0, Word) of
+                not_found -> emit_base_word(Prog0, Word);
+                Index -> emit_call(Prog0, Index)
+            end,
+    process_words(Prog1, Tail).
+
+%%process_words(_Prog, [Word | _Tail]) ->
+%%    ?COMPILE_ERROR1("Word is unexpected", Word).
 
 
 %%%-----------------------------------------------------------------------------
@@ -390,7 +367,7 @@ emit_lit(Prog0 = #j1bin_prog{}, Type, X) ->
     emit(Prog0, <<Type:?J1INSTR_WIDTH, X:?J1OP_INDEX_WIDTH/big>>).
 
 emit_small_pos(Prog0 = #j1bin_prog{}, X) ->
-    ?ASSERT(unsigned_value_fits(X, ?J1INSTR_WIDTH)),
+    ?ASSERT(unsigned_value_fits(X, ?J1INSTR_WIDTH), "SMALL-POS arg too big"),
     emit(Prog0, <<?J1INSTR_SMALL_POS:?J1INSTR_WIDTH,
                   X:?J1INSTR_WIDTH/big-unsigned>>).
 

@@ -27,8 +27,10 @@
 %% TODO: 8-bit ST small, same idea
 
 -define(J1INSTR_ENTER,      7). % value is stack frame size
-
--define(J1INSTR_SMALL_POS,  8). % 4-bit positive int literal (8 bit instr)
+% 8
+-define(J1INSTR_SMALL_POS,  9). % 4-bit positive int literal (8 bit instr)
+-define(J1INSTR_LD_SMALL,   10). % 3bit signed
+-define(J1INSTR_ST_SMALL,   11). % 3bit signed
 
 -define(J1LITERAL,          12).
 -define(J1LIT_ATOM,         (?J1LITERAL+0)).

@@ -53,9 +53,8 @@ process_words(Prog0 = #j1prog{}, [<<":MODULE">>, Name | Tail]) ->
 process_words(Prog0 = #j1prog{}, [<<":">>, Name | Tail]) ->
     Prog1 = prog_add_word(Prog0, Name),
     process_words(Prog1, Tail);
-process_words(Prog0 = #j1prog{}, [<<":NIF">>, Name, Index0 | Tail]) ->
-    Index1 = binary_to_integer(Index0),
-    Prog1 = prog_add_nif(Prog0, Name, Index1),
+process_words(Prog0 = #j1prog{}, [<<":NIF">>, Name, Index | Tail]) ->
+    Prog1 = prog_add_nif(Prog0, Name, Index),
     process_words(Prog1, Tail);
 
 %% --- Conditions ---
@@ -104,16 +103,16 @@ process_words(Prog0 = #j1prog{}, [<<"UNTIL">> | Tail]) -> % conditional if-zero 
 %% TODO: EQU, maybe VAR, ARR?
 
 process_words(Prog0 = #j1prog{}, [Var, ?F_LD | Tail]) ->
-    Prog1 = emit(Prog0, #j1ld{index = erlang:binary_to_integer(Var)}),
+    Prog1 = emit(Prog0, #j1ld{index = Var}),
     process_words(Prog1, Tail);
 process_words(Prog0 = #j1prog{}, [Var, ?F_ST | Tail]) ->
-    Prog1 = emit(Prog0, #j1st{index = erlang:binary_to_integer(Var)}),
+    Prog1 = emit(Prog0, #j1st{index = Var}),
     process_words(Prog1, Tail);
 process_words(Prog0 = #j1prog{}, [Index, ?F_GETELEMENT | Tail]) ->
-    Prog1 = emit(Prog0, #j1getelement{index = erlang:binary_to_integer(Index)}),
+    Prog1 = emit(Prog0, #j1getelement{index = Index}),
     process_words(Prog1, Tail);
 process_words(Prog0 = #j1prog{}, [FrameSize, ?F_ENTER | Tail]) ->
-    Prog1 = emit(Prog0, #j1enter{size = erlang:binary_to_integer(FrameSize)}),
+    Prog1 = emit(Prog0, #j1enter{size = FrameSize}),
     process_words(Prog1, Tail);
 process_words(Prog0 = #j1prog{}, [?F_LEAVE | Tail]) ->
     Prog1 = emit(Prog0, #j1leave{}),
@@ -126,6 +125,9 @@ process_words(Prog0 = #j1prog{}, [#f_comment{comment = C} | Tail]) ->
 %% A binary, probably a word? Pass through
 process_words(Prog0 = #j1prog{}, [Bin | Tail]) when is_binary(Bin) ->
     process_words(emit(Prog0, Bin), Tail);
+%% Integer literal - good stuff, let it through
+process_words(Prog0 = #j1prog{}, [Int | Tail]) when is_integer(Int) ->
+    process_words(emit(Prog0, Int), Tail);
 
 %% Atom or literal? Pass through
 process_words(Prog0 = #j1prog{}, [J = #j1atom{} | Tail]) ->
