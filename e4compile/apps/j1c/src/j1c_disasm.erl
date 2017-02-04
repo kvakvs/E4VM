@@ -10,12 +10,33 @@ disasm(Prog, Bin) ->
     unicode:characters_to_binary(Out, utf8).
 
 disasm(_Prog, _Pc, <<>>, Accum) -> lists:reverse(Accum);
+disasm(Prog, Pc, <<ByteOp:8, Tail/binary>>, Accum)
+    when ByteOp bsr 4 == ?J1INSTR_SINGLE_BYTE ->
+    disasm(Prog, Pc + 1, Tail, [
+        format_j1c_byte_op(Prog, ByteOp),
+        io_lib:format("[~4.16.0B]   ~2.16.0B: ", [Pc, ByteOp]) | Accum
+    ]);
 disasm(Prog, Pc, <<H:2/binary, Tail/binary>>, Accum) ->
     <<H1:16>> = H,
     disasm(Prog, Pc + 1, Tail, [
         format_j1c_op(Prog, H),
         io_lib:format("[~4.16.0B] ~4.16.0B: ", [Pc, H1]) | Accum
     ]).
+
+%%% ---------------------------------------------------------------------------
+
+%%format_j1c_byte_op(_Prog, <<?J1INSTR_ENTER:?J1INSTR_WIDTH,
+%%                       Size:?J1OP_INDEX_WIDTH/signed-big>>) ->
+%%    io_lib:format("~s ~B~n", [color:green("ENTER"), Size]);
+format_j1c_byte_op(_Prog, ?J1BYTE_INSTR_LEAVE) ->
+    io_lib:format("~s~n", [color:green("LEAVE+RET")]);
+
+format_j1c_byte_op(_Prog, ?J1BYTE_INSTR_ERL_CALL) ->
+    io_lib:format("~s~n", [color:green("ERL-CALL")]);
+format_j1c_byte_op(_Prog, ?J1BYTE_INSTR_ERL_TAIL_CALL) ->
+    io_lib:format("~s~n", [color:green("ERL-TAIL-CALL")]);
+format_j1c_byte_op(_Prog, Op) ->
+    io_lib:format("?UNKNOWN-BYTEOP ~2.16.0B~n", [Op]).
 
 %%% ---------------------------------------------------------------------------
 
@@ -29,6 +50,10 @@ format_j1c_op(_Prog, <<LitTag:?J1INSTR_WIDTH,
                  (?J1LIT_INTEGER) -> "i";
                  (?J1LIT_LITERAL) -> "L" end,
     io_lib:format("~s ~s:~B~n", [color:blueb("LIT"), LitType(LitTag), Lit]);
+
+format_j1c_op(_Prog, <<?J1INSTR_GETELEMENT:?J1INSTR_WIDTH,
+                       Index:?J1OP_INDEX_WIDTH/signed-big>>) ->
+    io_lib:format("~s ~B~n", [color:green("GET-ELEMENT"), Index]);
 
 %% Format a normal opcode, 16bit
 format_j1c_op(Prog, <<?J1INSTR_CALL:?J1INSTR_WIDTH,
@@ -53,23 +78,6 @@ format_j1c_op(_Prog, <<?J1INSTR_LD:?J1INSTR_WIDTH,
 format_j1c_op(_Prog, <<?J1INSTR_ST:?J1INSTR_WIDTH,
                        Index:?J1OP_INDEX_WIDTH/signed-big>>) ->
     io_lib:format("~s ~s~n", [color:green("ST"), annotate_ldst(Index)]);
-
-format_j1c_op(_Prog, <<?J1INSTR_ENTER:?J1INSTR_WIDTH,
-                       Size:?J1OP_INDEX_WIDTH/signed-big>>) ->
-    io_lib:format("~s ~B~n", [color:green("ENTER"), Size]);
-format_j1c_op(_Prog, <<?J1INSTR_LEAVE:?J1INSTR_WIDTH,
-                       0:?J1OP_INDEX_WIDTH/signed-big>>) ->
-    io_lib:format("~s~n", [color:green("LEAVE")]);
-
-format_j1c_op(_Prog, <<?J1INSTR_GETELEMENT:?J1INSTR_WIDTH,
-                       Index:?J1OP_INDEX_WIDTH/signed-big>>) ->
-    io_lib:format("~s ~B~n", [color:green("GET-ELEMENT"), Index]);
-format_j1c_op(_Prog, <<?J1INSTR_ERL_CALL:?J1INSTR_WIDTH,
-                       Index:?J1OP_INDEX_WIDTH/signed-big>>) ->
-    io_lib:format("~s~n", [color:green("ERL-CALL")]);
-format_j1c_op(_Prog, <<?J1INSTR_ERL_TAIL_CALL:?J1INSTR_WIDTH,
-                       Index:?J1OP_INDEX_WIDTH/signed-big>>) ->
-    io_lib:format("~s~n", [color:green("ERL-TAIL-CALL")]);
 
 format_j1c_op(_Prog, <<Cmd:?J1BITS>>) ->
     io_lib:format("?UNKNOWN ~4.16.0B~n", [Cmd]).

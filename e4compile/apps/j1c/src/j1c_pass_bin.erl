@@ -70,7 +70,7 @@ process_words(Prog0 = #j1bin_prog{}, [#j1st{index = ST},
     process_words(Prog0, [#j1ld{index = LD1}, <<"SWAP">> | Tail]);
 
 process_words(Prog0 = #j1bin_prog{}, [?F_RET | Tail]) ->
-    Prog1 = emit_alu(Prog0, #j1alu{op = 0, rpc = 1, ds = 2}),
+    Prog1 = emit_alu(Prog0, #j1alu{op = ?J1ALU_T, rpc = 1, ds = 2}),
     process_words(Prog1, Tail);
 
 %% Nothing else worked, look for the word in our dictionaries and base words,
@@ -130,18 +130,24 @@ process_words(Prog0, [#j1enter{size = Size} | Tail]) ->
                           Size:?J1OP_INDEX_WIDTH/big-signed>>),
     process_words(Prog1, Tail);
 
+%% LEAVE and LEAVE;RET
+process_words(Prog0, [#j1leave{}, ?F_RET | Tail]) ->
+    Prog1 = emit(Prog0, <<?J1INSTR_SINGLE_BYTE:?J1INSTR_WIDTH,
+                          ?J1BYTE_INSTR_LEAVE:?J1INSTR_WIDTH>>),
+    process_words(Prog1, Tail);
 process_words(Prog0, [#j1leave{} | Tail]) ->
-    Prog1 = emit(Prog0, <<?J1INSTR_LEAVE:?J1INSTR_WIDTH,
-                          0:?J1OP_INDEX_WIDTH/big-signed>>),
-    process_words(Prog1, Tail);
+%%    Prog1 = emit(Prog0, <<?J1INSTR_LEAVE:?J1INSTR_WIDTH,
+%%                          0:?J1OP_INDEX_WIDTH/big-signed>>),
+    ?COMPILE_ERROR("Stray LEAVE without RET following it"),
+    process_words(Prog0, Tail);
 
-process_words(Prog0, [#j1erl_call{lit = Lit} | Tail]) ->
-    Prog1 = emit(Prog0, <<?J1INSTR_ERL_CALL:?J1INSTR_WIDTH,
-                          Lit:?J1OP_INDEX_WIDTH/big-signed>>),
+process_words(Prog0, [#j1erl_call{lit = _Lit} | Tail]) ->
+    Prog1 = emit(Prog0, <<?J1INSTR_SINGLE_BYTE:?J1INSTR_WIDTH,
+                          ?J1BYTE_INSTR_ERL_CALL:?J1INSTR_WIDTH>>),
     process_words(Prog1, Tail);
-process_words(Prog0, [#j1erl_tailcall{lit = Lit} | Tail]) ->
-    Prog1 = emit(Prog0, <<?J1INSTR_ERL_TAIL_CALL:?J1INSTR_WIDTH,
-                          Lit:?J1OP_INDEX_WIDTH/big-signed>>),
+process_words(Prog0, [#j1erl_tailcall{lit = _Lit} | Tail]) ->
+    Prog1 = emit(Prog0, <<?J1INSTR_SINGLE_BYTE:?J1INSTR_WIDTH,
+                          ?J1BYTE_INSTR_ERL_TAIL_CALL:?J1INSTR_WIDTH>>),
     process_words(Prog1, Tail);
 
 process_words(Prog0, [#j1jump{condition = Cond, label = F} | Tail]) ->

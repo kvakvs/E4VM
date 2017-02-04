@@ -19,20 +19,23 @@
 -define(J1INSTR_JUMP_COND,  1). % may be extended by 16 bit varint
 -define(J1INSTR_CALL,       2). % may be extended by 16 bit varint
 -define(J1INSTR_ALU,        3). % always 16 bit
-
--define(J1INSTR_ERL_TAIL_CALL, 4).
--define(J1INSTR_ERL_CALL,      5).
+-define(J1INSTR_GETELEMENT, 4). % ( Tuple -- Tuple[Index] , index hardcoded )
 
 -define(J1INSTR_LD,         6). % value is 1.. for args or ..0 for stack frame
 -define(J1INSTR_ST,         7). % value is 1.. for args or ..0 for stack frame
 -define(J1INSTR_ENTER,      8). % value is stack frame size
--define(J1INSTR_LEAVE,      9). % value is ignored
--define(J1INSTR_GETELEMENT, 10). % ( Tuple Index -- Tuple[Index] )
 
--define(J1LITERAL,          13).
+-define(J1LITERAL,          12).
 -define(J1LIT_ATOM,         (?J1LITERAL+0)).
 -define(J1LIT_LITERAL,      (?J1LITERAL+1)).
 -define(J1LIT_INTEGER,      (?J1LITERAL+2)).
+
+-define(J1INSTR_SINGLE_BYTE, 15). % marks 1-byte opcode (those 16#F?)
+
+%-define(J1BYTE_INSTR_SMALL_INT,     16#F0). % Signed 3-bit integer literal
+-define(J1BYTE_INSTR_LEAVE,         16#F1). % Leaves stack frame and returns
+-define(J1BYTE_INSTR_ERL_TAIL_CALL, 16#F2). % ( Args... Fun -- , jump to fun
+-define(J1BYTE_INSTR_ERL_CALL,      16#F3). % ( Args... Fun -- Result , call )
 
 %% 4-bit values (ALU Operation)
 -define(J1ALU_T,             0).
