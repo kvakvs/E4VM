@@ -29,22 +29,24 @@ disasm(Prog, Pc, <<H:2/binary, Tail/binary>>, Accum) ->
 %%% ---------------------------------------------------------------------------
 
 format_j1c_byte_op(_Prog, ?J1BYTE_INSTR_LEAVE) ->
-    io_lib:format("~s~n", [color:green("LEAVE+RET")]);
+    io_lib:format("~s; ~s~n", [color:green("LEAVE"), color:red("RET")]);
 
 format_j1c_byte_op(_Prog, ?J1BYTE_INSTR_ERL_CALL) ->
-    io_lib:format("~s~n", [color:green("ERL-CALL")]);
+    io_lib:format("erl-~s~n", [color:green("CALL")]);
 format_j1c_byte_op(_Prog, ?J1BYTE_INSTR_ERL_TAIL_CALL) ->
-    io_lib:format("~s~n", [color:green("ERL-TAIL-CALL")]);
+    io_lib:format("erl-~s~n", [color:green("TAIL")]);
+format_j1c_byte_op(_Prog, ?J1BYTE_INSTR_NIL) ->
+    io_lib:format("~s []~n", [color:green("LIT")]);
 
 format_j1c_byte_op(_Prog, X) when X bsr 4 == ?J1INSTR_SMALL_POS ->
-    io_lib:format("~s i:~B~n", [color:blueb("LIT_"), X band 15]);
+    io_lib:format("~s i:~B~n", [color:blueb("LIT"), X band 15]);
 
 format_j1c_byte_op(_Prog, X) when X bsr 4 == ?J1INSTR_LD_SMALL ->
     <<_:?J1INSTR_WIDTH, Index:?J1INSTR_WIDTH/signed>> = <<X:8>>,
-    io_lib:format("~s ~s~n", [color:green("LD_"), annotate_ldst(Index)]);
+    io_lib:format("~s ~s~n", [color:green("LD"), annotate_ldst(Index)]);
 format_j1c_byte_op(_Prog, X) when X bsr 4 == ?J1INSTR_ST_SMALL ->
     <<_:?J1INSTR_WIDTH, Index:?J1INSTR_WIDTH/signed>> = <<X:8>>,
-    io_lib:format("~s ~s~n", [color:green("ST_"), annotate_ldst(Index)]);
+    io_lib:format("~s ~s~n", [color:green("ST"), annotate_ldst(Index)]);
 
 format_j1c_byte_op(_Prog, Op) ->
     io_lib:format("?UNKNOWN-BYTEOP ~2.16.0B~n", [Op]).
@@ -106,8 +108,8 @@ annotate_ldst(I) when I > 0 ->
 
 %%% ---------------------------------------------------------------------------
 
-format_j1c_alu(#j1alu{op = ?J1ALU_N, tn = 1}) ->
-    color:red("SWAP");
+format_j1c_alu(#j1alu{op = ?J1ALU_N, tn = 1}) -> color:red("SWAP");
+format_j1c_alu(#j1alu{op = ?J1ALU_T, rpc = 1, rs = 2}) -> color:red("RET");
 format_j1c_alu(#j1alu{rpc = RPC, op = Op, tn = TN, tr = TR, nti = NTI,
                       ds = Ds, rs = Rs}) ->
     FormatOffset =

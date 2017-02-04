@@ -42,6 +42,7 @@
 -define(J1BYTE_INSTR_LEAVE,         16#F0). % Leaves stack frame and returns
 -define(J1BYTE_INSTR_ERL_TAIL_CALL, 16#F1). % ( Args... Fun -- , jump to fun
 -define(J1BYTE_INSTR_ERL_CALL,      16#F2). % ( Args... Fun -- Result , call )
+-define(J1BYTE_INSTR_NIL,           16#F3).
 
 %% 4-bit values (ALU Operation)
 -define(J1ALU_T,             0).
@@ -65,7 +66,7 @@
 -type uint16() :: 0..65535.
 
 -record(j1alu, {
-    op = 0 :: 0..15,    % one of ?J1ALU_* macros.
+    op = 0 :: 0..15,    % one of ?J1ALU_* macros, ALU operation
     rpc = 0 :: 0..1,    % copy R (return stack top) to PC (program counter)
     tn = 0 :: 0..1,     % copy T (stack top) -> N (next after stack top)
     tr = 0 :: 0..1,     % copy T (stack top) to R (return stack top)

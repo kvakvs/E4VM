@@ -40,7 +40,6 @@ preprocess(Prog0 = #j1prog{},
 preprocess(Prog0 = #j1prog{},
            Acc,
            [?F_LIT_FUNA, ?F_LIT_ATOM, Fn, Arity | Tail]) ->
-    io:format("lit funa ~p ~B~n", [Fn, Arity]),
     {Prog1, Repr} = j1c_prog:lit(Prog0, funarity, {Fn, Arity}),
     preprocess(Prog1, [Repr | Acc], Tail);
 
@@ -54,7 +53,6 @@ preprocess(Prog, Acc, [H | Tail]) ->
 
 preprocess_numbers([], Acc) -> lists:reverse(Acc);
 preprocess_numbers([Word | Tail], Acc) ->
-    io:format("~p~n", [Word]),
     case (catch erlang:binary_to_integer(Word)) of
         X when is_integer(X) -> preprocess_numbers(Tail, [X | Acc]);
         {'EXIT', {badarg, _}} -> preprocess_numbers(Tail, [Word | Acc])

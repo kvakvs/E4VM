@@ -60,6 +60,11 @@ process_words(Prog0 = #j1bin_prog{}, [?F_RET | Tail]) ->
     Prog1 = emit_alu(Prog0, #j1alu{op = ?J1ALU_T, rpc = 1, ds = 2}),
     process_words(Prog1, Tail);
 
+process_words(Prog0 = #j1bin_prog{}, [?F_LIT_NIL | Tail]) ->
+    Prog1 = emit(Prog0, <<?J1INSTR_SINGLE_BYTE:?J1INSTR_WIDTH,
+                          ?J1BYTE_INSTR_NIL:?J1INSTR_WIDTH>>),
+    process_words(Prog1, Tail);
+
 %% Nothing else worked, look for the word in our dictionaries and base words,
 %% maybe it is a literal, too
 process_words(Prog0 = #j1bin_prog{}, [Int | Tail])

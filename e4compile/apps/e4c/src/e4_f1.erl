@@ -5,7 +5,7 @@
 %% API
 -export([
       'and'/1, 'if'/2, 'if'/3, block/0, block/1, block/3, block/4, comment/1,
-      comment/2, equals/2, lit/1, match_two_values/2, nil/0, eval/1,
+      comment/2, equals/2, lit/1, match_two_values/2, eval/1,
       store/1, tuple/1, var/1, element/2, unless/2, mark_alias/2,
       mark_new_arg/1, make_mfarity/3, primop/2, include/1, make_tmp/2, emit/2,
       export/2
@@ -114,9 +114,6 @@ comment(Str) -> comment("~s", [Str]).
 comment(Format, Args) ->
     Txt = iolist_to_binary(io_lib:format(Format, Args)),
     #f_comment{comment=Txt}.
-
-%% ( -- nil , leaves value [] on stack )
-nil() -> <<"NIL">>.
 
 block() -> block([], [], [], []).
 block(Code) -> block([], Code, [], []).

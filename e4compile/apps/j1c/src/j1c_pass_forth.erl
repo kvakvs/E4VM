@@ -20,7 +20,7 @@ compile(Prog0 = #j1prog{}, Preprocessed) ->
     file:write_file("j1c_pass_forth.txt",
                     iolist_to_binary(io_lib:format("~p", [J1Forth]))),
 
-    io:format("~s~n~p~n", [color:redb("J1C PASS 1"), J1Forth]),
+%%    io:format("~s~n~p~n", [color:redb("J1C PASS 1"), J1Forth]),
     Prog4.
 
 %%%-----------------------------------------------------------------------------
