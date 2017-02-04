@@ -1,5 +1,6 @@
 TESTFILE=gb_trees
 TESTFILE2=test1
+TESTFILE3=mochijson
 
 .PHONY: run1
 run1:
@@ -7,6 +8,9 @@ run1:
 .PHONY: run2
 run2:
 	rebar3 compile && ./e4c.sh priv/$(TESTFILE2).erl
+.PHONY: run3
+run3:
+	rebar3 compile && ./e4c.sh priv/$(TESTFILE3).erl
 
 .PHONY: dialyze
 dialyze:

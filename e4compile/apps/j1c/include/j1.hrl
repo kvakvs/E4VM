@@ -21,9 +21,14 @@
 -define(J1INSTR_ALU,        3). % always 16 bit
 -define(J1INSTR_GETELEMENT, 4). % ( Tuple -- Tuple[Index] , index hardcoded )
 
--define(J1INSTR_LD,         6). % value is 1.. for args or ..0 for stack frame
--define(J1INSTR_ST,         7). % value is 1.. for args or ..0 for stack frame
--define(J1INSTR_ENTER,      8). % value is stack frame size
+-define(J1INSTR_LD,         5). % value is 1.. for args or ..0 for stack frame
+-define(J1INSTR_ST,         6). % value is 1.. for args or ..0 for stack frame
+%% TODO: 8-bit LD small, maybe separate LDARG with 4-bit index and LDLOC?
+%% TODO: 8-bit ST small, same idea
+
+-define(J1INSTR_ENTER,      7). % value is stack frame size
+
+-define(J1INSTR_SMALL_POS,  8). % 4-bit positive int literal (8 bit instr)
 
 -define(J1LITERAL,          12).
 -define(J1LIT_ATOM,         (?J1LITERAL+0)).
@@ -32,10 +37,9 @@
 
 -define(J1INSTR_SINGLE_BYTE, 15). % marks 1-byte opcode (those 16#F?)
 
-%-define(J1BYTE_INSTR_SMALL_INT,     16#F0). % Signed 3-bit integer literal
--define(J1BYTE_INSTR_LEAVE,         16#F1). % Leaves stack frame and returns
--define(J1BYTE_INSTR_ERL_TAIL_CALL, 16#F2). % ( Args... Fun -- , jump to fun
--define(J1BYTE_INSTR_ERL_CALL,      16#F3). % ( Args... Fun -- Result , call )
+-define(J1BYTE_INSTR_LEAVE,         16#F0). % Leaves stack frame and returns
+-define(J1BYTE_INSTR_ERL_TAIL_CALL, 16#F1). % ( Args... Fun -- , jump to fun
+-define(J1BYTE_INSTR_ERL_CALL,      16#F2). % ( Args... Fun -- Result , call )
 
 %% 4-bit values (ALU Operation)
 -define(J1ALU_T,             0).

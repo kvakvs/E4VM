@@ -11,7 +11,8 @@ disasm(Prog, Bin) ->
 
 disasm(_Prog, _Pc, <<>>, Accum) -> lists:reverse(Accum);
 disasm(Prog, Pc, <<ByteOp:8, Tail/binary>>, Accum)
-    when ByteOp bsr 4 == ?J1INSTR_SINGLE_BYTE ->
+    when ByteOp bsr 4 == ?J1INSTR_SINGLE_BYTE
+         orelse ByteOp bsr 4 == ?J1INSTR_SMALL_POS ->
     disasm(Prog, Pc + 1, Tail, [
         format_j1c_byte_op(Prog, ByteOp),
         io_lib:format("[~4.16.0B]   ~2.16.0B: ", [Pc, ByteOp]) | Accum
@@ -35,6 +36,10 @@ format_j1c_byte_op(_Prog, ?J1BYTE_INSTR_ERL_CALL) ->
     io_lib:format("~s~n", [color:green("ERL-CALL")]);
 format_j1c_byte_op(_Prog, ?J1BYTE_INSTR_ERL_TAIL_CALL) ->
     io_lib:format("~s~n", [color:green("ERL-TAIL-CALL")]);
+
+format_j1c_byte_op(_Prog, X) when X bsr 4 == ?J1INSTR_SMALL_POS ->
+    io_lib:format("~s ~B~n", [color:green("SMALL-POS"), X band 15]);
+
 format_j1c_byte_op(_Prog, Op) ->
     io_lib:format("?UNKNOWN-BYTEOP ~2.16.0B~n", [Op]).
 

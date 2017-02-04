@@ -78,6 +78,10 @@ process_words(Prog0 = #j1bin_prog{}, [?F_RET | Tail]) ->
 process_words(Prog0 = #j1bin_prog{}, [Word | Tail]) when is_binary(Word) ->
     %% First check if it is accidentally an integer
     case (catch erlang:binary_to_integer(Word)) of
+        X when is_integer(X) andalso X >= 0 andalso X =< 15 ->
+            %% special case for positive integer =< 15
+            ProgA = emit_small_pos(Prog0, X),
+            process_words(ProgA, Tail);
         X when is_integer(X) ->
             ProgA = emit_lit(Prog0, ?J1LIT_INTEGER, X),
             process_words(ProgA, Tail);
@@ -358,7 +362,11 @@ emit_base_word(_Prog, Word) ->
 %%%-----------------------------------------------------------------------------
 
 emit_lit(Prog0 = #j1bin_prog{}, Type, X) ->
-    emit(Prog0, <<Type:?J1OPCODE_WIDTH, X:?J1OP_INDEX_WIDTH/big>>).
+    emit(Prog0, <<Type:?J1INSTR_WIDTH, X:?J1OP_INDEX_WIDTH/big>>).
+
+emit_small_pos(Prog0 = #j1bin_prog{}, X) ->
+    emit(Prog0, <<?J1INSTR_SMALL_POS:?J1INSTR_WIDTH,
+                  X:?J1INSTR_WIDTH/big-unsigned>>).
 
 %%emit_lit(Prog0 = #j1prog{}, atom, Word) ->
 %%    {Prog1, AIndex} = atom_index_or_create(Prog0, Word),
