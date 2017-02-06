@@ -62,20 +62,17 @@ process_words(Prog0 = #j1bin_prog{}, [?F_RET | Tail]) ->
     process_words(Prog1, Tail);
 
 process_words(Prog0 = #j1bin_prog{}, [?F_LIT_NIL | Tail]) ->
-    Prog1 = emit(Prog0, <<?J1INSTR_SINGLE_BYTE:?J1INSTR_WIDTH,
-                          ?J1BYTE_INSTR_NIL:?J1INSTR_WIDTH>>),
+    Prog1 = emit(Prog0, j1c_bc:literal_nil()),
     process_words(Prog1, Tail);
 
 %% Nothing else worked, look for the word in our dictionaries and base words,
 %% maybe it is a literal, too
 process_words(Prog0 = #j1bin_prog{}, [Int | Tail])
-    when is_integer(Int) andalso Int >= 0 andalso Int =< 15 ->
-        %% special case for positive integer =< 15
-        ProgA = emit_small_pos(Prog0, Int),
-        process_words(ProgA, Tail);
-process_words(Prog0 = #j1bin_prog{}, [Int | Tail])
     when is_integer(Int) ->
-        ProgA = emit_lit(Prog0, ?J1LIT_INTEGER, Int),
+        ProgA = case j1c_bc:unsigned_value_fits(Int, ?J1INSTR_WIDTH) of
+                    true -> emit(Prog0, j1c_bc:small_pos(Int));
+                    false -> emit(Prog0, j1c_bc:literal_integer(Int))
+                end,
         process_words(ProgA, Tail);
 
 process_words(Prog0, [#j1comment{} | Tail]) ->
@@ -83,80 +80,51 @@ process_words(Prog0, [#j1comment{} | Tail]) ->
 
 process_words(Prog0, [#j1atom{id = AtomId} | Tail]) ->
     %% TODO: Add bits to mark immediate atoms, ints etc or an arbitrary literal
-    Prog1 = emit_lit(Prog0, ?J1LIT_ATOM, AtomId),
+    Prog1 = emit(Prog0, j1c_bc:literal_atom(AtomId)),
     process_words(Prog1, Tail);
 
 process_words(Prog0, [#j1lit{id = LitId} | Tail]) ->
-    Prog1 = emit_lit(Prog0, ?J1LIT_LITERAL, LitId),
+    Prog1 = emit(Prog0, j1c_bc:literal_arbitrary(LitId)),
     process_words(Prog1, Tail);
 
 process_words(Prog0, [#j1ld{index = Index} | Tail]) ->
-    ?ASSERT(signed_value_fits(Index, ?J1OP_INDEX_WIDTH),
-            "LD opcode index is too large"),
-    Prog1 = case (signed_value_fits(Index, ?J1INSTR_WIDTH)) of
-                true ->
-                    emit(Prog0, <<?J1INSTR_LD_SMALL:?J1INSTR_WIDTH,
-                                  Index:?J1INSTR_WIDTH/signed>>);
-                false ->
-                    emit(Prog0, <<?J1INSTR_LD:?J1INSTR_WIDTH,
-                                  Index:?J1OP_INDEX_WIDTH/big-signed>>)
-            end,
+    Prog1 = emit(Prog0, j1c_bc:load(Index)),
     process_words(Prog1, Tail);
 
 process_words(Prog0, [#j1st{index = Index} | Tail]) ->
-    ?ASSERT(signed_value_fits(Index, ?J1OP_INDEX_WIDTH),
-            "ST opcode index is too large"),
-    Prog1 = case signed_value_fits(Index, ?J1OP_INDEX_WIDTH) of
-                true ->
-                    emit(Prog0, <<?J1INSTR_ST_SMALL:?J1INSTR_WIDTH,
-                                  Index:?J1INSTR_WIDTH/signed>>);
-                false ->
-                    emit(Prog0, <<?J1INSTR_ST:?J1INSTR_WIDTH,
-                                  Index:?J1OP_INDEX_WIDTH/big-signed>>)
-            end,
+    Prog1 = emit(Prog0, j1c_bc:store(Index)),
     process_words(Prog1, Tail);
 
 process_words(Prog0, [#j1getelement{index = Index} | Tail]) ->
-    ?ASSERT(unsigned_value_fits(Index, ?J1OP_INDEX_WIDTH),
-            "Get-element opcode index is too large"),
-    Prog1 = emit(Prog0, <<?J1INSTR_GETELEMENT:?J1INSTR_WIDTH,
-                          Index:?J1OP_INDEX_WIDTH/big-unsigned>>),
+    Prog1 = emit(Prog0, j1c_bc:get_element(Index)),
     process_words(Prog1, Tail);
 
 process_words(Prog0, [#j1enter{size = Size} | Tail]) ->
-    ?ASSERT(unsigned_value_fits(Size, ?J1OP_INDEX_WIDTH),
-            "ENTER size is too large"),
-    Prog1 = emit(Prog0, <<?J1INSTR_ENTER:?J1INSTR_WIDTH,
-                          Size:?J1OP_INDEX_WIDTH/big-unsigned>>),
+    Prog1 = emit(Prog0, j1c_bc:enter(Size)),
     process_words(Prog1, Tail);
 
 %% LEAVE and LEAVE;RET
 process_words(Prog0, [#j1leave{}, ?F_RET | Tail]) ->
-    Prog1 = emit(Prog0, <<?J1INSTR_SINGLE_BYTE:?J1INSTR_WIDTH,
-                          ?J1BYTE_INSTR_LEAVE:?J1INSTR_WIDTH>>),
+    Prog1 = emit(Prog0, j1c_bc:leave()),
     process_words(Prog1, Tail);
 process_words(Prog0, [#j1leave{} | Tail]) ->
-%%    Prog1 = emit(Prog0, <<?J1INSTR_LEAVE:?J1INSTR_WIDTH,
-%%                          0:?J1OP_INDEX_WIDTH/big-signed>>),
+%%    Prog1 = emit(Prog0, j1c_bc:leave()),
     ?COMPILE_ERROR("Stray LEAVE without RET following it"),
     process_words(Prog0, Tail);
 
 process_words(Prog0, [#j1erl_call{lit = _Lit} | Tail]) ->
-    Prog1 = emit(Prog0, <<?J1INSTR_SINGLE_BYTE:?J1INSTR_WIDTH,
-                          ?J1BYTE_INSTR_ERL_CALL:?J1INSTR_WIDTH>>),
+    Prog1 = emit(Prog0, j1c_bc:erl_call()),
     process_words(Prog1, Tail);
 process_words(Prog0, [#j1erl_tailcall{lit = _Lit} | Tail]) ->
-    Prog1 = emit(Prog0, <<?J1INSTR_SINGLE_BYTE:?J1INSTR_WIDTH,
-                          ?J1BYTE_INSTR_ERL_TAIL_CALL:?J1INSTR_WIDTH>>),
+    Prog1 = emit(Prog0, j1c_bc:erl_tail_call()),
     process_words(Prog1, Tail);
 
 process_words(Prog0, [#j1jump{condition = Cond, label = F} | Tail]) ->
-    JType = case Cond of
-                false -> ?J1INSTR_JUMP;
-                z -> ?J1INSTR_JUMP_COND
-            end,
-    Prog1 = emit(Prog0, <<JType:?J1INSTR_WIDTH,
-                          F:?J1OP_INDEX_WIDTH/big-signed>>),
+    Op = case Cond of
+             false  -> j1c_bc:jump_signed(F);
+             z      -> j1c_bc:jump_z_signed(F)
+         end,
+    Prog1 = emit(Prog0, Op),
     process_words(Prog1, Tail);
 
 process_words(Prog0 = #j1bin_prog{pc = PC, labels = Labels, lpatches = Patch},
@@ -200,18 +168,7 @@ prog_find_word(#j1bin_prog{dict_nif = NifDict, dict = Dict},
 %% relative offsets or addresses and possibly the value bits are extended in
 %% a later pass.
 emit_call(Prog0 = #j1bin_prog{}, Index) ->
-    ?ASSERT(signed_value_fits(Index, ?J1OP_INDEX_WIDTH),
-            "Label index for call instruction is too large"),
-    emit(Prog0, <<?J1INSTR_CALL:?J1INSTR_WIDTH,
-                  Index:?J1OP_INDEX_WIDTH/big-signed>>).
-
-signed_value_fits(Val, Bits) ->
-    <<OutVal:Bits/signed-big>> = <<Val:Bits/signed-big>>,
-    Val =:= OutVal.
-
-unsigned_value_fits(Val, Bits) ->
-    <<OutVal:Bits/unsigned-big>> = <<Val:Bits/unsigned-big>>,
-    Val =:= OutVal.
+    emit(Prog0, j1c_bc:call_signed(Index)).
 
 %%emit(Prog0 = #j1bin{output=Out, pc=PC}, #j1patch{}=Patch) ->
 %%    Prog0#j1bin{output=[Patch | Out],
@@ -236,21 +193,8 @@ emit_alu(Prog = #j1bin_prog{}, ALU = #j1alu{ds=-1}) ->
     emit_alu(Prog, ALU#j1alu{ds=2});
 emit_alu(Prog = #j1bin_prog{}, ALU = #j1alu{rs=-1}) ->
     emit_alu(Prog, ALU#j1alu{rs=2});
-emit_alu(Prog = #j1bin_prog{}, #j1alu{op = Op0, rpc = RPC,
-                                      tn = TN, tr = TR, nti = NTI,
-                                      ds = Ds, rs = Rs}) ->
-    %% 15 14 13 12 | 11 10 09 08 |  07 06 05  04 | 03 02 01 00 |
-    %% InstrTag--- | Op--------- | RPC TN TR NTI | DS--- RS--- |l
-    %%
-    Op1 = <<?J1INSTR_ALU:?J1INSTR_WIDTH/big,
-            Op0:?J1OPCODE_WIDTH/big,
-            RPC:1,
-            TN:1,
-            TR:1,
-            NTI:1,
-            Rs:2/big,
-            Ds:2/big>>,
-    emit(Prog, Op1).
+emit_alu(Prog = #j1bin_prog{}, ALU = #j1alu{}) ->
+    emit(Prog, j1c_bc:alu(ALU)).
 
 %%%-----------------------------------------------------------------------------
 
@@ -368,29 +312,3 @@ emit_base_word(_Prog, Word) ->
     ?COMPILE_ERROR1("Base word is not defined", Word).
 
 %%%-----------------------------------------------------------------------------
-
-emit_lit(Prog0 = #j1bin_prog{}, Type, X) ->
-    emit(Prog0, <<Type:?J1INSTR_WIDTH, X:?J1OP_INDEX_WIDTH/big>>).
-
-emit_small_pos(Prog0 = #j1bin_prog{}, X) ->
-    ?ASSERT(unsigned_value_fits(X, ?J1INSTR_WIDTH), "SMALL-POS arg too big"),
-    emit(Prog0, <<?J1INSTR_SMALL_POS:?J1INSTR_WIDTH,
-                  X:?J1INSTR_WIDTH/big-unsigned>>).
-
-%%emit_lit(Prog0 = #j1prog{}, atom, Word) ->
-%%    {Prog1, AIndex} = atom_index_or_create(Prog0, Word),
-%%    emit(Prog1, <<1:1, AIndex:?J1_LITERAL_BITS>>);
-%%emit_lit(Prog0 = #j1prog{}, mfa, {M, F, A}) ->
-%%    M1 = eval(M),
-%%    F1 = eval(F),
-%%    A1 = erlang:binary_to_integer(A),
-%%    {Prog1, LIndex} = literal_index_or_create(Prog0, {'$MFA', M1, F1, A1}),
-%%    emit(Prog1, <<1:1, LIndex:?J1_LITERAL_BITS>>);
-%%emit_lit(Prog0 = #j1prog{}, funarity, {F, A}) ->
-%%    F1 = eval(F),
-%%    A1 = erlang:binary_to_integer(A),
-%%    {Prog1, LIndex} = literal_index_or_create(Prog0, {'$FA', F1, A1}),
-%%    emit(Prog1, <<1:1, LIndex:?J1_LITERAL_BITS>>);
-%%emit_lit(Prog0 = #j1prog{}, arbitrary, Lit) ->
-%%    {Prog1, LIndex} = literal_index_or_create(Prog0, Lit),
-%%    emit(Prog1, <<1:1, LIndex:?J1_LITERAL_BITS>>).

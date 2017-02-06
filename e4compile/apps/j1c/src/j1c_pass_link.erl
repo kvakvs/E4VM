@@ -21,9 +21,9 @@ link(Prog = #j1bin_prog{}, [], Acc) ->
     New = lists:flatten(lists:reverse(Acc)),
     Prog#j1bin_prog{output = New};
 
-link(Prog = #j1bin_prog{}, [<<?J1INSTR_CALL:?J1INSTR_WIDTH,
-                              Label:?J1OP_INDEX_WIDTH>> | Tail], Acc) ->
-    link(Prog, Tail, [Label | Acc]);
+%%link(Prog = #j1bin_prog{}, [<<?J1INSTR_CALL:?J1INSTR_WIDTH,
+%%                              Label:?J1OP_INDEX_WIDTH>> | Tail], Acc) ->
+%%    link(Prog, Tail, [Label | Acc]);
 
 link(Prog = #j1bin_prog{}, [H | Tail], Acc) ->
     link(Prog, Tail, [H | Acc]).
