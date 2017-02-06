@@ -69,10 +69,7 @@ process_words(Prog0 = #j1bin_prog{}, [?F_LIT_NIL | Tail]) ->
 %% maybe it is a literal, too
 process_words(Prog0 = #j1bin_prog{}, [Int | Tail])
     when is_integer(Int) ->
-        ProgA = case j1c_bc:unsigned_value_fits(Int, ?J1INSTR_WIDTH) of
-                    true -> emit(Prog0, j1c_bc:small_pos(Int));
-                    false -> emit(Prog0, j1c_bc:literal_integer(Int))
-                end,
+        ProgA = emit(Prog0, j1c_bc:literal_integer(Int)),
         process_words(ProgA, Tail);
 
 process_words(Prog0, [#j1comment{} | Tail]) ->

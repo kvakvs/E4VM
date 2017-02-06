@@ -5,24 +5,24 @@
 
 %% API
 -export([
-      literal_nil/0,
-      signed_value_fits/2,
-      unsigned_value_fits/2,
-      small_pos/1,
       alu/1,
       call_signed/1,
+      enter/1,
+      erl_call/0,
+      erl_tail_call/0,
+      get_element/1,
       jump_signed/1,
       jump_z_signed/1,
-      erl_tail_call/0,
-      erl_call/0,
       leave/0,
-      enter/1,
-      get_element/1,
-      store/1,
-      load/1,
+      literal_arbitrary/1,
       literal_atom/1,
-      literal_integer/1
-    , literal_arbitrary/1]).
+      literal_integer/1,
+      literal_nil/0,
+      load/1,
+      signed_value_fits/2,
+      store/1,
+      unsigned_value_fits/2
+]).
 
 -include_lib("e4c/include/e4c.hrl").
 -include_lib("j1c/include/j1.hrl").
@@ -54,14 +54,16 @@ lit_signed(Type, Val) ->
     <<Type:?J1INSTR_WIDTH, Val:?J1OP_INDEX_WIDTH/big-signed>>.
 
 literal_atom(Index)  -> lit(?J1LIT_ATOM, Index).
-literal_integer(Int) -> lit_signed(?J1LIT_INTEGER, Int).
 literal_arbitrary(Lit) -> lit(?J1LIT_LITERAL, Lit).
 
-small_pos(X) ->
-    ?ASSERT(unsigned_value_fits(X, ?J1INSTR_WIDTH),
-            "Small positive int literal won't fit into designated bits"),
-    <<?J1INSTR_SMALL_POS:?J1INSTR_WIDTH,
-        X:?J1INSTR_WIDTH/big-unsigned>>.
+literal_integer(Int) ->
+    case j1c_bc:unsigned_value_fits(Int, ?J1INSTR_WIDTH) of
+        true ->
+            <<?J1INSTR_SMALL_POS:?J1INSTR_WIDTH,
+              Int:?J1INSTR_WIDTH/big-unsigned>>;
+        false ->
+            lit_signed(?J1LIT_INTEGER, Int)
+    end.
 
 alu(#j1alu{op = Op0, rpc = RPC,
            tn = TN, tr = TR, nti = NTI,
