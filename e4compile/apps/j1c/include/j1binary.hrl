@@ -13,6 +13,28 @@
 %%-define(J1_LITERAL_TAG_BITS, 4).
 %%-define(J1_LITERAL_BITS, (?J1BITS - ?J1_LITERAL_TAG_BITS)).
 
+%% Compared to the original J1 Forth ALU RPC flag is moved to the lower byte and
+%% instruction tag extended to a full 4-bit nibble. This allowed to introduce
+%% more 16-bit instructions and few 8-bit to optimize for shorter code size.
+%%
+%% A regular indexed instruction
+%% +-------------+---------------------------+
+%% | 15 14 13 12 | 11 10 9 8 7 6 5 4 3 2 1 0 |
+%% | instr_tag   | signed or unsigned int    |
+%% +-------------+---------------------------+
+%%
+%% ALU instruction
+%% +-------------+-----------+----------------------+
+%% | 15 14 13 12 | 11 10 9 8 |  7  6  5   4 3 2 1 0 |
+%% | J1INSTR_ALU | J1ALU_*   |RPC TN TR NTI -Ds -Rs |
+%% +-------------+-----------+----------------------+
+%%
+%% Single Byte instruction (short int literal, small ld, small st, single_byte)
+%% +-----------+------------------------+
+%% | 7  6  5 4 | 3 2 1 0                | lower nibble can contain a value or
+%% | instr_tag | signed or unsigned int | another 4 bits of instruction code
+%% +-----------+------------------------+ (when there's no argument to it)
+
 -define(J1INSTR_JUMP,       0). % may be extended by 16 bit varint
 -define(J1INSTR_JUMP_COND,  1). % may be extended by 16 bit varint
 -define(J1INSTR_CALL,       2). % may be extended by 16 bit varint
