@@ -37,7 +37,7 @@ public:
     explicit VM() : binary_heap_(1024) {} //-V730
 
     void run();
-    inline void run_alu(J1Opcode instr);
+    inline void run_alu(J1Opcode16 instr);
 
     //
     // Atom storage stuff

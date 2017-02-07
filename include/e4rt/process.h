@@ -52,11 +52,19 @@ public:
     Stack rs_;      // return stack
     RuntimeContext() = default;
 
-    J1Opcode fetch() {
-        auto opcode = pc_.fetch();
+    J1Opcode8 fetch() {
+        auto byte = pc_.fetch();
         // TODO: check code end/code range?
         pc_.advance();
-        return opcode;
+        return J1Opcode8(byte);
+    }
+
+    // Joins first byte with next and gives you a 16-bit opcode
+    J1Opcode16 fetch(J1Opcode8 first) {
+        auto second = pc_.fetch();
+        // TODO: check code end/code range?
+        pc_.advance();
+        return J1Opcode16(first.raw_, second);
     }
 };
 
@@ -94,16 +102,16 @@ public:
     apply(const MFArgs& mfargs);
 
     // TODO: maybe belongs to runtime context
-    void jump(CodeAddress newpc) {
-        E4LOG1("[proc] jump 0x%zx\n", newpc.get_index());
-        context_.pc_ = newpc;
-    }
+//    void jump(CodeAddress newpc) {
+//        E4LOG1("[proc] jump 0x%zx\n", newpc.get_index());
+//        context_.pc_ = newpc;
+//    }
 
     // TODO: maybe belongs to runtime context
-    void jump_label(SignedWord offs) {
-        E4LOG1("[proc] jump-rel 0x%zd\n", offs);
-        context_.pc_ += offs;
-    }
+//    void jump_label(SignedWord offs) {
+//        E4LOG1("[proc] jump-rel 0x%zd\n", offs);
+//        context_.pc_ += offs;
+//    }
 };
 
 } // ns e4

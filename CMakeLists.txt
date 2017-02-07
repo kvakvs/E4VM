@@ -70,11 +70,12 @@ set(E4_STD_SOURCES
     include/e4std/string.h
     include/e4std/stuff.h
     include/e4std/vector.h
+    include/e4std/vector_impl.h
     include/e4std/view.h
     src/e4std/free_fun.cpp
     src/e4std/stuff.cpp
     src/e4std/vector.cpp
-    include/e4std/vector_impl.h)
+    )
 
 set(EMU_SOURCES
     src/main.cpp

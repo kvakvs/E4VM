@@ -100,38 +100,45 @@ void VM::run() {
     }
 
     auto& context_ = proc->context_;
-    auto instr = context_.fetch();
+    J1Opcode8 instr8 = context_.fetch();
 
-    switch (instr.op_.instr_tag_) {
-        case j1_instr_tag::ALU: {
-            run_alu(instr);
-        } break;
+    switch (instr8.unsigned_.instr_tag_) {
 
-        case j1_instr_tag::LITERAL: {
-            // TODO: implement literal values longer than 15 bits signed
-            auto val = instr.lit_.val_;
-            context_.ds_.push((Word)val);
-        } break;
-
+        // A common instruction
         case j1_instr_tag::JUMP: {
             // TODO: Remap jmp destinations on code load or implement relative jumps
-            proc->jump(j1jump_addr(instr, context_.fetch()));
+            proc->jump(j1jump_addr(instr8, context_.fetch()));
         } break;
 
+        // A common instruction
         case j1_instr_tag::JUMP_COND: {
             if (context_.ds_.pop() == 0) {
-                proc->jump(j1jump_addr(instr, context_.fetch()));
+                proc->jump(j1jump_addr(instr8, context_.fetch()));
             }
         } break;
 
+        // A common instruction
+        case j1_instr_tag::LITERAL_SMALL_POS_INTEGER: {
+            // TODO: implement literal values longer than 15 bits signed
+            auto val = instr8.unsigned_.val_;
+            context_.ds_.push((Word)val);
+        } break;
+
+        // A rare instruction (SWAPs, stray RETs etc)
+        case j1_instr_tag::ALU: {
+            auto instr16 = context_.fetch(instr8);
+            run_alu(instr16);
+        } break;
+
+        // A rare instruction (Forth call)
         case j1_instr_tag::CALL: {
             context_.rs_.push(context_.pc_.as_word());
-            proc->jump(j1jump_addr(instr, context_.fetch()));
+            proc->jump(j1jump_addr(instr8, context_.fetch()));
         } break;
     }
 }
 
-inline void VM::run_alu(J1Opcode instr) {
+inline void VM::run_alu(J1Opcode16 instr) {
 
 }
 

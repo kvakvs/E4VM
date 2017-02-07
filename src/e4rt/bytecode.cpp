@@ -6,6 +6,6 @@
 
 namespace e4 {
 
-J1Opcode* CodeAddress::base_ = nullptr;
+J1Opcode16* CodeAddress::base_ = nullptr;
 
 } // ns e4

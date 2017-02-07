@@ -42,7 +42,7 @@ public:
 class Module {
 private:
     Term name_ = NON_VALUE; // atom name
-    PODVector<J1Opcode> code_;
+    PODVector<J1Opcode16> code_;
     PODVector<Word> labels_; // labels table TODO: merge with code maybe?
 
     PODVector<Term> literals_;
