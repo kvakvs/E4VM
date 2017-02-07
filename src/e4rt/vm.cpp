@@ -91,6 +91,10 @@ const char* VM::find_atom(Term atom) const {
 
 #define VMDBG(T) e4::debug_printf("vm loop: " T "\n")
 
+// Switch-based VM loop (slower but compact code and compact bytecode)
+//
+// To go faster: see threaded goto(void*) VM loop and convert bytecode to
+// label addresses during the load-time.
 void VM::run() {
     auto proc = sched_.next();
     if (not proc) {
@@ -103,19 +107,24 @@ void VM::run() {
     J1Opcode8 instr8 = context_.fetch();
 
     switch (instr8.unsigned_.instr_tag_) {
-
         // A common instruction
-        case j1_instr_tag::JUMP: {
-            // TODO: Remap jmp destinations on code load or implement relative jumps
-            proc->jump(j1jump_addr(instr8, context_.fetch()));
-        } break;
-
-        // A common instruction
-        case j1_instr_tag::JUMP_COND: {
-            if (context_.ds_.pop() == 0) {
-                proc->jump(j1jump_addr(instr8, context_.fetch()));
+        case j1_instr_tag::JUMP_COND:
+            if (context_.ds_.pop() != 0) {
+                context_.pc_.advance(); // skip second byte of the jump
+                break;
             }
+        // FALL THROUGH
+        case j1_instr_tag::JUMP: { // A common instruction
+            auto instr16 = context_.fetch(instr8);
+            proc->jump_rel(instr16.signed_.val_);
         } break;
+
+        case j1_instr_tag::GET_ELEMENT: E4TODO("getel");
+        case j1_instr_tag::LD: E4TODO("ld");
+        case j1_instr_tag::ST: E4TODO("st");
+        case j1_instr_tag::ENTER: E4TODO("enter");
+        case j1_instr_tag::LD_SMALL: E4TODO("ldsmall");
+        case j1_instr_tag::ST_SMALL: E4TODO("stsmall");
 
         // A common instruction
         case j1_instr_tag::LITERAL_SMALL_POS_INTEGER: {
@@ -123,8 +132,13 @@ void VM::run() {
             auto val = instr8.unsigned_.val_;
             context_.ds_.push((Word)val);
         } break;
+        case j1_instr_tag::LITERAL_INTEGER: E4TODO("lit-int");
+        case j1_instr_tag::LITERAL_ATOM: E4TODO("lit-atom");
+        case j1_instr_tag::LITERAL_ARBITRARY: E4TODO("lit-arb");
 
-        // A rare instruction (SWAPs, stray RETs etc)
+        case j1_instr_tag::SINGLE_BYTE: E4TODO("1byte");
+
+            // A rare instruction (SWAPs, stray RETs etc)
         case j1_instr_tag::ALU: {
             auto instr16 = context_.fetch(instr8);
             run_alu(instr16);
@@ -132,8 +146,9 @@ void VM::run() {
 
         // A rare instruction (Forth call)
         case j1_instr_tag::CALL: {
+            auto instr16 = context_.fetch(instr8);
             context_.rs_.push(context_.pc_.as_word());
-            proc->jump(j1jump_addr(instr8, context_.fetch()));
+            proc->jump_rel(instr16.signed_.val_);
         } break;
     }
 }

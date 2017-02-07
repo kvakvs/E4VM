@@ -102,16 +102,16 @@ public:
     apply(const MFArgs& mfargs);
 
     // TODO: maybe belongs to runtime context
-//    void jump(CodeAddress newpc) {
-//        E4LOG1("[proc] jump 0x%zx\n", newpc.get_index());
-//        context_.pc_ = newpc;
-//    }
+    void jump(CodeAddress newpc) {
+        E4LOG1("[proc] jump 0x%zx\n", newpc.get_index());
+        context_.pc_ = newpc;
+    }
 
     // TODO: maybe belongs to runtime context
-//    void jump_label(SignedWord offs) {
-//        E4LOG1("[proc] jump-rel 0x%zd\n", offs);
-//        context_.pc_ += offs;
-//    }
+    void jump_rel(SignedWord offs) {
+        E4LOG1("[proc] jump-rel 0x%zd\n", offs);
+        context_.pc_ += offs;
+    }
 };
 
 } // ns e4

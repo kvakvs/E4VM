@@ -79,16 +79,22 @@ public:
 
     // Indexed instruction with 4 bit instr code and 12 bit argument
     struct alignas(1)
-    J1AsIndexInstr {
-        unsigned int instr_tag_:INSTR_TAG_BITS;
-        unsigned int addr_:INSTR_VALUE_BITS;
+    J1UnsignedIndexOp {
+        unsigned int    instr_tag_:INSTR_TAG_BITS;
+        unsigned int    val_:INSTR_VALUE_BITS;
+    };
+    struct alignas(1)
+    J1SignedIndexOp {
+        unsigned int    instr_tag_:INSTR_TAG_BITS;
+        int             val_:INSTR_VALUE_BITS;
     };
 
     union {
-        uint16_t        raw_;
-        uint8_t         byte_[2];
-        J1AsALU         alu_;
-        J1AsIndexInstr  jmp_;
+        uint16_t            raw_;
+        uint8_t             byte_[2];
+        J1AsALU             alu_;
+        J1UnsignedIndexOp   unsigned_;
+        J1SignedIndexOp     signed_;
     };
 
     explicit J1Opcode16(uint8_t first, uint8_t second): byte_ {first, second} {
@@ -159,7 +165,7 @@ public:
 // This is still not enough for a 32-bit address so we use implicit code
 // base address to make this offset smaller
 //inline CodeAddress j1jump_addr(const J1Opcode16 jump, const J1Opcode16 next) {
-//    return CodeAddress((jump.jmp_.addr_ << 16) + next.raw_);
+//    return CodeAddress((jump.index_.addr_ << 16) + next.raw_);
 //}
 
 } // ns e4
