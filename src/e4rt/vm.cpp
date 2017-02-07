@@ -89,7 +89,11 @@ const char* VM::find_atom(Term atom) const {
 }
 #endif // DEBUG
 
+#ifdef DEBUG
 #define VMDBG(T) e4::debug_printf("vm loop: " T "\n")
+#else
+#define VMDBG(T)
+#endif
 
 // Switch-based VM loop (slower but compact code and compact bytecode)
 //
