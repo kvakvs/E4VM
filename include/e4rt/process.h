@@ -44,13 +44,33 @@ public:
 
 constexpr Word INIT_PROCESS_HEAP = 64; // first size for process heap (words)
 
+class RangeChecker {
+    const uint8_t*  code_range_;
+    const uint8_t*  code_range_end_;
+
+public:
+    explicit RangeChecker(const uint8_t* code_range,
+                               const uint8_t* code_range_end)
+            : code_range_(code_range), code_range_end_(code_range_end) {}
+    RangeChecker(const RangeChecker& other) = default;
+
+    bool in_range(const uint8_t* p) const {
+        return p >= code_range_ && p <= code_range_end_;
+    }
+    void assert_in_range(const uint8_t* p) const {
+        E4ASSERT(in_range(p));
+    }
+};
+
 // VM runtime context which gets swapped into VM loop and out
 class RuntimeContext {
 public:
-    CodeAddress pc_;
-    Stack ds_;      // data stack
-    Stack rs_;      // return stack
-    RuntimeContext() = default;
+    CodeAddress     pc_;
+    Stack           ds_;      // data stack
+    Stack           rs_;      // return stack
+    RangeChecker    range_checker_;
+
+    RuntimeContext(const RangeChecker& rc): range_checker_(rc) {}
 
     J1Opcode8 fetch() {
         auto byte = pc_.fetch();
@@ -89,8 +109,13 @@ public:
 
 public:
     Process() = delete;
+
     explicit Process(VM& vm, Term pid)
-            : pid_(pid), heap_(INIT_PROCESS_HEAP), vm_(vm), context_() {}
+            : pid_(pid),
+              heap_(INIT_PROCESS_HEAP),
+              vm_(vm),
+              context_(vm.get_code_range_checker()) {
+    }
 
     Term self() const { return pid_; }
 
@@ -109,7 +134,8 @@ public:
 
     // TODO: maybe belongs to runtime context
     void jump_rel(SignedWord offs) {
-        E4LOG1("[proc] jump-rel 0x%zd\n", offs);
+        E4ASSERT(offs != 0);
+        E4LOG1("[proc] jump-rel %zd\n", offs);
         context_.pc_ += offs;
     }
 };

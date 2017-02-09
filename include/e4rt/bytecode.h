@@ -176,10 +176,6 @@ public:
         return *this;
     }
 
-    Word as_word() const {
-        return reinterpret_cast<Word>(index_);
-    }
-
     void advance() { index_++; }
 };
 

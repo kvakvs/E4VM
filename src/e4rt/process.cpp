@@ -25,6 +25,7 @@ VoidResult Process::apply(const MFArgs& mfargs) {
         context_.ds_.push_term(*arg);
     }
 
+    E4LOG("[proc] Entering function\n");
     jump(mod->get_export_address(*pexport));
     return VoidResult::success();
 }

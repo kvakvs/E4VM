@@ -3,6 +3,8 @@
 //
 
 #include <stdio.h>
+#include <cstdlib>
+
 #include "e4rt/vm.h"
 //#include "e4platf/mem.h"
 #include "e4rt/process.h"
@@ -100,6 +102,7 @@ const char* VM::find_atom(Term atom) const {
 // To go faster: see threaded goto(void*) VM loop and convert bytecode to
 // label addresses during the load-time.
 void VM::run() {
+//schedule:
     auto proc = sched_.next();
     if (not proc) {
         VMDBG("idle");
@@ -108,11 +111,16 @@ void VM::run() {
     }
 
     auto& context_ = proc->context_;
+
+fetch:
+    auto pc0 = context_.pc_.get_index();
     J1Opcode8 instr8 = context_.fetch();
+    E4LOG2("[%x] %02x ", pc0, instr8.raw_);
 
     switch (instr8.unsigned_.instr_tag_) {
         // A common instruction
         case j1_instr_tag::JUMP_COND:
+            E4LOG("COND ");
             if (context_.ds_.pop() != 0) {
                 context_.pc_.advance(); // skip second byte of the jump
                 break;
@@ -120,7 +128,12 @@ void VM::run() {
         // FALL THROUGH
         case j1_instr_tag::JUMP: { // A common instruction
             auto instr16 = context_.fetch(instr8);
-            proc->jump_rel(instr16.signed_.val_);
+            E4LOG1("%02x ", instr16.raw_ >> 8);
+
+            auto offs = instr16.signed_.val_;
+            E4LOG2("JMP %s0x%x\n",
+                   offs < 0 ? "-" : "", std::abs(offs));
+            proc->jump_rel(offs);
         } break;
 
         case j1_instr_tag::GET_ELEMENT: E4TODO("getel");
@@ -151,10 +164,12 @@ void VM::run() {
         // A rare instruction (Forth call)
         case j1_instr_tag::CALL: {
             auto instr16 = context_.fetch(instr8);
-            context_.rs_.push(context_.pc_.as_word());
+            context_.rs_.push(context_.pc_.get_index());
             proc->jump_rel(instr16.signed_.val_);
         } break;
     }
+
+    goto fetch;
 }
 
 inline void VM::run_alu(J1Opcode16 instr) {
