@@ -3,7 +3,14 @@
 -module(j1c_prog).
 
 %% API
--export([atom_index_or_create/2, literal_index_or_create/2, lit/3]).
+-export([
+      atom_index_or_create/2,
+      lit_arbitrary/2,
+      lit_atom/2,
+      lit_funarity/2,
+      lit_mfa/2,
+      literal_index_or_create/2
+]).
 
 -include_lib("e4c/include/forth.hrl").
 -include_lib("j1c/include/j1.hrl").
@@ -34,37 +41,43 @@ literal_index_or_create(Prog0 = #j1prog{lit_id = LitId, literals = Literals},
                 lit_id = LitId + 1,
                 literals = orddict:store(Value, LitId, Literals)
             },
-            {Prog1, LitId};
+            #{p => Prog1,
+              lit_index => LitId};
         {ok, Existing} ->
-            {Prog0, Existing}
+            #{p => Prog0,
+              lit_index => Existing}
     end.
 
-%% @doc Create a literal or atom in program dictionary, and return modified
-%% #j1prog{} and its new representation
-lit(Prog0 = #j1prog{}, atom, Word) when is_binary(Word) ->
+lit_atom(Prog0 = #j1prog{}, Word) when is_binary(Word) ->
     {Prog1, AIndex} = j1c_prog:atom_index_or_create(Prog0, Word),
-    {Prog1,
-     #j1atom{id = AIndex, debug = Word}
-    };
-lit(Prog0 = #j1prog{}, mfa, {M, F, A1}) when is_integer(A1) ->
+    #{ p => Prog1,
+       forth => #j1atom{id = AIndex, debug = Word}
+    }.
+
+%% @doc Create a literal  in program dictionary, and return modified
+%% #j1prog{} and its new representation
+lit_mfa(Prog0 = #j1prog{}, {M, F, A1}) when is_integer(A1) ->
     M1 = eval(M),
     F1 = eval(F),
-    {Prog1, LIndex} = j1c_prog:literal_index_or_create(
-        Prog0, {?TAG_LIT_MFARITY, M1, F1, A1}),
-    {Prog1,
-     #j1lit{id = LIndex, debug = {?TAG_LIT_MFARITY, M, F, A1}}
-    };
-lit(Prog0 = #j1prog{}, funarity, {F, A1}) when is_integer(A1) ->
+    #{p := Prog1, lit_index := LIndex} =
+        j1c_prog:literal_index_or_create(Prog0, {?TAG_LIT_MFARITY, M1, F1, A1}),
+    #{p => Prog1,
+      forth => #j1lit{id = LIndex, debug = {?TAG_LIT_MFARITY, M, F, A1}}
+    }.
+
+lit_funarity(Prog0 = #j1prog{}, {F, A1}) when is_integer(A1) ->
     F1 = eval(F),
-    {Prog1, LIndex} = j1c_prog:literal_index_or_create(
-        Prog0, {?TAG_LIT_FUNARITY, F1, A1}),
-    {Prog1,
-     #j1lit{id = LIndex, debug = {?TAG_LIT_FUNARITY, F, A1}}
-    };
-lit(Prog0 = #j1prog{}, arbitrary, Lit) ->
-    {Prog1, LIndex} = j1c_prog:literal_index_or_create(Prog0, Lit),
-    {Prog1,
-     #j1lit{id = LIndex, debug = Lit}
+    #{p := Prog1, lit_index := LIndex} =
+        j1c_prog:literal_index_or_create(Prog0, {?TAG_LIT_FUNARITY, F1, A1}),
+    #{p => Prog1,
+      forth => #j1lit{id = LIndex, debug = {?TAG_LIT_FUNARITY, F, A1}}
+    }.
+
+lit_arbitrary(Prog0 = #j1prog{}, Lit) ->
+    #{p := Prog1, lit_index := LIndex} =
+        j1c_prog:literal_index_or_create(Prog0, Lit),
+    #{p => Prog1,
+      forth => #j1lit{id = LIndex, debug = Lit}
     }.
 
 eval(#k_atom{val = A}) -> erlang:binary_to_atom(A, utf8);

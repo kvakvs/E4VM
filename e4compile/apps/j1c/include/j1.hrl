@@ -59,13 +59,15 @@
 
 -record(j1atom, {
     id :: uint(),
-    debug :: atom()
+    debug :: atom() | binary()
 }).
 -type j1atom() :: #j1atom{}.
 
 %% Output from the pass1 forth
--type j1forth_code() :: [j1forth_code()] | binary() | j1label() | j1jump()
-                        | j1atom() | j1lit().
+-type j1forth_code() :: [j1forth_code()] | binary() | integer()
+    | j1label() | j1jump()
+    | j1atom() | j1lit() | j1erl_call() | j1erl_tailcall()
+    | j1ld() | j1st() | j1getelement() | j1enter() | j1leave() | j1comment().
 
 %% Output from the pass forth to bin
 -type j1bin_code() :: [j1bin_code()] | binary().
@@ -112,24 +114,40 @@
     atom_id = 0                 :: uint(),
     atoms = orddict:new()       :: orddict:orddict(binary(), uint()),
 
-    output = []                 :: j1forth_code()
+    output = []                 :: j1forth_code(),
+
+    %%
+    %% Compile to bytecode stuff
+    %%
+
+    labels = orddict:new()      :: orddict:orddict(uint(), uint()),
+    lpatches = []               :: [integer()],
+    pc = 0                      :: integer()
 }).
 -type j1prog() :: #j1prog{}.
 
 %% Output of J1C binary pass, contains copies of selected fields in #j1prog{}
--record(j1bin_prog, {
-    labels = orddict:new()      :: orddict:orddict(uint(), uint()),
-    lpatches = []               :: [integer()],
+%%-record(j1prog, {
+%%    labels = orddict:new()      :: orddict:orddict(uint(), uint()),
+%%    lpatches = []               :: [integer()],
+%%
+%%    literals = orddict:new()    :: orddict:orddict(any(), uint()),
+%%    exports = []                :: [{binary(), uint()}],
+%%    atoms = orddict:new()       :: orddict:orddict(binary(), uint()),
+%%
+%%    dict = orddict:new()        :: j1dict(),
+%%    dict_nif = orddict:new()    :: j1nif_dict(),
+%%    pc = 0                      :: integer(),
+%%    output = []                 :: j1bin_code()
+%%}).
+%%-type j1prog() :: #j1prog{}.
 
-    literals = orddict:new()    :: orddict:orddict(any(), uint()),
-    exports = []                :: [{binary(), uint()}],
-    atoms = orddict:new()       :: orddict:orddict(binary(), uint()),
-
-    dict = orddict:new()        :: j1dict(),
-    dict_nif = orddict:new()    :: j1nif_dict(),
-    pc = 0                      :: integer(),
-    output = []                 :: j1bin_code()
+%% Represents a processed block of Forth compiled to a list of binary opcodes.
+%% Originally offsets for jumps in it are label ids, but Link pass rewrites
+%% them to be relative addresses and expands opcodes if needed
+-record(j1compiled, {
+    bin :: j1bin_code()
 }).
--type j1bin_prog() :: #j1bin_prog{}.
+-type j1compiled() :: #j1compiled{}.
 
 -endif. % J1_HEADER

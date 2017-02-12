@@ -26,7 +26,7 @@
 
 -include_lib("e4c/include/e4c.hrl").
 -include_lib("j1c/include/j1.hrl").
--include_lib("j1c/include/j1binary.hrl").
+-include_lib("j1c/include/j1bytecode.hrl").
 
 signed_value_fits(Val, Bits) ->
     <<OutVal:Bits/signed-big>> = <<Val:Bits/signed-big>>,
@@ -39,6 +39,10 @@ unsigned_value_fits(Val, Bits) ->
 literal_nil() -> <<?J1INSTR_SINGLE_BYTE:?J1INSTR_WIDTH,
                    ?J1BYTE_INSTR_NIL:?J1INSTR_WIDTH>>.
 
+lit(varint, Val) when Val >= 0 ->
+    <<?J1BYTE_INSTR_VARINT:8, (e4c:varint(Val))/binary>>;
+lit(varint, Val) when Val < 0 ->
+    <<?J1BYTE_INSTR_VARINT_NEG:8, (e4c:varint(Val))/binary>>;
 lit(Type, Val) ->
     ?ASSERT(unsigned_value_fits(Type, ?J1INSTR_WIDTH),
             "Literal type won't fit into designated bits"),
@@ -93,16 +97,12 @@ call_signed(Index) ->
       Index:?J1OP_INDEX_WIDTH/big-signed>>.
 
 jump_signed(Offset) ->
-    ?ASSERT(signed_value_fits(Offset, ?J1OP_INDEX_WIDTH),
-            "Offset for a JUMP instruction is too large"),
-    <<?J1INSTR_JUMP:?J1INSTR_WIDTH,
-      Offset:?J1OP_INDEX_WIDTH/big-signed>>.
+    ArgBC = lit(varint, Offset),
+    [ArgBC, <<?J1BYTE_INSTR_JUMP:8>>].
 
 jump_z_signed(Offset) ->
-    ?ASSERT(signed_value_fits(Offset, ?J1OP_INDEX_WIDTH),
-            "Offset for a JUMP_COND instruction is too large"),
-    <<?J1INSTR_JUMP_COND:?J1INSTR_WIDTH,
-      Offset:?J1OP_INDEX_WIDTH/big-signed>>.
+    ArgBC = lit(varint, Offset),
+    [ArgBC, <<?J1BYTE_INSTR_JUMP_COND:8>>].
 
 erl_tail_call() ->
     <<?J1INSTR_SINGLE_BYTE:?J1INSTR_WIDTH,

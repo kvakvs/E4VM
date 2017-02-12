@@ -14,15 +14,24 @@
 -module(j1c_pass_link).
 
 %% API
--export([link/1]).
+-export([link_pass/1]).
 
 -include_lib("j1c/include/j1.hrl").
--include_lib("j1c/include/j1binary.hrl").
+-include_lib("j1c/include/j1bytecode.hrl").
 
-link(#j1prog{output = Input} = Prog) ->
+link_pass(#j1prog{output = Input} = Prog0) ->
     Input1 = partition(Input, []),
-    e4c:debug_write_term("j1c_pass_link-1.txt", Input1),
-    link(Prog, Input1, []).
+    #{p := Prog1, accum := Input2} = lists:foldl(
+        fun(Code, #{p := Prog, accum := Acc}) ->
+            #{p := ProgA, bin := CodeA} =
+                j1c_compile_bin:compile_segment(Prog, Code),
+            #{p => ProgA, accum => [CodeA | Acc]}
+        end,
+        #{p => Prog0, accum => []},
+        Input1),
+    e4c:debug_write_term("j1c_pass_link-1.txt", Input2),
+    %link(Prog1, Input2, []).
+    Prog1#j1prog{output = Input2}.
 
 %% @doc Final phase: find commands which used label references and replace
 %% offset in them with label address. This may require shifting input right

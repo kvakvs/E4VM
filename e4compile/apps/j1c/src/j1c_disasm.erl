@@ -4,7 +4,7 @@
 -export([disasm/2]).
 
 -include_lib("j1c/include/j1.hrl").
--include_lib("j1c/include/j1binary.hrl").
+-include_lib("j1c/include/j1bytecode.hrl").
 
 disasm(Prog, Bin) ->
     Out = disasm(Prog, 0, iolist_to_binary(Bin), []),
@@ -35,6 +35,10 @@ format_j1c_byte_op(_Prog, ?J1BYTE_INSTR_ERL_TAIL_CALL) ->
     io_lib:format("erl-~s~n", [color:green("TAIL")]);
 format_j1c_byte_op(_Prog, ?J1BYTE_INSTR_NIL) ->
     io_lib:format("~s []~n", [color:green("LIT")]);
+format_j1c_byte_op(_Prog, ?J1BYTE_INSTR_JUMP) ->
+    io_lib:format("~s~n", [color:green("JMP")]);
+format_j1c_byte_op(_Prog, ?J1BYTE_INSTR_JUMP_COND) ->
+    io_lib:format("~s~n", [color:green("JZ")]);
 
 format_j1c_byte_op(_Prog, X) when X bsr 4 == ?J1INSTR_SMALL_POS ->
     io_lib:format("~s i:~B~n", [color:blueb("LIT"), X band 15]);
@@ -74,12 +78,12 @@ format_j1c_op16(_Prog, <<?J1INSTR_GETELEMENT:?J1INSTR_WIDTH,
 format_j1c_op16(Prog, <<?J1INSTR_CALL:?J1INSTR_WIDTH,
                         Addr:?J1OP_INDEX_WIDTH/signed-big>>) ->
     io_lib:format("~s ~s~n", [color:green("CALL"), whereis_addr(Prog, Addr)]);
-format_j1c_op16(_Prog, <<?J1INSTR_JUMP:?J1INSTR_WIDTH,
-                         Addr:?J1OP_INDEX_WIDTH/signed-big>>) ->
-    io_lib:format("~s ~4.16.0B~n", [color:green("JMP"), Addr]);
-format_j1c_op16(_Prog, <<?J1INSTR_JUMP_COND:?J1INSTR_WIDTH,
-                         Addr:?J1OP_INDEX_WIDTH/signed-big>>) ->
-    io_lib:format("~s ~4.16.0B~n", [color:green("JZ"), Addr]);
+%%format_j1c_op16(_Prog, <<?J1INSTR_JUMP:?J1INSTR_WIDTH,
+%%                         Addr:?J1OP_INDEX_WIDTH/signed-big>>) ->
+%%    io_lib:format("~s ~4.16.0B~n", [color:green("JMP"), Addr]);
+%%format_j1c_op16(_Prog, <<?J1INSTR_JUMP_COND:?J1INSTR_WIDTH,
+%%                         Addr:?J1OP_INDEX_WIDTH/signed-big>>) ->
+%%    io_lib:format("~s ~4.16.0B~n", [color:green("JZ"), Addr]);
 format_j1c_op16(_Prog, <<?J1INSTR_ALU:?J1INSTR_WIDTH,
                          Op:?J1OPCODE_WIDTH,
                          RPC:1,
@@ -144,7 +148,7 @@ j1_op(?J1ALU_N_LSHIFT_T)         -> "N<<T";
 j1_op(?J1ALU_DEPTH)              -> "DEPTH";
 j1_op(?J1ALU_N_UNSIGNED_LESS_T)  -> "uN<T".
 
-whereis_addr(#j1bin_prog{dict = Words}, Addr) when Addr >= 0 ->
+whereis_addr(#j1prog{dict = Words}, Addr) when Addr >= 0 ->
     io:format("~p~n", [Words]),
     case lists:keyfind(Addr, 2, Words) of
         {{Name1, _Arity}, _Addr1} ->
@@ -153,7 +157,7 @@ whereis_addr(#j1bin_prog{dict = Words}, Addr) when Addr >= 0 ->
             io_lib:format("'~s'", [Name2]);
         false -> "?"
     end;
-whereis_addr(#j1bin_prog{dict_nif = Nifs}, Addr) when Addr < 0 ->
+whereis_addr(#j1prog{dict_nif = Nifs}, Addr) when Addr < 0 ->
     case lists:keyfind(Addr, 2, Nifs) of
         {Name, _} -> io_lib:format("~s '~s'", [color:blackb("NIF"), Name]);
         false -> "?"

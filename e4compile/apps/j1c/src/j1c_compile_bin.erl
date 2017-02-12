@@ -1,72 +1,54 @@
-%%% @doc J1-like forth to binary compiler adjusted for Erlang needs with
-%%% added types, literals etc.
-%%%
-%%% INPUT: Takes a processed Forth program. Labels are placed and all jumps are
-%%% using labels. Conditions and loops processed and also are using labels.
-%%% Words are marked with labels and added to word dict.
-%%%
-%%% OUTPUT: Binary executable Forth with labels converted to relative jumps.
+%%% @doc Takes a list of #j1*{} records and binary words and converts it to
+%%% J1 bytecode. Addresses for jump and similar are written as labels, and
+%%% the caller (j1c_pass_link) is responsible for resolving addresses to offsets
+%%% and encoding them properly into a long or short jump.
 
--module(j1c_pass_bin).
+-module(j1c_compile_bin).
 
 %% API
--export([compile/1]).
+-export([compile_segment/2]).
 
 -include_lib("e4c/include/forth.hrl").
 -include_lib("e4c/include/e4c.hrl").
 -include_lib("j1c/include/j1.hrl").
--include_lib("j1c/include/j1binary.hrl").
+-include_lib("j1c/include/j1bytecode.hrl").
 
-compile(Input = #j1prog{dict = IDict,
-                        dict_nif = IDictNif,
-                        literals = ILiterals,
-                        exports = IExports,
-                        atoms = IAtoms}) ->
-    Prog0 = #j1bin_prog{
-        dict     = IDict,
-        dict_nif = IDictNif,
-        literals = ILiterals,
-        exports  = IExports,
-        atoms    = IAtoms
-    },
+-spec compile_segment(j1prog(), j1forth_code())
+                     -> #{p => j1prog(), bin => j1compiled()}.
+compile_segment(Prog0 = #j1prog{}, Input) ->
+    %% Setup compiler state (ignored after finished)
+    Prog1 = Prog0#j1prog{pc = 0},
 
-    Prog1 = process_words(Prog0,
-                          j1c_optimize:optimize(Input#j1prog.output, [])),
+    Prog2 = process_words(Prog1, Input),
 
-    %% Print the output
-    Bin = lists:reverse(Prog1#j1bin_prog.output),
-    Prog2 = Prog1#j1bin_prog{output = Bin},
-
-    %Patched = apply_patches(Output, Prog1#j1bin.patch_table, []),
-    %Prog2 = Prog1#j1bin{output=Patched},
-    e4c:debug_write_term("j1c_pass_bin.txt", Bin),
-
-    io:format("~s~n"
-              "~s~n", [color:redb("J1C PASS 1"),
-                       j1c_disasm:disasm(Prog2, Bin)]),
-    Prog2.
+    %% Linking/compiling is done, we can flatten the list and optimize
+    Bin1 = lists:reverse(lists:flatten(Prog2#j1prog.output)),
+    Bin2 = j1c_optimize:optimize(Bin1, []),
+    #{ p => Prog2#j1prog{output = []},
+       bin => #j1compiled{bin = Bin2} }.
 
 %%%-----------------------------------------------------------------------------
 
--spec process_words(j1bin_prog(), j1forth_code()) -> j1bin_prog().
-process_words(Prog0 = #j1bin_prog{}, []) -> Prog0;
+-spec process_words(j1prog(), j1forth_code()) -> j1prog().
+process_words(Prog0 = #j1prog{}, []) -> Prog0;
+
 process_words(Prog0, [OpList | Tail]) when is_list(OpList) ->
     Prog1 = lists:foldl(fun(Op, P0) -> process_words(P0, [Op]) end,
                         Prog0,
                         OpList),
     process_words(Prog1, Tail);
 
-process_words(Prog0 = #j1bin_prog{}, [?F_RET | Tail]) ->
+process_words(Prog0 = #j1prog{}, [?F_RET | Tail]) ->
     Prog1 = emit_alu(Prog0, #j1alu{op = ?J1ALU_T, rpc = 1, ds = 2}),
     process_words(Prog1, Tail);
 
-process_words(Prog0 = #j1bin_prog{}, [?F_LIT_NIL | Tail]) ->
+process_words(Prog0 = #j1prog{}, [?F_LIT_NIL | Tail]) ->
     Prog1 = emit(Prog0, j1c_bc:literal_nil()),
     process_words(Prog1, Tail);
 
 %% Nothing else worked, look for the word in our dictionaries and base words,
 %% maybe it is a literal, too
-process_words(Prog0 = #j1bin_prog{}, [Int | Tail])
+process_words(Prog0 = #j1prog{}, [Int | Tail])
     when is_integer(Int) ->
         ProgA = emit(Prog0, j1c_bc:literal_integer(Int)),
         process_words(ProgA, Tail);
@@ -115,24 +97,23 @@ process_words(Prog0, [#j1erl_tailcall{lit = _Lit} | Tail]) ->
     Prog1 = emit(Prog0, j1c_bc:erl_tail_call()),
     process_words(Prog1, Tail);
 
-process_words(Prog0, [#j1jump{condition = Cond, label = F} | Tail]) ->
+process_words(Prog0, #j1jump{condition = Cond, label = F}) ->
     Op = case Cond of
              false  -> j1c_bc:jump_signed(F);
              z      -> j1c_bc:jump_z_signed(F)
          end,
-    Prog1 = emit(Prog0, Op),
-    process_words(Prog1, Tail);
+    emit(Prog0, Op);
 
-process_words(Prog0 = #j1bin_prog{pc = PC, labels = Labels, lpatches = Patch},
+process_words(Prog0 = #j1prog{pc = PC, labels = Labels, lpatches = Patch},
               [#j1label{label = F} | Tail]) ->
     Labels1 = orddict:store(F, PC, Labels),
-    Prog1 = Prog0#j1bin_prog{
+    Prog1 = Prog0#j1prog{
         labels = Labels1,
         lpatches = [PC | Patch]
     },
     process_words(Prog1, Tail);
 
-process_words(Prog0 = #j1bin_prog{}, [Word | Tail]) ->
+process_words(Prog0 = #j1prog{}, [Word | Tail]) ->
 %% Possibly a word, try resolve
     Prog1 = case prog_find_word(Prog0, Word) of
                 not_found -> emit_base_word(Prog0, Word);
@@ -147,8 +128,8 @@ process_words(Prog0 = #j1bin_prog{}, [Word | Tail]) ->
 %%%-----------------------------------------------------------------------------
 
 %% @doc Looks up a word in the dictionary, returns its address or 'not_found'
--spec prog_find_word(j1bin_prog(), forth_word()) -> integer() | not_found.
-prog_find_word(#j1bin_prog{dict_nif = NifDict, dict = Dict},
+-spec prog_find_word(j1prog(), forth_word()) -> integer() | not_found.
+prog_find_word(#j1prog{dict_nif = NifDict, dict = Dict},
                Word) when is_binary(Word) ->
     case orddict:find(Word, NifDict) of
         {ok, Index1} -> Index1; % nifs have negative indexes
@@ -163,38 +144,38 @@ prog_find_word(#j1bin_prog{dict_nif = NifDict, dict = Dict},
 %% Negative indices point to NIF functions. Label indexes are resolved to
 %% relative offsets or addresses and possibly the value bits are extended in
 %% a later pass.
-emit_call(Prog0 = #j1bin_prog{}, Index) ->
+emit_call(Prog0 = #j1prog{}, Index) ->
     emit(Prog0, j1c_bc:call_signed(Index)).
 
 %%emit(Prog0 = #j1bin{output=Out, pc=PC}, #j1patch{}=Patch) ->
 %%    Prog0#j1bin{output=[Patch | Out],
 %%                 pc=PC + 1};
--spec emit(j1bin_prog(), binary()) -> j1bin_prog().
-emit(Prog0 = #j1bin_prog{output=Out, pc=PC}, IOList) ->
-    Prog0#j1bin_prog{output=[IOList | Out],
-                     pc=PC + 1}.
+-spec emit(j1prog(), binary() | [binary()]) -> j1prog().
+emit(Prog0 = #j1prog{output=Out, pc=PC}, IOList) ->
+    Prog0#j1prog{output=[IOList | Out],
+                 pc=PC + 1}.
 
 %%%-----------------------------------------------------------------------------
 
--spec '_emit_alu_fold_helper'(j1alu(), j1bin_prog()) -> j1bin_prog().
+-spec '_emit_alu_fold_helper'(j1alu(), j1prog()) -> j1prog().
 '_emit_alu_fold_helper'(ALU, JBin) ->
     emit_alu(JBin, ALU).
 
--spec emit_alu_f(j1bin_prog(), [j1alu()]) -> j1bin_prog().
-emit_alu_f(Prog = #j1bin_prog{}, ALUList) ->
+-spec emit_alu_f(j1prog(), [j1alu()]) -> j1prog().
+emit_alu_f(Prog = #j1prog{}, ALUList) ->
     lists:foldl(fun '_emit_alu_fold_helper'/2, Prog, ALUList).
 
--spec emit_alu(j1bin_prog(), j1alu()) -> j1bin_prog().
-emit_alu(Prog = #j1bin_prog{}, ALU = #j1alu{ds=-1}) ->
+-spec emit_alu(j1prog(), j1alu()) -> j1prog().
+emit_alu(Prog = #j1prog{}, ALU = #j1alu{ds=-1}) ->
     emit_alu(Prog, ALU#j1alu{ds=2});
-emit_alu(Prog = #j1bin_prog{}, ALU = #j1alu{rs=-1}) ->
+emit_alu(Prog = #j1prog{}, ALU = #j1alu{rs=-1}) ->
     emit_alu(Prog, ALU#j1alu{rs=2});
-emit_alu(Prog = #j1bin_prog{}, ALU = #j1alu{}) ->
+emit_alu(Prog = #j1prog{}, ALU = #j1alu{}) ->
     emit(Prog, j1c_bc:alu(ALU)).
 
 %%%-----------------------------------------------------------------------------
 
--spec emit_base_word(j1bin_prog(), j1forth_code()) -> j1bin_prog().
+-spec emit_base_word(j1prog(), j1forth_code()) -> j1prog().
 %%
 %% Special stuff and folding
 %%
@@ -297,9 +278,6 @@ emit_base_word(Prog0, <<"DOWN1">>) ->
     emit_alu(Prog0, #j1alu{op = ?J1ALU_T, ds = -1});
 emit_base_word(Prog0, <<"COPY">>) ->
     emit_alu(Prog0, #j1alu{op = ?J1ALU_N});
-
-emit_base_word(Prog0, <<"NOOP">>) ->
-    emit_alu(Prog0, #j1alu{op = ?J1ALU_T});
 
 emit_base_word(Prog0, <<"NOOP">>) ->
     emit_alu(Prog0, #j1alu{op = ?J1ALU_T});

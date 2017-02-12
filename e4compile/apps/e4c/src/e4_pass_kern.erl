@@ -1,4 +1,4 @@
-%%% @doc Pass 1: From Core Erlang produces intermediate Forth syntax tree with
+%%% @doc Pass 1: From Kernel Erlang produces intermediate Forth syntax tree with
 %% scopes defined and basic blocks (code constructs) marked
 -module(e4_pass_kern).
 
@@ -12,10 +12,12 @@
 -include_lib("e4c/include/e4c.hrl").
 -import(e4_f1, [emit/2]).
 
+-type ktype_clause_type() :: k_tuple | k_atom | k_int | k_float | k_nil
+                            | k_cons | k_literal | k_map | k_binary.
 -record(match_ctx, {
     match_vars = [] :: [k_var()],   % vars which appeared in #k_match{}
     select_var,                     % focused var which appeared #k_select{}
-    type = k_nil :: k_tuple | k_atom | k_int | k_float | k_nil | k_cons | k_literal
+    type = k_nil :: ktype_clause_type()
 }).
 -type match_ctx() :: #match_ctx{}.
 %%-type match_elem_group() :: k_match() | k_alt() | k_select() | k_type_clause()
@@ -218,7 +220,7 @@ process_code(Block0 = #f_block{},
     %% In case RVal is a complex expression, save into tmp variable and emit
     %% the accompanying code (possibly empty list)
     %% The tmp code is inserted into the outer scope
-    {RTmp, RTmpEmit} = e4_f1:make_tmp(Block0, Rhs),
+    #{name := RTmp, forth := RTmpEmit} = e4_f1:make_tmp(Block0, Rhs),
     Block1 = emit(Block0, RTmpEmit),
 
     %% Create a conditional block for pattern match which checks if all
@@ -271,7 +273,7 @@ make_type_check(k_tuple)    -> <<".TUPLE?">>.
 %% values on the left match all values on the right.
 %% Code should be inserted inside this block by the caller.
 -spec emit_match(Scope :: [binary() | atom()],
-                 k_tuple | k_cons | k_nil | k_float | k_atom | k_literal,
+                 Type :: ktype_clause_type(),
                  _Lhs, _Rhs) -> forth_ic().
 emit_match(Scope, k_tuple, #k_tuple{es=LhsElements}, Rhs) ->
     %% Assuming Rhs is also a tuple, take elements from it and match against

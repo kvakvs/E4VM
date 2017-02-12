@@ -35,8 +35,10 @@
 %% | instr_tag | signed or unsigned int | another 4 bits of instruction code
 %% +-----------+------------------------+ (when there's no argument to it)
 
--define(J1INSTR_JUMP,       0). % may be extended by 16 bit varint
--define(J1INSTR_JUMP_COND,  1). % may be extended by 16 bit varint
+%% TODO: Refactor and reorganize bytecodes
+
+%%-define(J1INSTR_JUMP,       0). % may be extended by 16 bit varint
+%%-define(J1INSTR_JUMP_COND,  1). % may be extended by 16 bit varint
 -define(J1INSTR_CALL,       2). % may be extended by 16 bit varint
 -define(J1INSTR_ALU,        3). % always 16 bit
 -define(J1INSTR_GETELEMENT, 4). % ( Tuple -- Tuple[Index] , index hardcoded )
@@ -63,6 +65,10 @@
 -define(J1BYTE_INSTR_ERL_TAIL_CALL, 16#F1). % ( Args... Fun -- , jump to fun
 -define(J1BYTE_INSTR_ERL_CALL,      16#F2). % ( Args... Fun -- Result , call )
 -define(J1BYTE_INSTR_NIL,           16#F3).
+-define(J1BYTE_INSTR_JUMP,          16#F4). % Take varint from stack and jump
+-define(J1BYTE_INSTR_JUMP_COND,     16#F5). % Take varint from stack and jump-z
+-define(J1BYTE_INSTR_VARINT,        16#F6). % push positive varint onto stack
+-define(J1BYTE_INSTR_VARINT_NEG,    16#F7). % push negative varint onto stack
 
 %% 4-bit values (ALU Operation)
 -define(J1ALU_T,             0).
