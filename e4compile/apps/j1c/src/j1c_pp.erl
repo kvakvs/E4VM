@@ -18,8 +18,7 @@ process(ModuleName, SrcForth) ->
 
     Preprocessed1 = preprocess_numbers(SrcForth, []),
     {Prog2, Preprocessed2} = preprocess(Prog1, [], Preprocessed1),
-%%    file:write_file("j1c_pass_forth-pp.txt",
-%%                    iolist_to_binary(io_lib:format("~p", [Preprocessed2]))),
+%%    e4c:debug_write_term("j1c_pass_forth-pp.txt", Preprocessed2),
     {Prog2, Preprocessed2}.
 
 preprocess(Prog = #j1prog{}, Acc, []) ->

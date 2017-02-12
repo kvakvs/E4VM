@@ -35,8 +35,7 @@ process(#k_mdef{name=Name, exports=Exps, attributes=_Attr, body=Body}) ->
         [],
         [e4_f1:comment("end mod ~s", [Name])]),
     Out = process_code(Block0, #match_ctx{}, Body),
-%%    file:write_file("e4c_pass_kern.txt",
-%%                    iolist_to_binary(io_lib:format("~p", [Out]))),
+%%    e4c:debug_write_term("e4c_pass_kern.txt", Out),
 
 %%    io:format("~s~n~s~n",
 %%              [color:on_white(color:black(" PASS 1 ")),

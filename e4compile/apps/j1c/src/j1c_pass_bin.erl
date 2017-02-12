@@ -39,8 +39,7 @@ compile(Input = #j1prog{dict = IDict,
 
     %Patched = apply_patches(Output, Prog1#j1bin.patch_table, []),
     %Prog2 = Prog1#j1bin{output=Patched},
-    file:write_file("j1c_pass_bin.txt",
-                    iolist_to_binary(io_lib:format("~p", [Bin]))),
+    e4c:debug_write_term("j1c_pass_bin.txt", Bin),
 
     io:format("~s~n"
               "~s~n", [color:redb("J1C PASS 1"),

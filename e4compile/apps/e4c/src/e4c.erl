@@ -9,13 +9,14 @@
 
 %% Application callbacks
 -export([
-    arguments_loop/1,
-    error/1,
-    start/0,
-    start/2,
-    stop/1,
-    try_do/2,
-    varint/1
+      arguments_loop/1,
+      debug_write_term/2,
+      error/1,
+      start/0,
+      start/2,
+      stop/1,
+      try_do/2,
+      varint/1
 ]).
 
 -include_lib("e4c/include/e4c.hrl").
@@ -95,3 +96,8 @@ error(header) ->
 error(footer) ->
     io:format("~n"
               "+--------------------------------------------------------").
+
+debug_write_term(Filename, Term) ->
+    file:write_file(Filename,
+                    erlang:iolist_to_binary(
+                        io_lib:format("~p", [Term]))).

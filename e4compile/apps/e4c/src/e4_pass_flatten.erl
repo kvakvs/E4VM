@@ -14,8 +14,7 @@ process(IC) ->
     Out0 = lists:flatten(transform(#f_var_storage{}, IC, [])), % flat list of IC
     Out  = lists:flatten(lists:map(fun forthify/1, Out0)), % Convert to Forth
 
-%%    file:write_file("e4c_pass_flatten.txt",
-%%                    iolist_to_binary(io_lib:format("~p", [Out]))),
+%%    e4c:debug_write_term("e4c_pass_flatten.txt", Out),
 
 %%    io:format("~s~n~s~n",
 %%              [color:on_white(color:black(" PASS 3 Flatten ")),
