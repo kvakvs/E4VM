@@ -21,25 +21,32 @@
 
 link_pass(#j1prog{output = Input} = Prog0) ->
     Input1 = partition(Input, []),
+%%    e4c:debug_write_term("j1c_pass_link-0.txt", Input1),
+
     #{p := Prog1, accum := Input2} = lists:foldl(
         fun(Code, #{p := Prog, accum := Acc}) ->
-            #{p := ProgA, bin := CodeA} =
+            #{p := ProgA, bin := Bin} =
                 j1c_compile_bin:compile_segment(Prog, Code),
-            #{p => ProgA, accum => [CodeA | Acc]}
+            #{p => ProgA, accum => [Bin | Acc]}
         end,
         #{p => Prog0, accum => []},
         Input1),
     e4c:debug_write_term("j1c_pass_link-1.txt", Input2),
-    %link(Prog1, Input2, []).
-    Prog1#j1prog{output = Input2}.
+
+    Result1 = link(Prog1#j1prog{output = []}, Input2, []),
+    e4c:debug_write_term("j1c_pass_link-2.txt", Result1),
+
+    Result2 = flatten(Result1, []),
+    e4c:debug_write_term("j1c_pass_link-3.txt", Result2),
+
+    Prog1#j1prog{output = Result2}.
 
 %% @doc Final phase: find commands which used label references and replace
 %% offset in them with label address. This may require shifting input right
 %% with an extra word for longer address, and also shifting all labels above
 %% this address.
-link(Prog = #j1prog{}, [], Acc) ->
-    New = lists:flatten(lists:reverse(Acc)),
-    Prog#j1prog{output = New};
+link(#j1prog{}, [], Acc) ->
+    lists:flatten(lists:reverse(Acc));
 
 %%link(Prog = #j1bin_prog{}, [<<?J1INSTR_CALL:?J1INSTR_WIDTH,
 %%                              Label:?J1OP_INDEX_WIDTH>> | Tail], Acc) ->
@@ -66,3 +73,12 @@ partition(Input, Acc) ->
 
 is_not_separator(#j1jump{}) -> false;
 is_not_separator(_) -> true.
+
+%% @doc Given a list of #j1compiled{} and single commands like #j1jump{}, join
+%% everything together again, and unwrap #j1compiled{} into its content
+flatten([], Accum) -> lists:reverse(Accum);
+flatten([#j1compiled{bin = Code} | Tail], Accum) ->
+    flatten(Tail, [Code | Accum]);
+flatten([Other | Tail], Accum) ->
+    flatten(Tail, [Other | Accum]).
+
