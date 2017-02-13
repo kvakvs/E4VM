@@ -39,10 +39,11 @@ unsigned_value_fits(Val, Bits) ->
 literal_nil() -> <<?J1INSTR_SINGLE_BYTE:?J1INSTR_WIDTH,
                    ?J1BYTE_INSTR_NIL:?J1INSTR_WIDTH>>.
 
-lit(varint, Val) when Val >= 0 ->
+lit_varint(Val) when Val >= 0 ->
     <<?J1BYTE_INSTR_VARINT:8, (e4c:varint(Val))/binary>>;
-lit(varint, Val) when Val < 0 ->
-    <<?J1BYTE_INSTR_VARINT_NEG:8, (e4c:varint(Val))/binary>>;
+lit_varint(Val) when Val < 0 ->
+    <<?J1BYTE_INSTR_VARINT_NEG:8, (e4c:varint(Val))/binary>>.
+
 lit(Type, Val) ->
     ?ASSERT(unsigned_value_fits(Type, ?J1INSTR_WIDTH),
             "Literal type won't fit into designated bits"),
@@ -97,11 +98,11 @@ call_signed(Index) ->
       Index:?J1OP_INDEX_WIDTH/big-signed>>.
 
 jump_signed(Offset) ->
-    ArgBC = lit(varint, Offset),
+    ArgBC = lit_varint(Offset),
     [ArgBC, <<?J1BYTE_INSTR_JUMP:8>>].
 
 jump_z_signed(Offset) ->
-    ArgBC = lit(varint, Offset),
+    ArgBC = lit_varint(Offset),
     [ArgBC, <<?J1BYTE_INSTR_JUMP_COND:8>>].
 
 erl_tail_call() ->

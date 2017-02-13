@@ -14,7 +14,7 @@
 -include_lib("j1c/include/j1bytecode.hrl").
 
 -spec compile_segment(j1prog(), j1forth_code())
-                     -> #{p => j1prog(), bin => j1compiled()}.
+                     -> #{p => j1prog(), bin => list(binary())}.
 compile_segment(Prog0 = #j1prog{}, Input) ->
     %% Setup compiler state (ignored after finished)
     Prog1 = Prog0#j1prog{pc = 0, output = []},
@@ -24,9 +24,7 @@ compile_segment(Prog0 = #j1prog{}, Input) ->
     %% Linking/compiling is done, we can flatten the list and optimize
     Bin1 = lists:reverse(lists:flatten(Prog2#j1prog.output)),
 %%    Bin2 = j1c_optimize:optimize(Bin1, []),
-    #{ p => Prog2#j1prog{output = []},
-       bin => #j1compiled{bin = Bin1}
-    }.
+    #{ p => Prog2#j1prog{output = []}, bin => Bin1 }.
 
 %%%-----------------------------------------------------------------------------
 

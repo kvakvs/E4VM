@@ -93,3 +93,4 @@
     orelse ByteOp bsr ?J1INSTR_WIDTH == ?J1INSTR_SMALL_POS
     orelse ByteOp bsr ?J1INSTR_WIDTH == ?J1INSTR_LD_SMALL
     orelse ByteOp bsr ?J1INSTR_WIDTH == ?J1INSTR_ST_SMALL).
+

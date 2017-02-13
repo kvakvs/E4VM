@@ -145,9 +145,9 @@
 %% Represents a processed block of Forth compiled to a list of binary opcodes.
 %% Originally offsets for jumps in it are label ids, but Link pass rewrites
 %% them to be relative addresses and expands opcodes if needed
--record(j1compiled, {
-    bin :: j1bin_code()
-}).
--type j1compiled() :: #j1compiled{}.
+%%-record(j1compiled, {
+%%    bin :: j1bin_code()
+%%}).
+%%-type j1compiled() :: #j1compiled{}.
 
 -endif. % J1_HEADER
