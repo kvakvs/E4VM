@@ -39,6 +39,10 @@ format_j1c_byte_op(_Prog, ?J1BYTE_INSTR_JUMP) ->
     io_lib:format("~s~n", [color:green("JMP")]);
 format_j1c_byte_op(_Prog, ?J1BYTE_INSTR_JUMP_COND) ->
     io_lib:format("~s~n", [color:green("JZ")]);
+format_j1c_byte_op(_Prog, ?J1BYTE_INSTR_VARINT) ->
+    io_lib:format("~s~n", [color:green("VARINT")]);
+format_j1c_byte_op(_Prog, ?J1BYTE_INSTR_VARINT_NEG) ->
+    io_lib:format("~s~n", [color:green("VARINT-NEG")]);
 
 format_j1c_byte_op(_Prog, X) when X bsr 4 == ?J1INSTR_SMALL_POS ->
     io_lib:format("~s i:~B~n", [color:blueb("LIT"), X band 15]);

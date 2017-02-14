@@ -16,12 +16,15 @@
 %% API
 -export([link_pass/1]).
 
+-include_lib("e4c/include/e4c.hrl").
 -include_lib("j1c/include/j1.hrl").
 -include_lib("j1c/include/j1bytecode.hrl").
 
 link_pass(#j1prog{output = Input} = Prog0) ->
     Input1 = partition(Input, []),
 %%    e4c:debug_write_term("j1c_pass_link-0.txt", Input1),
+
+    ?ASSERT(Prog0#j1prog.pc =:= 0, "PC must be zero"),
 
     %% For each item in partitioned input list, apply compile_segment to it
     %% so that we get a list of #j1compiled{} and #j1jump{}
@@ -77,12 +80,3 @@ partition(Input, Acc) ->
 
 is_not_separator(#j1jump{}) -> false;
 is_not_separator(_) -> true.
-
-%% @ doc Given a list of #j1compiled{} and single commands like #j1jump{}, join
-%% everything together again, and unwrap #j1compiled{} into its content
-%%flatten([], Accum) -> lists:reverse(Accum);
-%%flatten([#j1compiled{bin = Code} | Tail], Accum) ->
-%%    flatten(Tail, [Code | Accum]);
-%%flatten([Other | Tail], Accum) ->
-%%    flatten(Tail, [Other | Accum]).
-%%
