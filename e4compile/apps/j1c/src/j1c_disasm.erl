@@ -1,28 +1,45 @@
 -module(j1c_disasm).
 
 %% API
--export([disasm/2]).
+-export([disasm/3]).
 
 -include_lib("j1c/include/j1.hrl").
 -include_lib("j1c/include/j1bytecode.hrl").
 
-disasm(Prog, Bin) ->
-    Out = disasm(Prog, 0, iolist_to_binary(Bin), []),
+disasm(Prog, Pc, Bin) ->
+    Out = disasm(Prog, Pc, iolist_to_binary(Bin), []),
     unicode:characters_to_binary(Out, utf8).
 
 disasm(_Prog, _Pc, <<>>, Accum) -> lists:reverse(Accum);
+
+disasm(Prog, Pc, <<?J1BYTE_INSTR_JUMP:8, F:24/big-signed>> = Op, Accum) ->
+    Out = io_lib:format("~s ~s ~B~n", [format_pc_and_opcode(Pc, Op),
+                                       color:green("JMP"), F]),
+    disasm(Prog, Pc + 4, Out);
+disasm(Prog, Pc, <<?J1BYTE_INSTR_JUMP_COND:8, F:24/big-signed>> = Op, Accum) ->
+    Out = io_lib:format("~s ~s ~B~n", [format_pc_and_opcode(Pc, Op),
+                                       color:green("JZ"), F]),
+    disasm(Prog, Pc + 4, Out);
+
 disasm(Prog, Pc, <<ByteOp:8, Tail/binary>>, Accum)
     when ?IS_SINGLE_BYTE_OPCODE(ByteOp) ->
     disasm(Prog, Pc + 1, Tail, [
         format_j1c_byte_op(Prog, ByteOp),
-        io_lib:format("[~4.16.0B]   ~2.16.0B: ", [Pc, ByteOp]) | Accum
+        format_pc_and_opcode(Pc, <<ByteOp:8>>) | Accum
     ]);
 disasm(Prog, Pc, <<H:2/binary, Tail/binary>>, Accum) ->
     <<H1:16>> = H,
-    disasm(Prog, Pc + 1, Tail, [
+    disasm(Prog, Pc + 2, Tail, [
         format_j1c_op16(Prog, H),
-        io_lib:format("[~4.16.0B] ~4.16.0B: ", [Pc, H1]) | Accum
+        format_pc_and_opcode(Pc, <<H1:16>>) | Accum
     ]).
+
+format_pc_and_opcode(Pc, <<Op:8>>) ->
+    io_lib:format("[~4.16.0B]   ~2.16.0B: ", [Pc, Op]);
+format_pc_and_opcode(Pc, <<Op:16>>) ->
+    io_lib:format("[~4.16.0B] ~4.16.0B: ", [Pc, Op]);
+format_pc_and_opcode(Pc, <<Op:32>>) ->
+    io_lib:format("[~4.16.0B] ~8.16.0B: ", [Pc, Op]).
 
 %%% ---------------------------------------------------------------------------
 
@@ -35,10 +52,6 @@ format_j1c_byte_op(_Prog, ?J1BYTE_INSTR_ERL_TAIL_CALL) ->
     io_lib:format("erl-~s~n", [color:green("TAIL")]);
 format_j1c_byte_op(_Prog, ?J1BYTE_INSTR_NIL) ->
     io_lib:format("~s []~n", [color:green("LIT")]);
-format_j1c_byte_op(_Prog, ?J1BYTE_INSTR_JUMP) ->
-    io_lib:format("~s~n", [color:green("JMP")]);
-format_j1c_byte_op(_Prog, ?J1BYTE_INSTR_JUMP_COND) ->
-    io_lib:format("~s~n", [color:green("JZ")]);
 format_j1c_byte_op(_Prog, ?J1BYTE_INSTR_VARINT) ->
     io_lib:format("~s~n", [color:green("VARINT")]);
 format_j1c_byte_op(_Prog, ?J1BYTE_INSTR_VARINT_NEG) ->
@@ -153,7 +166,7 @@ j1_op(?J1ALU_DEPTH)              -> "DEPTH";
 j1_op(?J1ALU_N_UNSIGNED_LESS_T)  -> "uN<T".
 
 whereis_addr(#j1prog{dict = Words}, Addr) when Addr >= 0 ->
-    io:format("~p~n", [Words]),
+%%    io:format("~p~n", [Words]),
     case lists:keyfind(Addr, 2, Words) of
         {{Name1, _Arity}, _Addr1} ->
             io_lib:format("'~s'", [Name1]);

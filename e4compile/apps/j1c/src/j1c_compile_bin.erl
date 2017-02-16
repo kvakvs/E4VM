@@ -15,7 +15,7 @@
 
 -spec compile_segment(j1prog(), j1forth_code())
                      -> #{p => j1prog(), bin => list(binary())}.
-compile_segment(Prog0 = #j1prog{}, Input) ->
+compile_segment(Prog0 = #j1prog{pc = Pc0}, Input) ->
     %% Setup compiler state (ignored after finished)
     Prog1 = Prog0#j1prog{output = []},
 
@@ -25,7 +25,7 @@ compile_segment(Prog0 = #j1prog{}, Input) ->
     Bin1 = lists:reverse(lists:flatten(Prog2#j1prog.output)),
 %%    Bin2 = j1c_optimize:optimize(Bin1, []),
 
-    Dis = j1c_disasm:disasm(Prog2, iolist_to_binary(Bin1)),
+    Dis = j1c_disasm:disasm(Prog2, Pc0, iolist_to_binary(Bin1)),
     io:format("~s~n", [Dis]),
 
     #{ p => Prog2#j1prog{output = []}, bin => Bin1 }.

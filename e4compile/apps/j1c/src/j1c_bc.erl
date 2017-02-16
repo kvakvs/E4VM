@@ -97,13 +97,13 @@ call_signed(Index) ->
     <<?J1INSTR_CALL:?J1INSTR_WIDTH,
       Index:?J1OP_INDEX_WIDTH/big-signed>>.
 
-jump_signed(Offset) ->
-    ArgBC = lit_varint(Offset),
-    [ArgBC, <<?J1BYTE_INSTR_JUMP:8>>].
+jump_signed(F) ->
+    %% Later (load time?) labels are replaced with addresses
+    <<?J1BYTE_INSTR_JUMP:8, F:24/big-signed>>.
 
-jump_z_signed(Offset) ->
-    ArgBC = lit_varint(Offset),
-    [ArgBC, <<?J1BYTE_INSTR_JUMP_COND:8>>].
+jump_z_signed(F) ->
+    %% Later (load time?) labels are replaced with addresses
+    <<?J1BYTE_INSTR_JUMP_COND:8, F:24/big-signed>>.
 
 erl_tail_call() ->
     <<?J1INSTR_SINGLE_BYTE:?J1INSTR_WIDTH,
