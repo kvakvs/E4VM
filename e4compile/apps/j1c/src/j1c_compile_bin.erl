@@ -19,7 +19,7 @@ compile_segment(Prog0 = #j1prog{pc = Pc0}, Input) ->
     %% Setup compiler state (ignored after finished)
     Prog1 = Prog0#j1prog{output = []},
 
-    Prog2 = process_words(Prog1, Input),
+    Prog2 = compile_many(Prog1, Input),
 
     %% Linking/compiling is done, we can flatten the list and optimize
     Bin1 = lists:reverse(lists:flatten(Prog2#j1prog.output)),
@@ -32,101 +32,92 @@ compile_segment(Prog0 = #j1prog{pc = Pc0}, Input) ->
 
 %%%-----------------------------------------------------------------------------
 
--spec process_words(j1prog(), j1forth_code()) -> j1prog().
-process_words(Prog0 = #j1prog{}, []) -> Prog0;
+-spec compile_many(j1prog(), j1forth_code()) -> j1prog().
+compile_many(Prog0 = #j1prog{}, []) -> Prog0;
 
-process_words(Prog0, [OpList | Tail]) when is_list(OpList) ->
-    Prog1 = lists:foldl(fun(Op, P0) -> process_words(P0, [Op]) end,
+compile_many(Prog0, [OpList | Tail]) when is_list(OpList) ->
+    Prog1 = lists:foldl(fun(Op, P0) -> compile_many(P0, [Op]) end,
                         Prog0,
                         OpList),
-    process_words(Prog1, Tail);
+    compile_many(Prog1, Tail);
 
-process_words(Prog0 = #j1prog{}, [?F_RET | Tail]) ->
-    Prog1 = emit_alu(Prog0, #j1alu{op = ?J1ALU_T, rpc = 1, ds = 2}),
-    process_words(Prog1, Tail);
+%% LEAVE;RET. Single LEAVE is handled in compile_1 and produces an error
+compile_many(Prog0, [#j1leave{}, ?F_RET | Tail]) ->
+    Prog1 = emit(Prog0, j1c_bc:leave()),
+    compile_many(Prog1, Tail);
 
-process_words(Prog0 = #j1prog{}, [?F_LIT_NIL | Tail]) ->
-    Prog1 = emit(Prog0, j1c_bc:literal_nil()),
-    process_words(Prog1, Tail);
+compile_many(Prog0, [Word | Tail]) ->
+    Prog1 = compile_1(Prog0, Word),
+    compile_many(Prog1, Tail);
+
+%% Handle a non-list (single op)
+compile_many(Prog0, Op) when not is_list(Op) ->
+    compile_1(Prog0, Op).
+
+%%%-----------------------------------------------------------------------------
+
+compile_1(Prog0 = #j1prog{}, ?F_RET) ->
+    emit_alu(Prog0, #j1alu{op = ?J1ALU_T, rpc = 1, ds = 2});
+
+compile_1(Prog0 = #j1prog{}, ?F_LIT_NIL) ->
+    emit(Prog0, j1c_bc:literal_nil());
 
 %% Nothing else worked, look for the word in our dictionaries and base words,
 %% maybe it is a literal, too
-process_words(Prog0 = #j1prog{}, [Int | Tail])
-    when is_integer(Int) ->
-        ProgA = emit(Prog0, j1c_bc:literal_integer(Int)),
-        process_words(ProgA, Tail);
+compile_1(Prog0 = #j1prog{}, Int) when is_integer(Int) ->
+    emit(Prog0, j1c_bc:literal_integer(Int));
 
-process_words(Prog0, [#j1comment{} | Tail]) ->
-    process_words(Prog0, Tail);
+compile_1(Prog0, #j1comment{}) -> Prog0;
 
-process_words(Prog0, [#j1atom{id = AtomId} | Tail]) ->
+compile_1(Prog0, #j1atom{id = AtomId}) ->
     %% TODO: Add bits to mark immediate atoms, ints etc or an arbitrary literal
-    Prog1 = emit(Prog0, j1c_bc:literal_atom(AtomId)),
-    process_words(Prog1, Tail);
+    emit(Prog0, j1c_bc:literal_atom(AtomId));
 
-process_words(Prog0, [#j1lit{id = LitId} | Tail]) ->
-    Prog1 = emit(Prog0, j1c_bc:literal_arbitrary(LitId)),
-    process_words(Prog1, Tail);
+compile_1(Prog0, #j1lit{id = LitId}) ->
+    emit(Prog0, j1c_bc:literal_arbitrary(LitId));
 
-process_words(Prog0, [#j1ld{index = Index} | Tail]) ->
-    Prog1 = emit(Prog0, j1c_bc:load(Index)),
-    process_words(Prog1, Tail);
+compile_1(Prog0, #j1ld{index = Index}) ->
+    emit(Prog0, j1c_bc:load(Index));
 
-process_words(Prog0, [#j1st{index = Index} | Tail]) ->
-    Prog1 = emit(Prog0, j1c_bc:store(Index)),
-    process_words(Prog1, Tail);
+compile_1(Prog0, #j1st{index = Index}) ->
+    emit(Prog0, j1c_bc:store(Index));
 
-process_words(Prog0, [#j1getelement{index = Index} | Tail]) ->
-    Prog1 = emit(Prog0, j1c_bc:get_element(Index)),
-    process_words(Prog1, Tail);
+compile_1(Prog0, #j1getelement{index = Index}) ->
+    emit(Prog0, j1c_bc:get_element(Index));
 
-process_words(Prog0, [#j1enter{size = Size} | Tail]) ->
-    Prog1 = emit(Prog0, j1c_bc:enter(Size)),
-    process_words(Prog1, Tail);
+compile_1(Prog0, #j1enter{size = Size}) ->
+    emit(Prog0, j1c_bc:enter(Size));
 
-%% LEAVE and LEAVE;RET
-process_words(Prog0, [#j1leave{}, ?F_RET | Tail]) ->
-    Prog1 = emit(Prog0, j1c_bc:leave()),
-    process_words(Prog1, Tail);
-process_words(Prog0, [#j1leave{} | Tail]) ->
-%%    Prog1 = emit(Prog0, j1c_bc:leave()),
-    ?COMPILE_ERROR("Stray LEAVE without RET following it"),
-    process_words(Prog0, Tail);
+%%compile_1(_Prog0, #j1leave{}) ->
+%%    ?COMPILE_ERROR("Stray LEAVE without RET following it");
 
-process_words(Prog0, [#j1erl_call{lit = _Lit} | Tail]) ->
-    Prog1 = emit(Prog0, j1c_bc:erl_call()),
-    process_words(Prog1, Tail);
-process_words(Prog0, [#j1erl_tailcall{lit = _Lit} | Tail]) ->
-    Prog1 = emit(Prog0, j1c_bc:erl_tail_call()),
-    process_words(Prog1, Tail);
+compile_1(Prog0, #j1erl_call{lit = _Lit}) ->
+    emit(Prog0, j1c_bc:erl_call());
 
-process_words(Prog0, #j1jump{condition = Cond, label = F}) ->
+compile_1(Prog0, #j1erl_tailcall{lit = _Lit}) ->
+    emit(Prog0, j1c_bc:erl_tail_call());
+
+compile_1(Prog0, #j1jump{condition = Cond, label = F}) ->
     Op = case Cond of
              false  -> j1c_bc:jump_signed(F);
              z      -> j1c_bc:jump_z_signed(F)
          end,
     emit(Prog0, Op);
 
-process_words(Prog0 = #j1prog{pc = PC, labels = Labels, lpatches = Patch},
-              [#j1label{label = F} | Tail]) ->
+compile_1(Prog0 = #j1prog{pc = PC, labels = Labels, lpatches = Patch},
+          #j1label{label = F}) ->
     Labels1 = orddict:store(F, PC, Labels),
-    Prog1 = Prog0#j1prog{
+    Prog0#j1prog{
         labels = Labels1,
         lpatches = [PC | Patch]
-    },
-    process_words(Prog1, Tail);
+    };
 
-process_words(Prog0 = #j1prog{}, [Word | Tail]) ->
-%% Possibly a word, try resolve
-    Prog1 = case prog_find_word(Prog0, Word) of
-                not_found -> emit_base_word(Prog0, Word);
-                Index -> emit_call(Prog0, Index)
-            end,
-    process_words(Prog1, Tail).
-
-%%process_words(_Prog, [Word | _Tail]) ->
-%%    ?COMPILE_ERROR1("Word is unexpected", Word).
-
+compile_1(Prog0 = #j1prog{}, Word) ->
+    %% Possibly a word, try resolve
+    case prog_find_word(Prog0, Word) of
+        not_found -> emit_base_word(Prog0, Word);
+        Index -> emit_call(Prog0, Index)
+    end.
 
 %%%-----------------------------------------------------------------------------
 

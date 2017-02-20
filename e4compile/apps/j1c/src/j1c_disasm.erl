@@ -15,16 +15,16 @@ disasm(_Prog, _Pc, <<>>, Accum) -> lists:reverse(Accum);
 disasm(Prog, Pc, <<?J1BYTE_INSTR_JUMP:8, F:24/big-signed>> = Op, Accum) ->
     Out = io_lib:format("~s ~s ~B~n", [format_pc_and_opcode(Pc, Op),
                                        color:green("JMP"), F]),
-    disasm(Prog, Pc + 4, Out);
+    disasm(Prog, Pc + 4, [Out | Accum]);
 disasm(Prog, Pc, <<?J1BYTE_INSTR_JUMP_COND:8, F:24/big-signed>> = Op, Accum) ->
     Out = io_lib:format("~s ~s ~B~n", [format_pc_and_opcode(Pc, Op),
                                        color:green("JZ"), F]),
-    disasm(Prog, Pc + 4, Out);
+    disasm(Prog, Pc + 4, [Out | Accum]);
 
 disasm(Prog, Pc, <<ByteOp:8, Tail/binary>>, Accum)
     when ?IS_SINGLE_BYTE_OPCODE(ByteOp) ->
     disasm(Prog, Pc + 1, Tail, [
-        format_j1c_byte_op(Prog, ByteOp),
+        format_j1c_op8(Prog, ByteOp),
         format_pc_and_opcode(Pc, <<ByteOp:8>>) | Accum
     ]);
 disasm(Prog, Pc, <<H:2/binary, Tail/binary>>, Accum) ->
@@ -43,31 +43,31 @@ format_pc_and_opcode(Pc, <<Op:32>>) ->
 
 %%% ---------------------------------------------------------------------------
 
-format_j1c_byte_op(_Prog, ?J1BYTE_INSTR_LEAVE) ->
+format_j1c_op8(_Prog, ?J1BYTE_INSTR_LEAVE) ->
     io_lib:format("~s; ~s~n", [color:green("LEAVE"), color:red("RET")]);
 
-format_j1c_byte_op(_Prog, ?J1BYTE_INSTR_ERL_CALL) ->
+format_j1c_op8(_Prog, ?J1BYTE_INSTR_ERL_CALL) ->
     io_lib:format("erl-~s~n", [color:green("CALL")]);
-format_j1c_byte_op(_Prog, ?J1BYTE_INSTR_ERL_TAIL_CALL) ->
+format_j1c_op8(_Prog, ?J1BYTE_INSTR_ERL_TAIL_CALL) ->
     io_lib:format("erl-~s~n", [color:green("TAIL")]);
-format_j1c_byte_op(_Prog, ?J1BYTE_INSTR_NIL) ->
+format_j1c_op8(_Prog, ?J1BYTE_INSTR_NIL) ->
     io_lib:format("~s []~n", [color:green("LIT")]);
-format_j1c_byte_op(_Prog, ?J1BYTE_INSTR_VARINT) ->
+format_j1c_op8(_Prog, ?J1BYTE_INSTR_VARINT) ->
     io_lib:format("~s~n", [color:green("VARINT")]);
-format_j1c_byte_op(_Prog, ?J1BYTE_INSTR_VARINT_NEG) ->
+format_j1c_op8(_Prog, ?J1BYTE_INSTR_VARINT_NEG) ->
     io_lib:format("~s~n", [color:green("VARINT-NEG")]);
 
-format_j1c_byte_op(_Prog, X) when X bsr 4 == ?J1INSTR_SMALL_POS ->
+format_j1c_op8(_Prog, X) when X bsr 4 == ?J1INSTR_SMALL_POS ->
     io_lib:format("~s i:~B~n", [color:blueb("LIT"), X band 15]);
 
-format_j1c_byte_op(_Prog, X) when X bsr 4 == ?J1INSTR_LD_SMALL ->
+format_j1c_op8(_Prog, X) when X bsr 4 == ?J1INSTR_LD_SMALL ->
     <<_:?J1INSTR_WIDTH, Index:?J1INSTR_WIDTH/signed>> = <<X:8>>,
     io_lib:format("~s ~s~n", [color:green("LD"), annotate_ldst(Index)]);
-format_j1c_byte_op(_Prog, X) when X bsr 4 == ?J1INSTR_ST_SMALL ->
+format_j1c_op8(_Prog, X) when X bsr 4 == ?J1INSTR_ST_SMALL ->
     <<_:?J1INSTR_WIDTH, Index:?J1INSTR_WIDTH/signed>> = <<X:8>>,
     io_lib:format("~s ~s~n", [color:green("ST"), annotate_ldst(Index)]);
 
-format_j1c_byte_op(_Prog, Op) ->
+format_j1c_op8(_Prog, Op) ->
     io_lib:format("?UNKNOWN-BYTEOP ~2.16.0B~n", [Op]).
 
 %%% ---------------------------------------------------------------------------

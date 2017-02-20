@@ -10,6 +10,7 @@
 %% Application callbacks
 -export([
       arguments_loop/1,
+      debug/1,
       debug_write_term/2,
       error/1,
       start/0,
@@ -28,10 +29,13 @@
 start() ->
     start(normal, init:get_plain_arguments()).
 
+%% @doc Pass in a string which will be compiled
+debug(Filename) ->
+    arguments_loop([Filename]).
+
 start(_StartType, Args) ->
     arguments_loop(Args),
-    init:stop(),
-    {ok, self()}.
+    init:stop().
 
 stop(_State) ->
     ok.
@@ -75,7 +79,7 @@ try_do(What, Fun) ->
     end.
 
 
-%% @doc Variable length UTF8-like encoding, highest bit is set to 1 for every
+%% @doc Variable length unsigned int encoding, highest bit is set to 1 for every
 %% encoded 7+1 bit sequence, and is set to 0 in the last 7+1 bits
 varint(N) when N < 0 -> erlang:error("varint: n<0");
 varint(N) when N =< 127 -> <<0:1, N:7>>; % last byte

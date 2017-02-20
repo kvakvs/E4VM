@@ -21,21 +21,23 @@
 -include_lib("j1c/include/j1bytecode.hrl").
 
 link_pass(#j1prog{output = Input} = Prog0) ->
-    Input1 = partition(Input, []),
 %%    e4c:debug_write_term("j1c_pass_link-0.txt", Input1),
 
     ?ASSERT(Prog0#j1prog.pc =:= 0, "PC must be zero"),
+    #{p := Prog1, bin := Input2}
+        = j1c_compile_bin:compile_segment(Prog0, Input),
 
-    %% For each item in partitioned input list, apply compile_segment to it
-    %% so that we get a list of #j1compiled{} and #j1jump{}
-    #{p := Prog1, accum := Input2} = lists:foldl(
-        fun(Code, #{p := Prog, accum := Acc}) ->
-            #{p := ProgA, bin := Bin} =
-                j1c_compile_bin:compile_segment(Prog, Code),
-            #{p => ProgA, accum => [Bin | Acc]}
-        end,
-        #{p => Prog0, accum => []},
-        Input1),
+%%    Input1 = partition(Input, []),
+%%    %% For each item in partitioned input list, apply compile_segment to it
+%%    %% so that we get a list of #j1compiled{} and #j1jump{}
+%%    #{p := Prog1, accum := Input2} = lists:foldl(
+%%        fun(Code, #{p := Prog, accum := Acc}) ->
+%%            #{p := ProgA, bin := Bin} =
+%%                j1c_compile_bin:compile_segment(Prog, Code),
+%%            #{p => ProgA, accum => [Bin | Acc]}
+%%        end,
+%%        #{p => Prog0, accum => []},
+%%        Input1),
     e4c:debug_write_term("j1c_pass_link-1.txt", Input2),
 
     Result1 = link(Prog1#j1prog{output = []}, Input2, []),
