@@ -1,4 +1,4 @@
-OCB_FLAGS   = -tag bin_annot -I src -I lib
+OCB_FLAGS   = -tag bin_annot -pkgs llvm,llvm.executionengine -use-ocamlfind
 PROJECTNAME = kerlc
 
 .PHONY: byte native

@@ -120,3 +120,4 @@ let parse_toplevel = parser
 (*  external ::= 'extern' prototype *)
 let parse_extern = parser
   | [< 'Token.Extern; e=parse_prototype >] -> e
+  
