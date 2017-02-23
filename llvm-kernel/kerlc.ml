@@ -8,7 +8,7 @@ open Llvm_target
 open Llvm_scalar_opts
 
 let main () =
-  ignore (initialize_native_target ());
+  ignore (initialize ()); (* Change the initialize *)
 
   (* Install standard binary operators.
    * 1 is the lowest precedence. *)
@@ -22,12 +22,13 @@ let main () =
   let stream = Lexer.lex (Stream.of_channel stdin) in
 
   (* Create the JIT. *)
-  let the_execution_engine = ExecutionEngine.create Codegen.the_module in
+  (* let the_execution_engine = ExecutionEngine.create Codegen.the_module in *)
+  let the_execution_engine = create Codegen.the_module in
   let the_fpm = PassManager.create_function Codegen.the_module in
 
   (* Set up the optimizer pipeline.  Start with registering info about how the
    * target lays out data structures. *)
-  DataLayout.add (ExecutionEngine.target_data the_execution_engine) the_fpm;
+  (* DataLayout.add_to_pass_manager the_fpm (data_layout the_execution_engine); *)
 
   (* Do simple "peephole" optimizations and bit-twiddling optzn. *)
   add_instruction_combination the_fpm;
