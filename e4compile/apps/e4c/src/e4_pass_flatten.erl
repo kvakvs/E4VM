@@ -55,9 +55,9 @@ transform_op(Scope, #f_ld{var=Var}) ->
 transform_op(Scope, #f_st{var=Var}) ->
     e4_f2:store(Scope, Var);
 transform_op(_Scope, #f_include{filename=F}) -> [
-    e4_f1:comment("begin include ~s", [F]),
+    ecpp_ast:comment("begin include ~s", [F]),
     j1c_parse:parse(F),
-    e4_f1:comment("end include ~s", [F])
+    ecpp_ast:comment("end include ~s", [F])
 ];
 %%transform_op(_Scope, X) when is_atom(X) ->
 %%    <<"'", (atom_to_binary(X, utf8))/binary>>;

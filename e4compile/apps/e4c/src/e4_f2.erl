@@ -98,7 +98,7 @@ add_alias(Storage = #f_var_storage{aliases=Aliases},
     Aliases1 = orddict:store(Var, ExistingVar, Aliases),
     Storage#f_var_storage{aliases=Aliases1}.
 
--spec emit(Mod :: f_module(), Code :: forth_ic()) -> f_block().
+-spec emit(Mod :: f_module(), Code :: forth_ic()) -> cpp_block().
 %%emit(_Mod0, #f_ld{}) -> compile_error("E4 Pass2: can't emit LD construct");
 %%emit(_Mod0, #f_st{}) -> compile_error("E4 Pass2: can't emit ST construct");
 emit(Mod0, AddCode) when not is_list(AddCode) ->

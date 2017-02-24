@@ -11,7 +11,7 @@
 
 format_ic(L, Indent) when is_list(L) ->
     [format_ic(Item, Indent) || Item <- L];
-format_ic(#f_block{before=B, scope=_S, code=C, aftr=A}, Indent) ->
+format_ic(#cpp_block{before=B, scope=_S, code=C, aftr=A}, Indent) ->
     [format_ic(B, Indent + 1),
      format_ic(C, Indent + 1),
      format_ic(A, Indent + 1)];

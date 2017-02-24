@@ -4,39 +4,78 @@
 
 %% API
 -export([
-      'and'/1, 'if'/2, 'if'/3, block/0, block/1, block/3, block/4, comment/1,
-      comment/2, equals/2, lit/1, match_two_values/2, eval/1,
-      store/1, tuple/1, var/1, element/2, unless/2, mark_alias/2,
-      mark_new_arg/1, make_mfarity/3, primop/2, include/1, make_tmp/2, emit/2,
-      export/2
+    'and'/1,
+    comment/1, comment/2,
+    element/2,
+    equals/2,
+    eval/1,
+    export/2,
+    include/1,
+    is_in_the_scope/2,
+    lit/1,
+    make_mfarity/3,
+    make_tmp/1,
+    mark_new_arg/1,
+    primop/2,
+    tuple/1,
+    var/1
 ]).
 
 -include_lib("compiler/src/core_parse.hrl").
 -include_lib("e4c/include/forth.hrl").
 -include_lib("e4c/include/e4c.hrl").
+-include_lib("ecpp/include/ecpp_ast.hrl").
+
+
+%% @doc Consult with scope and find out if value contains only known parts
+%% such as bound variables and literals, or some dynamic parts such as calls
+%% and (free) unbound variables. Having a known or dynamic value allows
+%% binding it to a temporary before some other calculation.
+%%-spec is_value_known(cpp_block(), any()) -> boolean().
+%%is_value_known(Block, Elements) when is_list(Elements) ->
+%%    lists:all(fun(E) -> is_value_known(Block, E) end,
+%%              Elements);
+%%is_value_known(_Block, #k_literal{}) -> true;
+%%is_value_known(_Block, #k_int{})     -> true;
+%%is_value_known(_Block, #k_float{})   -> true;
+%%is_value_known(_Block, #k_atom{})    -> true;
+%%is_value_known(_Block, #k_nil{})     -> true;
+%%is_value_known(Block = #cpp_block{}, #k_tuple{es=Elements}) ->
+%%    is_value_known(Block, Elements);
+%%is_value_known(Block = #cpp_block{}, #k_cons{hd=H, tl=T}) ->
+%%    is_value_known(Block, H) andalso is_value_known(Block, T);
+%%is_value_known(Block = #cpp_block{}, #cpp_block{code=Code}) ->
+%%    is_value_known(Block, Code);
+%%%%is_value_known(_Block, #cpp_var{})     -> true; % assuming var exists
+%%is_value_known(#cpp_block{scope=Scope}, #cpp_var{} = Var) ->
+%%    is_in_the_scope(Scope, Var).
+
+%% @doc Given a scope from an #f_block{} and a #cpp_var{} checks if the var exists
+%% in that scope (bound) or doesn't (free)
+is_in_the_scope(Scope, #cpp_var{name=Name}) ->
+    lists:member(Name, Scope).
 
 %% @doc Checks if expr is a simple variable or literal, then returns itself.
 %% Creates a tmp variable and assigns the value of Expr to it
-make_tmp(Block = #f_block{}, Value) ->
-    %% If Value is fully known inside the block we can replace with a temporary
-    case j1c_helper:is_value_known(Block, Value) of
-        false -> make_tmp(Value); % has only known vars, literals or calls
-        true ->
-            % value cannot be bound to a temporary
-            #{name => Value, forth => []}
-    end.
-
+-spec make_tmp(any())
+              -> #{name => binary() | any(), code => cpp_code()}.
 make_tmp(Value) ->
     %% Remove 4 bytes "#Ref" from "#Ref<0.0.2.60>" and prepend "forth"
-    <<_:4/binary, TmpName0/binary>> = erlang:list_to_binary(
+    <<_:5/binary, TmpName0/binary>> = erlang:list_to_binary(
         erlang:ref_to_list(make_ref())
     ),
-    TmpName = <<"forth", TmpName0/binary>>,
+    TmpName1 = [ <<(maketmp_variable_name_char(X)):8>> || <<X>> <= TmpName0],
+    TmpName = erlang:iolist_to_binary(["tmp_", TmpName1]),
 
     Tmp = var(TmpName),
-    TmpCode = [eval(Value), store(Tmp)],
-    #{name => Tmp, forth => TmpCode}.
+    TmpCode = ecpp_ast:assign(Tmp, eval(Value)),
+    #{name => Tmp, code => TmpCode}.
 
+maketmp_variable_name_char(X)
+    when X >= $0 andalso X =< $9
+         orelse X >= $A andalso X =< $Z
+         orelse X >= $a andalso X =< $z -> X;
+maketmp_variable_name_char(_Y) -> $_.
 
 %% @doc Takes list of Forth checks and creates forth instructions which produce
 %% true if all conditions are true. Assumption: each Cond in Conds is a Forth
@@ -55,59 +94,27 @@ make_tmp(Value) ->
         _ -> [Conds1, lists:duplicate(length(Conds1) - 1, 'AND')]
     end.
 
-%% TODO separate Cond from the rest of the arguments. How to optimize if true?
-'if'(X, Body) when is_list(Body) -> 'if'(X, block(Body));
-'if'(#k_literal{val='true'}, Body = #f_block{}) ->
-    Body;
-'if'(Cond, Body = #f_block{}) ->
-    block(
-        [comment("begin if"), Cond, <<"IF">>],
-        [Body],
-        [<<"THEN">>, comment("end if")]
-    ).
-
-'if'(Cond, Body = #f_block{}, Else = #f_block{}) ->
-    block(
-        [comment("begin ifelse"), Cond, <<"IF">>],
-        [Body, <<"ELSE">>, Else],
-        [<<"THEN">>]
-    ).
-
-unless(#k_literal{val='false'}, _Block) -> [];
-unless(Cond, Body = #f_block{}) ->
-    block(
-        [comment("begin unless"), Cond, <<"UNLESS">>],
-        [Body],
-        [<<"THEN">>]
-    ).
-
 %% ( c b a N - {a,b,c} , constructs a tuple size N from values on stack )
 %% Takes list of Forth expressions where each leaves one value on stack
 %% and constructs a tuple of that size
 tuple(Values) ->
-    [
-        lists:reverse(lists:map(fun eval/1, Values)),
-        lit(length(Values)),
-        <<".MAKE-TUPLE">>
-    ].
+    ecpp_ast:call("make_tuple", lists:map(fun eval/1, Values)).
 
-cons(H, T) -> [eval(H), eval(T), <<".CONS">>].
+cons(H, T) ->
+    ecpp_ast:call("cons", [eval(H), eval(T)]).
 
 %% ( X Y -- (X==Y) , takes 2 values from stack, pushes comparison result )
 equals(Lhs, Rhs) ->
-    [eval(Lhs), eval(Rhs), <<"==">>].
-
-%% ( X Y -- X , if X==Y, otherwise badmatch error )
-match_two_values(L, R) ->
-    [   % TODO: move to core.fs
-        eval(L), <<"DUP">>, eval(R), <<"==">>,
-        <<"UNLESS">>, <<"ERROR-BADMATCH">>, <<"THEN">>
-    ].
+    [ecpp_ast:call("equals", [eval(Lhs), eval(Rhs)])].
 
 %% ( -- Value , leaves a literal value on stack )
-%%lit([]) -> #k_nil{};
-lit(Value) when is_integer(Value) -> #k_int{val=Value};
-lit(Value) when is_atom(Value) -> #k_atom{val=Value};
+lit(Value) when is_integer(Value) ->
+    ecpp_ast:literal(Value);
+
+lit(#k_atom{val = Value}) -> ecpp_ast:literal(Value);
+lit(Value) when is_atom(Value) -> ecpp_ast:literal(Value);
+%%    ecpp_ast:call("make_atom", [ecpp_ast:string(Value)]);
+
 lit(Value) when is_float(Value) -> #k_float{val=Value};
 lit(Value) -> #k_literal{val=Value}.
 
@@ -117,78 +124,52 @@ comment(Format, Args) ->
     Txt = iolist_to_binary(io_lib:format(Format, Args)),
     #f_comment{comment=Txt}.
 
-block() -> block([], [], [], []).
-block(Code) -> block([], Code, [], []).
-
--spec block(Before :: forth_ic(),
-            Code :: forth_ic(),
-            After :: forth_ic()) -> f_block().
-block(Before, Code, After) ->
-    block(Before, Code, After, []).
-
--spec block(Before :: forth_ic(),
-            Code :: forth_ic(),
-            After :: forth_ic(), [k_var()]) ->
-    f_block().
-block(Before, Code, After, Scope) ->
-    #f_block{before=Before, code=Code, aftr=After, scope=Scope}.
-
-%% @doc Emit a structure which later will produce code to store value into
-%% the variable, allocated somewhere on the stack
-store([]) -> []; % for where empty ret=[] is provided
-store([Dst = #k_var{}]) -> #f_st{var=var(Dst)};
-store(Dst = #k_var{}) -> #f_st{var=var(Dst)}.
-
-%% @doc If both args are variables, creates an alias for the next compiler
-%% pass and generates no code. Otherwise generates code for copying.
-mark_alias(Var = #k_var{}, Existing = #k_var{}) ->
-    #f_var_alias{var=var(Var), existing=Existing};
-mark_alias(Existing = #k_var{}, #f_stacktop{}) ->
-    [<<"DUP">>, store(Existing)].
-
 %% @doc Produce code which will evaluate or retrieve variable value and leave
 %% it on stack for the code that follows.
-eval(#f_stacktop{})         -> [];
-eval(Retr = #f_ld{})        -> Retr;
-eval(#k_var{name={F, A}}) when is_atom(F), is_integer(A) ->
-    #k_local{name=F, arity=A};
-eval(#k_var{name=Var})      -> #f_ld{var=Var};
-eval(#k_tuple{es=Elements}) -> tuple(Elements);
-eval(#k_cons{hd=H, tl=T})   -> cons(H, T);
+eval(#f_stacktop{}) -> [];
+eval(Retr = #f_ld{}) -> Retr;
+eval(#cpp_var{name = {F, A}})
+    when is_atom(F), is_integer(A) ->
+    #k_local{name = F, arity = A};
+eval(#k_var{} = KVar) -> eval(var(KVar));
+eval(#k_tuple{es = Elements}) -> tuple(Elements);
+eval(#k_cons{hd = H, tl = T}) -> cons(H, T);
 
-eval(Lit = #k_local{}) -> Lit;  % local fun-arity
-eval(Lit = #k_remote{}) -> Lit; % external mod-fun-arity
-eval(Lit = #k_literal{}) -> Lit;
-eval(Lit = #k_atom{}) -> Lit;
-eval(Lit = #k_float{}) -> Lit;
-eval(Lit = #k_int{}) -> Lit;
-eval(Lit = #k_nil{}) -> Lit;
+eval(#cpp_var{} = Var) -> Var;
+eval(#cpp_call{} = Call) -> Call;
+
+eval(#k_local{name = F, arity = A}) ->
+    ecpp_ast:fun_name(F, A);
+eval(#k_remote{mod = M, name = F, arity = A}) ->
+    ecpp_ast:fun_name(eval(M), eval(F), A);
+eval(#k_literal{val = Lit}) -> ecpp_ast:literal(Lit);
+eval(#k_atom{val = Atom}) -> ecpp_ast:literal(Atom);
+eval(#k_float{val = Flt}) -> ecpp_ast:literal(Flt);
+eval(#k_int{val = Int}) -> ecpp_ast:literal(Int);
+eval(#k_nil{}) -> ecpp_ast:literal([]);
 eval(Code) when is_list(Code) -> Code;
 eval(Other) -> ?COMPILE_ERROR("Eval ~s - unknown element",
                               [?COLOR_TERM(red, Other)]).
 
-var(#k_var{name=Name})          -> var(Name);
-var(Name) when is_binary(Name)  -> #k_var{name=Name};
-var(Name) when is_atom(Name)    -> #k_var{name=atom_to_binary(Name, utf8)}.
+var([#k_var{name = Name}]) -> var(Name);
+var(#k_var{name = Name}) -> var(Name);
+var(#cpp_var{} = V) -> V;
+var(Name) when is_binary(Name) -> #cpp_var{name = Name};
+var(Name) when is_atom(Name) -> #cpp_var{name = atom_to_binary(Name, utf8)}.
 
-%mark_new_var(#c_var{}=V) -> #f_decl_var{var=var(V)};
-%%mark_new_var(L) when is_list(L) -> lists:map(fun mark_new_var/1, L);
-%%mark_new_var(#k_var{} = V) -> #f_decl_var{var=var(V)};
-%%mark_new_var(Name) -> #f_decl_var{var=var(Name)}.
-
-mark_new_arg(#k_var{} = V) -> #f_decl_arg{var=var(V)}.
+mark_new_arg(#cpp_var{} = V) -> #f_decl_arg{var=var(V)}.
 
 element(Index, Tuple) ->
-    [eval(Tuple), eval(Index), ?F_GETELEMENT].
+    ecpp_ast:call("element", [eval(Tuple), lit(Index)]).
 
 make_mfarity('.', F, Arity) when is_atom(F) ->
-    #k_local{name=F, arity=Arity};
+    #k_local{name = F, arity = Arity};
 make_mfarity(M, F, Arity) when is_atom(M), is_atom(F) ->
-    #k_remote{mod=M, name=F, arity=Arity};
+    #k_remote{mod = M, name = F, arity = Arity};
 make_mfarity(MExpr, FExpr, Arity) ->
     [MExpr, FExpr, lit(Arity), <<".MAKE-MFARITY">>].
 
-primop(#c_literal{val=Primop}, Arity) -> primop(Primop, Arity);
+primop(#c_literal{val = Primop}, Arity) -> primop(Primop, Arity);
 primop(match_fail, 1) ->
     <<"ERROR-CASE-CLAUSE">>;
 primop(Name, Arity) ->
@@ -196,23 +177,5 @@ primop(Name, Arity) ->
 
 include(F) -> #f_include{filename=F}.
 
-%% @doc Add code to the end of the #f_block{}
--spec emit(Block :: f_block(), Code :: forth_ic()) -> f_block().
-emit(Block = #f_block{}, AddCode) when not is_list(AddCode) ->
-    emit(Block, [AddCode]);
-emit(Block = #f_block{}, AddCode) ->
-    lists:foldl(fun emit_x_into_y/2, Block, AddCode).
-
-emit_x_into_y(#k_var{}, _Blk) ->
-    ?COMPILE_ERROR("should not emit variable");
-emit_x_into_y(Nested, Blk) when is_list(Nested) ->
-    emit(Blk, Nested);
-%% Append when code is just #f_block{}
-%%emit_x_into_y(ForthOp, Blk = #f_block{code=Code}) when is_tuple(Code) ->
-%%    Blk#f_block{code=[Code] ++ [ForthOp]};
-%% Append when code is a list
-emit_x_into_y(ForthOp, Blk = #f_block{code=Code}) ->
-    Blk#f_block{code=Code ++ [ForthOp]}.
-
 export(F, Arity) ->
-    #f_export{fn=atom_to_binary(F, utf8), arity=Arity}.
+    #f_export{fn = atom_to_binary(F, utf8), arity = Arity}.

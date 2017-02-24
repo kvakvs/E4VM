@@ -10,16 +10,16 @@
 
 -import(e4_f1, [emit/2]).
 
-process(IC = #f_block{}) ->
+process(IC = #cpp_block{}) ->
     Out = transform(IC),
-%%    e4c:debug_write_term("e4c_pass_scopes.txt", Out),
+    e4c:debug_write_term("e4c_pass_scopes.txt", Out),
 
 %%    io:format("~s~n~s~n",
 %%              [color:on_white(color:black(" PASS 2 Scopes ")),
 %%               e4_print_ic:format_ic(Out, 0)]),
     Out.
 
-transform(#f_block{before=Before, code=Code, aftr=After}) ->
+transform(#cpp_block{before=Before, code=Code, aftr=After}) ->
     AllCode0 = [transform(Before), transform(Code), transform(After)],
     AllCode = lists:flatten(AllCode0),
     Out0 = #f2_block{code = AllCode},

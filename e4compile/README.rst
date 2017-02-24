@@ -1,12 +1,12 @@
-Erlang-to-Forth (E4) compiler
-=============================
+Erlang-to-C++ trans-compiler
+============================
 
 A simple cross-compiler, converts your Erlang source to Kernel Erlang and then
-produces a Forth program internally which is then compiled into Forth bytecode.
-
-Forth dialect is based on J1Forth but with added Erlang types and extra opcodes.
+produces a C++ source program and accompanying CMakeLists ready to be built
+using make + CMake.
 
 Trying it out
 -------------
 
-    $ make run
+See `Makefile` targets, `make run1`, `make run2` and `make run3` may give some
+idea.

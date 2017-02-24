@@ -8,6 +8,7 @@
 -define(E4_FORTH_HRL, 1).
 
 -include_lib("e4c/include/kernel_erl.hrl").
+-include_lib("ecpp/include/ecpp_ast.hrl").
 
 %%-record(f_mfa, {mod :: atom(), fn :: atom(), arity :: integer()}).
 %%-type cf_mfa() :: #f_mfa{}.
@@ -20,14 +21,14 @@
 
 %% A code block with prefix and suffix
 %% TODO: Have var scopes merged with this? Not sure how to find scope parent
--record(f_block, {
-    before=[] :: forth_ic(),
-    %% A copy of upper level scope + own variables
-    scope=[] :: [binary()],
-    code=[] :: forth_ic(), % forth program output
-    aftr=[] :: forth_ic()
-}).
--type f_block() :: #f_block{}.
+%%-record(cpp_block, {
+%%    before=[] :: forth_ic(),
+%%    %% A copy of upper level scope + own variables
+%%    scope=[] :: [binary()],
+%%    code=[] :: forth_ic(), % forth program output
+%%    aftr=[] :: forth_ic()
+%%}).
+%%-type cpp_block() :: #cpp_block{}.
 
 %% TODO: not sure if used in this pass
 %%-record(f_mod_pass1, {
@@ -114,7 +115,7 @@
 
 %% Intermediate code element
 -type forth_ic_op() ::
-    forth_word() | f_comment() | k_literal() | f_block() | k_remote()
+    forth_word() | f_comment() | k_literal() | cpp_block() | k_remote()
     | f_decl_var() | f_decl_arg() | f_ld() | f_st() | f_enter() | f_leave().
 %% Forth intermediate code in general as list of ops or list of itself
 -type forth_ic() :: forth_ic_op() | [forth_ic_op()] | [forth_ic()].
