@@ -1,5 +1,5 @@
 #include "erl_parse.h"
-#include "erl_lexer.h"
+#include "erl_scanner.h"
 
 #include <llvm/ADT/STLExtras.h>
 
@@ -184,9 +184,9 @@ std::unique_ptr<ast::IExpr> Parser::parse_primary() {
 
 /// binoprhs
 ///   ::= ('+' primary)*
-std::unique_ptr<ast::IExpr>
-Parser::parse_binop_rhs(int ExprPrec,
-                        std::unique_ptr<ast::IExpr> lhs) {
+std::unique_ptr<ast::IExpr> Parser::parse_binop_rhs(
+    int ExprPrec,
+    std::unique_ptr<ast::IExpr> lhs) {
   // If this is a binop, find its precedence.
   while (true) {
     int TokPrec = GetTokPrecedence();
@@ -194,7 +194,9 @@ Parser::parse_binop_rhs(int ExprPrec,
     // If this is a binop that binds at least as tightly as the current
     // binop,
     // consume it, otherwise we are done.
-    if (TokPrec < ExprPrec) { return lhs; }
+    if (TokPrec < ExprPrec) {
+      return lhs;
+    }
 
     // Okay, we know this is a binop.
     int BinOp = cur_tok_;
@@ -202,7 +204,9 @@ Parser::parse_binop_rhs(int ExprPrec,
 
     // Parse the primary expression after the binary operator.
     auto rhs = parse_primary();
-    if (!rhs) { return nullptr; }
+    if (!rhs) {
+      return nullptr;
+    }
 
     // If BinOp binds less tightly with RHS than the operator after RHS, let
     // the pending operator take RHS as its LHS.
@@ -260,11 +264,12 @@ std::unique_ptr<ast::FunPrototype> Parser::parse_fun_proto() {
 std::unique_ptr<ast::FunctionAST> Parser::parse_definition() {
   get_next_token();  // eat def.
   auto fp = parse_fun_proto();
-  if (!fp) { return nullptr; }
+  if (!fp) {
+    return nullptr;
+  }
 
   if (auto expr = parse_expr()) {
-    return llvm::make_unique<ast::FunctionAST>(std::move(fp),
-                                               std::move(expr));
+    return llvm::make_unique<ast::FunctionAST>(std::move(fp), std::move(expr));
   }
   return nullptr;
 }

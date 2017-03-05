@@ -3,7 +3,7 @@
 #include <map>
 
 #include "erl_ast.h"
-#include "erl_lexer.h"
+#include "erl_scanner.h"
 
 class Parser {
   int cur_tok_ = ' ';

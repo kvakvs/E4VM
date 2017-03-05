@@ -8,6 +8,12 @@
 
 #include "erl_ast.h"
 
+namespace llvm {
+namespace orc {
+class ErlJIT;
+}
+}
+
 class Codegen {
  public:
   llvm::LLVMContext ctx_;
@@ -21,8 +27,8 @@ class Codegen {
   Codegen() : ir_builder_(ctx_) {}
 
   llvm::Function* get_function(const std::string& name);
-    
+
   llvm::Value* error_v(const char* Str);
 
-  void init_module_and_pass_manager();
+  void init_module_and_pass_manager(llvm::orc::ErlJIT& jit);
 };

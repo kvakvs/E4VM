@@ -16,19 +16,20 @@
 
 #include "erl_ast.h"
 #include "erl_codegen.h"
-#include "erl_lexer.h"
-#include "erl_parse.h"
 #include "erl_jit.h"
+#include "erl_parse.h"
+#include "erl_scanner.h"
+#include "erl_yy_driver.h"
 
 class Compiler {
-private:
+ private:
   Tokenizer tokenizer_;
   Parser parser_;
   Codegen codegen_;
   std::unique_ptr<llvm::orc::ErlJIT> jit_;
 
-public:
-  Compiler(): parser_(tokenizer_) {
+ public:
+  Compiler() : parser_(tokenizer_) {
     jit_ = llvm::make_unique<llvm::orc::ErlJIT>();
 
     // Install standard binary operators. 1 is lowest precedence.
@@ -37,7 +38,7 @@ public:
     parser_.binop_prio_['-'] = 20;
     parser_.binop_prio_['*'] = 40;  // highest.
 
-    codegen_.init_module_and_pass_manager();
+    codegen_.init_module_and_pass_manager(*jit_);
   }
 
   void main_repl_loop();
@@ -50,7 +51,7 @@ public:
     main_repl_loop();
   }
 
-private:
+ private:
   void handle_top_level_expr();
   void handle_definition();
   void handle_extern();
@@ -64,7 +65,7 @@ void Compiler::handle_definition() {
 
       fprintf(stderr, "\n");
       jit_->addModule(std::move(codegen_.mod_));
-      codegen_.init_module_and_pass_manager();
+      codegen_.init_module_and_pass_manager(*jit_);
     }
   } else {
     // Skip token for error recovery.
@@ -95,7 +96,7 @@ void Compiler::handle_top_level_expr() {
       // handle so
       // we can free it later.
       auto h = jit_->addModule(std::move(codegen_.mod_));
-      codegen_.init_module_and_pass_manager();
+      codegen_.init_module_and_pass_manager(*jit_);
 
       // Search the JIT for the __anon_expr symbol.
       auto expr_sym = jit_->findSymbol("__anon_expr");
@@ -162,14 +163,27 @@ extern "C" DLLEXPORT double printd(double X) {
   return 0;
 }
 
-int main() {
+int main(int argc, const char* argv[]) {
   llvm::InitializeNativeTarget();
   llvm::InitializeNativeTargetAsmPrinter();
   llvm::InitializeNativeTargetAsmParser();
 
   // Run the main "interpreter loop" now.
-  Compiler compiler;
-  compiler.go();
+  //  Compiler compiler;
+  //  compiler.go();
 
-  return 0;
+  int res = 0;
+  ErlangDriver driver;
+  for (int i = 1; i < argc; ++i) {
+    if (argv[i] == std::string("-p")) {
+      driver.set_trace_parsing();
+    } else if (argv[i] == std::string("-s")) {
+      driver.set_trace_scanning();
+    } else if (!driver.parse(argv[i])) {
+      std::cout << driver.get_result() << std::endl;
+    } else {
+      res = 1;
+    }
+  }
+  return res;
 }

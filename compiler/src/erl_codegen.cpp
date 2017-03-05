@@ -7,7 +7,7 @@
 #include <llvm/Transforms/Scalar/GVN.h>
 
 #include "erl_codegen.h"
-//#include "erl_parse.h"
+#include "erl_jit.h"
 
 llvm::Value* Codegen::error_v(const char* Str) {
   fprintf(stderr, "Error: %s\n", Str);
@@ -157,7 +157,9 @@ llvm::Value* ast::IfCondition::codegen(Codegen& cg) {
 llvm::Value* ast::ForLoop::codegen(Codegen& cg) {
   // Emit the start code first, without 'variable' in scope.
   llvm::Value* start_val = start_->codegen(cg);
-  if (!start_val) { return nullptr; }
+  if (!start_val) {
+    return nullptr;
+  }
 
   // Make the new basic block for the loop header, inserting after current
   // block.
@@ -172,7 +174,8 @@ llvm::Value* ast::ForLoop::codegen(Codegen& cg) {
   cg.ir_builder_.SetInsertPoint(loop_bb);
 
   // Start the PHI node with an entry for Start.
-  auto var = cg.ir_builder_.CreatePHI(llvm::Type::getDoubleTy(cg.ctx_), 2, var_);
+  auto var =
+      cg.ir_builder_.CreatePHI(llvm::Type::getDoubleTy(cg.ctx_), 2, var_);
   var->addIncoming(start_val, preheader_bb);
 
   // Within the loop, the variable is defined equal to the PHI node.  If it
@@ -182,15 +185,18 @@ llvm::Value* ast::ForLoop::codegen(Codegen& cg) {
 
   // Emit the body of the loop.  This, like any other expr, can change the
   // current BB.  Note that we ignore the value computed by the body, but
-  // don't
-  // allow an error.
-  if (!body_->codegen(cg)) { return nullptr; }
+  // don't allow an error.
+  if (!body_->codegen(cg)) {
+    return nullptr;
+  }
 
   // Emit the step value.
   llvm::Value* step_val = nullptr;
   if (step_) {
     step_val = step_->codegen(cg);
-    if (!step_val) { return nullptr; }
+    if (!step_val) {
+      return nullptr;
+    }
   } else {
     // If not specified, use 1.0.
     step_val = llvm::ConstantFP::get(cg.ctx_, llvm::APFloat(1.0));
@@ -200,33 +206,34 @@ llvm::Value* ast::ForLoop::codegen(Codegen& cg) {
 
   // Compute the end condition.
   llvm::Value* end_cond = end_->codegen(cg);
-  if (!end_cond) { return nullptr; }
+  if (!end_cond) {
+    return nullptr;
+  }
 
   // Convert condition to a bool by comparing non-equal to 0.0.
   end_cond = cg.ir_builder_.CreateFCmpONE(
-      end_cond,
-      llvm::ConstantFP::get(cg.ctx_, llvm::APFloat(0.0)),
-      "loopcond");
+      end_cond, llvm::ConstantFP::get(cg.ctx_, llvm::APFloat(0.0)), "loopcond");
 
   // Create the "after loop" block and insert it.
-  llvm::BasicBlock* LoopEndBB = cg.ir_builder_.GetInsertBlock();
-  llvm::BasicBlock* AfterBB =
+  llvm::BasicBlock* loop_end_bb = cg.ir_builder_.GetInsertBlock();
+  llvm::BasicBlock* after_bb =
       llvm::BasicBlock::Create(cg.ctx_, "afterloop", f_parent);
 
-  // Insert the conditional branch into the end of LoopEndBB.
-  cg.ir_builder_.CreateCondBr(end_cond, loop_bb, AfterBB);
+  // Insert the conditional branch into the end of loop_end_bb.
+  cg.ir_builder_.CreateCondBr(end_cond, loop_bb, after_bb);
 
-  // Any new code will be inserted in AfterBB.
-  cg.ir_builder_.SetInsertPoint(AfterBB);
+  // Any new code will be inserted in after_bb.
+  cg.ir_builder_.SetInsertPoint(after_bb);
 
   // Add a new entry to the PHI node for the backedge.
-  var->addIncoming(next_var, LoopEndBB);
+  var->addIncoming(next_var, loop_end_bb);
 
   // Restore the unshadowed variable.
-  if (old_val)
+  if (old_val) {
     cg.named_values_[var_] = old_val;
-  else
+  } else {
     cg.named_values_.erase(var_);
+  }
 
   // for expr always returns 0.0.
   return llvm::Constant::getNullValue(llvm::Type::getDoubleTy(cg.ctx_));
@@ -236,17 +243,17 @@ llvm::Function* ast::FunPrototype::codegen(Codegen& cg) {
   // Make the function type:  double(double,double) etc.
   std::vector<llvm::Type*> dbl_vec(args_.size(),
                                    llvm::Type::getDoubleTy(cg.ctx_));
-  auto fun_type = llvm::FunctionType::get(llvm::Type::getDoubleTy(cg.ctx_),
-                                          dbl_vec, false);
+  auto fun_type =
+      llvm::FunctionType::get(llvm::Type::getDoubleTy(cg.ctx_), dbl_vec, false);
 
-  auto fun = llvm::Function::Create(fun_type,
-                                    llvm::Function::ExternalLinkage,
+  auto fun = llvm::Function::Create(fun_type, llvm::Function::ExternalLinkage,
                                     fun_name_, cg.mod_.get());
 
   // Set names for all arguments.
-  unsigned Idx = 0;
-  for (auto& Arg : fun->args())
-    Arg.setName(args_[Idx++]);
+  unsigned index = 0;
+  for (auto& arg : fun->args()) {
+    arg.setName(args_[index++]);
+  }
 
   return fun;
 }
@@ -257,16 +264,19 @@ llvm::Function* ast::FunctionAST::codegen(Codegen& cg) {
   auto& proto = *proto_;
   cg.fun_protos_[proto_->getName()] = std::move(proto_);
   llvm::Function* fn = cg.get_function(proto.getName());
-  if (!fn) { return nullptr; }
+  if (!fn) {
+    return nullptr;
+  }
 
   // Create a new basic block to start insertion into.
-  llvm::BasicBlock* BB = llvm::BasicBlock::Create(cg.ctx_, "entry", fn);
-  cg.ir_builder_.SetInsertPoint(BB);
+  llvm::BasicBlock* bb = llvm::BasicBlock::Create(cg.ctx_, "entry", fn);
+  cg.ir_builder_.SetInsertPoint(bb);
 
   // Record the function arguments in the named_values_ map.
   cg.named_values_.clear();
-  for (auto& Arg : fn->args())
-    cg.named_values_[Arg.getName()] = &Arg;
+  for (auto& arg : fn->args()) {
+    cg.named_values_[arg.getName()] = &arg;
+  }
 
   llvm::Value* ret_val = body_->codegen(cg);
   if (ret_val) {
@@ -287,10 +297,10 @@ llvm::Function* ast::FunctionAST::codegen(Codegen& cg) {
   return nullptr;
 }
 
-void Codegen::init_module_and_pass_manager() {
+void Codegen::init_module_and_pass_manager(llvm::orc::ErlJIT& jit) {
   // Open a new module.
   mod_ = llvm::make_unique<llvm::Module>("my cool jit", ctx_);
-  mod_->setDataLayout(jit_->getTargetMachine().createDataLayout());
+  mod_->setDataLayout(jit.getTargetMachine().createDataLayout());
 
   // Create a new pass manager attached to it.
   fpm_ = llvm::make_unique<llvm::legacy::FunctionPassManager>(mod_.get());

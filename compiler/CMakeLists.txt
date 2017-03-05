@@ -24,29 +24,61 @@ add_definitions(-fPIC -fvisibility-inlines-hidden -Wall -W
     -Wcovered-switch-default -Wnon-virtual-dtor -Wdelete-non-virtual-dtor
     -Wstring-conversion -Werror=date-time
     -std=c++14 -g
-    -fno-exceptions -fno-rtti
     -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS
-    -D__STDC_LIMIT_MACROS)
+    -D__STDC_LIMIT_MACROS
+    )
+#    -fno-rtti
+#    -fno-exceptions
+
+set(YY_DIR ${CMAKE_SOURCE_DIR}/src/yy/)
 
 set(SOURCE_FILES
+    bison/erlang.ll
+    bison/erlang.yy
+    ${YY_DIR}/erlang_lexer.cpp
+    ${YY_DIR}/erlang_parser.cpp
+    ${YY_DIR}/erlang_parser.hpp
+#    ${YY_DIR}/location.hh
+#    ${YY_DIR}/position.hh
     src/erl_ast.h
     src/erl_codegen.cpp
     src/erl_codegen.h
-    src/erl_jit.h
-    src/erl_lexer.cpp
-    src/erl_lexer.h
+#    src/erl_jit.h
+    src/erl_scanner.cpp
+    src/erl_scanner.cpp
     src/erl_parse.cpp
     src/erl_parse.h
     src/main.cpp
+    src/erl_yy_driver.h src/erl_yy_driver.cpp)
+
+##
+## Flex/Bison definitions
+##
+find_package(BISON REQUIRED)
+find_package(FLEX REQUIRED)
+BISON_TARGET(MyErlangParser bison/erlang.yy ${YY_DIR}/erlang_parser.cpp
+    COMPILE_FLAGS "-L c++")
+flex_target(MyErlangLexer bison/erlang.ll ${YY_DIR}/erlang_lexer.cpp)
+ADD_FLEX_BISON_DEPENDENCY(MyErlangLexer MyErlangParser)
+#include_directories(${YY_DIR})
+##
+## End Flex/Bison
+##
+
+add_executable(compiler
+    ${SOURCE_FILES}
+    ${BISON_MyErlangParser_OUTPUTS}
+    ${FLEX_MyErlangLexer_OUTPUTS}
     )
-add_executable(compiler ${SOURCE_FILES})
 
 set(MY_LLVM_LIBS
     LLVMX86Disassembler LLVMX86AsmParser LLVMX86CodeGen LLVMGlobalISel
     LLVMSelectionDAG LLVMAsmPrinter LLVMDebugInfoCodeView LLVMDebugInfoMSF
     LLVMCodeGen LLVMScalarOpts LLVMInstCombine LLVMTransformUtils
     LLVMBitWriter LLVMX86Desc LLVMMCDisassembler LLVMX86Info LLVMX86AsmPrinter
-    LLVMX86Utils LLVMMCJIT LLVMExecutionEngine LLVMTarget LLVMAnalysis
+    LLVMX86Utils
+#    LLVMMCJIT
+    LLVMExecutionEngine LLVMTarget LLVMAnalysis
     LLVMProfileData LLVMRuntimeDyld LLVMObject LLVMMCParser LLVMBitReader
     LLVMMC LLVMCore LLVMSupport LLVMDemangle
     )

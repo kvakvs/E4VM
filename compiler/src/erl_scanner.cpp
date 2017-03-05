@@ -1,4 +1,4 @@
-#include "erl_lexer.h"
+#include "erl_scanner.h"
 
 //#include <cctype>
 //#include <cstdio>
@@ -33,7 +33,9 @@ int Tokenizer::get_tok() {
       return Token::In;
     }
 
-    if (isupper(ident_str_[0])) { return Token::Identifier; }
+    if (isupper(ident_str_[0])) {
+      return Token::Identifier;
+    }
     return Token::Atom;
   }
 
