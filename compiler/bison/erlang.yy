@@ -1,20 +1,25 @@
 // %glr-parser
+// %skeleton "glr.cc"
+
 %skeleton "lalr1.cc"
 %require "3.0.4"
 
 %defines
-%define parser_class_name {ErlangParser}
+%define parser_class_name {BaseErlangParser}
 
 %define api.token.constructor
 %define api.value.type variant
 %define parse.assert
 
+// %define api.value.type {int}
+
 %code requires {
+    #include <string>
+    class ErlangDriver;
 
-#include <string>
-
-class ErlangDriver;
-
+    // Tell Flex the lexer's prototype ...
+    #undef YY_DECL
+    #define YY_DECL yy::BaseErlangParser::symbol_type yylex(ErlangDriver& driver)
 }
 
 // The parsing context.
@@ -22,8 +27,8 @@ class ErlangDriver;
 
 %locations
 %initial-action {
-  // Initialize the initial location.
-  @$.begin.filename = @$.end.filename = &driver.file_;
+    // Initialize the initial location.
+    @$.begin.filename = @$.end.filename = &driver.file_;
 };
 
 %define parse.trace
@@ -31,11 +36,9 @@ class ErlangDriver;
 
 %code {
     #include "../erl_yy_driver.h"
-    // class ErlangParser;
-    // ErlangParser::basic_symbol yylex(ErlangDriver&);
 
     #undef yylex
-    #define yylex driver.lexer_->yylex
+    #define yylex driver.lexer_->lex
 }
 
 %define api.token.prefix {TOK_}
@@ -52,7 +55,8 @@ class ErlangDriver;
     ;
 
 %token
-    END_OF_FILE 0 "end of file"
+    END_OF_FILE 0   "end of file"
+    END_OF_LINE     "end of line"
 
     LT '<'
     GT '>'
@@ -113,8 +117,6 @@ match_expression:
 
 %%
 void
-yy::ErlangParser::error (const location_type& l,
-                         const std::string& m)
-{
+yy::BaseErlangParser::error(const location_type& l, const std::string& m) {
   driver.error (l, m);
 }

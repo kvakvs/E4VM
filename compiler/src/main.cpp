@@ -14,13 +14,14 @@
 #include "llvm/Transforms/Scalar.h"
 #include "llvm/Transforms/Scalar/GVN.h"
 
-#include "erl_ast.h"
-#include "erl_codegen.h"
-#include "erl_jit.h"
-#include "erl_parse.h"
-#include "erl_scanner.h"
+//#include "erl_ast.h"
+//#include "erl_codegen.h"
+//#include "erl_jit.h"
+//#include "erl_parse.h"
+//#include "erl_scanner.h"
 #include "erl_yy_driver.h"
 
+#if 0
 class Compiler {
  private:
   Tokenizer tokenizer_;
@@ -162,6 +163,7 @@ extern "C" DLLEXPORT double printd(double X) {
   fprintf(stderr, "%f\n", X);
   return 0;
 }
+#endif //0
 
 int main(int argc, const char* argv[]) {
   llvm::InitializeNativeTarget();

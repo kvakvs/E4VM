@@ -4,7 +4,8 @@
 
 int yy_init = 1;
 int yy_start = 0;
-//std::istream* yyin = nullptr;
+std::istream& yyin = std::cin;
+std::ostream& yyout = std::cout;
 
 ErlangDriver::ErlangDriver() : trace_scanning_(false), trace_parsing_(false) {
   variables_["one"] = 1;
@@ -19,12 +20,12 @@ int ErlangDriver::parse(const std::string& f) {
 
   std::ifstream ifs;
   ifs.open("../e4compile/priv/gb_trees.erl");
-  lexer_ = std::make_unique<ErlangScanner>(&ifs);
 
-  yy::ErlangParser parser(*this);
+  lexer_ = std::make_unique<ErlangLexer>(&ifs);
+  parser_ = std::make_unique<ErlangParser>(*this);
 
-  parser.set_debug_level(trace_parsing_);
-  int res = parser.parse();
+  parser_->set_debug_level(trace_parsing_);
+  int res = parser_->parse();
   //  scan_end();
 
   ifs.close();

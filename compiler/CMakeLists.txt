@@ -32,55 +32,94 @@ add_definitions(-fPIC -fvisibility-inlines-hidden -Wall -W
 
 set(YY_DIR ${CMAKE_SOURCE_DIR}/src/yy/)
 
+set(ANTLR4_OUTPUTS
+    src/antlr4/ErlangBaseListener.cpp
+    src/antlr4/ErlangBaseListener.h
+    src/antlr4/ErlangLexer.cpp
+    src/antlr4/ErlangLexer.h
+    src/antlr4/ErlangListener.cpp
+    src/antlr4/ErlangListener.h
+    src/antlr4/ErlangParser.cpp
+    src/antlr4/ErlangParser.h
+    )
 set(SOURCE_FILES
-    bison/erlang.ll
-    bison/erlang.yy
-    ${YY_DIR}/erlang_lexer.cpp
-    ${YY_DIR}/erlang_parser.cpp
-    ${YY_DIR}/erlang_parser.hpp
+    antlr4-erlang/Erlang.g4
+    ${ANTLR4_OUTPUTS}
+
+#    bison/erlang.ll
+#    bison/erlang.yy
+#    ${YY_DIR}/erlang_lexer.cpp
+#    ${YY_DIR}/erlang_parser.cpp ${YY_DIR}/erlang_parser.hpp
 #    ${YY_DIR}/location.hh
 #    ${YY_DIR}/position.hh
-    src/erl_ast.h
-    src/erl_codegen.cpp
-    src/erl_codegen.h
+#    ${YY_DIR}/stack.hh
+#    src/erl_ast.h
+#    src/erl_codegen.cpp
+#    src/erl_codegen.h
 #    src/erl_jit.h
-    src/erl_scanner.cpp
-    src/erl_scanner.cpp
-    src/erl_parse.cpp
-    src/erl_parse.h
+#    src/erl_scanner.cpp
+#    src/erl_scanner.cpp
+#    src/erl_parse.cpp
+#    src/erl_parse.h
     src/main.cpp
-    src/erl_yy_driver.h src/erl_yy_driver.cpp)
+    src/erl_yy_driver.h
+    src/erl_yy_driver.cpp
+    )
 
-##
-## Flex/Bison definitions
-##
-find_package(BISON REQUIRED)
-find_package(FLEX REQUIRED)
-BISON_TARGET(MyErlangParser bison/erlang.yy ${YY_DIR}/erlang_parser.cpp
-    COMPILE_FLAGS "-L c++")
-flex_target(MyErlangLexer bison/erlang.ll ${YY_DIR}/erlang_lexer.cpp)
-ADD_FLEX_BISON_DEPENDENCY(MyErlangLexer MyErlangParser)
-#include_directories(${YY_DIR})
-##
-## End Flex/Bison
-##
+add_custom_command(OUTPUT ${ANTLR4_OUTPUTS}
+    COMMAND antlr4
+    )
+
+#find_package(BISON REQUIRED)
+#find_package(FLEX REQUIRED)
+#BISON_TARGET(MyErlangParser
+#    bison/erlang.yy
+#    ${YY_DIR}/erlang_parser.cpp
+#    COMPILE_FLAGS "-L c++")
+#FLEX_TARGET(MyErlangLexer
+#    bison/erlang.ll
+#    ${YY_DIR}/erlang_lexer.cpp
+#    COMPILE_FLAGS "-f --c++ --nounistd")
+#ADD_FLEX_BISON_DEPENDENCY(MyErlangLexer MyErlangParser)
 
 add_executable(compiler
     ${SOURCE_FILES}
-    ${BISON_MyErlangParser_OUTPUTS}
-    ${FLEX_MyErlangLexer_OUTPUTS}
+#    ${BISON_MyErlangParser_OUTPUTS}
+#    ${FLEX_MyErlangLexer_OUTPUTS}
     )
 
 set(MY_LLVM_LIBS
-    LLVMX86Disassembler LLVMX86AsmParser LLVMX86CodeGen LLVMGlobalISel
-    LLVMSelectionDAG LLVMAsmPrinter LLVMDebugInfoCodeView LLVMDebugInfoMSF
-    LLVMCodeGen LLVMScalarOpts LLVMInstCombine LLVMTransformUtils
-    LLVMBitWriter LLVMX86Desc LLVMMCDisassembler LLVMX86Info LLVMX86AsmPrinter
+    #LLVMMCJIT
+    LLVMAnalysis
+    LLVMAsmPrinter
+    #LLVMBitReader
+    #LLVMBitWriter
+    LLVMCodeGen
+    LLVMCore
+    #LLVMDebugInfoCodeView
+    #LLVMDebugInfoMSF
+    LLVMDemangle
+    LLVMExecutionEngine
+    #LLVMGlobalISel
+    #LLVMInstCombine
+    #LLVMMC
+    #LLVMMCDisassembler
+    #LLVMMCParser
+    #LLVMObject
+    #LLVMProfileData
+    #LLVMRuntimeDyld
+    #LLVMScalarOpts
+    #LLVMSelectionDAG
+    LLVMSupport
+    LLVMTarget
+    LLVMTransformUtils
+    LLVMX86AsmParser
+    LLVMX86AsmPrinter
+    LLVMX86CodeGen
+    LLVMX86Desc
+    LLVMX86Disassembler
+    LLVMX86Info
     LLVMX86Utils
-#    LLVMMCJIT
-    LLVMExecutionEngine LLVMTarget LLVMAnalysis
-    LLVMProfileData LLVMRuntimeDyld LLVMObject LLVMMCParser LLVMBitReader
-    LLVMMC LLVMCore LLVMSupport LLVMDemangle
     )
 
 # Link against LLVM libraries

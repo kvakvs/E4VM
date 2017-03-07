@@ -54,25 +54,3 @@ class Tokenizer {
   double get_double_val() const { return d_literal_; }
   const std::string& get_identifier_str() const { return ident_str_; }
 };
-
-class ErlangScanner : public yyFlexLexer {
-  using ErlangParser = yy::ErlangParser;
-
- public:
-  explicit ErlangScanner(std::istream* in) : yyFlexLexer(in) {
-    loc = new ErlangParser::location_type();
-  };
-
-  // get rid of override virtual function warning
-  using FlexLexer::yylex;
-
-  // YY_DECL for this is defined in erlang.ll
-  // Method body is created by flex in erlang_lexer.cpp
-  virtual ErlangParser::symbol_type yylex(
-      ErlangParser::semantic_type* const lval,
-      ErlangParser::location_type* location);
-
- private:
-  ErlangParser::semantic_type* yylval = nullptr;
-  ErlangParser::location_type* loc = nullptr;
-};

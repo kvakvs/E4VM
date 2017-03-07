@@ -4,18 +4,42 @@
 #include <string>
 #include <memory>
 
+#if !defined(yyFlexLexerOnce)
+  #include <FlexLexer.h>
+#endif
+
 #include "yy/erlang_parser.hpp"
 #include "yy/location.hh"
-#include "erl_scanner.h"
 
-// Tell Flex the lexer's prototype ...
-#undef YY_DECL
-#define YY_DECL yy::ErlangParser::symbol_type yylex(ErlangDriver& driver)
 YY_DECL;
 
 extern int yy_init; // whether we need to initialize
 extern int yy_start;
-//extern std::istream* yyin;
+extern std::istream& yyin;
+extern std::ostream& yyout;
+
+using ErlangParser = yy::BaseErlangParser;
+
+class ErlangLexer : public yyFlexLexer {
+ public:
+  explicit ErlangLexer(std::istream* in) : yyFlexLexer(in) {
+    loc = new ErlangParser::location_type();
+  };
+
+  // get rid of override virtual function warning
+  using FlexLexer::yylex;
+
+  // YY_DECL for this is defined in erlang.ll
+  // Method body is created by flex in erlang_lexer.cpp
+  virtual ErlangParser::symbol_type lex(
+//      ErlangParser::semantic_type* const lval,
+//      ErlangParser::location_type* location,
+      ErlangDriver& driver);
+
+ private:
+  ErlangParser::semantic_type* yylval = nullptr;
+  ErlangParser::location_type* loc = nullptr;
+};
 
 // Conducting the whole scanning and parsing of Calc++.
 class ErlangDriver {
@@ -31,7 +55,8 @@ class ErlangDriver {
   // The name of the file being parsed.
   // Used later to pass the file name to the location tracker.
   std::string file_;
-  std::unique_ptr<ErlangScanner> lexer_;
+  std::unique_ptr<ErlangLexer> lexer_;
+  std::unique_ptr<ErlangParser> parser_;
 
  public:
   ErlangDriver();
