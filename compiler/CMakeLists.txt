@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
-project(compiler)
+project(compiler CXX)
 
+add_subdirectory(antlr4-runtime)
 set(CMAKE_CXX_STANDARD 14)
 
 #set(LLVM_CMAKE_DIR "/usr/local/lib/cmake/llvm")
@@ -30,8 +31,7 @@ add_definitions(-fPIC -fvisibility-inlines-hidden -Wall -W
 #    -fno-rtti
 #    -fno-exceptions
 
-set(YY_DIR ${CMAKE_SOURCE_DIR}/src/yy/)
-
+include_directories(antlr4-runtime/runtime/src)
 set(ANTLR4_OUTPUTS
     src/antlr4/ErlangBaseListener.cpp
     src/antlr4/ErlangBaseListener.h
@@ -42,32 +42,12 @@ set(ANTLR4_OUTPUTS
     src/antlr4/ErlangParser.cpp
     src/antlr4/ErlangParser.h
     )
+
+# to update Antlr4 code, run make in antlr4-erlang
 set(SOURCE_FILES
     antlr4-erlang/Erlang.g4
     ${ANTLR4_OUTPUTS}
-
-#    bison/erlang.ll
-#    bison/erlang.yy
-#    ${YY_DIR}/erlang_lexer.cpp
-#    ${YY_DIR}/erlang_parser.cpp ${YY_DIR}/erlang_parser.hpp
-#    ${YY_DIR}/location.hh
-#    ${YY_DIR}/position.hh
-#    ${YY_DIR}/stack.hh
-#    src/erl_ast.h
-#    src/erl_codegen.cpp
-#    src/erl_codegen.h
-#    src/erl_jit.h
-#    src/erl_scanner.cpp
-#    src/erl_scanner.cpp
-#    src/erl_parse.cpp
-#    src/erl_parse.h
     src/main.cpp
-    src/erl_yy_driver.h
-    src/erl_yy_driver.cpp
-    )
-
-add_custom_command(OUTPUT ${ANTLR4_OUTPUTS}
-    COMMAND antlr4
     )
 
 #find_package(BISON REQUIRED)
@@ -123,4 +103,7 @@ set(MY_LLVM_LIBS
     )
 
 # Link against LLVM libraries
-target_link_libraries(compiler ${MY_LLVM_LIBS})
+target_link_libraries(compiler
+    ${MY_LLVM_LIBS}
+    )
+target_link_libraries(compiler antlr4_static)
