@@ -20,7 +20,8 @@
 
 // An ANTLR4 Grammar of Erlang R16B01 made by Pierre Fenoll from
 // https://github.com/erlang/otp/blob/maint/lib/stdlib/src/erl_parse.yrl
-
+// Modified by Dmytro Lytovchenko to Erlang 19 and 20
+// <dmytro.lytovchenko@gmail.com>
 
 grammar Erlang;
 
@@ -79,18 +80,18 @@ specFun :             tokAtom
         | tokAtom ':' tokAtom '/' tokInteger '::'
         ;
 
-typedAttrVal : expr ','  typedRecordFields
-             | expr '::' topType
+typedAttrVal : catchExpr ','  typedRecordFields
+             | catchExpr '::' topType
              ;
 
 typedRecordFields : '{' typedExprs '}' ;
 
 typedExprs : typedExpr
            | typedExpr  ',' typedExprs
-           | expr       ',' typedExprs
+           | catchExpr       ',' typedExprs
            | typedExpr  ','      exprs ;
 
-typedExpr : expr '::' topType ;
+typedExpr : catchExpr '::' topType ;
 
 typeSigs : typeSig (';' typeSig)* ;
 
@@ -115,7 +116,7 @@ type300 : type300 addOp type400
 type400 : type400 multOp type500
         |                type500 ;
 
-type500 : prefixOp? type ;
+type500 : unaryOp? type ;
 
 type : '(' topType ')'
      | tokVar
@@ -159,10 +160,10 @@ binUnitType : tokVar ':' tokVar '*' type ;
 
 /// Exprs
 
-attrVal :     expr
-        | '(' expr           ')'
-        |     expr ',' exprs
-        | '(' expr ',' exprs ')' ;
+attrVal :     catchExpr
+        | '(' catchExpr           ')'
+        |     catchExpr ',' exprs
+        | '(' catchExpr ',' exprs ')' ;
 
 function : functionClause (';' functionClause)* ;
 
@@ -173,33 +174,55 @@ clauseArgs : argumentList ;
 
 clauseGuard : ('when' guard)? ;
 
-clauseBody : '->' exprs ;
+clauseBody
+    : '->' exprs ;
 
+catchExpr
+    : 'catch' catchExpr
+    | matchbangExpr
+    ;
 
-expr : 'catch' expr
-     | expr100 ;
+matchbangExpr
+    : orelseExpr
+    | ('=' | '!') orelseExpr
+    ;
 
-expr100 : expr150 (('=' | '!') expr150)* ;
+orelseExpr
+    : andalsoExpr
+    | 'orelse' andalsoExpr
+    ;
 
-expr150 : expr160 ('orelse' expr160)* ;
+andalsoExpr
+    : compareExpr
+    | 'andalso' compareExpr
+    ;
 
-expr160 : expr200 ('andalso' expr200)* ;
+compareExpr
+    : listExpr
+    | compareExpr compareOp listExpr
+    ;
 
-expr200 : expr300 (compOp expr300)? ;
+listExpr
+    : addExpr
+    | listExpr listOp addExpr
+    ;
 
-expr300 : expr400 (listOp expr400)* ;
+addExpr
+    : multExpr
+    | addExpr addOp multExpr
+    ;
 
-expr400 : expr500 (addOp expr500)* ;
+multExpr
+    : unaryExpr
+    | multExpr multOp unaryExpr ;
 
-expr500 : expr600 (multOp expr600)* ;
-
-expr600 : prefixOp? expr700 ;
+unaryExpr : unaryOp? expr700 ;
 
 expr700 : functionCall
         | recordExpr
-        | expr800 ;
+        | semicolonExpr ;
 
-expr800 : exprMax (':' exprMax)? ;
+semicolonExpr : exprMax (':' exprMax)? ;
 
 exprMax : tokVar
         | atomic
@@ -208,8 +231,8 @@ exprMax : tokVar
         | listComprehension
         | binaryComprehension
         | tuple
-      //  | struct
-        | '(' expr ')'
+    //  | struct
+        | '(' catchExpr ')'
         | 'begin' exprs 'end'
         | ifExpr
         | caseExpr
@@ -219,11 +242,11 @@ exprMax : tokVar
         ;
 
 list : '['      ']'
-     | '[' expr tail
+     | '[' catchExpr tail
      ;
 tail :          ']'
-     | '|' expr ']'
-     | ',' expr tail
+     | '|' catchExpr ']'
+     | ',' catchExpr tail
      ;
 
 binary : '<<'             '>>'
@@ -233,7 +256,7 @@ binElements : binElement (',' binElement)* ;
 
 binElement : bitExpr optBitSizeExpr optBitTypeList ;
 
-bitExpr : prefixOp? exprMax ;
+bitExpr : unaryOp? exprMax ;
 
 optBitSizeExpr : (':' bitSizeExpr)? ;
 
@@ -246,15 +269,15 @@ bitType : tokAtom (':' tokInteger)? ;
 bitSizeExpr : exprMax ;
 
 
-listComprehension :   '['  expr   '||' lcExprs ']' ;
+listComprehension :   '['  catchExpr   '||' lcExprs ']' ;
 
 binaryComprehension : '<<' binary '||' lcExprs '>>' ;
 
 lcExprs : lcExpr (',' lcExpr)* ;
 
-lcExpr : expr
-       | expr   '<-' expr
-       | binary '<=' expr
+lcExpr : catchExpr
+       | catchExpr   '<-' catchExpr
+       | binary '<=' catchExpr
        ;
 
 tuple : '{' exprs? '}' ;
@@ -275,12 +298,12 @@ recordTuple : '{' recordFields? '}' ;
 
 recordFields : recordField (',' recordField)* ;
 
-recordField : (tokVar | tokAtom) '=' expr ;
+recordField : (tokVar | tokAtom) '=' catchExpr ;
 
 
 /* N.B. This is called from expr700. */
 
-functionCall : expr800 argumentList ;
+functionCall : semicolonExpr argumentList ;
 
 
 ifExpr : 'if' ifClauses 'end' ;
@@ -290,16 +313,16 @@ ifClauses : ifClause (';' ifClause)* ;
 ifClause : guard clauseBody ;
 
 
-caseExpr : 'case' expr 'of' crClauses 'end' ;
+caseExpr : 'case' catchExpr 'of' crClauses 'end' ;
 
 crClauses : crClause (';' crClause)* ;
 
-crClause : expr clauseGuard clauseBody ;
+crClause : catchExpr clauseGuard clauseBody ;
 
 
 receiveExpr : 'receive' crClauses                         'end'
-            | 'receive'           'after' expr clauseBody 'end'
-            | 'receive' crClauses 'after' expr clauseBody 'end'
+            | 'receive'           'after' catchExpr clauseBody 'end'
+            | 'receive' crClauses 'after' catchExpr clauseBody 'end'
             ;
 
 
@@ -326,13 +349,13 @@ tryCatch : 'catch' tryClauses               'end'
 
 tryClauses : tryClause (';' tryClause)* ;
 
-tryClause : (atomOrVar ':')? expr clauseGuard clauseBody ;
+tryClause : (atomOrVar ':')? catchExpr clauseGuard clauseBody ;
 
 
 
 argumentList : '(' exprs? ')' ;
 
-exprs : expr (',' expr)* ;
+exprs : catchExpr (',' catchExpr)* ;
 
 guard : exprs (';' exprs)* ;
 
@@ -343,7 +366,7 @@ atomic : tokChar
        | (tokString)+
        ;
 
-prefixOp : '+'
+unaryOp : '+'
          | '-'
          | 'bnot'
          | 'not'
@@ -371,7 +394,7 @@ listOp : '++'
        | '--'
        ;
 
-compOp : '=='
+compareOp : '=='
        | '/='
        | '=<'
        | '<'
@@ -381,10 +404,8 @@ compOp : '=='
        | '=/='
        ;
 
-
 ruleClauses : ruleClause (';' ruleClause)* ;
 
 ruleClause : tokAtom clauseArgs clauseGuard ruleBody ;
 
 ruleBody : ':-' lcExprs ;
-

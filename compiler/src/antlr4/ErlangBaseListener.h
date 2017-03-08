@@ -136,38 +136,38 @@ public:
   virtual void enterClauseBody(ErlangParser::ClauseBodyContext * /*ctx*/) override { }
   virtual void exitClauseBody(ErlangParser::ClauseBodyContext * /*ctx*/) override { }
 
-  virtual void enterExpr(ErlangParser::ExprContext * /*ctx*/) override { }
-  virtual void exitExpr(ErlangParser::ExprContext * /*ctx*/) override { }
+  virtual void enterCatchExpr(ErlangParser::CatchExprContext * /*ctx*/) override { }
+  virtual void exitCatchExpr(ErlangParser::CatchExprContext * /*ctx*/) override { }
 
-  virtual void enterExpr100(ErlangParser::Expr100Context * /*ctx*/) override { }
-  virtual void exitExpr100(ErlangParser::Expr100Context * /*ctx*/) override { }
+  virtual void enterMatchbangExpr(ErlangParser::MatchbangExprContext * /*ctx*/) override { }
+  virtual void exitMatchbangExpr(ErlangParser::MatchbangExprContext * /*ctx*/) override { }
 
-  virtual void enterExpr150(ErlangParser::Expr150Context * /*ctx*/) override { }
-  virtual void exitExpr150(ErlangParser::Expr150Context * /*ctx*/) override { }
+  virtual void enterOrelseExpr(ErlangParser::OrelseExprContext * /*ctx*/) override { }
+  virtual void exitOrelseExpr(ErlangParser::OrelseExprContext * /*ctx*/) override { }
 
-  virtual void enterExpr160(ErlangParser::Expr160Context * /*ctx*/) override { }
-  virtual void exitExpr160(ErlangParser::Expr160Context * /*ctx*/) override { }
+  virtual void enterAndalsoExpr(ErlangParser::AndalsoExprContext * /*ctx*/) override { }
+  virtual void exitAndalsoExpr(ErlangParser::AndalsoExprContext * /*ctx*/) override { }
 
-  virtual void enterExpr200(ErlangParser::Expr200Context * /*ctx*/) override { }
-  virtual void exitExpr200(ErlangParser::Expr200Context * /*ctx*/) override { }
+  virtual void enterCompareExpr(ErlangParser::CompareExprContext * /*ctx*/) override { }
+  virtual void exitCompareExpr(ErlangParser::CompareExprContext * /*ctx*/) override { }
 
-  virtual void enterExpr300(ErlangParser::Expr300Context * /*ctx*/) override { }
-  virtual void exitExpr300(ErlangParser::Expr300Context * /*ctx*/) override { }
+  virtual void enterListExpr(ErlangParser::ListExprContext * /*ctx*/) override { }
+  virtual void exitListExpr(ErlangParser::ListExprContext * /*ctx*/) override { }
 
-  virtual void enterExpr400(ErlangParser::Expr400Context * /*ctx*/) override { }
-  virtual void exitExpr400(ErlangParser::Expr400Context * /*ctx*/) override { }
+  virtual void enterAddExpr(ErlangParser::AddExprContext * /*ctx*/) override { }
+  virtual void exitAddExpr(ErlangParser::AddExprContext * /*ctx*/) override { }
 
-  virtual void enterExpr500(ErlangParser::Expr500Context * /*ctx*/) override { }
-  virtual void exitExpr500(ErlangParser::Expr500Context * /*ctx*/) override { }
+  virtual void enterMultExpr(ErlangParser::MultExprContext * /*ctx*/) override { }
+  virtual void exitMultExpr(ErlangParser::MultExprContext * /*ctx*/) override { }
 
-  virtual void enterExpr600(ErlangParser::Expr600Context * /*ctx*/) override { }
-  virtual void exitExpr600(ErlangParser::Expr600Context * /*ctx*/) override { }
+  virtual void enterUnaryExpr(ErlangParser::UnaryExprContext * /*ctx*/) override { }
+  virtual void exitUnaryExpr(ErlangParser::UnaryExprContext * /*ctx*/) override { }
 
   virtual void enterExpr700(ErlangParser::Expr700Context * /*ctx*/) override { }
   virtual void exitExpr700(ErlangParser::Expr700Context * /*ctx*/) override { }
 
-  virtual void enterExpr800(ErlangParser::Expr800Context * /*ctx*/) override { }
-  virtual void exitExpr800(ErlangParser::Expr800Context * /*ctx*/) override { }
+  virtual void enterSemicolonExpr(ErlangParser::SemicolonExprContext * /*ctx*/) override { }
+  virtual void exitSemicolonExpr(ErlangParser::SemicolonExprContext * /*ctx*/) override { }
 
   virtual void enterExprMax(ErlangParser::ExprMaxContext * /*ctx*/) override { }
   virtual void exitExprMax(ErlangParser::ExprMaxContext * /*ctx*/) override { }
@@ -295,8 +295,8 @@ public:
   virtual void enterAtomic(ErlangParser::AtomicContext * /*ctx*/) override { }
   virtual void exitAtomic(ErlangParser::AtomicContext * /*ctx*/) override { }
 
-  virtual void enterPrefixOp(ErlangParser::PrefixOpContext * /*ctx*/) override { }
-  virtual void exitPrefixOp(ErlangParser::PrefixOpContext * /*ctx*/) override { }
+  virtual void enterUnaryOp(ErlangParser::UnaryOpContext * /*ctx*/) override { }
+  virtual void exitUnaryOp(ErlangParser::UnaryOpContext * /*ctx*/) override { }
 
   virtual void enterMultOp(ErlangParser::MultOpContext * /*ctx*/) override { }
   virtual void exitMultOp(ErlangParser::MultOpContext * /*ctx*/) override { }
@@ -307,8 +307,8 @@ public:
   virtual void enterListOp(ErlangParser::ListOpContext * /*ctx*/) override { }
   virtual void exitListOp(ErlangParser::ListOpContext * /*ctx*/) override { }
 
-  virtual void enterCompOp(ErlangParser::CompOpContext * /*ctx*/) override { }
-  virtual void exitCompOp(ErlangParser::CompOpContext * /*ctx*/) override { }
+  virtual void enterCompareOp(ErlangParser::CompareOpContext * /*ctx*/) override { }
+  virtual void exitCompareOp(ErlangParser::CompareOpContext * /*ctx*/) override { }
 
   virtual void enterRuleClauses(ErlangParser::RuleClausesContext * /*ctx*/) override { }
   virtual void exitRuleClauses(ErlangParser::RuleClausesContext * /*ctx*/) override { }

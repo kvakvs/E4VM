@@ -36,10 +36,10 @@ public:
     RuleType500 = 25, RuleType = 26, RuleFunType100 = 27, RuleFunType = 28, 
     RuleFieldTypes = 29, RuleFieldType = 30, RuleBinaryType = 31, RuleBinBaseType = 32, 
     RuleBinUnitType = 33, RuleAttrVal = 34, RuleFunction = 35, RuleFunctionClause = 36, 
-    RuleClauseArgs = 37, RuleClauseGuard = 38, RuleClauseBody = 39, RuleExpr = 40, 
-    RuleExpr100 = 41, RuleExpr150 = 42, RuleExpr160 = 43, RuleExpr200 = 44, 
-    RuleExpr300 = 45, RuleExpr400 = 46, RuleExpr500 = 47, RuleExpr600 = 48, 
-    RuleExpr700 = 49, RuleExpr800 = 50, RuleExprMax = 51, RuleList = 52, 
+    RuleClauseArgs = 37, RuleClauseGuard = 38, RuleClauseBody = 39, RuleCatchExpr = 40, 
+    RuleMatchbangExpr = 41, RuleOrelseExpr = 42, RuleAndalsoExpr = 43, RuleCompareExpr = 44, 
+    RuleListExpr = 45, RuleAddExpr = 46, RuleMultExpr = 47, RuleUnaryExpr = 48, 
+    RuleExpr700 = 49, RuleSemicolonExpr = 50, RuleExprMax = 51, RuleList = 52, 
     RuleTail = 53, RuleBinary = 54, RuleBinElements = 55, RuleBinElement = 56, 
     RuleBitExpr = 57, RuleOptBitSizeExpr = 58, RuleOptBitTypeList = 59, 
     RuleBitTypeList = 60, RuleBitType = 61, RuleBitSizeExpr = 62, RuleListComprehension = 63, 
@@ -50,8 +50,8 @@ public:
     RuleFunExpr = 80, RuleAtomOrVar = 81, RuleIntegerOrVar = 82, RuleFunClauses = 83, 
     RuleFunClause = 84, RuleTryExpr = 85, RuleTryCatch = 86, RuleTryClauses = 87, 
     RuleTryClause = 88, RuleArgumentList = 89, RuleExprs = 90, RuleGuard = 91, 
-    RuleAtomic = 92, RulePrefixOp = 93, RuleMultOp = 94, RuleAddOp = 95, 
-    RuleListOp = 96, RuleCompOp = 97, RuleRuleClauses = 98, RuleRuleClause = 99, 
+    RuleAtomic = 92, RuleUnaryOp = 93, RuleMultOp = 94, RuleAddOp = 95, 
+    RuleListOp = 96, RuleCompareOp = 97, RuleRuleClauses = 98, RuleRuleClause = 99, 
     RuleRuleBody = 100
   };
 
@@ -105,17 +105,17 @@ public:
   class ClauseArgsContext;
   class ClauseGuardContext;
   class ClauseBodyContext;
-  class ExprContext;
-  class Expr100Context;
-  class Expr150Context;
-  class Expr160Context;
-  class Expr200Context;
-  class Expr300Context;
-  class Expr400Context;
-  class Expr500Context;
-  class Expr600Context;
+  class CatchExprContext;
+  class MatchbangExprContext;
+  class OrelseExprContext;
+  class AndalsoExprContext;
+  class CompareExprContext;
+  class ListExprContext;
+  class AddExprContext;
+  class MultExprContext;
+  class UnaryExprContext;
   class Expr700Context;
-  class Expr800Context;
+  class SemicolonExprContext;
   class ExprMaxContext;
   class ListContext;
   class TailContext;
@@ -158,11 +158,11 @@ public:
   class ExprsContext;
   class GuardContext;
   class AtomicContext;
-  class PrefixOpContext;
+  class UnaryOpContext;
   class MultOpContext;
   class AddOpContext;
   class ListOpContext;
-  class CompOpContext;
+  class CompareOpContext;
   class RuleClausesContext;
   class RuleClauseContext;
   class RuleBodyContext; 
@@ -325,7 +325,7 @@ public:
   public:
     TypedAttrValContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    ExprContext *expr();
+    CatchExprContext *catchExpr();
     TypedRecordFieldsContext *typedRecordFields();
     TopTypeContext *topType();
 
@@ -355,7 +355,7 @@ public:
     virtual size_t getRuleIndex() const override;
     TypedExprContext *typedExpr();
     TypedExprsContext *typedExprs();
-    ExprContext *expr();
+    CatchExprContext *catchExpr();
     ExprsContext *exprs();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -369,7 +369,7 @@ public:
   public:
     TypedExprContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    ExprContext *expr();
+    CatchExprContext *catchExpr();
     TopTypeContext *topType();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -528,7 +528,7 @@ public:
     Type500Context(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
     TypeContext *type();
-    PrefixOpContext *prefixOp();
+    UnaryOpContext *unaryOp();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -661,7 +661,7 @@ public:
   public:
     AttrValContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    ExprContext *expr();
+    CatchExprContext *catchExpr();
     ExprsContext *exprs();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -740,138 +740,132 @@ public:
 
   ClauseBodyContext* clauseBody();
 
-  class  ExprContext : public antlr4::ParserRuleContext {
+  class  CatchExprContext : public antlr4::ParserRuleContext {
   public:
-    ExprContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    CatchExprContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    ExprContext *expr();
-    Expr100Context *expr100();
+    CatchExprContext *catchExpr();
+    MatchbangExprContext *matchbangExpr();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
    
   };
 
-  ExprContext* expr();
+  CatchExprContext* catchExpr();
 
-  class  Expr100Context : public antlr4::ParserRuleContext {
+  class  MatchbangExprContext : public antlr4::ParserRuleContext {
   public:
-    Expr100Context(antlr4::ParserRuleContext *parent, size_t invokingState);
+    MatchbangExprContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    std::vector<Expr150Context *> expr150();
-    Expr150Context* expr150(size_t i);
+    OrelseExprContext *orelseExpr();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
    
   };
 
-  Expr100Context* expr100();
+  MatchbangExprContext* matchbangExpr();
 
-  class  Expr150Context : public antlr4::ParserRuleContext {
+  class  OrelseExprContext : public antlr4::ParserRuleContext {
   public:
-    Expr150Context(antlr4::ParserRuleContext *parent, size_t invokingState);
+    OrelseExprContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    std::vector<Expr160Context *> expr160();
-    Expr160Context* expr160(size_t i);
+    AndalsoExprContext *andalsoExpr();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
    
   };
 
-  Expr150Context* expr150();
+  OrelseExprContext* orelseExpr();
 
-  class  Expr160Context : public antlr4::ParserRuleContext {
+  class  AndalsoExprContext : public antlr4::ParserRuleContext {
   public:
-    Expr160Context(antlr4::ParserRuleContext *parent, size_t invokingState);
+    AndalsoExprContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    std::vector<Expr200Context *> expr200();
-    Expr200Context* expr200(size_t i);
+    CompareExprContext *compareExpr();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
    
   };
 
-  Expr160Context* expr160();
+  AndalsoExprContext* andalsoExpr();
 
-  class  Expr200Context : public antlr4::ParserRuleContext {
+  class  CompareExprContext : public antlr4::ParserRuleContext {
   public:
-    Expr200Context(antlr4::ParserRuleContext *parent, size_t invokingState);
+    CompareExprContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    std::vector<Expr300Context *> expr300();
-    Expr300Context* expr300(size_t i);
-    CompOpContext *compOp();
+    ListExprContext *listExpr();
+    CompareExprContext *compareExpr();
+    CompareOpContext *compareOp();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
    
   };
 
-  Expr200Context* expr200();
-
-  class  Expr300Context : public antlr4::ParserRuleContext {
+  CompareExprContext* compareExpr();
+  CompareExprContext* compareExpr(int precedence);
+  class  ListExprContext : public antlr4::ParserRuleContext {
   public:
-    Expr300Context(antlr4::ParserRuleContext *parent, size_t invokingState);
+    ListExprContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    std::vector<Expr400Context *> expr400();
-    Expr400Context* expr400(size_t i);
-    std::vector<ListOpContext *> listOp();
-    ListOpContext* listOp(size_t i);
+    AddExprContext *addExpr();
+    ListExprContext *listExpr();
+    ListOpContext *listOp();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
    
   };
 
-  Expr300Context* expr300();
-
-  class  Expr400Context : public antlr4::ParserRuleContext {
+  ListExprContext* listExpr();
+  ListExprContext* listExpr(int precedence);
+  class  AddExprContext : public antlr4::ParserRuleContext {
   public:
-    Expr400Context(antlr4::ParserRuleContext *parent, size_t invokingState);
+    AddExprContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    std::vector<Expr500Context *> expr500();
-    Expr500Context* expr500(size_t i);
-    std::vector<AddOpContext *> addOp();
-    AddOpContext* addOp(size_t i);
+    MultExprContext *multExpr();
+    AddExprContext *addExpr();
+    AddOpContext *addOp();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
    
   };
 
-  Expr400Context* expr400();
-
-  class  Expr500Context : public antlr4::ParserRuleContext {
+  AddExprContext* addExpr();
+  AddExprContext* addExpr(int precedence);
+  class  MultExprContext : public antlr4::ParserRuleContext {
   public:
-    Expr500Context(antlr4::ParserRuleContext *parent, size_t invokingState);
+    MultExprContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    std::vector<Expr600Context *> expr600();
-    Expr600Context* expr600(size_t i);
-    std::vector<MultOpContext *> multOp();
-    MultOpContext* multOp(size_t i);
+    UnaryExprContext *unaryExpr();
+    MultExprContext *multExpr();
+    MultOpContext *multOp();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
    
   };
 
-  Expr500Context* expr500();
-
-  class  Expr600Context : public antlr4::ParserRuleContext {
+  MultExprContext* multExpr();
+  MultExprContext* multExpr(int precedence);
+  class  UnaryExprContext : public antlr4::ParserRuleContext {
   public:
-    Expr600Context(antlr4::ParserRuleContext *parent, size_t invokingState);
+    UnaryExprContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
     Expr700Context *expr700();
-    PrefixOpContext *prefixOp();
+    UnaryOpContext *unaryOp();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
    
   };
 
-  Expr600Context* expr600();
+  UnaryExprContext* unaryExpr();
 
   class  Expr700Context : public antlr4::ParserRuleContext {
   public:
@@ -879,7 +873,7 @@ public:
     virtual size_t getRuleIndex() const override;
     FunctionCallContext *functionCall();
     RecordExprContext *recordExpr();
-    Expr800Context *expr800();
+    SemicolonExprContext *semicolonExpr();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -888,9 +882,9 @@ public:
 
   Expr700Context* expr700();
 
-  class  Expr800Context : public antlr4::ParserRuleContext {
+  class  SemicolonExprContext : public antlr4::ParserRuleContext {
   public:
-    Expr800Context(antlr4::ParserRuleContext *parent, size_t invokingState);
+    SemicolonExprContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
     std::vector<ExprMaxContext *> exprMax();
     ExprMaxContext* exprMax(size_t i);
@@ -900,7 +894,7 @@ public:
    
   };
 
-  Expr800Context* expr800();
+  SemicolonExprContext* semicolonExpr();
 
   class  ExprMaxContext : public antlr4::ParserRuleContext {
   public:
@@ -913,7 +907,7 @@ public:
     ListComprehensionContext *listComprehension();
     BinaryComprehensionContext *binaryComprehension();
     TupleContext *tuple();
-    ExprContext *expr();
+    CatchExprContext *catchExpr();
     ExprsContext *exprs();
     IfExprContext *ifExpr();
     CaseExprContext *caseExpr();
@@ -932,7 +926,7 @@ public:
   public:
     ListContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    ExprContext *expr();
+    CatchExprContext *catchExpr();
     TailContext *tail();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -946,7 +940,7 @@ public:
   public:
     TailContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    ExprContext *expr();
+    CatchExprContext *catchExpr();
     TailContext *tail();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -1003,7 +997,7 @@ public:
     BitExprContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
     ExprMaxContext *exprMax();
-    PrefixOpContext *prefixOp();
+    UnaryOpContext *unaryOp();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -1083,7 +1077,7 @@ public:
   public:
     ListComprehensionContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    ExprContext *expr();
+    CatchExprContext *catchExpr();
     LcExprsContext *lcExprs();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -1125,8 +1119,8 @@ public:
   public:
     LcExprContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    std::vector<ExprContext *> expr();
-    ExprContext* expr(size_t i);
+    std::vector<CatchExprContext *> catchExpr();
+    CatchExprContext* catchExpr(size_t i);
     BinaryContext *binary();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -1197,7 +1191,7 @@ public:
   public:
     RecordFieldContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    ExprContext *expr();
+    CatchExprContext *catchExpr();
     TokVarContext *tokVar();
     TokAtomContext *tokAtom();
 
@@ -1212,7 +1206,7 @@ public:
   public:
     FunctionCallContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    Expr800Context *expr800();
+    SemicolonExprContext *semicolonExpr();
     ArgumentListContext *argumentList();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -1267,7 +1261,7 @@ public:
   public:
     CaseExprContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    ExprContext *expr();
+    CatchExprContext *catchExpr();
     CrClausesContext *crClauses();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -1295,7 +1289,7 @@ public:
   public:
     CrClauseContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    ExprContext *expr();
+    CatchExprContext *catchExpr();
     ClauseGuardContext *clauseGuard();
     ClauseBodyContext *clauseBody();
 
@@ -1311,7 +1305,7 @@ public:
     ReceiveExprContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
     CrClausesContext *crClauses();
-    ExprContext *expr();
+    CatchExprContext *catchExpr();
     ClauseBodyContext *clauseBody();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -1443,7 +1437,7 @@ public:
   public:
     TryClauseContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    ExprContext *expr();
+    CatchExprContext *catchExpr();
     ClauseGuardContext *clauseGuard();
     ClauseBodyContext *clauseBody();
     AtomOrVarContext *atomOrVar();
@@ -1472,8 +1466,8 @@ public:
   public:
     ExprsContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    std::vector<ExprContext *> expr();
-    ExprContext* expr(size_t i);
+    std::vector<CatchExprContext *> catchExpr();
+    CatchExprContext* catchExpr(size_t i);
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -1514,9 +1508,9 @@ public:
 
   AtomicContext* atomic();
 
-  class  PrefixOpContext : public antlr4::ParserRuleContext {
+  class  UnaryOpContext : public antlr4::ParserRuleContext {
   public:
-    PrefixOpContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    UnaryOpContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -1524,7 +1518,7 @@ public:
    
   };
 
-  PrefixOpContext* prefixOp();
+  UnaryOpContext* unaryOp();
 
   class  MultOpContext : public antlr4::ParserRuleContext {
   public:
@@ -1562,9 +1556,9 @@ public:
 
   ListOpContext* listOp();
 
-  class  CompOpContext : public antlr4::ParserRuleContext {
+  class  CompareOpContext : public antlr4::ParserRuleContext {
   public:
-    CompOpContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    CompareOpContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -1572,7 +1566,7 @@ public:
    
   };
 
-  CompOpContext* compOp();
+  CompareOpContext* compareOp();
 
   class  RuleClausesContext : public antlr4::ParserRuleContext {
   public:
@@ -1621,6 +1615,10 @@ public:
   virtual bool sempred(antlr4::RuleContext *_localctx, size_t ruleIndex, size_t predicateIndex) override;
   bool type300Sempred(Type300Context *_localctx, size_t predicateIndex);
   bool type400Sempred(Type400Context *_localctx, size_t predicateIndex);
+  bool compareExprSempred(CompareExprContext *_localctx, size_t predicateIndex);
+  bool listExprSempred(ListExprContext *_localctx, size_t predicateIndex);
+  bool addExprSempred(AddExprContext *_localctx, size_t predicateIndex);
+  bool multExprSempred(MultExprContext *_localctx, size_t predicateIndex);
   bool recordExprSempred(RecordExprContext *_localctx, size_t predicateIndex);
 
 private:

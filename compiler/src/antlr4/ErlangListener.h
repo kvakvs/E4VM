@@ -134,38 +134,38 @@ public:
   virtual void enterClauseBody(ErlangParser::ClauseBodyContext *ctx) = 0;
   virtual void exitClauseBody(ErlangParser::ClauseBodyContext *ctx) = 0;
 
-  virtual void enterExpr(ErlangParser::ExprContext *ctx) = 0;
-  virtual void exitExpr(ErlangParser::ExprContext *ctx) = 0;
+  virtual void enterCatchExpr(ErlangParser::CatchExprContext *ctx) = 0;
+  virtual void exitCatchExpr(ErlangParser::CatchExprContext *ctx) = 0;
 
-  virtual void enterExpr100(ErlangParser::Expr100Context *ctx) = 0;
-  virtual void exitExpr100(ErlangParser::Expr100Context *ctx) = 0;
+  virtual void enterMatchbangExpr(ErlangParser::MatchbangExprContext *ctx) = 0;
+  virtual void exitMatchbangExpr(ErlangParser::MatchbangExprContext *ctx) = 0;
 
-  virtual void enterExpr150(ErlangParser::Expr150Context *ctx) = 0;
-  virtual void exitExpr150(ErlangParser::Expr150Context *ctx) = 0;
+  virtual void enterOrelseExpr(ErlangParser::OrelseExprContext *ctx) = 0;
+  virtual void exitOrelseExpr(ErlangParser::OrelseExprContext *ctx) = 0;
 
-  virtual void enterExpr160(ErlangParser::Expr160Context *ctx) = 0;
-  virtual void exitExpr160(ErlangParser::Expr160Context *ctx) = 0;
+  virtual void enterAndalsoExpr(ErlangParser::AndalsoExprContext *ctx) = 0;
+  virtual void exitAndalsoExpr(ErlangParser::AndalsoExprContext *ctx) = 0;
 
-  virtual void enterExpr200(ErlangParser::Expr200Context *ctx) = 0;
-  virtual void exitExpr200(ErlangParser::Expr200Context *ctx) = 0;
+  virtual void enterCompareExpr(ErlangParser::CompareExprContext *ctx) = 0;
+  virtual void exitCompareExpr(ErlangParser::CompareExprContext *ctx) = 0;
 
-  virtual void enterExpr300(ErlangParser::Expr300Context *ctx) = 0;
-  virtual void exitExpr300(ErlangParser::Expr300Context *ctx) = 0;
+  virtual void enterListExpr(ErlangParser::ListExprContext *ctx) = 0;
+  virtual void exitListExpr(ErlangParser::ListExprContext *ctx) = 0;
 
-  virtual void enterExpr400(ErlangParser::Expr400Context *ctx) = 0;
-  virtual void exitExpr400(ErlangParser::Expr400Context *ctx) = 0;
+  virtual void enterAddExpr(ErlangParser::AddExprContext *ctx) = 0;
+  virtual void exitAddExpr(ErlangParser::AddExprContext *ctx) = 0;
 
-  virtual void enterExpr500(ErlangParser::Expr500Context *ctx) = 0;
-  virtual void exitExpr500(ErlangParser::Expr500Context *ctx) = 0;
+  virtual void enterMultExpr(ErlangParser::MultExprContext *ctx) = 0;
+  virtual void exitMultExpr(ErlangParser::MultExprContext *ctx) = 0;
 
-  virtual void enterExpr600(ErlangParser::Expr600Context *ctx) = 0;
-  virtual void exitExpr600(ErlangParser::Expr600Context *ctx) = 0;
+  virtual void enterUnaryExpr(ErlangParser::UnaryExprContext *ctx) = 0;
+  virtual void exitUnaryExpr(ErlangParser::UnaryExprContext *ctx) = 0;
 
   virtual void enterExpr700(ErlangParser::Expr700Context *ctx) = 0;
   virtual void exitExpr700(ErlangParser::Expr700Context *ctx) = 0;
 
-  virtual void enterExpr800(ErlangParser::Expr800Context *ctx) = 0;
-  virtual void exitExpr800(ErlangParser::Expr800Context *ctx) = 0;
+  virtual void enterSemicolonExpr(ErlangParser::SemicolonExprContext *ctx) = 0;
+  virtual void exitSemicolonExpr(ErlangParser::SemicolonExprContext *ctx) = 0;
 
   virtual void enterExprMax(ErlangParser::ExprMaxContext *ctx) = 0;
   virtual void exitExprMax(ErlangParser::ExprMaxContext *ctx) = 0;
@@ -293,8 +293,8 @@ public:
   virtual void enterAtomic(ErlangParser::AtomicContext *ctx) = 0;
   virtual void exitAtomic(ErlangParser::AtomicContext *ctx) = 0;
 
-  virtual void enterPrefixOp(ErlangParser::PrefixOpContext *ctx) = 0;
-  virtual void exitPrefixOp(ErlangParser::PrefixOpContext *ctx) = 0;
+  virtual void enterUnaryOp(ErlangParser::UnaryOpContext *ctx) = 0;
+  virtual void exitUnaryOp(ErlangParser::UnaryOpContext *ctx) = 0;
 
   virtual void enterMultOp(ErlangParser::MultOpContext *ctx) = 0;
   virtual void exitMultOp(ErlangParser::MultOpContext *ctx) = 0;
@@ -305,8 +305,8 @@ public:
   virtual void enterListOp(ErlangParser::ListOpContext *ctx) = 0;
   virtual void exitListOp(ErlangParser::ListOpContext *ctx) = 0;
 
-  virtual void enterCompOp(ErlangParser::CompOpContext *ctx) = 0;
-  virtual void exitCompOp(ErlangParser::CompOpContext *ctx) = 0;
+  virtual void enterCompareOp(ErlangParser::CompareOpContext *ctx) = 0;
+  virtual void exitCompareOp(ErlangParser::CompareOpContext *ctx) = 0;
 
   virtual void enterRuleClauses(ErlangParser::RuleClausesContext *ctx) = 0;
   virtual void exitRuleClauses(ErlangParser::RuleClausesContext *ctx) = 0;
