@@ -12,18 +12,21 @@
 class  ErlangLexer : public antlr4::Lexer {
 public:
   enum {
-    T__0 = 1, T__1 = 2, T__2 = 3, T__3 = 4, T__4 = 5, T__5 = 6, T__6 = 7, 
-    T__7 = 8, T__8 = 9, T__9 = 10, T__10 = 11, T__11 = 12, T__12 = 13, T__13 = 14, 
-    T__14 = 15, T__15 = 16, T__16 = 17, T__17 = 18, T__18 = 19, T__19 = 20, 
-    T__20 = 21, T__21 = 22, T__22 = 23, T__23 = 24, T__24 = 25, T__25 = 26, 
-    T__26 = 27, T__27 = 28, T__28 = 29, T__29 = 30, T__30 = 31, T__31 = 32, 
-    T__32 = 33, T__33 = 34, T__34 = 35, T__35 = 36, T__36 = 37, T__37 = 38, 
-    T__38 = 39, T__39 = 40, T__40 = 41, T__41 = 42, T__42 = 43, T__43 = 44, 
-    T__44 = 45, T__45 = 46, T__46 = 47, T__47 = 48, T__48 = 49, T__49 = 50, 
-    T__50 = 51, T__51 = 52, T__52 = 53, T__53 = 54, T__54 = 55, T__55 = 56, 
-    T__56 = 57, T__57 = 58, T__58 = 59, T__59 = 60, T__60 = 61, T__61 = 62, 
-    T__62 = 63, TokAtom = 64, TokVar = 65, TokFloat = 66, TokInteger = 67, 
-    TokChar = 68, TokString = 69, AttrName = 70, Comment = 71, WS = 72
+    TokDot = 1, TokMinus = 2, TokPlus = 3, TokSlash = 4, TokStar = 5, TokBang = 6, 
+    TokBar = 7, TokBarBar = 8, TokBinaryClose = 9, TokBinaryOpen = 10, TokColon = 11, 
+    TokComma = 12, TokCurlyClose = 13, TokCurlyOpen = 14, TokDoubleColon = 15, 
+    TokDoubleDot = 16, TokEllipsis = 17, TokEq = 18, TokHash = 19, TokLArrow = 20, 
+    TokLDoubleArrow = 21, TokParenClose = 22, TokParenOpen = 23, TokRArrow = 24, 
+    TokSemicolon = 25, TokSquareClose = 26, TokSquareOpen = 27, TokAfter = 28, 
+    TokAndalso = 29, TokBegin = 30, TokCase = 31, TokCatch = 32, TokEnd = 33, 
+    TokFun = 34, TokIf = 35, TokOf = 36, TokOrelse = 37, TokReceive = 38, 
+    TokTry = 39, TokWhen = 40, TokAtom = 41, TokVar = 42, TokFloat = 43, 
+    TokInteger = 44, TokChar = 45, TokString = 46, TokAttrName = 47, TokComment = 48, 
+    TokWhitespace = 49, TokBnot = 50, TokNot = 51, TokDiv = 52, TokRem = 53, 
+    TokBand = 54, TokAnd = 55, TokBor = 56, TokBxor = 57, TokBsl = 58, TokBsr = 59, 
+    TokOr = 60, TokXor = 61, TokDoublePlus = 62, TokDoubleMinus = 63, TokDoubleEq = 64, 
+    TokNotEq = 65, TokLessEq = 66, TokLess = 67, TokGreaterEq = 68, TokGreater = 69, 
+    TokStrictEq = 70, TokStrictNeq = 71
   };
 
   ErlangLexer(antlr4::CharStream *input);

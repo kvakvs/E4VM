@@ -45,27 +45,16 @@ set(ANTLR4_OUTPUTS
 
 # to update Antlr4 code, run make in antlr4-erlang
 set(SOURCE_FILES
-    antlr4-erlang/Erlang.g4
     ${ANTLR4_OUTPUTS}
+    antlr4-erlang/Erlang.g4
+    src/ast.h
+    src/compiler.cpp
+    src/compiler.h
     src/main.cpp
     )
 
-#find_package(BISON REQUIRED)
-#find_package(FLEX REQUIRED)
-#BISON_TARGET(MyErlangParser
-#    bison/erlang.yy
-#    ${YY_DIR}/erlang_parser.cpp
-#    COMPILE_FLAGS "-L c++")
-#FLEX_TARGET(MyErlangLexer
-#    bison/erlang.ll
-#    ${YY_DIR}/erlang_lexer.cpp
-#    COMPILE_FLAGS "-f --c++ --nounistd")
-#ADD_FLEX_BISON_DEPENDENCY(MyErlangLexer MyErlangParser)
-
 add_executable(compiler
     ${SOURCE_FILES}
-#    ${BISON_MyErlangParser_OUTPUTS}
-#    ${FLEX_MyErlangLexer_OUTPUTS}
     )
 
 set(MY_LLVM_LIBS
@@ -104,6 +93,6 @@ set(MY_LLVM_LIBS
 
 # Link against LLVM libraries
 target_link_libraries(compiler
-    ${MY_LLVM_LIBS}
+#    ${MY_LLVM_LIBS}
     )
 target_link_libraries(compiler antlr4_static)

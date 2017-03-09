@@ -12,18 +12,21 @@
 class  ErlangParser : public antlr4::Parser {
 public:
   enum {
-    T__0 = 1, T__1 = 2, T__2 = 3, T__3 = 4, T__4 = 5, T__5 = 6, T__6 = 7, 
-    T__7 = 8, T__8 = 9, T__9 = 10, T__10 = 11, T__11 = 12, T__12 = 13, T__13 = 14, 
-    T__14 = 15, T__15 = 16, T__16 = 17, T__17 = 18, T__18 = 19, T__19 = 20, 
-    T__20 = 21, T__21 = 22, T__22 = 23, T__23 = 24, T__24 = 25, T__25 = 26, 
-    T__26 = 27, T__27 = 28, T__28 = 29, T__29 = 30, T__30 = 31, T__31 = 32, 
-    T__32 = 33, T__33 = 34, T__34 = 35, T__35 = 36, T__36 = 37, T__37 = 38, 
-    T__38 = 39, T__39 = 40, T__40 = 41, T__41 = 42, T__42 = 43, T__43 = 44, 
-    T__44 = 45, T__45 = 46, T__46 = 47, T__47 = 48, T__48 = 49, T__49 = 50, 
-    T__50 = 51, T__51 = 52, T__52 = 53, T__53 = 54, T__54 = 55, T__55 = 56, 
-    T__56 = 57, T__57 = 58, T__58 = 59, T__59 = 60, T__60 = 61, T__61 = 62, 
-    T__62 = 63, TokAtom = 64, TokVar = 65, TokFloat = 66, TokInteger = 67, 
-    TokChar = 68, TokString = 69, AttrName = 70, Comment = 71, WS = 72
+    TokDot = 1, TokMinus = 2, TokPlus = 3, TokSlash = 4, TokStar = 5, TokBang = 6, 
+    TokBar = 7, TokBarBar = 8, TokBinaryClose = 9, TokBinaryOpen = 10, TokColon = 11, 
+    TokComma = 12, TokCurlyClose = 13, TokCurlyOpen = 14, TokDoubleColon = 15, 
+    TokDoubleDot = 16, TokEllipsis = 17, TokEq = 18, TokHash = 19, TokLArrow = 20, 
+    TokLDoubleArrow = 21, TokParenClose = 22, TokParenOpen = 23, TokRArrow = 24, 
+    TokSemicolon = 25, TokSquareClose = 26, TokSquareOpen = 27, TokAfter = 28, 
+    TokAndalso = 29, TokBegin = 30, TokCase = 31, TokCatch = 32, TokEnd = 33, 
+    TokFun = 34, TokIf = 35, TokOf = 36, TokOrelse = 37, TokReceive = 38, 
+    TokTry = 39, TokWhen = 40, TokAtom = 41, TokVar = 42, TokFloat = 43, 
+    TokInteger = 44, TokChar = 45, TokString = 46, TokAttrName = 47, TokComment = 48, 
+    TokWhitespace = 49, TokBnot = 50, TokNot = 51, TokDiv = 52, TokRem = 53, 
+    TokBand = 54, TokAnd = 55, TokBor = 56, TokBxor = 57, TokBsl = 58, TokBsr = 59, 
+    TokOr = 60, TokXor = 61, TokDoublePlus = 62, TokDoubleMinus = 63, TokDoubleEq = 64, 
+    TokNotEq = 65, TokLessEq = 66, TokLess = 67, TokGreaterEq = 68, TokGreater = 69, 
+    TokStrictEq = 70, TokStrictNeq = 71
   };
 
   enum {
@@ -51,8 +54,7 @@ public:
     RuleFunClause = 84, RuleTryExpr = 85, RuleTryCatch = 86, RuleTryClauses = 87, 
     RuleTryClause = 88, RuleArgumentList = 89, RuleExprs = 90, RuleGuard = 91, 
     RuleAtomic = 92, RuleUnaryOp = 93, RuleMultOp = 94, RuleAddOp = 95, 
-    RuleListOp = 96, RuleCompareOp = 97, RuleRuleClauses = 98, RuleRuleClause = 99, 
-    RuleRuleBody = 100
+    RuleListOp = 96, RuleCompareOp = 97
   };
 
   ErlangParser(antlr4::TokenStream *input);
@@ -162,10 +164,7 @@ public:
   class MultOpContext;
   class AddOpContext;
   class ListOpContext;
-  class CompareOpContext;
-  class RuleClausesContext;
-  class RuleClauseContext;
-  class RuleBodyContext; 
+  class CompareOpContext; 
 
   class  FormsContext : public antlr4::ParserRuleContext {
   public:
@@ -186,9 +185,9 @@ public:
   public:
     FormContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *TokDot();
     AttributeContext *attribute();
     FunctionContext *function();
-    RuleClausesContext *ruleClauses();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -279,10 +278,13 @@ public:
   public:
     AttributeContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *TokMinus();
     TokAtomContext *tokAtom();
     AttrValContext *attrVal();
     TypedAttrValContext *typedAttrVal();
-    antlr4::tree::TerminalNode *AttrName();
+    antlr4::tree::TerminalNode *TokParenOpen();
+    antlr4::tree::TerminalNode *TokParenClose();
+    antlr4::tree::TerminalNode *TokAttrName();
     TypeSpecContext *typeSpec();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -298,6 +300,8 @@ public:
     virtual size_t getRuleIndex() const override;
     SpecFunContext *specFun();
     TypeSigsContext *typeSigs();
+    antlr4::tree::TerminalNode *TokParenOpen();
+    antlr4::tree::TerminalNode *TokParenClose();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -312,7 +316,10 @@ public:
     virtual size_t getRuleIndex() const override;
     std::vector<TokAtomContext *> tokAtom();
     TokAtomContext* tokAtom(size_t i);
+    antlr4::tree::TerminalNode *TokColon();
+    antlr4::tree::TerminalNode *TokSlash();
     TokIntegerContext *tokInteger();
+    antlr4::tree::TerminalNode *TokDoubleColon();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -326,7 +333,9 @@ public:
     TypedAttrValContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
     CatchExprContext *catchExpr();
+    antlr4::tree::TerminalNode *TokComma();
     TypedRecordFieldsContext *typedRecordFields();
+    antlr4::tree::TerminalNode *TokDoubleColon();
     TopTypeContext *topType();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -340,7 +349,9 @@ public:
   public:
     TypedRecordFieldsContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *TokCurlyOpen();
     TypedExprsContext *typedExprs();
+    antlr4::tree::TerminalNode *TokCurlyClose();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -354,6 +365,7 @@ public:
     TypedExprsContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
     TypedExprContext *typedExpr();
+    antlr4::tree::TerminalNode *TokComma();
     TypedExprsContext *typedExprs();
     CatchExprContext *catchExpr();
     ExprsContext *exprs();
@@ -370,6 +382,7 @@ public:
     TypedExprContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
     CatchExprContext *catchExpr();
+    antlr4::tree::TerminalNode *TokDoubleColon();
     TopTypeContext *topType();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -385,6 +398,8 @@ public:
     virtual size_t getRuleIndex() const override;
     std::vector<TypeSigContext *> typeSig();
     TypeSigContext* typeSig(size_t i);
+    std::vector<antlr4::tree::TerminalNode *> TokSemicolon();
+    antlr4::tree::TerminalNode* TokSemicolon(size_t i);
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -398,6 +413,7 @@ public:
     TypeSigContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
     FunTypeContext *funType();
+    antlr4::tree::TerminalNode *TokWhen();
     TypeGuardsContext *typeGuards();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -413,6 +429,8 @@ public:
     virtual size_t getRuleIndex() const override;
     std::vector<TypeGuardContext *> typeGuard();
     TypeGuardContext* typeGuard(size_t i);
+    std::vector<antlr4::tree::TerminalNode *> TokComma();
+    antlr4::tree::TerminalNode* TokComma(size_t i);
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -426,8 +444,11 @@ public:
     TypeGuardContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
     TokAtomContext *tokAtom();
+    antlr4::tree::TerminalNode *TokParenOpen();
     TopTypesContext *topTypes();
+    antlr4::tree::TerminalNode *TokParenClose();
     TokVarContext *tokVar();
+    antlr4::tree::TerminalNode *TokDoubleColon();
     TopTypeContext *topType();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -443,6 +464,8 @@ public:
     virtual size_t getRuleIndex() const override;
     std::vector<TopTypeContext *> topType();
     TopTypeContext* topType(size_t i);
+    std::vector<antlr4::tree::TerminalNode *> TokComma();
+    antlr4::tree::TerminalNode* TokComma(size_t i);
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -457,6 +480,7 @@ public:
     virtual size_t getRuleIndex() const override;
     TopType100Context *topType100();
     TokVarContext *tokVar();
+    antlr4::tree::TerminalNode *TokDoubleColon();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -470,6 +494,7 @@ public:
     TopType100Context(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
     Type200Context *type200();
+    antlr4::tree::TerminalNode *TokBar();
     TopType100Context *topType100();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -485,6 +510,7 @@ public:
     virtual size_t getRuleIndex() const override;
     std::vector<Type300Context *> type300();
     Type300Context* type300(size_t i);
+    antlr4::tree::TerminalNode *TokDoubleDot();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -541,14 +567,25 @@ public:
   public:
     TypeContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *TokParenOpen();
     TopTypeContext *topType();
+    antlr4::tree::TerminalNode *TokParenClose();
     TokVarContext *tokVar();
     std::vector<TokAtomContext *> tokAtom();
     TokAtomContext* tokAtom(size_t i);
     TopTypesContext *topTypes();
+    antlr4::tree::TerminalNode *TokColon();
+    antlr4::tree::TerminalNode *TokSquareOpen();
+    antlr4::tree::TerminalNode *TokSquareClose();
+    antlr4::tree::TerminalNode *TokComma();
+    antlr4::tree::TerminalNode *TokEllipsis();
+    antlr4::tree::TerminalNode *TokCurlyOpen();
+    antlr4::tree::TerminalNode *TokCurlyClose();
+    antlr4::tree::TerminalNode *TokHash();
     FieldTypesContext *fieldTypes();
     BinaryTypeContext *binaryType();
     TokIntegerContext *tokInteger();
+    antlr4::tree::TerminalNode *TokFun();
     FunType100Context *funType100();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -562,6 +599,10 @@ public:
   public:
     FunType100Context(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *TokParenOpen();
+    antlr4::tree::TerminalNode *TokEllipsis();
+    antlr4::tree::TerminalNode *TokParenClose();
+    antlr4::tree::TerminalNode *TokRArrow();
     TopTypeContext *topType();
     FunTypeContext *funType();
 
@@ -576,6 +617,9 @@ public:
   public:
     FunTypeContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *TokParenOpen();
+    antlr4::tree::TerminalNode *TokParenClose();
+    antlr4::tree::TerminalNode *TokRArrow();
     TopTypeContext *topType();
     TopTypesContext *topTypes();
 
@@ -592,6 +636,8 @@ public:
     virtual size_t getRuleIndex() const override;
     std::vector<FieldTypeContext *> fieldType();
     FieldTypeContext* fieldType(size_t i);
+    std::vector<antlr4::tree::TerminalNode *> TokComma();
+    antlr4::tree::TerminalNode* TokComma(size_t i);
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -605,6 +651,7 @@ public:
     FieldTypeContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
     TokAtomContext *tokAtom();
+    antlr4::tree::TerminalNode *TokDoubleColon();
     TopTypeContext *topType();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -618,8 +665,11 @@ public:
   public:
     BinaryTypeContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *TokBinaryOpen();
+    antlr4::tree::TerminalNode *TokBinaryClose();
     BinBaseTypeContext *binBaseType();
     BinUnitTypeContext *binUnitType();
+    antlr4::tree::TerminalNode *TokComma();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -633,6 +683,7 @@ public:
     BinBaseTypeContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
     TokVarContext *tokVar();
+    antlr4::tree::TerminalNode *TokColon();
     TypeContext *type();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -648,6 +699,8 @@ public:
     virtual size_t getRuleIndex() const override;
     std::vector<TokVarContext *> tokVar();
     TokVarContext* tokVar(size_t i);
+    antlr4::tree::TerminalNode *TokColon();
+    antlr4::tree::TerminalNode *TokStar();
     TypeContext *type();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -662,6 +715,9 @@ public:
     AttrValContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
     CatchExprContext *catchExpr();
+    antlr4::tree::TerminalNode *TokParenOpen();
+    antlr4::tree::TerminalNode *TokParenClose();
+    antlr4::tree::TerminalNode *TokComma();
     ExprsContext *exprs();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -677,6 +733,8 @@ public:
     virtual size_t getRuleIndex() const override;
     std::vector<FunctionClauseContext *> functionClause();
     FunctionClauseContext* functionClause(size_t i);
+    std::vector<antlr4::tree::TerminalNode *> TokSemicolon();
+    antlr4::tree::TerminalNode* TokSemicolon(size_t i);
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -718,6 +776,7 @@ public:
   public:
     ClauseGuardContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *TokWhen();
     GuardContext *guard();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -731,6 +790,7 @@ public:
   public:
     ClauseBodyContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *TokRArrow();
     ExprsContext *exprs();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -744,6 +804,7 @@ public:
   public:
     CatchExprContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *TokCatch();
     CatchExprContext *catchExpr();
     MatchbangExprContext *matchbangExpr();
 
@@ -759,6 +820,8 @@ public:
     MatchbangExprContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
     OrelseExprContext *orelseExpr();
+    antlr4::tree::TerminalNode *TokEq();
+    antlr4::tree::TerminalNode *TokBang();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -772,6 +835,7 @@ public:
     OrelseExprContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
     AndalsoExprContext *andalsoExpr();
+    antlr4::tree::TerminalNode *TokOrelse();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -785,6 +849,7 @@ public:
     AndalsoExprContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
     CompareExprContext *compareExpr();
+    antlr4::tree::TerminalNode *TokAndalso();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -888,6 +953,7 @@ public:
     virtual size_t getRuleIndex() const override;
     std::vector<ExprMaxContext *> exprMax();
     ExprMaxContext* exprMax(size_t i);
+    antlr4::tree::TerminalNode *TokColon();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -907,8 +973,12 @@ public:
     ListComprehensionContext *listComprehension();
     BinaryComprehensionContext *binaryComprehension();
     TupleContext *tuple();
+    antlr4::tree::TerminalNode *TokParenOpen();
     CatchExprContext *catchExpr();
+    antlr4::tree::TerminalNode *TokParenClose();
+    antlr4::tree::TerminalNode *TokBegin();
     ExprsContext *exprs();
+    antlr4::tree::TerminalNode *TokEnd();
     IfExprContext *ifExpr();
     CaseExprContext *caseExpr();
     ReceiveExprContext *receiveExpr();
@@ -926,6 +996,8 @@ public:
   public:
     ListContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *TokSquareOpen();
+    antlr4::tree::TerminalNode *TokSquareClose();
     CatchExprContext *catchExpr();
     TailContext *tail();
 
@@ -940,7 +1012,10 @@ public:
   public:
     TailContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *TokSquareClose();
+    antlr4::tree::TerminalNode *TokBar();
     CatchExprContext *catchExpr();
+    antlr4::tree::TerminalNode *TokComma();
     TailContext *tail();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -954,6 +1029,8 @@ public:
   public:
     BinaryContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *TokBinaryOpen();
+    antlr4::tree::TerminalNode *TokBinaryClose();
     BinElementsContext *binElements();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -969,6 +1046,8 @@ public:
     virtual size_t getRuleIndex() const override;
     std::vector<BinElementContext *> binElement();
     BinElementContext* binElement(size_t i);
+    std::vector<antlr4::tree::TerminalNode *> TokComma();
+    antlr4::tree::TerminalNode* TokComma(size_t i);
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -1010,6 +1089,7 @@ public:
   public:
     OptBitSizeExprContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *TokColon();
     BitSizeExprContext *bitSizeExpr();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -1023,6 +1103,7 @@ public:
   public:
     OptBitTypeListContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *TokSlash();
     BitTypeListContext *bitTypeList();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -1038,6 +1119,8 @@ public:
     virtual size_t getRuleIndex() const override;
     std::vector<BitTypeContext *> bitType();
     BitTypeContext* bitType(size_t i);
+    std::vector<antlr4::tree::TerminalNode *> TokMinus();
+    antlr4::tree::TerminalNode* TokMinus(size_t i);
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -1051,6 +1134,7 @@ public:
     BitTypeContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
     TokAtomContext *tokAtom();
+    antlr4::tree::TerminalNode *TokColon();
     TokIntegerContext *tokInteger();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -1077,8 +1161,11 @@ public:
   public:
     ListComprehensionContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *TokSquareOpen();
     CatchExprContext *catchExpr();
+    antlr4::tree::TerminalNode *TokBarBar();
     LcExprsContext *lcExprs();
+    antlr4::tree::TerminalNode *TokSquareClose();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -1091,8 +1178,11 @@ public:
   public:
     BinaryComprehensionContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *TokBinaryOpen();
     BinaryContext *binary();
+    antlr4::tree::TerminalNode *TokBarBar();
     LcExprsContext *lcExprs();
+    antlr4::tree::TerminalNode *TokBinaryClose();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -1107,6 +1197,8 @@ public:
     virtual size_t getRuleIndex() const override;
     std::vector<LcExprContext *> lcExpr();
     LcExprContext* lcExpr(size_t i);
+    std::vector<antlr4::tree::TerminalNode *> TokComma();
+    antlr4::tree::TerminalNode* TokComma(size_t i);
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -1121,7 +1213,9 @@ public:
     virtual size_t getRuleIndex() const override;
     std::vector<CatchExprContext *> catchExpr();
     CatchExprContext* catchExpr(size_t i);
+    antlr4::tree::TerminalNode *TokLArrow();
     BinaryContext *binary();
+    antlr4::tree::TerminalNode *TokLDoubleArrow();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -1134,6 +1228,8 @@ public:
   public:
     TupleContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *TokCurlyOpen();
+    antlr4::tree::TerminalNode *TokCurlyClose();
     ExprsContext *exprs();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -1147,8 +1243,10 @@ public:
   public:
     RecordExprContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *TokHash();
     std::vector<TokAtomContext *> tokAtom();
     TokAtomContext* tokAtom(size_t i);
+    antlr4::tree::TerminalNode *TokDot();
     RecordTupleContext *recordTuple();
     ExprMaxContext *exprMax();
     RecordExprContext *recordExpr();
@@ -1164,6 +1262,8 @@ public:
   public:
     RecordTupleContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *TokCurlyOpen();
+    antlr4::tree::TerminalNode *TokCurlyClose();
     RecordFieldsContext *recordFields();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -1179,6 +1279,8 @@ public:
     virtual size_t getRuleIndex() const override;
     std::vector<RecordFieldContext *> recordField();
     RecordFieldContext* recordField(size_t i);
+    std::vector<antlr4::tree::TerminalNode *> TokComma();
+    antlr4::tree::TerminalNode* TokComma(size_t i);
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -1191,6 +1293,7 @@ public:
   public:
     RecordFieldContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *TokEq();
     CatchExprContext *catchExpr();
     TokVarContext *tokVar();
     TokAtomContext *tokAtom();
@@ -1220,7 +1323,9 @@ public:
   public:
     IfExprContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *TokIf();
     IfClausesContext *ifClauses();
+    antlr4::tree::TerminalNode *TokEnd();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -1235,6 +1340,8 @@ public:
     virtual size_t getRuleIndex() const override;
     std::vector<IfClauseContext *> ifClause();
     IfClauseContext* ifClause(size_t i);
+    std::vector<antlr4::tree::TerminalNode *> TokSemicolon();
+    antlr4::tree::TerminalNode* TokSemicolon(size_t i);
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -1261,8 +1368,11 @@ public:
   public:
     CaseExprContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *TokCase();
     CatchExprContext *catchExpr();
+    antlr4::tree::TerminalNode *TokOf();
     CrClausesContext *crClauses();
+    antlr4::tree::TerminalNode *TokEnd();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -1277,6 +1387,8 @@ public:
     virtual size_t getRuleIndex() const override;
     std::vector<CrClauseContext *> crClause();
     CrClauseContext* crClause(size_t i);
+    std::vector<antlr4::tree::TerminalNode *> TokSemicolon();
+    antlr4::tree::TerminalNode* TokSemicolon(size_t i);
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -1304,7 +1416,10 @@ public:
   public:
     ReceiveExprContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *TokReceive();
     CrClausesContext *crClauses();
+    antlr4::tree::TerminalNode *TokEnd();
+    antlr4::tree::TerminalNode *TokAfter();
     CatchExprContext *catchExpr();
     ClauseBodyContext *clauseBody();
 
@@ -1319,12 +1434,16 @@ public:
   public:
     FunExprContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *TokFun();
     TokAtomContext *tokAtom();
+    antlr4::tree::TerminalNode *TokSlash();
     TokIntegerContext *tokInteger();
     std::vector<AtomOrVarContext *> atomOrVar();
     AtomOrVarContext* atomOrVar(size_t i);
+    antlr4::tree::TerminalNode *TokColon();
     IntegerOrVarContext *integerOrVar();
     FunClausesContext *funClauses();
+    antlr4::tree::TerminalNode *TokEnd();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -1367,6 +1486,8 @@ public:
     virtual size_t getRuleIndex() const override;
     std::vector<FunClauseContext *> funClause();
     FunClauseContext* funClause(size_t i);
+    std::vector<antlr4::tree::TerminalNode *> TokSemicolon();
+    antlr4::tree::TerminalNode* TokSemicolon(size_t i);
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -1394,8 +1515,10 @@ public:
   public:
     TryExprContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *TokTry();
     ExprsContext *exprs();
     TryCatchContext *tryCatch();
+    antlr4::tree::TerminalNode *TokOf();
     CrClausesContext *crClauses();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -1409,7 +1532,10 @@ public:
   public:
     TryCatchContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *TokCatch();
     TryClausesContext *tryClauses();
+    antlr4::tree::TerminalNode *TokEnd();
+    antlr4::tree::TerminalNode *TokAfter();
     ExprsContext *exprs();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -1425,6 +1551,8 @@ public:
     virtual size_t getRuleIndex() const override;
     std::vector<TryClauseContext *> tryClause();
     TryClauseContext* tryClause(size_t i);
+    std::vector<antlr4::tree::TerminalNode *> TokSemicolon();
+    antlr4::tree::TerminalNode* TokSemicolon(size_t i);
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -1441,6 +1569,7 @@ public:
     ClauseGuardContext *clauseGuard();
     ClauseBodyContext *clauseBody();
     AtomOrVarContext *atomOrVar();
+    antlr4::tree::TerminalNode *TokColon();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -1453,6 +1582,8 @@ public:
   public:
     ArgumentListContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *TokParenOpen();
+    antlr4::tree::TerminalNode *TokParenClose();
     ExprsContext *exprs();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -1468,6 +1599,8 @@ public:
     virtual size_t getRuleIndex() const override;
     std::vector<CatchExprContext *> catchExpr();
     CatchExprContext* catchExpr(size_t i);
+    std::vector<antlr4::tree::TerminalNode *> TokComma();
+    antlr4::tree::TerminalNode* TokComma(size_t i);
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -1482,6 +1615,8 @@ public:
     virtual size_t getRuleIndex() const override;
     std::vector<ExprsContext *> exprs();
     ExprsContext* exprs(size_t i);
+    std::vector<antlr4::tree::TerminalNode *> TokSemicolon();
+    antlr4::tree::TerminalNode* TokSemicolon(size_t i);
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -1512,6 +1647,10 @@ public:
   public:
     UnaryOpContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *TokPlus();
+    antlr4::tree::TerminalNode *TokMinus();
+    antlr4::tree::TerminalNode *TokBnot();
+    antlr4::tree::TerminalNode *TokNot();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -1524,6 +1663,12 @@ public:
   public:
     MultOpContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *TokSlash();
+    antlr4::tree::TerminalNode *TokStar();
+    antlr4::tree::TerminalNode *TokDiv();
+    antlr4::tree::TerminalNode *TokRem();
+    antlr4::tree::TerminalNode *TokBand();
+    antlr4::tree::TerminalNode *TokAnd();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -1536,6 +1681,14 @@ public:
   public:
     AddOpContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *TokPlus();
+    antlr4::tree::TerminalNode *TokMinus();
+    antlr4::tree::TerminalNode *TokBor();
+    antlr4::tree::TerminalNode *TokBxor();
+    antlr4::tree::TerminalNode *TokBsl();
+    antlr4::tree::TerminalNode *TokBsr();
+    antlr4::tree::TerminalNode *TokOr();
+    antlr4::tree::TerminalNode *TokXor();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -1548,6 +1701,8 @@ public:
   public:
     ListOpContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *TokDoublePlus();
+    antlr4::tree::TerminalNode *TokDoubleMinus();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -1560,6 +1715,14 @@ public:
   public:
     CompareOpContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *TokDoubleEq();
+    antlr4::tree::TerminalNode *TokNotEq();
+    antlr4::tree::TerminalNode *TokLessEq();
+    antlr4::tree::TerminalNode *TokLess();
+    antlr4::tree::TerminalNode *TokGreaterEq();
+    antlr4::tree::TerminalNode *TokGreater();
+    antlr4::tree::TerminalNode *TokStrictEq();
+    antlr4::tree::TerminalNode *TokStrictNeq();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -1567,49 +1730,6 @@ public:
   };
 
   CompareOpContext* compareOp();
-
-  class  RuleClausesContext : public antlr4::ParserRuleContext {
-  public:
-    RuleClausesContext(antlr4::ParserRuleContext *parent, size_t invokingState);
-    virtual size_t getRuleIndex() const override;
-    std::vector<RuleClauseContext *> ruleClause();
-    RuleClauseContext* ruleClause(size_t i);
-
-    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
-    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
-   
-  };
-
-  RuleClausesContext* ruleClauses();
-
-  class  RuleClauseContext : public antlr4::ParserRuleContext {
-  public:
-    RuleClauseContext(antlr4::ParserRuleContext *parent, size_t invokingState);
-    virtual size_t getRuleIndex() const override;
-    TokAtomContext *tokAtom();
-    ClauseArgsContext *clauseArgs();
-    ClauseGuardContext *clauseGuard();
-    RuleBodyContext *ruleBody();
-
-    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
-    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
-   
-  };
-
-  RuleClauseContext* ruleClause();
-
-  class  RuleBodyContext : public antlr4::ParserRuleContext {
-  public:
-    RuleBodyContext(antlr4::ParserRuleContext *parent, size_t invokingState);
-    virtual size_t getRuleIndex() const override;
-    LcExprsContext *lcExprs();
-
-    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
-    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
-   
-  };
-
-  RuleBodyContext* ruleBody();
 
 
   virtual bool sempred(antlr4::RuleContext *_localctx, size_t ruleIndex, size_t predicateIndex) override;

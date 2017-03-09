@@ -308,15 +308,6 @@ public:
   virtual void enterCompareOp(ErlangParser::CompareOpContext *ctx) = 0;
   virtual void exitCompareOp(ErlangParser::CompareOpContext *ctx) = 0;
 
-  virtual void enterRuleClauses(ErlangParser::RuleClausesContext *ctx) = 0;
-  virtual void exitRuleClauses(ErlangParser::RuleClausesContext *ctx) = 0;
-
-  virtual void enterRuleClause(ErlangParser::RuleClauseContext *ctx) = 0;
-  virtual void exitRuleClause(ErlangParser::RuleClauseContext *ctx) = 0;
-
-  virtual void enterRuleBody(ErlangParser::RuleBodyContext *ctx) = 0;
-  virtual void exitRuleBody(ErlangParser::RuleBodyContext *ctx) = 0;
-
 
 };
 

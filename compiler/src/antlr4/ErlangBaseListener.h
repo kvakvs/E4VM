@@ -310,15 +310,6 @@ public:
   virtual void enterCompareOp(ErlangParser::CompareOpContext * /*ctx*/) override { }
   virtual void exitCompareOp(ErlangParser::CompareOpContext * /*ctx*/) override { }
 
-  virtual void enterRuleClauses(ErlangParser::RuleClausesContext * /*ctx*/) override { }
-  virtual void exitRuleClauses(ErlangParser::RuleClausesContext * /*ctx*/) override { }
-
-  virtual void enterRuleClause(ErlangParser::RuleClauseContext * /*ctx*/) override { }
-  virtual void exitRuleClause(ErlangParser::RuleClauseContext * /*ctx*/) override { }
-
-  virtual void enterRuleBody(ErlangParser::RuleBodyContext * /*ctx*/) override { }
-  virtual void exitRuleBody(ErlangParser::RuleBodyContext * /*ctx*/) override { }
-
 
   virtual void enterEveryRule(antlr4::ParserRuleContext * /*ctx*/) override { }
   virtual void exitEveryRule(antlr4::ParserRuleContext * /*ctx*/) override { }
