@@ -1,6 +1,7 @@
 #pragma once
 
 #include <tree/ParseTreeVisitor.h>
+#include "antlr4/ErlangBaseVisitor.h"
 
 namespace ast {
 
@@ -13,6 +14,20 @@ public:
 };
 
 class Atom: public INode {
+};
+
+///-----------------------------------------------------------------------------
+
+class ASTBuilderVisitor: public ::ErlangBaseVisitor {
+public:
+  using Super = ::ErlangBaseVisitor;
+  std::unique_ptr<INode> tree_;
+
+  virtual antlrcpp::Any
+  visitFunction(ErlangParser::FunctionContext *ctx) override;
+
+private:
+  void add_node(ast::INode* n);
 };
 
 }; // ns ast

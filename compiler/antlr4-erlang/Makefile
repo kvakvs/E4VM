@@ -1,7 +1,7 @@
 all: compile
 
 compile:
-	antlr4 -Dlanguage=Cpp Erlang.g4 -o ../src/antlr4
+	antlr4 -visitor -listener -Dlanguage=Cpp Erlang.g4 -o ../src/antlr4
 
 debug: compile
 	java org.antlr.v4.runtime.misc.TestRig  Erlang forms -gui -encoding utf8

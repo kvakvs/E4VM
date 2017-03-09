@@ -35,12 +35,16 @@ include_directories(antlr4-runtime/runtime/src)
 set(ANTLR4_OUTPUTS
     src/antlr4/ErlangBaseListener.cpp
     src/antlr4/ErlangBaseListener.h
+    src/antlr4/ErlangBaseVisitor.cpp
+    src/antlr4/ErlangBaseVisitor.h
     src/antlr4/ErlangLexer.cpp
     src/antlr4/ErlangLexer.h
     src/antlr4/ErlangListener.cpp
     src/antlr4/ErlangListener.h
     src/antlr4/ErlangParser.cpp
     src/antlr4/ErlangParser.h
+    src/antlr4/ErlangVisitor.cpp
+    src/antlr4/ErlangVisitor.h
     )
 
 # to update Antlr4 code, run make in antlr4-erlang
@@ -51,6 +55,7 @@ set(SOURCE_FILES
     src/compiler.cpp
     src/compiler.h
     src/main.cpp
+    src/ast.cpp
     )
 
 add_executable(compiler

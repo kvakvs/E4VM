@@ -3,6 +3,7 @@
 
 
 #include "ErlangListener.h"
+#include "ErlangVisitor.h"
 
 #include "ErlangParser.h"
 
@@ -64,6 +65,14 @@ void ErlangParser::FormsContext::exitRule(tree::ParseTreeListener *listener) {
   auto parserListener = dynamic_cast<ErlangListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitForms(this);
+}
+
+
+antlrcpp::Any ErlangParser::FormsContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitForms(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 ErlangParser::FormsContext* ErlangParser::forms() {
@@ -137,6 +146,14 @@ void ErlangParser::FormContext::exitRule(tree::ParseTreeListener *listener) {
     parserListener->exitForm(this);
 }
 
+
+antlrcpp::Any ErlangParser::FormContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitForm(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 ErlangParser::FormContext* ErlangParser::form() {
   FormContext *_localctx = _tracker.createInstance<FormContext>(_ctx, getState());
   enterRule(_localctx, 2, ErlangParser::RuleForm);
@@ -205,6 +222,14 @@ void ErlangParser::TokAtomContext::exitRule(tree::ParseTreeListener *listener) {
     parserListener->exitTokAtom(this);
 }
 
+
+antlrcpp::Any ErlangParser::TokAtomContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitTokAtom(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 ErlangParser::TokAtomContext* ErlangParser::tokAtom() {
   TokAtomContext *_localctx = _tracker.createInstance<TokAtomContext>(_ctx, getState());
   enterRule(_localctx, 4, ErlangParser::RuleTokAtom);
@@ -252,6 +277,14 @@ void ErlangParser::TokVarContext::exitRule(tree::ParseTreeListener *listener) {
   auto parserListener = dynamic_cast<ErlangListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitTokVar(this);
+}
+
+
+antlrcpp::Any ErlangParser::TokVarContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitTokVar(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 ErlangParser::TokVarContext* ErlangParser::tokVar() {
@@ -303,6 +336,14 @@ void ErlangParser::TokFloatContext::exitRule(tree::ParseTreeListener *listener) 
     parserListener->exitTokFloat(this);
 }
 
+
+antlrcpp::Any ErlangParser::TokFloatContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitTokFloat(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 ErlangParser::TokFloatContext* ErlangParser::tokFloat() {
   TokFloatContext *_localctx = _tracker.createInstance<TokFloatContext>(_ctx, getState());
   enterRule(_localctx, 8, ErlangParser::RuleTokFloat);
@@ -350,6 +391,14 @@ void ErlangParser::TokIntegerContext::exitRule(tree::ParseTreeListener *listener
   auto parserListener = dynamic_cast<ErlangListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitTokInteger(this);
+}
+
+
+antlrcpp::Any ErlangParser::TokIntegerContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitTokInteger(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 ErlangParser::TokIntegerContext* ErlangParser::tokInteger() {
@@ -401,6 +450,14 @@ void ErlangParser::TokCharContext::exitRule(tree::ParseTreeListener *listener) {
     parserListener->exitTokChar(this);
 }
 
+
+antlrcpp::Any ErlangParser::TokCharContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitTokChar(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 ErlangParser::TokCharContext* ErlangParser::tokChar() {
   TokCharContext *_localctx = _tracker.createInstance<TokCharContext>(_ctx, getState());
   enterRule(_localctx, 12, ErlangParser::RuleTokChar);
@@ -448,6 +505,14 @@ void ErlangParser::TokStringContext::exitRule(tree::ParseTreeListener *listener)
   auto parserListener = dynamic_cast<ErlangListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitTokString(this);
+}
+
+
+antlrcpp::Any ErlangParser::TokStringContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitTokString(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 ErlangParser::TokStringContext* ErlangParser::tokString() {
@@ -525,6 +590,14 @@ void ErlangParser::AttributeContext::exitRule(tree::ParseTreeListener *listener)
   auto parserListener = dynamic_cast<ErlangListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitAttribute(this);
+}
+
+
+antlrcpp::Any ErlangParser::AttributeContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitAttribute(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 ErlangParser::AttributeContext* ErlangParser::attribute() {
@@ -635,6 +708,14 @@ void ErlangParser::TypeSpecContext::exitRule(tree::ParseTreeListener *listener) 
     parserListener->exitTypeSpec(this);
 }
 
+
+antlrcpp::Any ErlangParser::TypeSpecContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitTypeSpec(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 ErlangParser::TypeSpecContext* ErlangParser::typeSpec() {
   TypeSpecContext *_localctx = _tracker.createInstance<TypeSpecContext>(_ctx, getState());
   enterRule(_localctx, 18, ErlangParser::RuleTypeSpec);
@@ -727,6 +808,14 @@ void ErlangParser::SpecFunContext::exitRule(tree::ParseTreeListener *listener) {
   auto parserListener = dynamic_cast<ErlangListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitSpecFun(this);
+}
+
+
+antlrcpp::Any ErlangParser::SpecFunContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitSpecFun(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 ErlangParser::SpecFunContext* ErlangParser::specFun() {
@@ -843,6 +932,14 @@ void ErlangParser::TypedAttrValContext::exitRule(tree::ParseTreeListener *listen
     parserListener->exitTypedAttrVal(this);
 }
 
+
+antlrcpp::Any ErlangParser::TypedAttrValContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitTypedAttrVal(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 ErlangParser::TypedAttrValContext* ErlangParser::typedAttrVal() {
   TypedAttrValContext *_localctx = _tracker.createInstance<TypedAttrValContext>(_ctx, getState());
   enterRule(_localctx, 22, ErlangParser::RuleTypedAttrVal);
@@ -923,6 +1020,14 @@ void ErlangParser::TypedRecordFieldsContext::exitRule(tree::ParseTreeListener *l
     parserListener->exitTypedRecordFields(this);
 }
 
+
+antlrcpp::Any ErlangParser::TypedRecordFieldsContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitTypedRecordFields(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 ErlangParser::TypedRecordFieldsContext* ErlangParser::typedRecordFields() {
   TypedRecordFieldsContext *_localctx = _tracker.createInstance<TypedRecordFieldsContext>(_ctx, getState());
   enterRule(_localctx, 24, ErlangParser::RuleTypedRecordFields);
@@ -990,6 +1095,14 @@ void ErlangParser::TypedExprsContext::exitRule(tree::ParseTreeListener *listener
   auto parserListener = dynamic_cast<ErlangListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitTypedExprs(this);
+}
+
+
+antlrcpp::Any ErlangParser::TypedExprsContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitTypedExprs(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 ErlangParser::TypedExprsContext* ErlangParser::typedExprs() {
@@ -1090,6 +1203,14 @@ void ErlangParser::TypedExprContext::exitRule(tree::ParseTreeListener *listener)
     parserListener->exitTypedExpr(this);
 }
 
+
+antlrcpp::Any ErlangParser::TypedExprContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitTypedExpr(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 ErlangParser::TypedExprContext* ErlangParser::typedExpr() {
   TypedExprContext *_localctx = _tracker.createInstance<TypedExprContext>(_ctx, getState());
   enterRule(_localctx, 28, ErlangParser::RuleTypedExpr);
@@ -1153,6 +1274,14 @@ void ErlangParser::TypeSigsContext::exitRule(tree::ParseTreeListener *listener) 
   auto parserListener = dynamic_cast<ErlangListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitTypeSigs(this);
+}
+
+
+antlrcpp::Any ErlangParser::TypeSigsContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitTypeSigs(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 ErlangParser::TypeSigsContext* ErlangParser::typeSigs() {
@@ -1225,6 +1354,14 @@ void ErlangParser::TypeSigContext::exitRule(tree::ParseTreeListener *listener) {
     parserListener->exitTypeSig(this);
 }
 
+
+antlrcpp::Any ErlangParser::TypeSigContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitTypeSig(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 ErlangParser::TypeSigContext* ErlangParser::typeSig() {
   TypeSigContext *_localctx = _tracker.createInstance<TypeSigContext>(_ctx, getState());
   enterRule(_localctx, 32, ErlangParser::RuleTypeSig);
@@ -1295,6 +1432,14 @@ void ErlangParser::TypeGuardsContext::exitRule(tree::ParseTreeListener *listener
   auto parserListener = dynamic_cast<ErlangListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitTypeGuards(this);
+}
+
+
+antlrcpp::Any ErlangParser::TypeGuardsContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitTypeGuards(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 ErlangParser::TypeGuardsContext* ErlangParser::typeGuards() {
@@ -1381,6 +1526,14 @@ void ErlangParser::TypeGuardContext::exitRule(tree::ParseTreeListener *listener)
   auto parserListener = dynamic_cast<ErlangListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitTypeGuard(this);
+}
+
+
+antlrcpp::Any ErlangParser::TypeGuardContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitTypeGuard(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 ErlangParser::TypeGuardContext* ErlangParser::typeGuard() {
@@ -1471,6 +1624,14 @@ void ErlangParser::TopTypesContext::exitRule(tree::ParseTreeListener *listener) 
     parserListener->exitTopTypes(this);
 }
 
+
+antlrcpp::Any ErlangParser::TopTypesContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitTopTypes(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 ErlangParser::TopTypesContext* ErlangParser::topTypes() {
   TopTypesContext *_localctx = _tracker.createInstance<TopTypesContext>(_ctx, getState());
   enterRule(_localctx, 38, ErlangParser::RuleTopTypes);
@@ -1539,6 +1700,14 @@ void ErlangParser::TopTypeContext::exitRule(tree::ParseTreeListener *listener) {
   auto parserListener = dynamic_cast<ErlangListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitTopType(this);
+}
+
+
+antlrcpp::Any ErlangParser::TopTypeContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitTopType(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 ErlangParser::TopTypeContext* ErlangParser::topType() {
@@ -1611,6 +1780,14 @@ void ErlangParser::TopType100Context::exitRule(tree::ParseTreeListener *listener
     parserListener->exitTopType100(this);
 }
 
+
+antlrcpp::Any ErlangParser::TopType100Context::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitTopType100(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 ErlangParser::TopType100Context* ErlangParser::topType100() {
   TopType100Context *_localctx = _tracker.createInstance<TopType100Context>(_ctx, getState());
   enterRule(_localctx, 42, ErlangParser::RuleTopType100);
@@ -1679,6 +1856,14 @@ void ErlangParser::Type200Context::exitRule(tree::ParseTreeListener *listener) {
     parserListener->exitType200(this);
 }
 
+
+antlrcpp::Any ErlangParser::Type200Context::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitType200(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 ErlangParser::Type200Context* ErlangParser::type200() {
   Type200Context *_localctx = _tracker.createInstance<Type200Context>(_ctx, getState());
   enterRule(_localctx, 44, ErlangParser::RuleType200);
@@ -1745,6 +1930,14 @@ void ErlangParser::Type300Context::exitRule(tree::ParseTreeListener *listener) {
   auto parserListener = dynamic_cast<ErlangListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitType300(this);
+}
+
+
+antlrcpp::Any ErlangParser::Type300Context::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitType300(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 
@@ -1838,6 +2031,14 @@ void ErlangParser::Type400Context::exitRule(tree::ParseTreeListener *listener) {
 }
 
 
+antlrcpp::Any ErlangParser::Type400Context::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitType400(this);
+  else
+    return visitor->visitChildren(this);
+}
+
+
 ErlangParser::Type400Context* ErlangParser::type400() {
    return type400(0);
 }
@@ -1921,6 +2122,14 @@ void ErlangParser::Type500Context::exitRule(tree::ParseTreeListener *listener) {
   auto parserListener = dynamic_cast<ErlangListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitType500(this);
+}
+
+
+antlrcpp::Any ErlangParser::Type500Context::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitType500(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 ErlangParser::Type500Context* ErlangParser::type500() {
@@ -2059,6 +2268,14 @@ void ErlangParser::TypeContext::exitRule(tree::ParseTreeListener *listener) {
   auto parserListener = dynamic_cast<ErlangListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitType(this);
+}
+
+
+antlrcpp::Any ErlangParser::TypeContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitType(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 ErlangParser::TypeContext* ErlangParser::type() {
@@ -2333,6 +2550,14 @@ void ErlangParser::FunType100Context::exitRule(tree::ParseTreeListener *listener
     parserListener->exitFunType100(this);
 }
 
+
+antlrcpp::Any ErlangParser::FunType100Context::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitFunType100(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 ErlangParser::FunType100Context* ErlangParser::funType100() {
   FunType100Context *_localctx = _tracker.createInstance<FunType100Context>(_ctx, getState());
   enterRule(_localctx, 54, ErlangParser::RuleFunType100);
@@ -2419,6 +2644,14 @@ void ErlangParser::FunTypeContext::exitRule(tree::ParseTreeListener *listener) {
   auto parserListener = dynamic_cast<ErlangListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitFunType(this);
+}
+
+
+antlrcpp::Any ErlangParser::FunTypeContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitFunType(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 ErlangParser::FunTypeContext* ErlangParser::funType() {
@@ -2510,6 +2743,14 @@ void ErlangParser::FieldTypesContext::exitRule(tree::ParseTreeListener *listener
     parserListener->exitFieldTypes(this);
 }
 
+
+antlrcpp::Any ErlangParser::FieldTypesContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitFieldTypes(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 ErlangParser::FieldTypesContext* ErlangParser::fieldTypes() {
   FieldTypesContext *_localctx = _tracker.createInstance<FieldTypesContext>(_ctx, getState());
   enterRule(_localctx, 58, ErlangParser::RuleFieldTypes);
@@ -2580,6 +2821,14 @@ void ErlangParser::FieldTypeContext::exitRule(tree::ParseTreeListener *listener)
     parserListener->exitFieldType(this);
 }
 
+
+antlrcpp::Any ErlangParser::FieldTypeContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitFieldType(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 ErlangParser::FieldTypeContext* ErlangParser::fieldType() {
   FieldTypeContext *_localctx = _tracker.createInstance<FieldTypeContext>(_ctx, getState());
   enterRule(_localctx, 60, ErlangParser::RuleFieldType);
@@ -2647,6 +2896,14 @@ void ErlangParser::BinaryTypeContext::exitRule(tree::ParseTreeListener *listener
   auto parserListener = dynamic_cast<ErlangListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitBinaryType(this);
+}
+
+
+antlrcpp::Any ErlangParser::BinaryTypeContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitBinaryType(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 ErlangParser::BinaryTypeContext* ErlangParser::binaryType() {
@@ -2753,6 +3010,14 @@ void ErlangParser::BinBaseTypeContext::exitRule(tree::ParseTreeListener *listene
     parserListener->exitBinBaseType(this);
 }
 
+
+antlrcpp::Any ErlangParser::BinBaseTypeContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitBinBaseType(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 ErlangParser::BinBaseTypeContext* ErlangParser::binBaseType() {
   BinBaseTypeContext *_localctx = _tracker.createInstance<BinBaseTypeContext>(_ctx, getState());
   enterRule(_localctx, 64, ErlangParser::RuleBinBaseType);
@@ -2820,6 +3085,14 @@ void ErlangParser::BinUnitTypeContext::exitRule(tree::ParseTreeListener *listene
   auto parserListener = dynamic_cast<ErlangListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitBinUnitType(this);
+}
+
+
+antlrcpp::Any ErlangParser::BinUnitTypeContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitBinUnitType(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 ErlangParser::BinUnitTypeContext* ErlangParser::binUnitType() {
@@ -2893,6 +3166,14 @@ void ErlangParser::AttrValContext::exitRule(tree::ParseTreeListener *listener) {
   auto parserListener = dynamic_cast<ErlangListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitAttrVal(this);
+}
+
+
+antlrcpp::Any ErlangParser::AttrValContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitAttrVal(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 ErlangParser::AttrValContext* ErlangParser::attrVal() {
@@ -3001,6 +3282,14 @@ void ErlangParser::FunctionContext::exitRule(tree::ParseTreeListener *listener) 
     parserListener->exitFunction(this);
 }
 
+
+antlrcpp::Any ErlangParser::FunctionContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitFunction(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 ErlangParser::FunctionContext* ErlangParser::function() {
   FunctionContext *_localctx = _tracker.createInstance<FunctionContext>(_ctx, getState());
   enterRule(_localctx, 70, ErlangParser::RuleFunction);
@@ -3075,6 +3364,14 @@ void ErlangParser::FunctionClauseContext::exitRule(tree::ParseTreeListener *list
     parserListener->exitFunctionClause(this);
 }
 
+
+antlrcpp::Any ErlangParser::FunctionClauseContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitFunctionClause(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 ErlangParser::FunctionClauseContext* ErlangParser::functionClause() {
   FunctionClauseContext *_localctx = _tracker.createInstance<FunctionClauseContext>(_ctx, getState());
   enterRule(_localctx, 72, ErlangParser::RuleFunctionClause);
@@ -3130,6 +3427,14 @@ void ErlangParser::ClauseArgsContext::exitRule(tree::ParseTreeListener *listener
     parserListener->exitClauseArgs(this);
 }
 
+
+antlrcpp::Any ErlangParser::ClauseArgsContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitClauseArgs(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 ErlangParser::ClauseArgsContext* ErlangParser::clauseArgs() {
   ClauseArgsContext *_localctx = _tracker.createInstance<ClauseArgsContext>(_ctx, getState());
   enterRule(_localctx, 74, ErlangParser::RuleClauseArgs);
@@ -3181,6 +3486,14 @@ void ErlangParser::ClauseGuardContext::exitRule(tree::ParseTreeListener *listene
   auto parserListener = dynamic_cast<ErlangListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitClauseGuard(this);
+}
+
+
+antlrcpp::Any ErlangParser::ClauseGuardContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitClauseGuard(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 ErlangParser::ClauseGuardContext* ErlangParser::clauseGuard() {
@@ -3245,6 +3558,14 @@ void ErlangParser::ClauseBodyContext::exitRule(tree::ParseTreeListener *listener
     parserListener->exitClauseBody(this);
 }
 
+
+antlrcpp::Any ErlangParser::ClauseBodyContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitClauseBody(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 ErlangParser::ClauseBodyContext* ErlangParser::clauseBody() {
   ClauseBodyContext *_localctx = _tracker.createInstance<ClauseBodyContext>(_ctx, getState());
   enterRule(_localctx, 78, ErlangParser::RuleClauseBody);
@@ -3302,6 +3623,14 @@ void ErlangParser::ExpressionContext::exitRule(tree::ParseTreeListener *listener
   auto parserListener = dynamic_cast<ErlangListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitExpression(this);
+}
+
+
+antlrcpp::Any ErlangParser::ExpressionContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitExpression(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 ErlangParser::ExpressionContext* ErlangParser::expression() {
@@ -3412,6 +3741,14 @@ void ErlangParser::MatchExprContext::exitRule(tree::ParseTreeListener *listener)
     parserListener->exitMatchExpr(this);
 }
 
+
+antlrcpp::Any ErlangParser::MatchExprContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitMatchExpr(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 ErlangParser::MatchExprContext* ErlangParser::matchExpr() {
   MatchExprContext *_localctx = _tracker.createInstance<MatchExprContext>(_ctx, getState());
   enterRule(_localctx, 82, ErlangParser::RuleMatchExpr);
@@ -3497,6 +3834,14 @@ void ErlangParser::OrelseExprContext::exitRule(tree::ParseTreeListener *listener
     parserListener->exitOrelseExpr(this);
 }
 
+
+antlrcpp::Any ErlangParser::OrelseExprContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitOrelseExpr(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 ErlangParser::OrelseExprContext* ErlangParser::orelseExpr() {
   OrelseExprContext *_localctx = _tracker.createInstance<OrelseExprContext>(_ctx, getState());
   enterRule(_localctx, 84, ErlangParser::RuleOrelseExpr);
@@ -3571,6 +3916,14 @@ void ErlangParser::AndalsoExprContext::exitRule(tree::ParseTreeListener *listene
     parserListener->exitAndalsoExpr(this);
 }
 
+
+antlrcpp::Any ErlangParser::AndalsoExprContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitAndalsoExpr(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 ErlangParser::AndalsoExprContext* ErlangParser::andalsoExpr() {
   AndalsoExprContext *_localctx = _tracker.createInstance<AndalsoExprContext>(_ctx, getState());
   enterRule(_localctx, 86, ErlangParser::RuleAndalsoExpr);
@@ -3639,6 +3992,14 @@ void ErlangParser::CompareExprContext::exitRule(tree::ParseTreeListener *listene
   auto parserListener = dynamic_cast<ErlangListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitCompareExpr(this);
+}
+
+
+antlrcpp::Any ErlangParser::CompareExprContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitCompareExpr(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 ErlangParser::CompareExprContext* ErlangParser::compareExpr() {
@@ -3721,6 +4082,14 @@ void ErlangParser::ListExprContext::exitRule(tree::ParseTreeListener *listener) 
     parserListener->exitListExpr(this);
 }
 
+
+antlrcpp::Any ErlangParser::ListExprContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitListExpr(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 ErlangParser::ListExprContext* ErlangParser::listExpr() {
   ListExprContext *_localctx = _tracker.createInstance<ListExprContext>(_ctx, getState());
   enterRule(_localctx, 90, ErlangParser::RuleListExpr);
@@ -3795,6 +4164,14 @@ void ErlangParser::AddExprContext::exitRule(tree::ParseTreeListener *listener) {
   auto parserListener = dynamic_cast<ErlangListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitAddExpr(this);
+}
+
+
+antlrcpp::Any ErlangParser::AddExprContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitAddExpr(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 ErlangParser::AddExprContext* ErlangParser::addExpr() {
@@ -3879,6 +4256,14 @@ void ErlangParser::MultExprContext::exitRule(tree::ParseTreeListener *listener) 
     parserListener->exitMultExpr(this);
 }
 
+
+antlrcpp::Any ErlangParser::MultExprContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitMultExpr(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 ErlangParser::MultExprContext* ErlangParser::multExpr() {
   MultExprContext *_localctx = _tracker.createInstance<MultExprContext>(_ctx, getState());
   enterRule(_localctx, 94, ErlangParser::RuleMultExpr);
@@ -3951,6 +4336,14 @@ void ErlangParser::UnaryExprContext::exitRule(tree::ParseTreeListener *listener)
     parserListener->exitUnaryExpr(this);
 }
 
+
+antlrcpp::Any ErlangParser::UnaryExprContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitUnaryExpr(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 ErlangParser::UnaryExprContext* ErlangParser::unaryExpr() {
   UnaryExprContext *_localctx = _tracker.createInstance<UnaryExprContext>(_ctx, getState());
   enterRule(_localctx, 96, ErlangParser::RuleUnaryExpr);
@@ -4019,6 +4412,14 @@ void ErlangParser::Expr700Context::exitRule(tree::ParseTreeListener *listener) {
   auto parserListener = dynamic_cast<ErlangListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitExpr700(this);
+}
+
+
+antlrcpp::Any ErlangParser::Expr700Context::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitExpr700(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 ErlangParser::Expr700Context* ErlangParser::expr700() {
@@ -4098,6 +4499,14 @@ void ErlangParser::ColonExprContext::exitRule(tree::ParseTreeListener *listener)
   auto parserListener = dynamic_cast<ErlangListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitColonExpr(this);
+}
+
+
+antlrcpp::Any ErlangParser::ColonExprContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitColonExpr(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 ErlangParser::ColonExprContext* ErlangParser::colonExpr() {
@@ -4226,6 +4635,14 @@ void ErlangParser::ExprMaxContext::exitRule(tree::ParseTreeListener *listener) {
   auto parserListener = dynamic_cast<ErlangListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitExprMax(this);
+}
+
+
+antlrcpp::Any ErlangParser::ExprMaxContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitExprMax(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 ErlangParser::ExprMaxContext* ErlangParser::exprMax() {
@@ -4396,6 +4813,14 @@ void ErlangParser::ListContext::exitRule(tree::ParseTreeListener *listener) {
     parserListener->exitList(this);
 }
 
+
+antlrcpp::Any ErlangParser::ListContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitList(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 ErlangParser::ListContext* ErlangParser::list() {
   ListContext *_localctx = _tracker.createInstance<ListContext>(_ctx, getState());
   enterRule(_localctx, 104, ErlangParser::RuleList);
@@ -4480,6 +4905,14 @@ void ErlangParser::TailContext::exitRule(tree::ParseTreeListener *listener) {
   auto parserListener = dynamic_cast<ErlangListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitTail(this);
+}
+
+
+antlrcpp::Any ErlangParser::TailContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitTail(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 ErlangParser::TailContext* ErlangParser::tail() {
@@ -4571,6 +5004,14 @@ void ErlangParser::BinaryContext::exitRule(tree::ParseTreeListener *listener) {
     parserListener->exitBinary(this);
 }
 
+
+antlrcpp::Any ErlangParser::BinaryContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitBinary(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 ErlangParser::BinaryContext* ErlangParser::binary() {
   BinaryContext *_localctx = _tracker.createInstance<BinaryContext>(_ctx, getState());
   enterRule(_localctx, 108, ErlangParser::RuleBinary);
@@ -4653,6 +5094,14 @@ void ErlangParser::BinElementsContext::exitRule(tree::ParseTreeListener *listene
     parserListener->exitBinElements(this);
 }
 
+
+antlrcpp::Any ErlangParser::BinElementsContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitBinElements(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 ErlangParser::BinElementsContext* ErlangParser::binElements() {
   BinElementsContext *_localctx = _tracker.createInstance<BinElementsContext>(_ctx, getState());
   enterRule(_localctx, 110, ErlangParser::RuleBinElements);
@@ -4723,6 +5172,14 @@ void ErlangParser::BinElementContext::exitRule(tree::ParseTreeListener *listener
     parserListener->exitBinElement(this);
 }
 
+
+antlrcpp::Any ErlangParser::BinElementContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitBinElement(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 ErlangParser::BinElementContext* ErlangParser::binElement() {
   BinElementContext *_localctx = _tracker.createInstance<BinElementContext>(_ctx, getState());
   enterRule(_localctx, 112, ErlangParser::RuleBinElement);
@@ -4778,6 +5235,14 @@ void ErlangParser::BitExprContext::exitRule(tree::ParseTreeListener *listener) {
   auto parserListener = dynamic_cast<ErlangListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitBitExpr(this);
+}
+
+
+antlrcpp::Any ErlangParser::BitExprContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitBitExpr(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 ErlangParser::BitExprContext* ErlangParser::bitExpr() {
@@ -4846,6 +5311,14 @@ void ErlangParser::OptBitSizeExprContext::exitRule(tree::ParseTreeListener *list
     parserListener->exitOptBitSizeExpr(this);
 }
 
+
+antlrcpp::Any ErlangParser::OptBitSizeExprContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitOptBitSizeExpr(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 ErlangParser::OptBitSizeExprContext* ErlangParser::optBitSizeExpr() {
   OptBitSizeExprContext *_localctx = _tracker.createInstance<OptBitSizeExprContext>(_ctx, getState());
   enterRule(_localctx, 116, ErlangParser::RuleOptBitSizeExpr);
@@ -4906,6 +5379,14 @@ void ErlangParser::OptBitTypeListContext::exitRule(tree::ParseTreeListener *list
   auto parserListener = dynamic_cast<ErlangListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitOptBitTypeList(this);
+}
+
+
+antlrcpp::Any ErlangParser::OptBitTypeListContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitOptBitTypeList(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 ErlangParser::OptBitTypeListContext* ErlangParser::optBitTypeList() {
@@ -4978,6 +5459,14 @@ void ErlangParser::BitTypeListContext::exitRule(tree::ParseTreeListener *listene
     parserListener->exitBitTypeList(this);
 }
 
+
+antlrcpp::Any ErlangParser::BitTypeListContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitBitTypeList(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 ErlangParser::BitTypeListContext* ErlangParser::bitTypeList() {
   BitTypeListContext *_localctx = _tracker.createInstance<BitTypeListContext>(_ctx, getState());
   enterRule(_localctx, 120, ErlangParser::RuleBitTypeList);
@@ -5048,6 +5537,14 @@ void ErlangParser::BitTypeContext::exitRule(tree::ParseTreeListener *listener) {
     parserListener->exitBitType(this);
 }
 
+
+antlrcpp::Any ErlangParser::BitTypeContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitBitType(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 ErlangParser::BitTypeContext* ErlangParser::bitType() {
   BitTypeContext *_localctx = _tracker.createInstance<BitTypeContext>(_ctx, getState());
   enterRule(_localctx, 122, ErlangParser::RuleBitType);
@@ -5106,6 +5603,14 @@ void ErlangParser::BitSizeExprContext::exitRule(tree::ParseTreeListener *listene
   auto parserListener = dynamic_cast<ErlangListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitBitSizeExpr(this);
+}
+
+
+antlrcpp::Any ErlangParser::BitSizeExprContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitBitSizeExpr(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 ErlangParser::BitSizeExprContext* ErlangParser::bitSizeExpr() {
@@ -5171,6 +5676,14 @@ void ErlangParser::ListComprehensionContext::exitRule(tree::ParseTreeListener *l
   auto parserListener = dynamic_cast<ErlangListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitListComprehension(this);
+}
+
+
+antlrcpp::Any ErlangParser::ListComprehensionContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitListComprehension(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 ErlangParser::ListComprehensionContext* ErlangParser::listComprehension() {
@@ -5246,6 +5759,14 @@ void ErlangParser::BinaryComprehensionContext::exitRule(tree::ParseTreeListener 
     parserListener->exitBinaryComprehension(this);
 }
 
+
+antlrcpp::Any ErlangParser::BinaryComprehensionContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitBinaryComprehension(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 ErlangParser::BinaryComprehensionContext* ErlangParser::binaryComprehension() {
   BinaryComprehensionContext *_localctx = _tracker.createInstance<BinaryComprehensionContext>(_ctx, getState());
   enterRule(_localctx, 128, ErlangParser::RuleBinaryComprehension);
@@ -5313,6 +5834,14 @@ void ErlangParser::LcExprsContext::exitRule(tree::ParseTreeListener *listener) {
   auto parserListener = dynamic_cast<ErlangListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitLcExprs(this);
+}
+
+
+antlrcpp::Any ErlangParser::LcExprsContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitLcExprs(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 ErlangParser::LcExprsContext* ErlangParser::lcExprs() {
@@ -5391,6 +5920,14 @@ void ErlangParser::LcExprContext::exitRule(tree::ParseTreeListener *listener) {
   auto parserListener = dynamic_cast<ErlangListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitLcExpr(this);
+}
+
+
+antlrcpp::Any ErlangParser::LcExprContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitLcExpr(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 ErlangParser::LcExprContext* ErlangParser::lcExpr() {
@@ -5478,6 +6015,14 @@ void ErlangParser::TupleContext::exitRule(tree::ParseTreeListener *listener) {
   auto parserListener = dynamic_cast<ErlangListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitTuple(this);
+}
+
+
+antlrcpp::Any ErlangParser::TupleContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitTuple(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 ErlangParser::TupleContext* ErlangParser::tuple() {
@@ -5584,6 +6129,14 @@ void ErlangParser::RecordExprContext::exitRule(tree::ParseTreeListener *listener
   auto parserListener = dynamic_cast<ErlangListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitRecordExpr(this);
+}
+
+
+antlrcpp::Any ErlangParser::RecordExprContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitRecordExpr(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 
@@ -5742,6 +6295,14 @@ void ErlangParser::RecordTupleContext::exitRule(tree::ParseTreeListener *listene
     parserListener->exitRecordTuple(this);
 }
 
+
+antlrcpp::Any ErlangParser::RecordTupleContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitRecordTuple(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 ErlangParser::RecordTupleContext* ErlangParser::recordTuple() {
   RecordTupleContext *_localctx = _tracker.createInstance<RecordTupleContext>(_ctx, getState());
   enterRule(_localctx, 138, ErlangParser::RuleRecordTuple);
@@ -5814,6 +6375,14 @@ void ErlangParser::RecordFieldsContext::exitRule(tree::ParseTreeListener *listen
   auto parserListener = dynamic_cast<ErlangListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitRecordFields(this);
+}
+
+
+antlrcpp::Any ErlangParser::RecordFieldsContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitRecordFields(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 ErlangParser::RecordFieldsContext* ErlangParser::recordFields() {
@@ -5890,6 +6459,14 @@ void ErlangParser::RecordFieldContext::exitRule(tree::ParseTreeListener *listene
     parserListener->exitRecordField(this);
 }
 
+
+antlrcpp::Any ErlangParser::RecordFieldContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitRecordField(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 ErlangParser::RecordFieldContext* ErlangParser::recordField() {
   RecordFieldContext *_localctx = _tracker.createInstance<RecordFieldContext>(_ctx, getState());
   enterRule(_localctx, 142, ErlangParser::RuleRecordField);
@@ -5963,6 +6540,14 @@ void ErlangParser::FunctionCallContext::exitRule(tree::ParseTreeListener *listen
     parserListener->exitFunctionCall(this);
 }
 
+
+antlrcpp::Any ErlangParser::FunctionCallContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitFunctionCall(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 ErlangParser::FunctionCallContext* ErlangParser::functionCall() {
   FunctionCallContext *_localctx = _tracker.createInstance<FunctionCallContext>(_ctx, getState());
   enterRule(_localctx, 144, ErlangParser::RuleFunctionCall);
@@ -6020,6 +6605,14 @@ void ErlangParser::IfExprContext::exitRule(tree::ParseTreeListener *listener) {
   auto parserListener = dynamic_cast<ErlangListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitIfExpr(this);
+}
+
+
+antlrcpp::Any ErlangParser::IfExprContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitIfExpr(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 ErlangParser::IfExprContext* ErlangParser::ifExpr() {
@@ -6085,6 +6678,14 @@ void ErlangParser::IfClausesContext::exitRule(tree::ParseTreeListener *listener)
   auto parserListener = dynamic_cast<ErlangListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitIfClauses(this);
+}
+
+
+antlrcpp::Any ErlangParser::IfClausesContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitIfClauses(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 ErlangParser::IfClausesContext* ErlangParser::ifClauses() {
@@ -6153,6 +6754,14 @@ void ErlangParser::IfClauseContext::exitRule(tree::ParseTreeListener *listener) 
     parserListener->exitIfClause(this);
 }
 
+
+antlrcpp::Any ErlangParser::IfClauseContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitIfClause(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 ErlangParser::IfClauseContext* ErlangParser::ifClause() {
   IfClauseContext *_localctx = _tracker.createInstance<IfClauseContext>(_ctx, getState());
   enterRule(_localctx, 150, ErlangParser::RuleIfClause);
@@ -6218,6 +6827,14 @@ void ErlangParser::CaseExprContext::exitRule(tree::ParseTreeListener *listener) 
   auto parserListener = dynamic_cast<ErlangListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitCaseExpr(this);
+}
+
+
+antlrcpp::Any ErlangParser::CaseExprContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitCaseExpr(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 ErlangParser::CaseExprContext* ErlangParser::caseExpr() {
@@ -6289,6 +6906,14 @@ void ErlangParser::CrClausesContext::exitRule(tree::ParseTreeListener *listener)
     parserListener->exitCrClauses(this);
 }
 
+
+antlrcpp::Any ErlangParser::CrClausesContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitCrClauses(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 ErlangParser::CrClausesContext* ErlangParser::crClauses() {
   CrClausesContext *_localctx = _tracker.createInstance<CrClausesContext>(_ctx, getState());
   enterRule(_localctx, 154, ErlangParser::RuleCrClauses);
@@ -6357,6 +6982,14 @@ void ErlangParser::CrClauseContext::exitRule(tree::ParseTreeListener *listener) 
   auto parserListener = dynamic_cast<ErlangListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitCrClause(this);
+}
+
+
+antlrcpp::Any ErlangParser::CrClauseContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitCrClause(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 ErlangParser::CrClauseContext* ErlangParser::crClause() {
@@ -6430,6 +7063,14 @@ void ErlangParser::ReceiveExprContext::exitRule(tree::ParseTreeListener *listene
   auto parserListener = dynamic_cast<ErlangListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitReceiveExpr(this);
+}
+
+
+antlrcpp::Any ErlangParser::ReceiveExprContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitReceiveExpr(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 ErlangParser::ReceiveExprContext* ErlangParser::receiveExpr() {
@@ -6561,6 +7202,14 @@ void ErlangParser::FunExprContext::exitRule(tree::ParseTreeListener *listener) {
     parserListener->exitFunExpr(this);
 }
 
+
+antlrcpp::Any ErlangParser::FunExprContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitFunExpr(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 ErlangParser::FunExprContext* ErlangParser::funExpr() {
   FunExprContext *_localctx = _tracker.createInstance<FunExprContext>(_ctx, getState());
   enterRule(_localctx, 160, ErlangParser::RuleFunExpr);
@@ -6656,6 +7305,14 @@ void ErlangParser::AtomOrVarContext::exitRule(tree::ParseTreeListener *listener)
     parserListener->exitAtomOrVar(this);
 }
 
+
+antlrcpp::Any ErlangParser::AtomOrVarContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitAtomOrVar(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 ErlangParser::AtomOrVarContext* ErlangParser::atomOrVar() {
   AtomOrVarContext *_localctx = _tracker.createInstance<AtomOrVarContext>(_ctx, getState());
   enterRule(_localctx, 162, ErlangParser::RuleAtomOrVar);
@@ -6724,6 +7381,14 @@ void ErlangParser::IntegerOrVarContext::exitRule(tree::ParseTreeListener *listen
   auto parserListener = dynamic_cast<ErlangListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitIntegerOrVar(this);
+}
+
+
+antlrcpp::Any ErlangParser::IntegerOrVarContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitIntegerOrVar(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 ErlangParser::IntegerOrVarContext* ErlangParser::integerOrVar() {
@@ -6804,6 +7469,14 @@ void ErlangParser::FunClausesContext::exitRule(tree::ParseTreeListener *listener
     parserListener->exitFunClauses(this);
 }
 
+
+antlrcpp::Any ErlangParser::FunClausesContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitFunClauses(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 ErlangParser::FunClausesContext* ErlangParser::funClauses() {
   FunClausesContext *_localctx = _tracker.createInstance<FunClausesContext>(_ctx, getState());
   enterRule(_localctx, 166, ErlangParser::RuleFunClauses);
@@ -6874,6 +7547,14 @@ void ErlangParser::FunClauseContext::exitRule(tree::ParseTreeListener *listener)
     parserListener->exitFunClause(this);
 }
 
+
+antlrcpp::Any ErlangParser::FunClauseContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitFunClause(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 ErlangParser::FunClauseContext* ErlangParser::funClause() {
   FunClauseContext *_localctx = _tracker.createInstance<FunClauseContext>(_ctx, getState());
   enterRule(_localctx, 168, ErlangParser::RuleFunClause);
@@ -6941,6 +7622,14 @@ void ErlangParser::TryExprContext::exitRule(tree::ParseTreeListener *listener) {
   auto parserListener = dynamic_cast<ErlangListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitTryExpr(this);
+}
+
+
+antlrcpp::Any ErlangParser::TryExprContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitTryExpr(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 ErlangParser::TryExprContext* ErlangParser::tryExpr() {
@@ -7021,6 +7710,14 @@ void ErlangParser::TryCatchContext::exitRule(tree::ParseTreeListener *listener) 
   auto parserListener = dynamic_cast<ErlangListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitTryCatch(this);
+}
+
+
+antlrcpp::Any ErlangParser::TryCatchContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitTryCatch(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 ErlangParser::TryCatchContext* ErlangParser::tryCatch() {
@@ -7122,6 +7819,14 @@ void ErlangParser::TryClausesContext::exitRule(tree::ParseTreeListener *listener
     parserListener->exitTryClauses(this);
 }
 
+
+antlrcpp::Any ErlangParser::TryClausesContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitTryClauses(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 ErlangParser::TryClausesContext* ErlangParser::tryClauses() {
   TryClausesContext *_localctx = _tracker.createInstance<TryClausesContext>(_ctx, getState());
   enterRule(_localctx, 174, ErlangParser::RuleTryClauses);
@@ -7200,6 +7905,14 @@ void ErlangParser::TryClauseContext::exitRule(tree::ParseTreeListener *listener)
     parserListener->exitTryClause(this);
 }
 
+
+antlrcpp::Any ErlangParser::TryClauseContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitTryClause(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 ErlangParser::TryClauseContext* ErlangParser::tryClause() {
   TryClauseContext *_localctx = _tracker.createInstance<TryClauseContext>(_ctx, getState());
   enterRule(_localctx, 176, ErlangParser::RuleTryClause);
@@ -7272,6 +7985,14 @@ void ErlangParser::ArgumentListContext::exitRule(tree::ParseTreeListener *listen
   auto parserListener = dynamic_cast<ErlangListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitArgumentList(this);
+}
+
+
+antlrcpp::Any ErlangParser::ArgumentListContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitArgumentList(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 ErlangParser::ArgumentListContext* ErlangParser::argumentList() {
@@ -7368,6 +8089,14 @@ void ErlangParser::CommaSeparatedExprsContext::exitRule(tree::ParseTreeListener 
     parserListener->exitCommaSeparatedExprs(this);
 }
 
+
+antlrcpp::Any ErlangParser::CommaSeparatedExprsContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitCommaSeparatedExprs(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 ErlangParser::CommaSeparatedExprsContext* ErlangParser::commaSeparatedExprs() {
   CommaSeparatedExprsContext *_localctx = _tracker.createInstance<CommaSeparatedExprsContext>(_ctx, getState());
   enterRule(_localctx, 180, ErlangParser::RuleCommaSeparatedExprs);
@@ -7440,6 +8169,14 @@ void ErlangParser::GuardContext::exitRule(tree::ParseTreeListener *listener) {
   auto parserListener = dynamic_cast<ErlangListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitGuard(this);
+}
+
+
+antlrcpp::Any ErlangParser::GuardContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitGuard(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 ErlangParser::GuardContext* ErlangParser::guard() {
@@ -7522,6 +8259,14 @@ void ErlangParser::LiteralContext::exitRule(tree::ParseTreeListener *listener) {
   auto parserListener = dynamic_cast<ErlangListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitLiteral(this);
+}
+
+
+antlrcpp::Any ErlangParser::LiteralContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitLiteral(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 ErlangParser::LiteralContext* ErlangParser::literal() {
@@ -7632,6 +8377,14 @@ void ErlangParser::UnaryOpContext::exitRule(tree::ParseTreeListener *listener) {
     parserListener->exitUnaryOp(this);
 }
 
+
+antlrcpp::Any ErlangParser::UnaryOpContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitUnaryOp(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 ErlangParser::UnaryOpContext* ErlangParser::unaryOp() {
   UnaryOpContext *_localctx = _tracker.createInstance<UnaryOpContext>(_ctx, getState());
   enterRule(_localctx, 186, ErlangParser::RuleUnaryOp);
@@ -7711,6 +8464,14 @@ void ErlangParser::MultOpContext::exitRule(tree::ParseTreeListener *listener) {
   auto parserListener = dynamic_cast<ErlangListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitMultOp(this);
+}
+
+
+antlrcpp::Any ErlangParser::MultOpContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitMultOp(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 ErlangParser::MultOpContext* ErlangParser::multOp() {
@@ -7804,6 +8565,14 @@ void ErlangParser::AddOpContext::exitRule(tree::ParseTreeListener *listener) {
     parserListener->exitAddOp(this);
 }
 
+
+antlrcpp::Any ErlangParser::AddOpContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitAddOp(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 ErlangParser::AddOpContext* ErlangParser::addOp() {
   AddOpContext *_localctx = _tracker.createInstance<AddOpContext>(_ctx, getState());
   enterRule(_localctx, 190, ErlangParser::RuleAddOp);
@@ -7871,6 +8640,14 @@ void ErlangParser::ListOpContext::exitRule(tree::ParseTreeListener *listener) {
   auto parserListener = dynamic_cast<ErlangListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitListOp(this);
+}
+
+
+antlrcpp::Any ErlangParser::ListOpContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitListOp(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 ErlangParser::ListOpContext* ErlangParser::listOp() {
@@ -7958,6 +8735,14 @@ void ErlangParser::CompareOpContext::exitRule(tree::ParseTreeListener *listener)
   auto parserListener = dynamic_cast<ErlangListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitCompareOp(this);
+}
+
+
+antlrcpp::Any ErlangParser::CompareOpContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ErlangVisitor*>(visitor))
+    return parserVisitor->visitCompareOp(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 ErlangParser::CompareOpContext* ErlangParser::compareOp() {

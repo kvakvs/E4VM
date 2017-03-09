@@ -2,57 +2,6 @@
 
 namespace erl {
 
-class ParseTreeVisitor: public antlr4::tree::ParseTreeVisitor {
-public:
-  std::unique_ptr<ast::INode> ast_tree_;
-  ParseTreeVisitor() {}
-
-  virtual antlrcpp::Any visit(antlr4::tree::ParseTree *tree) override {
-    if (tree->children.size() == 0) {
-      auto term = dynamic_cast<antlr4::tree::TerminalNode*>(tree);
-      return visitTerminal(term);
-    }
-    return visitChildren(tree);
-  }
-
-  virtual antlrcpp::Any visitChildren(antlr4::tree::ParseTree *node) override {
-    for(auto c: node->children) {
-      visit(c);
-    }
-    return antlrcpp::Any();
-  }
-
-  virtual antlrcpp::Any visitTerminal(antlr4::tree::TerminalNode *node) override {
-    if (not node) {
-      printf("NULL (non terminal node with no children)\n");
-      return antlrcpp::Any();
-    }
-
-    auto sym = node->getSymbol();
-    auto node_str = node->getText();
-    printf("TERM %s [%zu]\n", node_str.c_str(), sym->getType());
-    switch (sym->getType()) {
-      case ErlangParser::TokAtom: {
-        ast_node(new ast::Atom());
-      } break;
-      default:
-        printf("Unhandled token type %zu\n", sym->getType());
-    }
-    return antlrcpp::Any();
-  }
-  virtual antlrcpp::Any visitErrorNode(antlr4::tree::ErrorNode *node) override {
-    return antlrcpp::Any();
-  }
-
-  void ast_node(ast::INode* n) {
-    if (not ast_tree_) {
-      ast_tree_.reset(n);
-    } else {
-      ast_tree_->add_child(n);
-    }
-  }
-};
-
 bool Compiler::process(const char* filename) {
   filename_ = filename;
   antlr4::ANTLRFileStream f_stream(filename);
@@ -77,9 +26,9 @@ bool Compiler::process(const char* filename) {
 
 //  std::cout << parse_tree_->toStringTree(parser_.get()) << std::endl;
 
-  ParseTreeVisitor ptv;
-  ptv.visit(parse_tree_);
-  ast_tree_ = std::move(ptv.ast_tree_);
+  ast::ASTBuilderVisitor ast_b;
+  ast_b.visit(parse_tree_);
+  ast_tree_ = std::move(ast_b.tree_);
   return true;
 }
 
