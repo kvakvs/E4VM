@@ -33,47 +33,67 @@ form : ( attribute | function ) TokDot ;
 
 /// Tokens
 
-TokMinus:       '-' ;
-TokPlus:        '+' ;
-TokSlash:       '/' ;
-TokStar:        '*' ;
-
+TokAfter:       'after' ;
+TokAnd:         'and' ;
+TokAndalso:     'andalso' ;
+TokBand:        'band' ;
 TokBang:        '!' ;
 TokBar:         '|' ;
 TokBarBar:      '||' ;
+TokBegin:       'begin' ;
 TokBinaryClose: '>>' ;
 TokBinaryOpen:  '<<' ;
+TokBnot:        'bnot' ;
+TokBor:         'bor' ;
+TokBsl:         'bsl' ;
+TokBsr:         'bsr' ;
+TokBxor:        'bxor' ;
+TokCase:        'case' ;
+TokCatch:       'catch' ;
 TokColon:       ':' ;
 TokComma:       ',' ;
 TokCurlyClose:  '}' ;
 TokCurlyOpen:   '{' ;
+TokDiv:         'div' ;
 TokDoubleColon: '::' ;
 TokDoubleDot:   '..' ;
+TokDoubleEq:    '==' ;
+TokDoubleMinus: '--' ;
+TokDoublePlus:  '++' ;
 TokEllipsis:    '...' ;
+TokEnd:         'end' ;
 TokEq:          '=' ;
+TokFun:         'fun' ;
+TokGreater:     '>' ;
+TokGreaterEq:   '>=' ;
 TokHash:        '#' ;
+TokIf:          'if' ;
 TokLArrow:      '<-' ;
-TokLDoubleArrow: '<=' ;
+TokLDoubleArrow:'<=' ;
+TokLess:        '<' ;
+TokLessEq:      '=<' ;
+TokMinus:       '-' ;
+TokNot:         'not' ;
+TokNotEq:       '/=' ;
+TokOf:          'of' ;
+TokOr:          'or' ;
+TokOrelse:      'orelse' ;
 TokParenClose:  ')' ;
 TokParenOpen:   '(' ;
+TokPlus:        '+' ;
 TokRArrow:      '->' ;
+TokReceive:     'receive' ;
+TokRem:         'rem' ;
 TokSemicolon:   ';' ;
+TokSlash:       '/' ;
 TokSquareClose: ']' ;
 TokSquareOpen:  '[' ;
-
-TokAfter:       'after' ;
-TokAndalso:     'andalso' ;
-TokBegin:       'begin' ;
-TokCase:        'case' ;
-TokCatch:       'catch' ;
-TokEnd:         'end' ;
-TokFun:         'fun' ;
-TokIf:          'if' ;
-TokOf:          'of' ;
-TokOrelse:      'orelse' ;
-TokReceive:     'receive' ;
+TokStar:        '*' ;
+TokStrictEq:    '=:=' ;
+TokStrictNeq:   '=/=' ;
 TokTry:         'try' ;
 TokWhen:        'when' ;
+TokXor:         'xor' ;
 
 tokAtom : TokAtom ;
 TokAtom : [a-z@][0-9a-zA-Z_@]*
@@ -124,18 +144,18 @@ specFun :                  tokAtom
         | tokAtom TokColon tokAtom TokSlash tokInteger TokDoubleColon
         ;
 
-typedAttrVal : catchExpr TokComma  typedRecordFields
-             | catchExpr TokDoubleColon topType
+typedAttrVal : expression TokComma  typedRecordFields
+             | expression TokDoubleColon topType
              ;
 
 typedRecordFields : TokCurlyOpen typedExprs TokCurlyClose ;
 
 typedExprs : typedExpr
            | typedExpr  TokComma typedExprs
-           | catchExpr  TokComma typedExprs
-           | typedExpr  TokComma      exprs ;
+           | expression  TokComma typedExprs
+           | typedExpr  TokComma      commaSeparatedExprs ;
 
-typedExpr : catchExpr TokDoubleColon topType ;
+typedExpr : expression TokDoubleColon topType ;
 
 typeSigs : typeSig (TokSemicolon typeSig)* ;
 
@@ -204,10 +224,10 @@ binUnitType : tokVar TokColon tokVar TokStar type ;
 
 /// Exprs
 
-attrVal :              catchExpr
-        | TokParenOpen catchExpr                TokParenClose
-        |              catchExpr TokComma exprs
-        | TokParenOpen catchExpr TokComma exprs TokParenClose ;
+attrVal :              expression
+        | TokParenOpen expression                              TokParenClose
+        |              expression TokComma commaSeparatedExprs
+        | TokParenOpen expression TokComma commaSeparatedExprs TokParenClose ;
 
 function : functionClause (TokSemicolon functionClause)* ;
 
@@ -218,66 +238,33 @@ clauseArgs : argumentList ;
 
 clauseGuard : (TokWhen guard)? ;
 
-clauseBody
-    : TokRArrow exprs ;
+clauseBody : TokRArrow commaSeparatedExprs ;
 
-catchExpr
-    : TokCatch catchExpr
-    | matchbangExpr
-    ;
+expression  : TokCatch expression | matchExpr ;
 
-matchbangExpr
-    : orelseExpr
-    | (TokEq | TokBang) orelseExpr
-    ;
-
-orelseExpr
-    : andalsoExpr
-    | TokOrelse andalsoExpr
-    ;
-
-andalsoExpr
-    : compareExpr
-    | TokAndalso compareExpr
-    ;
-
-compareExpr
-    : listExpr
-    | compareExpr compareOp listExpr
-    ;
-
-listExpr
-    : addExpr
-    | listExpr listOp addExpr
-    ;
-
-addExpr
-    : multExpr
-    | addExpr addOp multExpr
-    ;
-
-multExpr
-    : unaryExpr
-    | multExpr multOp unaryExpr ;
-
-unaryExpr : unaryOp? expr700 ;
-
-expr700 : functionCall
-        | recordExpr
-        | semicolonExpr ;
-
-semicolonExpr : exprMax (TokColon exprMax)? ;
+matchExpr   : orelseExpr    ((TokEq | TokBang) orelseExpr)* ;
+orelseExpr  : andalsoExpr   (TokOrelse andalsoExpr)* ;
+andalsoExpr : compareExpr   (TokAndalso compareExpr)* ;
+compareExpr : listExpr      (compareOp listExpr)? ;
+listExpr    : addExpr       (listOp addExpr)* ;
+addExpr     : multExpr      (addOp multExpr)* ;
+multExpr    : unaryExpr     (multOp unaryExpr)* ;
+unaryExpr   : unaryOp? expr700 ;
+expr700     : functionCall
+            | recordExpr
+            | colonExpr ;
+colonExpr   : exprMax (TokColon exprMax)? ;
 
 exprMax : tokVar
-        | atomic
+        | literal
         | list
         | binary
         | listComprehension
         | binaryComprehension
         | tuple
     //  | struct
-        | TokParenOpen catchExpr TokParenClose
-        | TokBegin exprs TokEnd
+        | TokParenOpen expression TokParenClose
+        | TokBegin commaSeparatedExprs TokEnd
         | ifExpr
         | caseExpr
         | receiveExpr
@@ -286,45 +273,45 @@ exprMax : tokVar
         ;
 
 list : TokSquareOpen                TokSquareClose
-     | TokSquareOpen catchExpr tail
+     | TokSquareOpen expression tail
      ;
 tail :                          TokSquareClose
-     | TokBar catchExpr         TokSquareClose
-     | TokComma catchExpr tail
+     | TokBar expression         TokSquareClose
+     | TokComma expression tail
      ;
 
 binary : TokBinaryOpen             TokBinaryClose
        | TokBinaryOpen binElements TokBinaryClose ;
 
-binElements : binElement (TokComma binElement)* ;
+binElements     : binElement (TokComma binElement)* ;
 
-binElement : bitExpr optBitSizeExpr optBitTypeList ;
+binElement      : bitExpr optBitSizeExpr optBitTypeList ;
 
-bitExpr : unaryOp? exprMax ;
+bitExpr         : unaryOp? exprMax ;
 
-optBitSizeExpr : (TokColon bitSizeExpr)? ;
+optBitSizeExpr  : (TokColon bitSizeExpr)? ;
 
-optBitTypeList : (TokSlash bitTypeList)? ;
+optBitTypeList  : (TokSlash bitTypeList)? ;
 
-bitTypeList : bitType (TokMinus bitType)* ;
+bitTypeList     : bitType (TokMinus bitType)* ;
 
-bitType : tokAtom (TokColon tokInteger)? ;
+bitType         : tokAtom (TokColon tokInteger)? ;
 
-bitSizeExpr : exprMax ;
+bitSizeExpr     : exprMax ;
 
 
-listComprehension : TokSquareOpen catchExpr TokBarBar lcExprs TokSquareClose ;
+listComprehension : TokSquareOpen expression TokBarBar lcExprs TokSquareClose ;
 
 binaryComprehension : TokBinaryOpen binary TokBarBar lcExprs TokBinaryClose ;
 
 lcExprs : lcExpr (TokComma lcExpr)* ;
 
-lcExpr : catchExpr
-       | catchExpr  TokLArrow       catchExpr
-       | binary     TokLDoubleArrow catchExpr
+lcExpr : expression
+       | expression  TokLArrow       expression
+       | binary      TokLDoubleArrow expression
        ;
 
-tuple : TokCurlyOpen exprs? TokCurlyClose ;
+tuple : TokCurlyOpen commaSeparatedExprs? TokCurlyClose ;
 
 
 /* struct : tokAtom tuple ; */
@@ -342,12 +329,12 @@ recordTuple : TokCurlyOpen recordFields? TokCurlyClose ;
 
 recordFields : recordField (TokComma recordField)* ;
 
-recordField : (tokVar | tokAtom) TokEq catchExpr ;
+recordField : (tokVar | tokAtom) TokEq expression ;
 
 
 /* N.B. This is called from expr700. */
 
-functionCall : semicolonExpr argumentList ;
+functionCall : colonExpr argumentList ;
 
 
 ifExpr : TokIf ifClauses TokEnd ;
@@ -357,16 +344,16 @@ ifClauses : ifClause (TokSemicolon ifClause)* ;
 ifClause : guard clauseBody ;
 
 
-caseExpr : TokCase catchExpr TokOf crClauses TokEnd ;
+caseExpr : TokCase expression TokOf crClauses TokEnd ;
 
 crClauses : crClause (TokSemicolon crClause)* ;
 
-crClause : catchExpr clauseGuard clauseBody ;
+crClause : expression clauseGuard clauseBody ;
 
 
-receiveExpr : TokReceive crClauses                               TokEnd
-            | TokReceive           TokAfter catchExpr clauseBody TokEnd
-            | TokReceive crClauses TokAfter catchExpr clauseBody TokEnd
+receiveExpr : TokReceive crClauses                                TokEnd
+            | TokReceive           TokAfter expression clauseBody TokEnd
+            | TokReceive crClauses TokAfter expression clauseBody TokEnd
             ;
 
 
@@ -385,44 +372,36 @@ funClauses : funClause (TokSemicolon funClause)* ;
 funClause : argumentList clauseGuard clauseBody ;
 
 
-tryExpr : TokTry exprs (TokOf crClauses)? tryCatch ;
+tryExpr : TokTry commaSeparatedExprs (TokOf crClauses)? tryCatch ;
 
-tryCatch : TokCatch tryClauses                TokEnd
-         | TokCatch tryClauses TokAfter exprs TokEnd
-         |                     TokAfter exprs TokEnd ;
+tryCatch : TokCatch tryClauses                              TokEnd
+         | TokCatch tryClauses TokAfter commaSeparatedExprs TokEnd
+         |                     TokAfter commaSeparatedExprs TokEnd ;
 
 tryClauses : tryClause (TokSemicolon tryClause)* ;
 
-tryClause : (atomOrVar TokColon)? catchExpr clauseGuard clauseBody ;
+tryClause : (atomOrVar TokColon)? expression clauseGuard clauseBody ;
 
 
 
-argumentList : TokParenOpen exprs? TokParenClose ;
+argumentList : TokParenOpen commaSeparatedExprs? TokParenClose ;
 
-exprs : catchExpr (TokComma catchExpr)* ;
+commaSeparatedExprs : expression (TokComma expression)* ;
 
-guard : exprs (TokSemicolon exprs)* ;
+guard : commaSeparatedExprs (TokSemicolon commaSeparatedExprs)* ;
 
-atomic : tokChar
-       | tokInteger
-       | tokFloat
-       | tokAtom
-       | (tokString)+
-       ;
-
-TokBnot:    'bnot' ;
-TokNot:     'not' ;
+literal : tokChar
+        | tokInteger
+        | tokFloat
+        | tokAtom
+        | (tokString)+
+        ;
 
 unaryOp : TokPlus
-         | TokMinus
-         | TokBnot
-         | TokNot
-         ;
-
-TokDiv:     'div' ;
-TokRem:     'rem' ;
-TokBand:    'band' ;
-TokAnd:     'and' ;
+        | TokMinus
+        | TokBnot
+        | TokNot
+        ;
 
 multOp : TokSlash
        | TokStar
@@ -431,13 +410,6 @@ multOp : TokSlash
        | TokBand
        | TokAnd
        ;
-
-TokBor:     'bor' ;
-TokBxor:    'bxor' ;
-TokBsl:     'bsl' ;
-TokBsr:     'bsr' ;
-TokOr:      'or' ;
-TokXor:     'xor' ;
 
 addOp : TokPlus
       | TokMinus
@@ -449,31 +421,19 @@ addOp : TokPlus
       | TokXor
       ;
 
-TokDoublePlus:   '++' ;
-TokDoubleMinus:  '--' ;
-
 listOp : TokDoublePlus
        | TokDoubleMinus
        ;
 
-TokDoubleEq:    '==' ;
-TokNotEq:       '/=' ;
-TokLessEq:      '=<' ;
-TokLess:        '<' ;
-TokGreaterEq:   '>=' ;
-TokGreater:     '>' ;
-TokStrictEq:    '=:=' ;
-TokStrictNeq:   '=/=' ;
-
 compareOp : TokDoubleEq
-       | TokNotEq
-       | TokLessEq
-       | TokLess
-       | TokGreaterEq
-       | TokGreater
-       | TokStrictEq
-       | TokStrictNeq
-       ;
+          | TokNotEq
+          | TokLessEq
+          | TokLess
+          | TokGreaterEq
+          | TokGreater
+          | TokStrictEq
+          | TokStrictNeq
+          ;
 
 //ruleClauses : ruleClause (TokSemicolon ruleClause)* ;
 //ruleClause : tokAtom clauseArgs clauseGuard ruleBody ;

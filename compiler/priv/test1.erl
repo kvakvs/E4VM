@@ -2,4 +2,5 @@
 -compile([export_all]).
 
 size({Size, _}) when is_integer(Size), Size >= 0 ->
-    Size.
+    X = 0,
+    Size + X.

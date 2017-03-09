@@ -134,11 +134,11 @@ public:
   virtual void enterClauseBody(ErlangParser::ClauseBodyContext *ctx) = 0;
   virtual void exitClauseBody(ErlangParser::ClauseBodyContext *ctx) = 0;
 
-  virtual void enterCatchExpr(ErlangParser::CatchExprContext *ctx) = 0;
-  virtual void exitCatchExpr(ErlangParser::CatchExprContext *ctx) = 0;
+  virtual void enterExpression(ErlangParser::ExpressionContext *ctx) = 0;
+  virtual void exitExpression(ErlangParser::ExpressionContext *ctx) = 0;
 
-  virtual void enterMatchbangExpr(ErlangParser::MatchbangExprContext *ctx) = 0;
-  virtual void exitMatchbangExpr(ErlangParser::MatchbangExprContext *ctx) = 0;
+  virtual void enterMatchExpr(ErlangParser::MatchExprContext *ctx) = 0;
+  virtual void exitMatchExpr(ErlangParser::MatchExprContext *ctx) = 0;
 
   virtual void enterOrelseExpr(ErlangParser::OrelseExprContext *ctx) = 0;
   virtual void exitOrelseExpr(ErlangParser::OrelseExprContext *ctx) = 0;
@@ -164,8 +164,8 @@ public:
   virtual void enterExpr700(ErlangParser::Expr700Context *ctx) = 0;
   virtual void exitExpr700(ErlangParser::Expr700Context *ctx) = 0;
 
-  virtual void enterSemicolonExpr(ErlangParser::SemicolonExprContext *ctx) = 0;
-  virtual void exitSemicolonExpr(ErlangParser::SemicolonExprContext *ctx) = 0;
+  virtual void enterColonExpr(ErlangParser::ColonExprContext *ctx) = 0;
+  virtual void exitColonExpr(ErlangParser::ColonExprContext *ctx) = 0;
 
   virtual void enterExprMax(ErlangParser::ExprMaxContext *ctx) = 0;
   virtual void exitExprMax(ErlangParser::ExprMaxContext *ctx) = 0;
@@ -284,14 +284,14 @@ public:
   virtual void enterArgumentList(ErlangParser::ArgumentListContext *ctx) = 0;
   virtual void exitArgumentList(ErlangParser::ArgumentListContext *ctx) = 0;
 
-  virtual void enterExprs(ErlangParser::ExprsContext *ctx) = 0;
-  virtual void exitExprs(ErlangParser::ExprsContext *ctx) = 0;
+  virtual void enterCommaSeparatedExprs(ErlangParser::CommaSeparatedExprsContext *ctx) = 0;
+  virtual void exitCommaSeparatedExprs(ErlangParser::CommaSeparatedExprsContext *ctx) = 0;
 
   virtual void enterGuard(ErlangParser::GuardContext *ctx) = 0;
   virtual void exitGuard(ErlangParser::GuardContext *ctx) = 0;
 
-  virtual void enterAtomic(ErlangParser::AtomicContext *ctx) = 0;
-  virtual void exitAtomic(ErlangParser::AtomicContext *ctx) = 0;
+  virtual void enterLiteral(ErlangParser::LiteralContext *ctx) = 0;
+  virtual void exitLiteral(ErlangParser::LiteralContext *ctx) = 0;
 
   virtual void enterUnaryOp(ErlangParser::UnaryOpContext *ctx) = 0;
   virtual void exitUnaryOp(ErlangParser::UnaryOpContext *ctx) = 0;

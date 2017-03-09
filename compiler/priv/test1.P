@@ -1,0 +1,12 @@
+-file("test1.erl", 1).
+
+-module(test1).
+
+-compile([export_all]).
+
+size({Size,_}) when is_integer(Size), Size >= 0 ->
+    X = 0,
+    Size + X.
+
+
+

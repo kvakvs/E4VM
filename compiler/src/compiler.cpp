@@ -9,7 +9,8 @@ public:
 
   virtual antlrcpp::Any visit(antlr4::tree::ParseTree *tree) override {
     if (tree->children.size() == 0) {
-      return visitTerminal((antlr4::tree::TerminalNode*)tree);
+      auto term = dynamic_cast<antlr4::tree::TerminalNode*>(tree);
+      return visitTerminal(term);
     }
     return visitChildren(tree);
   }
@@ -22,6 +23,11 @@ public:
   }
 
   virtual antlrcpp::Any visitTerminal(antlr4::tree::TerminalNode *node) override {
+    if (not node) {
+      printf("NULL (non terminal node with no children)\n");
+      return antlrcpp::Any();
+    }
+
     auto sym = node->getSymbol();
     auto node_str = node->getText();
     printf("TERM %s [%zu]\n", node_str.c_str(), sym->getType());
@@ -31,7 +37,6 @@ public:
       } break;
       default:
         printf("Unhandled token type %zu\n", sym->getType());
-//        ::exit(1);
     }
     return antlrcpp::Any();
   }

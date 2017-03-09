@@ -1,5 +1,6 @@
 MYCMD=./cmake-build-debug/compiler
 MYARGS=priv/gb_trees.P
+#MYARGS=priv/test1.P
 
 .PHONY: debug run
 
