@@ -48,7 +48,8 @@ public:
   }
 };
 
-void Compiler::process(const char* filename) {
+bool Compiler::process(const char* filename) {
+  filename_ = filename;
   antlr4::ANTLRFileStream f_stream(filename);
   lexer_ = std::make_unique<ErlangLexer1>(&f_stream);
 
@@ -60,13 +61,33 @@ void Compiler::process(const char* filename) {
   //  }
 
   parser_ = std::make_unique<ErlangParser>(token_stream_.get());
+  err_listener_ = std::make_unique<ErlangErrorListener>(this);
+  parser_->removeErrorListeners();
+  parser_->addErrorListener(err_listener_.get());
   parse_tree_ = parser_->forms();
+
+  if (is_error_) {
+    return false;
+  }
 
 //  std::cout << parse_tree_->toStringTree(parser_.get()) << std::endl;
 
   ParseTreeVisitor ptv;
   ptv.visit(parse_tree_);
   ast_tree_ = std::move(ptv.ast_tree_);
+  return true;
+}
+
+void ErlangErrorListener::syntaxError(antlr4::Recognizer* recognizer,
+                                      antlr4::Token* offendingSymbol,
+                                      size_t line, size_t charPositionInLine,
+                                      const std::string& msg,
+                                      std::exception_ptr e) {
+  std::cerr
+      << "ERR " << compiler_->get_filename() << " "
+      << line << ":" << charPositionInLine << " -> "
+      << msg << std::endl;
+  compiler_->set_error();
 }
 
 } // ns erl

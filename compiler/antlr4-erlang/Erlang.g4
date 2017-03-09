@@ -95,7 +95,7 @@ tokString : TokString ;
 TokString : '"' ( '\\' (~'\\'|'\\') | ~[\\"] )* '"' ;
 
 // antlr4 would not accept spec as an Atom otherwise.
-TokAttrName : TokMinus ('spec' | 'callback') ;
+TokAttrName : '-' ('spec' | 'callback') ;
 
 TokComment : '%' ~[\r\n]* '\r'? '\n' -> skip ;
 
@@ -364,7 +364,7 @@ crClauses : crClause (TokSemicolon crClause)* ;
 crClause : catchExpr clauseGuard clauseBody ;
 
 
-receiveExpr : TokReceive crClauses                              TokEnd
+receiveExpr : TokReceive crClauses                               TokEnd
             | TokReceive           TokAfter catchExpr clauseBody TokEnd
             | TokReceive crClauses TokAfter catchExpr clauseBody TokEnd
             ;

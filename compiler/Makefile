@@ -1,10 +1,14 @@
 MYCMD=./cmake-build-debug/compiler
-MYARGS=../e4compile/priv/test1.erl
+MYARGS=priv/gb_trees.P
 
 .PHONY: debug run
 
-run:
+run: compile
 	$(MYCMD) $(MYARGS)
 
-debug:
+debug: compile
 	gdb -r --args $(MYCMD) $(MYARGS)
+
+.PHONY: compile
+compile:
+	cd cmake-build-debug && $(MAKE) -j8
