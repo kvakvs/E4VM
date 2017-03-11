@@ -1,4 +1,5 @@
 #include "compiler.h"
+#include "ast_builder.h"
 
 namespace erl {
 
@@ -26,9 +27,10 @@ bool Compiler::process(const char* filename) {
 
 //  std::cout << parse_tree_->toStringTree(parser_.get()) << std::endl;
 
-  ast::ASTBuilderVisitor ast_b;
-  ast_b.visit(parse_tree_);
-  ast_tree_ = std::move(ast_b.tree_);
+//  erl::ASTBuilder ast_b;
+//  ast_b.visit(parse_tree_);
+//  ast_tree_ = std::move(ast_b.tree_);
+  ast_tree_ = erl::build_ast(parse_tree_);
   return true;
 }
 

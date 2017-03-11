@@ -44,7 +44,7 @@ private:
   std::unique_ptr<ErlangParser> parser_;
   std::unique_ptr<ErlangErrorListener> err_listener_;
   antlr4::tree::ParseTree* parse_tree_;
-  std::unique_ptr<ast::INode> ast_tree_;
+  ast::INode::Ptr ast_tree_;
 
   std::string filename_;
   bool is_error_ = false;

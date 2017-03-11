@@ -1,5 +1,8 @@
 project(antlr4-runtime CXX)
-add_definitions(-std=c++14 -g)
+add_definitions(
+    -std=c++14
+    -g -ggdb
+    )
 
 include_directories(
   ${PROJECT_SOURCE_DIR}/runtime/src

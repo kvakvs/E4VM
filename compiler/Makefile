@@ -13,3 +13,8 @@ debug: compile
 .PHONY: compile
 compile:
 	cd cmake-build-debug && $(MAKE) -j8
+
+.PHONY: valgrind
+valgrind: compile
+	valgrind --log-file=valgrind.log \
+		$(MYCMD) $(MYARGS)

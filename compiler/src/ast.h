@@ -1,33 +1,53 @@
 #pragma once
 
 #include <tree/ParseTreeVisitor.h>
-#include "antlr4/ErlangBaseVisitor.h"
+#include "antlr4/ErlangParser.h"
 
 namespace ast {
 
 class INode {
-  std::vector<INode*> children_;
 public:
-  void add_child(INode* n) {
-    children_.push_back(n);
+  using Ptr = std::shared_ptr<INode>;
+private:
+  std::vector<Ptr> children_;
+public:
+  virtual ~INode() {}
+
+  void add_child(INode::Ptr&& n) {
+    children_.push_back(std::move(n));
   }
 };
 
-class Atom: public INode {
+class Atom : public INode {
+public:
+  virtual ~Atom() {}
 };
 
-///-----------------------------------------------------------------------------
-
-class ASTBuilderVisitor: public ::ErlangBaseVisitor {
+class FunctionClause {
+  std::vector<INode::Ptr> args_;
 public:
-  using Super = ::ErlangBaseVisitor;
-  std::unique_ptr<INode> tree_;
+  void add_arg(INode::Ptr&& ast) {
+    args_.push_back(std::move(ast));
+  }
+};
 
-  virtual antlrcpp::Any
-  visitFunction(ErlangParser::FunctionContext *ctx) override;
-
+class Function : public INode {
 private:
-  void add_node(ast::INode* n);
+  std::string name_;
+  std::vector<std::unique_ptr<FunctionClause>> clauses_;
+public:
+  explicit Function(const std::string& name) : name_(name) {
+  }
+
+  virtual ~Function() {}
+
+  void add_clause(std::unique_ptr<FunctionClause>&& clause) {
+    clauses_.push_back(std::move(clause));
+  }
+
+  const std::string& get_name() const {
+    return name_;
+  }
 };
 
 }; // ns ast

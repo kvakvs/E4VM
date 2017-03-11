@@ -24,9 +24,10 @@ add_definitions(-fPIC -fvisibility-inlines-hidden -Wall -W
     -Wmissing-field-initializers -pedantic -Wno-long-long
     -Wcovered-switch-default -Wnon-virtual-dtor -Wdelete-non-virtual-dtor
     -Wstring-conversion -Werror=date-time
-    -std=c++14 -g
     -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS
     -D__STDC_LIMIT_MACROS
+    -std=c++14
+    -g -ggdb
     )
 #    -fno-rtti
 #    -fno-exceptions
@@ -56,7 +57,7 @@ set(SOURCE_FILES
     src/compiler.h
     src/main.cpp
     src/ast.cpp
-    )
+    src/ast_builder.h src/ast_builder.cpp)
 
 add_executable(compiler
     ${SOURCE_FILES}
