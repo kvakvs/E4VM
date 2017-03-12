@@ -1,5 +1,6 @@
 #include "compiler.h"
 #include "ast_builder.h"
+#include "codegen.h"
 
 namespace erl {
 
@@ -31,6 +32,11 @@ bool Compiler::process(const char* filename) {
 //  ast_b.visit(parse_tree_);
 //  ast_tree_ = std::move(ast_b.tree_);
   ast_tree_ = erl::build_ast(parse_tree_);
+
+  erl::Codegen cg;
+  cg.init_module_and_pass_manager("test1");
+  ast_tree_->codegen(cg);
+//  cg.process(ast_tree_);
   return true;
 }
 

@@ -57,7 +57,7 @@ set(SOURCE_FILES
     src/compiler.h
     src/main.cpp
     src/ast.cpp
-    src/ast_builder.h src/ast_builder.cpp)
+    src/ast_builder.h src/ast_builder.cpp src/codegen.h src/codegen.cpp)
 
 add_executable(compiler
     ${SOURCE_FILES}
@@ -99,6 +99,6 @@ set(MY_LLVM_LIBS
 
 # Link against LLVM libraries
 target_link_libraries(compiler
-#    ${MY_LLVM_LIBS}
+    ${MY_LLVM_LIBS}
     )
 target_link_libraries(compiler antlr4_static)

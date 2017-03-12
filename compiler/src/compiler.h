@@ -43,13 +43,16 @@ private:
   std::unique_ptr<antlr4::CommonTokenStream> token_stream_;
   std::unique_ptr<ErlangParser> parser_;
   std::unique_ptr<ErlangErrorListener> err_listener_;
-  antlr4::tree::ParseTree* parse_tree_;
+  antlr4::tree::ParseTree* parse_tree_ = nullptr;
   ast::INode::Ptr ast_tree_;
 
   std::string filename_;
   bool is_error_ = false;
 
 public:
+  Compiler() {
+  }
+
   bool process(const char *filename);
 
   const std::string& get_filename() const { return filename_; }
