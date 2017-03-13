@@ -57,7 +57,7 @@ set(SOURCE_FILES
     src/compiler.h
     src/main.cpp
     src/ast.cpp
-    src/ast_builder.h src/ast_builder.cpp src/codegen.h src/codegen.cpp src/compile_error.h)
+    src/ast_builder.h src/ast_builder.cpp src/codegen.h src/codegen.cpp src/compile_error.h src/naming.h src/naming.cpp)
 
 add_executable(compiler
     ${SOURCE_FILES}

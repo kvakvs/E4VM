@@ -1,6 +1,7 @@
 #include "codegen.h"
 #include "ast.h"
 #include "compile_error.h"
+#include "naming.h"
 
 //#include <llvm/IR/IRBuilder.h>
 //#include <llvm/IR/LegacyPassManager.h>
@@ -43,11 +44,30 @@ void Codegen::gen_function(ast::Function& ast_fn) {
   auto fun_type =
       llvm::FunctionType::get(llvm::Type::getDoubleTy(ctx_), arg_vec, false);
 
+  auto fn_name = naming::function_name(ast_fn.name(), ast_fn.arity());
+  llvm::outs() << "cg: Creating fun " << fn_name << "\n";
+
   auto fun = llvm::Function::Create(fun_type,
                                     llvm::Function::ExternalLinkage,
-                                    ast_fn.name(),
+                                    fn_name,
                                     mod_.get());
 
+  // Create a new basic block to start insertion
+  llvm::BasicBlock* bb = llvm::BasicBlock::Create(ctx_, fn_name, fun);
+  ir_builder_.SetInsertPoint(bb);
+  {
+    auto v1 = llvm::ConstantInt::get(ctx_, llvm::APInt(32, 123));
+    auto v2 = llvm::ConstantInt::get(ctx_, llvm::APInt(32, 456));
+    ir_builder_.CreateMul(v1, v2, "hello");
+  }
+
+  llvm::outs() << "<- Dumping fun " << fn_name << "\n";
+  for (auto& instr: *bb) {
+    llvm::outs() << instr << "\n";
+  }
+}
+
+void Codegen::print() {
 }
 
 } // ns erl

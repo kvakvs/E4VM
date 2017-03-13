@@ -35,16 +35,18 @@ bool Compiler::process(const char* filename) {
 
   erl::Codegen cg;
   cg.init_module_and_pass_manager("test1");
-  ast_tree_->codegen(cg);
-//  cg.process(ast_tree_);
+
+  if (ast_tree_) {
+    ast_tree_->codegen(cg);
+  }
   return true;
 }
 
-void ErlangErrorListener::syntaxError(antlr4::Recognizer* recognizer,
-                                      antlr4::Token* offendingSymbol,
+void ErlangErrorListener::syntaxError(antlr4::Recognizer* /*recognizer*/ ,
+                                      antlr4::Token* /*offendingSymbol*/ ,
                                       size_t line, size_t charPositionInLine,
                                       const std::string& msg,
-                                      std::exception_ptr e) {
+                                      std::exception_ptr /*e*/ ) {
   std::cerr
       << "ERR " << compiler_->get_filename() << " "
       << line << ":" << charPositionInLine << " -> "

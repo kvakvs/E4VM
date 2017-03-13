@@ -1,3 +1,4 @@
+#include <llvm/Support/raw_ostream.h>
 #include "ast_builder.h"
 
 namespace erl {
@@ -22,12 +23,12 @@ ASTBuilder::visitFunction(ErlangParser::FunctionContext* ctx) {
 
   auto ast_fn = new ast::Function(clause0->tokAtom()->getText());
   ast::INode::Ptr ast_fn_uptr(ast_fn);
-  printf("FUN %s\n", ast_fn->get_name().c_str());
+  llvm::outs() << "FUN " << ast_fn->get_name() << "\n";
 
   for (ErlangParser::FunctionClauseContext* clause: ctx->functionClause()) {
     ErlangParser::ClauseArgsContext* args = clause->clauseArgs();
     auto clause_name = clause->tokAtom()->getText();
-    printf("-- CLAUSE %s\n", clause_name.c_str());
+    llvm::outs() << "-- CLAUSE " << clause_name << "\n";
 
     auto ast_clause = std::make_unique<ast::FunctionClause>();
 
@@ -37,7 +38,7 @@ ASTBuilder::visitFunction(ErlangParser::FunctionContext* ctx) {
     if (arg_list1) {
       auto arg_list2 = arg_list1->expression();
       for (ErlangParser::ExpressionContext* arg: arg_list2) {
-        printf("  -- ARG %s\n", arg->getText().c_str());
+        llvm::outs() << "  -- ARG " << arg->getText() << "\n";
         ast_clause->add_arg(std::move(build_ast(arg)));
       }
     }

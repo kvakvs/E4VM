@@ -26,6 +26,7 @@ class Codegen {
   void init_module_and_pass_manager(const std::string& mod);
 
   void gen_function(ast::Function& ast_fn);
+  void print();
 };
 
 } // ns erl
