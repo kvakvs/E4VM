@@ -31,29 +31,36 @@ public:
 
 class FunctionClause {
   std::vector<INode::Ptr> args_;
+
 public:
   void add_arg(INode::Ptr&& ast) {
     args_.push_back(std::move(ast));
   }
 
   void codegen_clause(erl::Codegen& cg);
+  int arity() const {
+    return static_cast<int>(args_.size());
+  }
 };
 
 class Function : public INode {
 private:
   std::string name_;
+  int arity_ = -1;
   std::vector<std::unique_ptr<FunctionClause>> clauses_;
+
 public:
   explicit Function(const std::string& name) : name_(name) {
   }
 
   virtual ~Function() {}
 
+  int arity() const { return arity_; }
+  const std::string& name() const { return name_; }
+
   virtual void codegen(erl::Codegen& cg) override;
 
-  void add_clause(std::unique_ptr<FunctionClause>&& clause) {
-    clauses_.push_back(std::move(clause));
-  }
+  void add_clause(std::unique_ptr<FunctionClause>&& clause);
 
   const std::string& get_name() const {
     return name_;

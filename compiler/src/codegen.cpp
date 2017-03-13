@@ -1,5 +1,6 @@
 #include "codegen.h"
 #include "ast.h"
+#include "compile_error.h"
 
 //#include <llvm/IR/IRBuilder.h>
 //#include <llvm/IR/LegacyPassManager.h>
@@ -35,14 +36,18 @@ void Codegen::init_module_and_pass_manager(const std::string& mod) {
   fpm_->doInitialization();
 }
 
-void Codegen::gen_function(const std::string& name, int arity) {
-  std::vector<llvm::Type*> arg_vec(arity,
-                                   llvm::Type::getDoubleTy(cg.ctx_));
+void Codegen::gen_function(ast::Function& ast_fn) {
+  E4_ASSERT(ast_fn.arity() >= 0);
+  std::vector<llvm::Type*> arg_vec(static_cast<size_t>(ast_fn.arity()),
+                                   llvm::Type::getDoubleTy(ctx_));
   auto fun_type =
-      llvm::FunctionType::get(llvm::Type::getDoubleTy(cg.ctx_), arg_vec, false);
+      llvm::FunctionType::get(llvm::Type::getDoubleTy(ctx_), arg_vec, false);
 
-  auto fun = llvm::Function::Create(fun_type, llvm::Function::ExternalLinkage,
-                                    fun_name_, cg.mod_.get());
+  auto fun = llvm::Function::Create(fun_type,
+                                    llvm::Function::ExternalLinkage,
+                                    ast_fn.name(),
+                                    mod_.get());
+
 }
 
 } // ns erl

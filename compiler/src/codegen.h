@@ -4,7 +4,10 @@
 #include <llvm/IR/LegacyPassManager.h>
 #include <llvm/IR/Module.h>
 #include <llvm/IR/Value.h>
-#include "ast.h"
+
+namespace ast {
+  class Function;
+} // ns ast
 
 namespace erl {
 
@@ -22,7 +25,7 @@ class Codegen {
 
   void init_module_and_pass_manager(const std::string& mod);
 
-  void gen_function(const std::string& name, int arity);
+  void gen_function(ast::Function& ast_fn);
 };
 
 } // ns erl
