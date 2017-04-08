@@ -43,7 +43,7 @@ class Export {
 class Module {
  private:
   Term name_ = NON_VALUE;  // atom name
-  PODVector<uint8_t> code_;
+  PODVector<Instruction> code_;
   PODVector<Word> labels_;  // labels table TODO: merge with code maybe?
 
   PODVector<Term> literals_;

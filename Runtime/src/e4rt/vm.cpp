@@ -122,89 +122,30 @@ void VM::run() {
              // TODO: perform maintenance tasks, enter energy saving idle
   }
 
-  auto& context_ = proc->context_;
+//  auto& context_ = proc->context_;
+//fetch:
+//  auto pc0 = context_.pc_.get_index();
+//  uint8_t instr8 = context_.fetch();
+//  E4LOG2("[%x] %02x ", pc0, instr8.raw_);
 
-fetch:
-  auto pc0 = context_.pc_.get_index();
-  J1Opcode8 instr8 = context_.fetch();
-  E4LOG2("[%x] %02x ", pc0, instr8.raw_);
-
-  switch (instr8.unsigned_.instr_tag_) {
-    // A common instruction
-    case j1_instr_tag::JUMP_COND:
-      E4LOG("COND ");
-      if (context_.ds_.pop() != 0) {
-        context_.pc_.advance();  // skip second byte of the jump
-        break;
-      }
-    // FALL THROUGH
-    case j1_instr_tag::JUMP: {  // A common instruction
-      auto instr16 = context_.fetch(instr8);
-      E4LOG1("%02x ", instr16.raw_ >> 8);
-
-      auto offs = instr16.signed_.val_;
-      E4LOG2("JMP %s0x%x\n", offs < 0 ? "-" : "", std::abs(offs));
-      proc->jump_rel(offs);
-    } break;
-
-    case j1_instr_tag::GET_ELEMENT:
-      E4TODO("getel");
-    case j1_instr_tag::LD:
-      E4TODO("ld");
-    case j1_instr_tag::ST:
-      E4TODO("st");
-    case j1_instr_tag::ENTER:
-      E4TODO("enter");
-    case j1_instr_tag::LD_SMALL:
-      E4TODO("ldsmall");
-    case j1_instr_tag::ST_SMALL:
-      E4TODO("stsmall");
-
-    // A common instruction
-    case j1_instr_tag::LITERAL_SMALL_POS_INTEGER: {
-      // TODO: implement literal values longer than 15 bits signed
-      auto val = instr8.unsigned_.val_;
-      context_.ds_.push((Word)val);
-    } break;
-    case j1_instr_tag::LITERAL_INTEGER:
-      E4TODO("lit-int");
-    case j1_instr_tag::LITERAL_ATOM:
-      E4TODO("lit-atom");
-    case j1_instr_tag::LITERAL_ARBITRARY:
-      E4TODO("lit-arb");
-
-    case j1_instr_tag::SINGLE_BYTE:
-      E4TODO("1byte");
-
-    // A rare instruction (SWAPs, stray RETs etc)
-    case j1_instr_tag::ALU: {
-      auto instr16 = context_.fetch(instr8);
-      run_alu(instr16);
-    } break;
-
-    // A rare instruction (Forth call)
-    case j1_instr_tag::CALL: {
-      auto instr16 = context_.fetch(instr8);
-      context_.rs_.push(context_.pc_.get_index());
-      proc->jump_rel(instr16.signed_.val_);
-    } break;
-  }
-
-  goto fetch;
-}
-
-inline void VM::run_alu(J1Opcode16 instr) {}
-
-// static void print_atoms_helper(const void* k, const void* v, void* extra) {
-//    auto pk = static_cast<const Term*>(k);
-//    auto pv = static_cast<const CString*>(v);
-//    auto vm = static_cast<VM*>(extra);
-//    vm->print(*pk);
-//    ::printf(" => %s\n", pv->str());
-//}
+//  switch (instr8.unsigned_.instr_tag_) {
+//    // A common instruction
+//    case j1_instr_t::JUMP: {  // A common instruction
+//      auto instr16 = context_.fetch(instr8);
+//      E4LOG1("%02x ", instr16.raw_ >> 8);
 //
-// void VM::print_atoms() const {
-//    atoms_.visit_nodes(print_atoms_helper, const_cast<VM*>(this));
-//}
+//      auto offs = instr16.signed_.val_;
+//      E4LOG2("JMP %s0x%x\n", offs < 0 ? "-" : "", std::abs(offs));
+//      proc->jump_rel(offs);
+//    } break;
+//
+//    case j1_instr_t::GET_ELEMENT:
+//      E4TODO("getel");
+//    case j1_instr_t::ENTER:
+//      E4TODO("enter");
+//  }
+
+//  goto fetch;
+}
 
 }  // ns e4

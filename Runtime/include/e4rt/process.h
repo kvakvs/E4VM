@@ -6,6 +6,7 @@
 #pragma once
 
 #include "e4rt/bytecode.h"
+#include "e4rt/range_checker.h"
 #include "e4rt/term.h"
 #include "e4rt/vm.h"
 #include "e4std/complicated.h"
@@ -41,22 +42,6 @@ class Stack {
 
 constexpr Word INIT_PROCESS_HEAP = 64;  // first size for process heap (words)
 
-class RangeChecker {
-  const uint8_t* code_range_;
-  const uint8_t* code_range_end_;
-
- public:
-  explicit RangeChecker(const uint8_t* code_range,
-                        const uint8_t* code_range_end)
-    : code_range_(code_range), code_range_end_(code_range_end) {}
-  RangeChecker(const RangeChecker& other) = default;
-
-  bool in_range(const uint8_t* p) const {
-    return p >= code_range_ && p <= code_range_end_;
-  }
-  void assert_in_range(const uint8_t* p) const { E4ASSERT(in_range(p)); }
-};
-
 // VM runtime context which gets swapped into VM loop and out
 class RuntimeContext {
  public:
@@ -65,21 +50,13 @@ class RuntimeContext {
   Stack rs_;  // return stack
   RangeChecker range_checker_;
 
-  RuntimeContext(const RangeChecker& rc) : range_checker_(rc) {}
+  explicit RuntimeContext(const RangeChecker& rc) : range_checker_(rc) {}
 
-  J1Opcode8 fetch() {
-    auto byte = pc_.fetch();
+  Instruction fetch() {
+    auto instr = pc_.fetch();
     // TODO: check code end/code range?
     pc_.advance();
-    return J1Opcode8(byte);
-  }
-
-  // Joins first byte with next and gives you a 16-bit opcode
-  J1Opcode16 fetch(J1Opcode8 first) {
-    auto second = pc_.fetch();
-    // TODO: check code end/code range?
-    pc_.advance();
-    return J1Opcode16(first.raw_, second);
+    return instr;
   }
 };
 
@@ -102,11 +79,7 @@ class Process {
  public:
   Process() = delete;
 
-  explicit Process(VM& vm, Term pid)
-    : pid_(pid),
-      heap_(INIT_PROCESS_HEAP),
-      vm_(vm),
-      context_(vm.get_code_range_checker()) {}
+  explicit Process(VM& vm, Term pid);
 
   Term self() const { return pid_; }
 

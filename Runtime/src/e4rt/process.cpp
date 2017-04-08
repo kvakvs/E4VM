@@ -31,4 +31,10 @@ VoidResult Process::apply(const MFArgs& mfargs) {
   return VoidResult::success();
 }
 
+Process::Process(VM& vm, Term pid)
+    : pid_(pid),
+      heap_(INIT_PROCESS_HEAP),
+      vm_(vm),
+      context_(vm.get_code_range_checker()) {}
+
 }  // ns e4

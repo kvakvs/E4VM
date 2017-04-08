@@ -8,10 +8,11 @@
 #include "e4rt/atom_store.h"
 #include "e4rt/code_mgr.h"
 #include "e4rt/dist.h"
+#include "e4rt/range_checker.h"
 #include "e4rt/scheduler.h"
-
 #include "e4std/array.h"
 #include "e4std/string.h"
+#include "process.h"
 
 namespace e4 {
 
@@ -34,11 +35,15 @@ class VM {
  public:
   CodeManager modules_;
   Heap binary_heap_;
+  RangeChecker range_checker_;
 
-  explicit VM() : binary_heap_(1024) {}  //-V730
+  explicit VM()
+      : binary_heap_(1024), range_checker_(nullptr, nullptr)
+  {}  //-V730
 
   void run();
-  inline void run_alu(J1Opcode16 instr);
+
+  const RangeChecker& get_code_range_checker() { return range_checker_; }
 
   //
   // Atom storage stuff
