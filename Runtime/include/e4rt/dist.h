@@ -1,4 +1,5 @@
-// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// This is an open source non-commercial project. Dear PVS-Studio, please check
+// it.
 // PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 //
 
@@ -16,9 +17,9 @@ namespace e4 {
 
 // Erl dist node implementation
 class Node {
-public:
-    Term ml_sysname = NIL;
-    dist::Creation m_creation = dist::INTERNAL_CREATION;
+ public:
+  Term ml_sysname = NIL;
+  dist::Creation m_creation = dist::INTERNAL_CREATION;
 };
 
 #ifdef __clang__

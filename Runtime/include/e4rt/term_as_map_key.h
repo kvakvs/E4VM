@@ -1,4 +1,5 @@
-// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// This is an open source non-commercial project. Dear PVS-Studio, please check
+// it.
 // PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 //
 
@@ -12,14 +13,14 @@
 
 namespace e4std {
 
-template<>
+template <>
 inline bool compare_equal(const e4::Term a, const e4::Term b) {
-    return a.get_raw() == b.get_raw();
+  return a.get_raw() == b.get_raw();
 }
 
-template<>
+template <>
 inline bool compare_less(const e4::Term a, const e4::Term b) {
-    return a.get_raw() < b.get_raw();
+  return a.get_raw() < b.get_raw();
 }
 
-} // ns e4std
+}  // ns e4std

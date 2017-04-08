@@ -1,4 +1,5 @@
-// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// This is an open source non-commercial project. Dear PVS-Studio, please check
+// it.
 // PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 //
 
@@ -17,33 +18,33 @@ using DtorFun = void (*)(void* dst);
 // have to construct different types
 template <class Type>
 void destruct(Type* t) {
-    t->~Type();
+  t->~Type();
 }
 
 // Override this or use this as a function pointer in generic functions which
 // have to construct different types
 template <class Type>
 void construct_in(Type* t) {
-    *t = Type();
+  *t = Type();
 }
 
 // Override this for your beautiful key type
 template <class Type>
 bool compare_equal(Type a, Type b) {
-    return a == b;
+  return a == b;
 }
-template<>
+template <>
 bool compare_equal(const char* a, const char* b);
 
 // Override this for your beautiful key type
 template <class Type>
 bool compare_less(const Type a, const Type b) {
-    return a < b;
+  return a < b;
 }
-template<>
+template <>
 bool compare_less(const char* a, const char* b);
 
 // C style comparison function which returns -1 if a<b, 1 if a>b else 0
 using VoidpCompareFun = int (*)(const void* a, const void* b);
 
-} // ns e4std
+}  // ns e4std

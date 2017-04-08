@@ -1,4 +1,5 @@
-// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// This is an open source non-commercial project. Dear PVS-Studio, please check
+// it.
 // PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 //
 
@@ -16,15 +17,16 @@ namespace e4std {
 // std::runtime_error
 //
 class RuntimeError {
-private:
-    const char* err_ = nullptr;
-public:
-    explicit RuntimeError(const char* e) : err_(e) {}
+ private:
+  const char* err_ = nullptr;
 
-    RuntimeError(const RuntimeError&) = default;
-    virtual ~RuntimeError();
+ public:
+  explicit RuntimeError(const char* e) : err_(e) {}
 
-    virtual const char* what() const noexcept { return err_; }
+  RuntimeError(const RuntimeError&) = default;
+  virtual ~RuntimeError();
+
+  virtual const char* what() const noexcept { return err_; }
 };
 
-} // ns e4std
+}  // ns e4std

@@ -1,10 +1,9 @@
 //
-// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// This is an open source non-commercial project. Dear PVS-Studio, please check
+// it.
 // PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 //
 
 #include "e4rt/binary.h"
 
-namespace e4 {
-
-} // ns e4
+namespace e4 {}  // ns e4
