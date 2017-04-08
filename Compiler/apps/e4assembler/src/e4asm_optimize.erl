@@ -1,12 +1,12 @@
 %%% @doc Pre-binary pass Forth optimizations
 %%% @end
 
--module(j1c_optimize).
+-module(e4asm_optimize).
 
 %% API
 -export([optimize/2]).
 
--include_lib("j1c/include/j1.hrl").
+-include_lib("e4assembler/include/j1.hrl").
 
 optimize([], Acc) -> lists:flatten(lists:reverse(Acc));
 

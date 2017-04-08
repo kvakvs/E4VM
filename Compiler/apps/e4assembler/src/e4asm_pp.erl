@@ -1,19 +1,19 @@
 %%% @doc Forth Preprocessor.
 %%% Analyzes source, replaces literal groups of keywords with #j1lit etc
 %%% @end
--module(j1c_pp).
+-module(e4asm_pp).
 
 %% API
 -export([forth_preproc/2]).
 
--include_lib("e4c/include/forth.hrl").
--include_lib("j1c/include/j1.hrl").
+-include_lib("e4compiler/include/forth.hrl").
+-include_lib("e4assembler/include/j1.hrl").
 
 forth_preproc(ModuleName, SrcForth) ->
     Prog0 = #j1prog{mod = ModuleName},
 
     % Module name should always be #0
-    {Prog1, _} = j1c_prog:atom_index_or_create(
+    {Prog1, _} = e4asm_prog:atom_index_or_create(
         Prog0, atom_to_binary(ModuleName, utf8)),
 
     Preprocessed1 = parse_numbers(SrcForth, []),
@@ -28,25 +28,25 @@ preprocess(Prog = #j1prog{}, Acc, []) ->
       result => lists:flatten(lists:reverse(Acc))};
 
 preprocess(Prog0 = #j1prog{}, Acc, [?F_LIT_ATOM, A | Tail]) ->
-    #{p := Prog1, forth := Repr} = j1c_prog:lit_atom(Prog0, A),
+    #{p := Prog1, forth := Repr} = e4asm_prog:lit_atom(Prog0, A),
     preprocess(Prog1, [Repr | Acc], Tail);
 preprocess(Prog0 = #j1prog{}, Acc, [#k_atom{val = A} | Tail]) ->
-    #{p := Prog1, forth := Repr} = j1c_prog:lit_atom(Prog0, A),
+    #{p := Prog1, forth := Repr} = e4asm_prog:lit_atom(Prog0, A),
     preprocess(Prog1, [Repr | Acc], Tail);
 
 preprocess(Prog0 = #j1prog{},
            Acc,
            [?F_LIT_MFA, ?F_LIT_ATOM, M, ?F_LIT_ATOM, F, Arity | Tail]) ->
-    #{p := Prog1, forth := Repr} = j1c_prog:lit_mfa(Prog0, {M, F, Arity}),
+    #{p := Prog1, forth := Repr} = e4asm_prog:lit_mfa(Prog0, {M, F, Arity}),
     preprocess(Prog1, [Repr | Acc], Tail);
 preprocess(Prog0 = #j1prog{},
            Acc,
            [?F_LIT_FUNA, ?F_LIT_ATOM, Fn, Arity | Tail]) ->
-    #{p := Prog1, forth := Repr} = j1c_prog:lit_funarity(Prog0, {Fn, Arity}),
+    #{p := Prog1, forth := Repr} = e4asm_prog:lit_funarity(Prog0, {Fn, Arity}),
     preprocess(Prog1, [Repr | Acc], Tail);
 
 preprocess(Prog0 = #j1prog{}, Acc, [#k_literal{val = L} | Tail]) ->
-    #{p := Prog1, forth := Repr} = j1c_prog:lit_arbitrary(Prog0, L),
+    #{p := Prog1, forth := Repr} = e4asm_prog:lit_arbitrary(Prog0, L),
     preprocess(Prog1, [Repr | Acc], Tail);
 
 preprocess(Prog, Acc, [H | Tail]) ->

@@ -3,15 +3,15 @@
 %%% the caller (j1c_pass_link) is responsible for resolving addresses to offsets
 %%% and encoding them properly into a long or short jump.
 
--module(j1c_compile_bin).
+-module(e4asm_compile_bin).
 
 %% API
 -export([compile_segment/2]).
 
--include_lib("e4c/include/forth.hrl").
--include_lib("e4c/include/e4c.hrl").
--include_lib("j1c/include/j1.hrl").
--include_lib("j1c/include/j1bytecode.hrl").
+-include_lib("e4compiler/include/forth.hrl").
+-include_lib("e4compiler/include/e4c.hrl").
+-include_lib("e4assembler/include/j1.hrl").
+-include_lib("e4assembler/include/j1bytecode.hrl").
 
 -spec compile_segment(j1prog(), j1forth_code())
                      -> #{p => j1prog(), bin => list(binary())}.
@@ -25,7 +25,7 @@ compile_segment(Prog0 = #j1prog{pc = Pc0}, Input) ->
     Bin1 = lists:reverse(lists:flatten(Prog2#j1prog.output)),
 %%    Bin2 = j1c_optimize:optimize(Bin1, []),
 
-    Dis = j1c_disasm:disasm(Prog2, Pc0, iolist_to_binary(Bin1)),
+    Dis = e4asm_dis:disasm(Prog2, Pc0, iolist_to_binary(Bin1)),
     io:format("~s~n", [Dis]),
 
     #{ p => Prog2#j1prog{output = []}, bin => Bin1 }.
@@ -43,7 +43,7 @@ compile_many(Prog0, [OpList | Tail]) when is_list(OpList) ->
 
 %% LEAVE;RET. Single LEAVE is handled in compile_1 and produces an error
 compile_many(Prog0, [#j1leave{}, ?F_RET | Tail]) ->
-    Prog1 = emit(Prog0, j1c_bc:leave()),
+    Prog1 = emit(Prog0, e4asm_bytecode:leave()),
     compile_many(Prog1, Tail);
 
 compile_many(Prog0, [Word | Tail]) ->
@@ -60,47 +60,47 @@ compile_1(Prog0 = #j1prog{}, ?F_RET) ->
     emit_alu(Prog0, #j1alu{op = ?J1ALU_T, rpc = 1, ds = 2});
 
 compile_1(Prog0 = #j1prog{}, ?F_LIT_NIL) ->
-    emit(Prog0, j1c_bc:literal_nil());
+    emit(Prog0, e4asm_bytecode:literal_nil());
 
 %% Nothing else worked, look for the word in our dictionaries and base words,
 %% maybe it is a literal, too
 compile_1(Prog0 = #j1prog{}, Int) when is_integer(Int) ->
-    emit(Prog0, j1c_bc:literal_integer(Int));
+    emit(Prog0, e4asm_bytecode:literal_integer(Int));
 
 compile_1(Prog0, #j1comment{}) -> Prog0;
 
 compile_1(Prog0, #j1atom{id = AtomId}) ->
     %% TODO: Add bits to mark immediate atoms, ints etc or an arbitrary literal
-    emit(Prog0, j1c_bc:literal_atom(AtomId));
+    emit(Prog0, e4asm_bytecode:literal_atom(AtomId));
 
 compile_1(Prog0, #j1lit{id = LitId}) ->
-    emit(Prog0, j1c_bc:literal_arbitrary(LitId));
+    emit(Prog0, e4asm_bytecode:literal_arbitrary(LitId));
 
 compile_1(Prog0, #j1ld{index = Index}) ->
-    emit(Prog0, j1c_bc:load(Index));
+    emit(Prog0, e4asm_bytecode:load(Index));
 
 compile_1(Prog0, #j1st{index = Index}) ->
-    emit(Prog0, j1c_bc:store(Index));
+    emit(Prog0, e4asm_bytecode:store(Index));
 
 compile_1(Prog0, #j1getelement{index = Index}) ->
-    emit(Prog0, j1c_bc:get_element(Index));
+    emit(Prog0, e4asm_bytecode:get_element(Index));
 
 compile_1(Prog0, #j1enter{size = Size}) ->
-    emit(Prog0, j1c_bc:enter(Size));
+    emit(Prog0, e4asm_bytecode:enter(Size));
 
 %%compile_1(_Prog0, #j1leave{}) ->
 %%    ?COMPILE_ERROR("Stray LEAVE without RET following it");
 
 compile_1(Prog0, #j1erl_call{lit = _Lit}) ->
-    emit(Prog0, j1c_bc:erl_call());
+    emit(Prog0, e4asm_bytecode:erl_call());
 
 compile_1(Prog0, #j1erl_tailcall{lit = _Lit}) ->
-    emit(Prog0, j1c_bc:erl_tail_call());
+    emit(Prog0, e4asm_bytecode:erl_tail_call());
 
 compile_1(Prog0, #j1jump{condition = Cond, label = F}) ->
     Op = case Cond of
-             false  -> j1c_bc:jump_signed(F);
-             z      -> j1c_bc:jump_z_signed(F)
+             false  -> e4asm_bytecode:jump_signed(F);
+             z      -> e4asm_bytecode:jump_z_signed(F)
          end,
     emit(Prog0, Op);
 
@@ -139,7 +139,7 @@ prog_find_word(#j1prog{dict_nif = NifDict, dict = Dict},
 %% relative offsets or addresses and possibly the value bits are extended in
 %% a later pass.
 emit_call(Prog0 = #j1prog{}, Index) ->
-    emit(Prog0, j1c_bc:call_signed(Index)).
+    emit(Prog0, e4asm_bytecode:call_signed(Index)).
 
 %%emit(Prog0 = #j1bin{output=Out, pc=PC}, #j1patch{}=Patch) ->
 %%    Prog0#j1bin{output=[Patch | Out],
@@ -167,7 +167,7 @@ emit_alu(Prog = #j1prog{}, ALU = #j1alu{ds=-1}) ->
 emit_alu(Prog = #j1prog{}, ALU = #j1alu{rs=-1}) ->
     emit_alu(Prog, ALU#j1alu{rs=2});
 emit_alu(Prog = #j1prog{}, ALU = #j1alu{}) ->
-    emit(Prog, j1c_bc:alu(ALU)).
+    emit(Prog, e4asm_bytecode:alu(ALU)).
 
 %%%-----------------------------------------------------------------------------
 

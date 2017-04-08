@@ -1,12 +1,12 @@
 %%% @doc Value helpers
 
--module(j1c_helper).
+-module(e4asm_helper).
 
 %% API
 -export([is_value_known/2, is_in_the_scope/2]).
 
--include_lib("e4c/include/forth.hrl").
--include_lib("e4c/include/e4c.hrl").
+-include_lib("e4compiler/include/forth.hrl").
+-include_lib("e4compiler/include/e4c.hrl").
 
 %% @doc Consult with scope and find out if value contains only known parts
 %% such as bound variables and literals, or some dynamic parts such as calls

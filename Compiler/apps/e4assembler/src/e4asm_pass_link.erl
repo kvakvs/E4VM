@@ -11,21 +11,21 @@
 %%%     affected jumps and edit them too
 %%% @end
 
--module(j1c_pass_link).
+-module(e4asm_pass_link).
 
 %% API
 -export([link_pass/1]).
 
--include_lib("e4c/include/e4c.hrl").
--include_lib("j1c/include/j1.hrl").
--include_lib("j1c/include/j1bytecode.hrl").
+-include_lib("e4compiler/include/e4c.hrl").
+-include_lib("e4assembler/include/j1.hrl").
+-include_lib("e4assembler/include/j1bytecode.hrl").
 
 link_pass(#j1prog{output = Input} = Prog0) ->
 %%    e4c:debug_write_term("j1c_pass_link-0.txt", Input1),
 
     ?ASSERT(Prog0#j1prog.pc =:= 0, "PC must be zero"),
-    #{p := Prog1, bin := Input2}
-        = j1c_compile_bin:compile_segment(Prog0, Input),
+  #{p := Prog1, bin := Input2}
+  = e4asm_compile_bin:compile_segment(Prog0, Input),
 
 %%    Input1 = partition(Input, []),
 %%    %% For each item in partitioned input list, apply compile_segment to it

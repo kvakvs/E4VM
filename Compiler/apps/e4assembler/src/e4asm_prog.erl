@@ -1,6 +1,6 @@
 %%% @doc #j1prog manipulation and helpers
 %%% @end
--module(j1c_prog).
+-module(e4asm_prog).
 
 %% API
 -export([
@@ -12,8 +12,8 @@
       literal_index_or_create/2
 ]).
 
--include_lib("e4c/include/forth.hrl").
--include_lib("j1c/include/j1.hrl").
+-include_lib("e4compiler/include/forth.hrl").
+-include_lib("e4assembler/include/j1.hrl").
 
 %% @doc Looks up an atom in the atom table, returns its paired value or creates
 %% a new atom, assigns it next available index and returns it
@@ -49,7 +49,7 @@ literal_index_or_create(Prog0 = #j1prog{lit_id = LitId, literals = Literals},
     end.
 
 lit_atom(Prog0 = #j1prog{}, Word) when is_binary(Word) ->
-    {Prog1, AIndex} = j1c_prog:atom_index_or_create(Prog0, Word),
+  {Prog1, AIndex} = e4asm_prog:atom_index_or_create(Prog0, Word),
     #{ p => Prog1,
        forth => #j1atom{id = AIndex, debug = Word}
     }.
@@ -59,23 +59,23 @@ lit_atom(Prog0 = #j1prog{}, Word) when is_binary(Word) ->
 lit_mfa(Prog0 = #j1prog{}, {M, F, A1}) when is_integer(A1) ->
     M1 = eval(M),
     F1 = eval(F),
-    #{p := Prog1, lit_index := LIndex} =
-        j1c_prog:literal_index_or_create(Prog0, {?TAG_LIT_MFARITY, M1, F1, A1}),
+  #{p := Prog1, lit_index := LIndex} =
+  e4asm_prog:literal_index_or_create(Prog0, {?TAG_LIT_MFARITY, M1, F1, A1}),
     #{p => Prog1,
       forth => #j1lit{id = LIndex, debug = {?TAG_LIT_MFARITY, M, F, A1}}
     }.
 
 lit_funarity(Prog0 = #j1prog{}, {F, A1}) when is_integer(A1) ->
     F1 = eval(F),
-    #{p := Prog1, lit_index := LIndex} =
-        j1c_prog:literal_index_or_create(Prog0, {?TAG_LIT_FUNARITY, F1, A1}),
+  #{p := Prog1, lit_index := LIndex} =
+  e4asm_prog:literal_index_or_create(Prog0, {?TAG_LIT_FUNARITY, F1, A1}),
     #{p => Prog1,
       forth => #j1lit{id = LIndex, debug = {?TAG_LIT_FUNARITY, F, A1}}
     }.
 
 lit_arbitrary(Prog0 = #j1prog{}, Lit) ->
-    #{p := Prog1, lit_index := LIndex} =
-        j1c_prog:literal_index_or_create(Prog0, Lit),
+  #{p := Prog1, lit_index := LIndex} =
+  e4asm_prog:literal_index_or_create(Prog0, Lit),
     #{p => Prog1,
       forth => #j1lit{id = LIndex, debug = Lit}
     }.

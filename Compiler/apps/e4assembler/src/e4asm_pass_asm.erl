@@ -1,14 +1,14 @@
 %%% @doc J1-like forth to binary compiler adjusted for Erlang needs with
 %%% added types, literals etc.
 
--module(j1c_pass_forth).
+-module(e4asm_pass_asm).
 
 %% API
 -export([compile/2]).
 
--include_lib("e4c/include/forth.hrl").
--include_lib("e4c/include/e4c.hrl").
--include_lib("j1c/include/j1.hrl").
+-include_lib("e4compiler/include/forth.hrl").
+-include_lib("e4compiler/include/e4c.hrl").
+-include_lib("e4assembler/include/j1.hrl").
 
 compile(Prog0 = #j1prog{}, Preprocessed) ->
     Prog3 = process_words(Prog0, Preprocessed),
@@ -186,7 +186,7 @@ cond_update_label(Prog0 = #j1prog{}, _Offset) ->
 prog_add_export(Prog0 = #j1prog{exports = Expt},
                 Fun,
                 Arity) ->
-    {Prog1, _} = j1c_prog:atom_index_or_create(Prog0, Fun),
+    {Prog1, _} = e4asm_prog:atom_index_or_create(Prog0, Fun),
     Expt1 = [{Fun, Arity} | Expt],
     Prog1#j1prog{exports = Expt1}.
 
@@ -206,7 +206,7 @@ prog_add_word(Prog0, Word) when is_binary(Word) ->
 '_do_add_word'(Prog0 = #j1prog{dict = Dict}, Fun, Arity) ->
     {F, Prog1} = create_label(Prog0),
     Dict1 = orddict:store({Fun, Arity}, F, Dict),
-    {Prog2, _} = j1c_prog:atom_index_or_create(Prog1, Fun),
+    {Prog2, _} = e4asm_prog:atom_index_or_create(Prog1, Fun),
     Prog2#j1prog{dict = Dict1}.
 
 %% @doc Adds a NIF name to the dictionary, does not register any other data

@@ -1,7 +1,7 @@
 %%% @doc Bytecode abstraction layer
 %%% @end
 
--module(j1c_bc).
+-module(e4asm_bytecode).
 
 %% API
 -export([
@@ -24,9 +24,9 @@
       unsigned_value_fits/2
 ]).
 
--include_lib("e4c/include/e4c.hrl").
--include_lib("j1c/include/j1.hrl").
--include_lib("j1c/include/j1bytecode.hrl").
+-include_lib("e4compiler/include/e4c.hrl").
+-include_lib("e4assembler/include/j1.hrl").
+-include_lib("e4assembler/include/j1bytecode.hrl").
 
 signed_value_fits(Val, Bits) ->
     <<OutVal:Bits/signed-big>> = <<Val:Bits/signed-big>>,
@@ -62,7 +62,7 @@ literal_atom(Index)  -> lit(?J1LIT_ATOM, Index).
 literal_arbitrary(Lit) -> lit(?J1LIT_LITERAL, Lit).
 
 literal_integer(Int) ->
-    case j1c_bc:unsigned_value_fits(Int, ?J1INSTR_WIDTH) of
+    case e4asm_bytecode:unsigned_value_fits(Int, ?J1INSTR_WIDTH) of
         true ->
             <<?J1INSTR_SMALL_POS:?J1INSTR_WIDTH,
               Int:?J1INSTR_WIDTH/big-unsigned>>;
@@ -124,13 +124,13 @@ enter(Size) ->
       Size:?J1OP_INDEX_WIDTH/big-unsigned>>.
 
 get_element(Index) ->
-    ?ASSERT(j1c_bc:unsigned_value_fits(Index, ?J1OP_INDEX_WIDTH),
+    ?ASSERT(e4asm_bytecode:unsigned_value_fits(Index, ?J1OP_INDEX_WIDTH),
             "GET-ELEMENT opcode index is too large"),
     <<?J1INSTR_GETELEMENT:?J1INSTR_WIDTH,
       Index:?J1OP_INDEX_WIDTH/big-unsigned>>.
 
 store(Index) ->
-    ?ASSERT(j1c_bc:signed_value_fits(Index, ?J1OP_INDEX_WIDTH),
+    ?ASSERT(e4asm_bytecode:signed_value_fits(Index, ?J1OP_INDEX_WIDTH),
             "ST opcode index is too large"),
     case signed_value_fits(Index, ?J1INSTR_WIDTH) of
         true ->
@@ -142,7 +142,7 @@ store(Index) ->
     end.
 
 load(Index) ->
-    ?ASSERT(j1c_bc:signed_value_fits(Index, ?J1OP_INDEX_WIDTH),
+    ?ASSERT(e4asm_bytecode:signed_value_fits(Index, ?J1OP_INDEX_WIDTH),
             "LD opcode index is too large"),
     case signed_value_fits(Index, ?J1INSTR_WIDTH) of
         true ->

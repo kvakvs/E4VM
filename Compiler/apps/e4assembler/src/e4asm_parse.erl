@@ -1,10 +1,10 @@
 %%% @doc Forth source handling
 
--module(j1c_parse).
+-module(e4asm_parse).
 
 %% API
 -export([parse/1]).
--include_lib("e4c/include/e4c.hrl").
+-include_lib("e4compiler/include/e4c.hrl").
 
 parse(Filename) ->
     case file:read_file(Filename) of

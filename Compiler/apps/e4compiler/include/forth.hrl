@@ -7,7 +7,7 @@
 -ifndef(E4_FORTH_HRL).
 -define(E4_FORTH_HRL, 1).
 
--include_lib("e4c/include/kernel_erl.hrl").
+-include_lib("e4compiler/include/kernel_erl.hrl").
 
 %%-record(f_mfa, {mod :: atom(), fn :: atom(), arity :: integer()}).
 %%-type cf_mfa() :: #f_mfa{}.

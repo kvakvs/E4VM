@@ -1,10 +1,10 @@
--module(j1c_disasm).
+-module(e4asm_dis).
 
 %% API
 -export([disasm/3]).
 
--include_lib("j1c/include/j1.hrl").
--include_lib("j1c/include/j1bytecode.hrl").
+-include_lib("e4assembler/include/j1.hrl").
+-include_lib("e4assembler/include/j1bytecode.hrl").
 
 disasm(Prog, Pc, Bin) ->
     Out = disasm(Prog, Pc, iolist_to_binary(Bin), []),

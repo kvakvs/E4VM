@@ -1,5 +1,5 @@
-{application, j1c,
-    [{description, "J1C Forth to binary Forth compiler"},
+{application, e4asm,
+    [{description, "E4 Assembly to binary compiler"},
      {vsn, "0.1.0"},
      {registered, []},
      {applications,

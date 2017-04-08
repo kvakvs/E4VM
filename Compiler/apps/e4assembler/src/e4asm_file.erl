@@ -1,11 +1,11 @@
 %%% @doc Binary module file writer.
--module(j1c_file).
+-module(e4asm_file).
 
 %% API
 -export([to_iolist/1, bin_filename/1]).
 
--include_lib("j1c/include/j1.hrl").
--include_lib("e4c/include/forth.hrl").
+-include_lib("e4assembler/include/j1.hrl").
+-include_lib("e4compiler/include/forth.hrl").
 
 to_iolist(Prog = #j1prog{}) ->
     Compr = uncompressed, % value: uncompressed | gzipped
