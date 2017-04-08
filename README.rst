@@ -12,7 +12,7 @@ Includes a simple cross-compiler, which converts your Erlang source to Kernel
 Erlang and then produces a Forth program internally which is then compiled into
 J1 Forth bytecode and written to disk as ``filename.e4b``.
 
-See also: ``e4compiler/README.rst``
+See also: ``Compiler/README.rst``
 
 The ultimate goal is to land on embedded devices (something like RTEMS?)
 but development naturally happens on x64 Linux.
