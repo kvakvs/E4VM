@@ -27,7 +27,7 @@ class CodeManager {
     paths_.push_back(String("."));
   }
 
-  Term load(VM& vm, const char* name);
+  Term load(VM& vm, Term name);
 
   void add(Module* m);
 

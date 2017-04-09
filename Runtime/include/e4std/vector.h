@@ -18,9 +18,11 @@
 #include "e4std/vector_impl.h"
 
 #include <functional>
+#include <vector>
 
 namespace e4std {
 
+#if 0
 static constexpr ::size_t VECTOR_MIN_GROWTH = 4;
 
 namespace impl {
@@ -349,5 +351,9 @@ class PODVector : public impl::VectorImpl {
     return data()[i];
   }
 };
+#endif // 0
+
+template <class T> using Vector = std::vector<T>;
+template <class T> using PODVector = std::vector<T>;
 
 }  // ns e4std

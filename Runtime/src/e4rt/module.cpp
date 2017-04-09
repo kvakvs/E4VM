@@ -116,18 +116,19 @@ void Module::load_exports(const ByteView& adata,
     exports_.push_back(ex);
   }
   // We then use binary search so better this be sorted
-  exports_.sort(Export::compare_pvoid);
+  std::sort(exports_.begin(), exports_.end(),
+            [](const Export& a, const Export& b) -> bool {
+              return Export::compare_pvoid(&a, &b) < 0;
+            });
 }
 
 Export* Module::find_export(const MFArity& mfa) const {
-  Export exp(mfa.fun_, mfa.arity_, 0);
-  //#if E4DEBUG
-  //    exports_.for_each([this](const Export& e) {
-  //        e.print(vm_);
-  //        ::puts("");
-  //    });
-  //#endif
-  return exports_.binary_search(&exp, Export::compare_pvoid);
+  Export sample(mfa.fun_, mfa.arity_, 0);
+  auto r = e4std::binary_search(exports_.begin(), exports_.end(), sample,
+                              [](const Export& a, const Export& b) -> bool {
+                                return Export::compare_pvoid(&a, &b) == 0;
+                              });
+  return const_cast<Export*>(r);
 }
 
 CodeAddress Module::get_export_address(const Export& exp) const {

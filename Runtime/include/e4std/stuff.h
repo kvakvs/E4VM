@@ -29,4 +29,14 @@ class RuntimeError {
   virtual const char* what() const noexcept { return err_; }
 };
 
+template<class ForwardIt, class T, class Compare>
+const T* binary_search(ForwardIt first, ForwardIt last,
+                       T& value, Compare fn_comp) {
+  first = std::lower_bound(first, last, value, fn_comp);
+  if (not (first == last) && not fn_comp(value, *first)) {
+    return &(*first);
+  }
+  return nullptr;
+}
+
 }  // ns e4std

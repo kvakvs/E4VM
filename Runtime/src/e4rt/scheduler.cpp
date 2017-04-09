@@ -21,8 +21,8 @@ void Scheduler::register_proc(Process* p) {
 }
 
 void Scheduler::schedule(Process* p) {
-  E4ASSERT(not runq_normal_.contains_val(p));
-  E4ASSERT(not runq_high_.contains_val(p));
+//  E4ASSERT(not runq_normal_.contains_val(p));
+//  E4ASSERT(not runq_high_.contains_val(p));
   switch (p->priority()) {
     case ProcessPriority::Normal:
       runq_normal_.push_back(p);

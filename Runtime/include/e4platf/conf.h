@@ -14,32 +14,35 @@ namespace e4 {
 #ifndef E4FEATURE_FS
 #define E4FEATURE_FS 0
 #endif
-constexpr bool FEATURE_FS = (E4FEATURE_FS != 0);
-
 #ifndef E4FEATURE_ERLDIST
+
 #define E4FEATURE_ERLDIST 0
 #endif
-constexpr bool FEATURE_ERLDIST = (E4FEATURE_ERLDIST != 0);
-
 #ifndef E4FEATURE_FLOAT
+
 #define E4FEATURE_FLOAT 0
 #endif
-constexpr bool FEATURE_FLOAT = (E4FEATURE_FLOAT != 0);
-
 #ifndef E4FEATURE_BIGNUM
+
 #define E4FEATURE_BIGNUM 0
 #endif
-constexpr bool FEATURE_BIGNUM = (E4FEATURE_BIGNUM != 0);
-
 #ifndef E4FEATURE_MAPS
+
 #define E4FEATURE_MAPS 0
 #endif
-constexpr bool FEATURE_MAPS = (E4FEATURE_MAPS != 0);
-
 #ifndef E4FEATURE_HOTCODELOAD
+
 #define E4FEATURE_HOTCODELOAD 0
 #endif
-constexpr bool FEATURE_HOTCODELOAD = (E4FEATURE_HOTCODELOAD != 0);
+
+namespace feat {
+constexpr bool fs() { return (E4FEATURE_FS != 0); }
+constexpr bool distribution() { return (E4FEATURE_ERLDIST != 0); }
+constexpr bool floating_point() { return (E4FEATURE_FLOAT != 0); }
+constexpr bool bignum() { return (E4FEATURE_BIGNUM != 0); }
+constexpr bool maps() { return (E4FEATURE_MAPS != 0); }
+constexpr bool hot_code_load() { return (E4FEATURE_HOTCODELOAD != 0); }
+} // ns feat
 
 //
 //====== END FEATURES ======

@@ -17,6 +17,8 @@
 
 namespace e4std {
 
+using String = std::string;
+#if 0
 class String {
  private:
   Vector<char> content_;
@@ -101,5 +103,6 @@ class String {
 
   const char* c_str() const { return content_.data(); }
 };
+#endif // 0
 
 }  // ns e4std

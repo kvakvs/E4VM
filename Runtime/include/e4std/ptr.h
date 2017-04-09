@@ -13,9 +13,11 @@
 
 #include <stddef.h>
 #include <cstdint>
+#include <bits/unique_ptr.h>
 
 namespace e4std {
 
+#if 0
 template <class ValueType, class Allocator>
 class TUniquePtr {
  private:
@@ -64,6 +66,10 @@ using UniquePtr = TUniquePtr<T, platf::SingleAlloc>;
 
 template <class T>
 using UniqueArrayPtr = TUniquePtr<T, platf::ArrayAlloc>;
+#endif //0
+
+template <class T> using UniquePtr = std::unique_ptr<T>;
+template <class T> using UniqueArrayPtr = std::unique_ptr<T[]>;
 
 template <class T>
 UniqueArrayPtr<T> make_array(::size_t sz) {

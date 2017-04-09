@@ -6,6 +6,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 
 #include "e4std/array.h"
 #include "e4std/map.h"
@@ -61,7 +62,6 @@ template <class TKey, class TValue>
 using Map = e4std::Map<TKey, TValue>;
 
 using String = e4std::String;
-//    using CString = e4std::CString;
 
 template <class Type>
 using UniquePtr = e4std::UniquePtr<Type>;

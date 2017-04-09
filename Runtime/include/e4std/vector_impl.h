@@ -4,13 +4,15 @@
  */
 #pragma once
 
+#include <cstdint>
+
 //
 // A custom, badly written replacement for stupid vector which operates raw
 // blocks of uniform size, zeroes memory and ignores C++ constructors
 //
-namespace e4std {
-namespace impl {
+namespace e4std::impl {
 
+#if 0
 static constexpr ::size_t VECTOR_MIN_GROWTH = 4;
 
 //
@@ -39,7 +41,7 @@ class VectorImpl {
       ::memmove(newdata.get(), data_.get(), size_);
     }
     capacity_ = size_ = newlength;
-    data_.take_over(newdata);
+    data_ = std::move(newdata);
   }
 
   void change_capacity(::size_t element_size, ::size_t newcap) {
@@ -66,4 +68,6 @@ class VectorImpl {
   }
 };
 }
+#endif // 0
+
 }  // ns e4std::impl

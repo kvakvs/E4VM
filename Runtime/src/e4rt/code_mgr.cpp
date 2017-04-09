@@ -11,11 +11,14 @@
 
 namespace e4 {
 
-Term CodeManager::load(VM& vm, const char* fn) {
-  auto data = platf::fs::read(paths_, fn);
+Term CodeManager::load(VM& vm, Term modn) {
+  String mod_filename(vm.find_atom(modn));
+  mod_filename += ".beam";
+
+  auto data = platf::fs::read(paths_, mod_filename.c_str());
   auto m = new Module(vm);
   m->load(ByteView(data));
-  vm.modules_.add(m);
+  add(m);
   return m->name();
 }
 
