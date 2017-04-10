@@ -9,6 +9,8 @@ process(F) ->
     {ok, _ModuleName, BeamS} ->
       e4c:try_do("e4_pass_S - Erlang 'S' Assembly to E4 Assembly",
                  fun() -> e4c_pass_S:process(BeamS) end);
+      %% TODO optimize {label1} Code {label2} Code can be collapsed
+      %% into {label1}{label} Code if the code is identical
     Error ->
       io:format("~n~s: ~p~n", [F, Error])
   end.

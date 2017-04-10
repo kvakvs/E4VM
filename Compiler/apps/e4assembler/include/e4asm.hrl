@@ -12,19 +12,21 @@
 
 -type e4bif() :: {e4bif, #{
   name => atom(),
-  fail => label() | ignore,
+  fail => label() | ignore, % default ignore
   args => list(),
-  result => xreg() | ignore
+  result => xreg() | ignore, % default ignore
+  gc => integer() % heap size to ensure, default 0
 }}.
 
 -type e4call() :: {e4call, #{
   target => label(),
   arity => integer(),
-  tailcall => boolean()
+  tailcall => boolean(), % default false
+  dealloc => integer() % default 0
 }}.
 
 -type e4ret() :: {e4ret, #{
-  dealloc => integer()
+  dealloc => integer() % default 0
 }}.
 
 -endif.

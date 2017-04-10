@@ -30,7 +30,16 @@ process_forms([X | _Forms], _Out) ->
   ?COMPILE_ERROR("Unknown form ~p", [X]).
 
 process_fun([], Out) -> lists:reverse(Out);
-process_fun([{gc_bif, Name, Fail, _1, Args, Result} | Tail], Out) ->
+process_fun([{gc_bif, Name, Fail, Heap, Args, Result} | Tail], Out) ->
+  Cmd = {e4bif, #{
+    name => Name,
+    fail => Fail,
+    args => Args,
+    result => Result,
+    gc => Heap
+  }},
+  process_fun(Tail, [Cmd | Out]);
+process_fun([{bif, Name, Fail, Args, Result} | Tail], Out) ->
   Cmd = {e4bif, #{
     name => Name,
     fail => Fail,
@@ -42,23 +51,27 @@ process_fun([{test, F, Fail, Args} | Tail], Out) ->
   Cmd = {e4bif, #{
     name => F,
     fail => Fail,
-    args => Args,
-    result => ignore
+    args => Args
   }},
   process_fun(Tail, [Cmd | Out]);
 process_fun([{func_info, _M, F, Arity} | Tail], Out) ->
   Cmd = {e4bif, #{
     name => function_clause,
-    fail => ignore,
-    args => [F, Arity],
-    result => ignore
+    args => [F, Arity]
   }},
   process_fun(Tail, [Cmd | Out]);
 process_fun([{call, Arity, Label} | Tail], Out) ->
   Cmd = {e4call, #{
     arity => Arity,
+    target => Label
+  }},
+  process_fun(Tail, [Cmd | Out]);
+process_fun([{call_last, Arity, Label, Dealloc} | Tail], Out) ->
+  Cmd = {e4call, #{
+    arity => Arity,
     target => Label,
-    tailcall => false
+    tailcall => true,
+    dealloc => Dealloc
   }},
   process_fun(Tail, [Cmd | Out]);
 process_fun([{call_only, Arity, Label} | Tail], Out) ->
@@ -66,6 +79,27 @@ process_fun([{call_only, Arity, Label} | Tail], Out) ->
     arity => Arity,
     target => Label,
     tailcall => true
+  }},
+  process_fun(Tail, [Cmd | Out]);
+process_fun([{call_ext, Arity, {extfunc, M, F, Arity}} | Tail], Out) ->
+  Cmd = {e4call, #{
+    arity => Arity,
+    target => {extfunc, M, F, Arity}
+  }},
+  process_fun(Tail, [Cmd | Out]);
+process_fun([{call_ext_only, Arity, {extfunc, M, F, Arity}} | Tail], Out) ->
+  Cmd = {e4call, #{
+    arity => Arity,
+    target => {extfunc, M, F, Arity},
+    tailcall => true
+  }},
+  process_fun(Tail, [Cmd | Out]);
+process_fun([{call_ext_last, Arity, {extfunc, M, F, Arity}, De} | Tail], Out) ->
+  Cmd = {e4call, #{
+    arity => Arity,
+    target => {extfunc, M, F, Arity},
+    tailcall => true,
+    dealloc => De
   }},
   process_fun(Tail, [Cmd | Out]);
 process_fun([{deallocate, N}, return | Tail], Out) ->
