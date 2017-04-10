@@ -75,8 +75,12 @@ try_do(What, Fun) ->
 
 compile(InputPath) ->
   %% Process Kernel to Assembler transformation
-  try_do("top-level E4C invocation",
-         fun() -> e4c_compile:process(InputPath) end).
+  Module = try_do("top-level E4C invocation",
+    fun() -> e4c_compile:process(InputPath) end
+  ),
+  try_do("top-level E4ASM invocation",
+    fun() -> e4asm_compile:process(InputPath, Module) end
+  ).
 
   %% Compile E4 Assembler to Forth bytecode transformation
 %%  try_do("top-level E4ASM invocation",
