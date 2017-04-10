@@ -39,19 +39,38 @@ process_fun(Fun = #{'$' := e4fun, code := Code0}, M0) ->
   {Fun#{code := Code1}, M1}.
 
 process_fun_helper(Fun = #{'$' := e4fun},
-                   Op,
+                   Op0,
                    #{binary := Accum, program := Mod0}) ->
-  #{binary := Op, program := Mod1} = process_op(Mod0, Fun, Op),
-  #{binary => [Op | Accum], program => Mod1}.
+  #{op_bin := Op1,
+    program := Mod1} = process_op(Mod0, Fun, Op0),
+  #{binary => [Op1 | Accum],
+    program => Mod1}.
 
+-spec process_op(e4mod(), e4fun(), tuple() | atom()) -> e4mod().
 process_op(Mod0, Fun, {label, L}) ->
-  #{program => add_label(Mod0, Fun, L),
-    binary => []};
+  emit(add_label(Mod0, Fun, L), []);
+process_op(Mod0, _Fun, {func_info, {atom, _Mod}, {atom, FunName}, Arity}) ->
+  Mod1 = register_atom(Mod0, FunName),
+  emit(Mod1, e4asm_bc:func_info(Mod1, FunName, Arity));
 process_op(_Mod0, Fun, Other) ->
   ?COMPILE_ERROR("Unknown op ~p in ~s", [Other, fun_str(Fun)]).
+
+emit(Mod0, Code) -> #{program => Mod0, op_bin => Code}.
 
 fun_str(#{'$' := e4fun, name := N, arity := A}) ->
   io_lib:format("~s:~B", [N, A]).
 
 add_label(Mod0, Fun, L) ->
   Mod0.
+
+%% @doc Inform the program Mod0 that there will be an atom A, it will be
+%% added to the atom table if needed.
+register_atom(Mod0 = #{'$' := e4mod}, A) when is_atom(A) ->
+  Atoms = maps:get(atoms, Mod0, orddict:new()),
+  case orddict:find(A, Atoms) of
+    {ok, _} -> Mod0;
+    error -> % not found, update atom table
+      AtomIndex = maps:get(atom_index, Mod0, 1),
+      Atoms1 = orddict:store(A, AtomIndex, Atoms),
+      Mod0#{atoms => Atoms1, atom_index => AtomIndex + 1}
+  end.

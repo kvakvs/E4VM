@@ -40,28 +40,28 @@ process_fun([], Out) -> lists:reverse(Out);
 process_fun([{gc_bif, Name, Fail, Heap, Args, Result} | Tail], Out) ->
   Cmd = #{
     '$' => e4bif,
-    name => Name,
-    fail => Fail,
     args => Args,
-    result => Result,
-    gc => Heap
+    fail => Fail,
+    gc => Heap,
+    name => Name,
+    result => Result
   },
   process_fun(Tail, [Cmd | Out]);
 process_fun([{bif, Name, Fail, Args, Result} | Tail], Out) ->
   Cmd = #{
     '$' => e4bif,
-    name => Name,
-    fail => Fail,
     args => Args,
+    fail => Fail,
+    name => Name,
     result => Result
   },
   process_fun(Tail, [Cmd | Out]);
 process_fun([{test, F, Fail, Args} | Tail], Out) ->
   Cmd = #{
     '$' => e4bif,
-    name => F,
+    args => Args,
     fail => Fail,
-    args => Args
+    name => F
   },
   process_fun(Tail, [Cmd | Out]);
 process_fun([{call, Arity, Label} | Tail], Out) ->
@@ -75,17 +75,17 @@ process_fun([{call_last, Arity, Label, Dealloc} | Tail], Out) ->
   Cmd = #{
     '$' => e4call,
     arity => Arity,
-    target => Label,
+    dealloc => Dealloc,
     tailcall => true,
-    dealloc => Dealloc
+    target => Label
   },
   process_fun(Tail, [Cmd | Out]);
 process_fun([{call_only, Arity, Label} | Tail], Out) ->
   Cmd = #{
     '$' => e4call,
     arity => Arity,
-    target => Label,
-    tailcall => true
+    tailcall => true,
+    target => Label
   },
   process_fun(Tail, [Cmd | Out]);
 process_fun([{call_ext, Arity, {extfunc, M, F, Arity}} | Tail], Out) ->
@@ -99,17 +99,17 @@ process_fun([{call_ext_only, Arity, {extfunc, M, F, Arity}} | Tail], Out) ->
   Cmd = #{
     '$' => e4call,
     arity => Arity,
-    target => {extfunc, M, F, Arity},
-    tailcall => true
+    tailcall => true,
+    target => {extfunc, M, F, Arity}
   },
   process_fun(Tail, [Cmd | Out]);
 process_fun([{call_ext_last, Arity, {extfunc, M, F, Arity}, De} | Tail], Out) ->
   Cmd = #{
     '$' => e4call,
     arity => Arity,
-    target => {extfunc, M, F, Arity},
+    dealloc => De,
     tailcall => true,
-    dealloc => De
+    target => {extfunc, M, F, Arity}
   },
   process_fun(Tail, [Cmd | Out]);
 process_fun([{deallocate, N}, return | Tail], Out) ->
