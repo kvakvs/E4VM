@@ -1,8 +1,6 @@
 -module(e4c_compile).
 -export([process/1]).
 
--include_lib("e4compiler/include/forth.hrl").
-
 %% @doc Takes filename as input, produces compiled BEAM assembly AST and then
 %% passes are invoked to process it further
 -spec process(string()) -> {module(), [binary()]}.

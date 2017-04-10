@@ -3,7 +3,9 @@
 
 %% API
 -export([process/1]).
+
 -include_lib("e4compiler/include/e4c.hrl").
+-include_lib("e4assembler/include/e4asm.hrl").
 
 process({_Module, _Exports, _Attrs, Forms, _}) ->
   E4Asm = process_forms(Forms, []),
