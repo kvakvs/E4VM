@@ -25,26 +25,25 @@ bit_if(true, X) -> X;
 bit_if(false, _X) -> 0.
 
 
-func_info(#{'$' := e4mod, atoms := Atoms}, F, Arity) ->
+func_info(Mod = #{'$' := e4mod}, F, Arity) ->
   [bc_op(?E4BC_FUNC_INFO),
-   e4c:varint(atom_index(Atoms, F)),
-   e4c:varint(Arity)].
+   e4asm_cte:encode(Mod, {atom, F}),
+   e4asm_cte:encode(Mod, Arity)].
 
 
-call(#{'$' := e4mod} = Module,
+call(#{'$' := e4mod} = Mod,
      #{'$' := e4call, arity := A, tailcall := Tail,
        target := Target, dealloc := Dealloc}) ->
   %% TODO: Dealloc
   case Target of
     {f, TargetLabel} ->
       [bc_op(?E4BC_CALL_LOCAL, Tail, Dealloc =/= 0), e4c:varint(TargetLabel)];
-    {extfunc, M, F, Arity} when Arity =:= A ->
+    {extfunc, _, _, _} = MFA ->
       [bc_op(?E4BC_CALL_EXT, Tail, Dealloc =/= 0),
-       encode(Module, M),
-       e4c:varint(atom_index(Atoms, F))]
+       e4asm_cte:encode(Mod, MFA)]
   end.
 
-bif(#{'$' := e4mod, atoms := Atoms},
+bif(Mod = #{'$' := e4mod},
     Bif = #{'$' := e4bif, args := Args, name := Name}) ->
   %% TODO: Args
   %% TODO: Gc
@@ -54,21 +53,21 @@ bif(#{'$' := e4mod, atoms := Atoms},
   %% TODO: Result
   Result = maps:get(result, Bif, ignore),
   [bc_op(?E4BC_BIF, Fail =/= ignore, Gc =/= 0, Result =/= 0),
-   e4c:varint(atom_index(Atoms, Name))].
+   e4asm_cte:encode(Mod, {atom, Name})].
 
 allocate(StackNeed, 0, Live) ->
   [bc_op(?E4BC_ALLOC_S),
-   e4c:varint(StackNeed),
-   e4c:varint(Live)];
+   e4asm_cte:encode(#{}, StackNeed),
+   e4asm_cte:encode(#{}, Live)];
 allocate(StackNeed, HeapNeed, Live) ->
   [bc_op(?E4BC_ALLOC_S_H),
-   e4c:varint(StackNeed),
-   e4c:varint(HeapNeed),
-   e4c:varint(Live)].
+   e4asm_cte:encode(#{}, StackNeed),
+   e4asm_cte:encode(#{}, HeapNeed),
+   e4asm_cte:encode(#{}, Live)].
 
 get_element(Tuple, Index, Result) ->
   %% TODO: Result
   [bc_op(?E4BC_GET_ELEMENT),
-   encode(Tuple),
-   e4c:varint(Index),
-   encode(Result)].
+   e4asm_cte:encode(#{}, Tuple),
+   e4asm_cte:encode(#{}, Index),
+   e4asm_cte:encode(#{}, Result)].
