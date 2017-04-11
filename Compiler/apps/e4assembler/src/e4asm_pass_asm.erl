@@ -53,12 +53,30 @@ process_op(Mod0, Fun, {label, L}) ->
 
 process_op(Mod0, _Fun,
            {func_info, {atom, _Mod}, {atom, FunName}, Arity}) ->
-  Mod1 = register_atom(Mod0, FunName),
+  Mod1 = register_value(Mod0, FunName),
   emit(Mod1, e4asm_bc:func_info(Mod1, FunName, Arity));
 
 process_op(Mod0, _Fun, #{'$' := e4call, target := Target} = CallOp) ->
   Mod1 = register_call_target(Mod0, Target),
   emit(Mod1, e4asm_bc:call(Mod1, CallOp));
+
+process_op(Mod0, _Fun, #{'$' := e4bif, args := Args, name := Name} = BifOp) ->
+  Mod1 = register_value(Mod0, Name),
+  Mod2 = register_values(Mod1, Args),
+  emit(Mod1, e4asm_bc:bif(Mod2, BifOp));
+
+process_op(Mod0, _Fun, {allocate, StackNeed, Live}) ->
+  emit(Mod0, e4asm_bc:allocate(StackNeed, 0, Live));
+process_op(Mod0, _Fun, {allocate_zero, StackNeed, Live}) ->
+  emit(Mod0, e4asm_bc:allocate(StackNeed, 0, Live));
+process_op(Mod0, _Fun, {allocate_heap, StackNeed, HeapNeed, Live}) ->
+  emit(Mod0, e4asm_bc:allocate(StackNeed, HeapNeed, Live));
+process_op(Mod0, _Fun, {allocate_heap_zero, StackNeed, HeapNeed, Live}) ->
+  emit(Mod0, e4asm_bc:allocate(StackNeed, HeapNeed, Live));
+
+process_op(Mod0, _Fun, {get_tuple_element, Tuple, Index, Result}) ->
+  Mod1 = register_value(Mod0, Tuple),
+  emit(Mod1, e4asm_bc:get_element(Tuple, Index, Result));
 
 process_op(_Mod0, Fun, Other) ->
   ?COMPILE_ERROR("Unknown op ~p in ~s", [Other, fun_str(Fun)]).
@@ -71,13 +89,17 @@ fun_str(#{'$' := e4fun, name := N, arity := A}) ->
   io_lib:format("~s:~B", [N, A]).
 
 
-add_label(Mod0, Fun, L) ->
+add_label(Mod0, _Fun, _L) ->
   Mod0.
 
 
-%% @doc Inform the program Mod0 that there will be an atom A, it will be
-%% added to the atom table if needed.
-register_atom(Mod0 = #{'$' := e4mod}, A) when is_atom(A) ->
+%% @doc Inform the program Mod0 that there will be a value in the program,
+%% possibly a literal or an atom, so it will be added to the atom or literal
+%% table if needed.
+%%
+register_value(Mod, Int) when is_integer(Int) -> Mod;
+register_value(Mod, {x, _}) -> Mod;
+register_value(Mod0 = #{'$' := e4mod}, A) when is_atom(A) ->
   Atoms = maps:get(atoms, Mod0, orddict:new()),
   case orddict:find(A, Atoms) of
     {ok, _} -> Mod0;
@@ -90,4 +112,10 @@ register_atom(Mod0 = #{'$' := e4mod}, A) when is_atom(A) ->
 
 register_call_target(Mod0, {f, _}) -> Mod0;
 register_call_target(Mod0, {extfunc, M, F, _Arity}) ->
-  register_atom(register_atom(Mod0, M), F).
+  Mod1 = register_value(Mod0, M),
+  register_value(Mod1, F).
+
+
+register_values(Mod0, []) -> Mod0;
+register_values(Mod0, List) ->
+  lists:foldl(fun(A, Mod) -> register_value(Mod, A) end, Mod0, List).
