@@ -49,40 +49,57 @@ process_fun_helper(Fun = #{'$' := e4fun},
 
 -spec process_op(e4mod(), e4fun(), tuple() | atom()) -> e4mod().
 process_op(Mod0, Fun, {label, L}) ->
-  emit(add_label(Mod0, Fun, L), []);
+  make_emit(add_label(Mod0, Fun, L), []);
 
 process_op(Mod0, _Fun,
            {func_info, {atom, _Mod}, {atom, FunName}, Arity}) ->
   Mod1 = register_value(Mod0, FunName),
-  emit(Mod1, e4asm_bc:func_info(Mod1, FunName, Arity));
+  make_emit(Mod1, e4asm_bc:func_info(Mod1, FunName, Arity));
 
 process_op(Mod0, _Fun, #{'$' := e4call, target := Target} = CallOp) ->
   Mod1 = register_call_target(Mod0, Target),
-  emit(Mod1, e4asm_bc:call(Mod1, CallOp));
+  make_emit(Mod1, e4asm_bc:call(Mod1, CallOp));
 
 process_op(Mod0, _Fun, #{'$' := e4bif, args := Args, name := Name} = BifOp) ->
   Mod1 = register_value(Mod0, Name),
   Mod2 = register_values(Mod1, Args),
-  emit(Mod1, e4asm_bc:bif(Mod2, BifOp));
+  make_emit(Mod1, e4asm_bc:bif(Mod2, BifOp));
 
 process_op(Mod0, _Fun, {allocate, StackNeed, Live}) ->
-  emit(Mod0, e4asm_bc:allocate(StackNeed, 0, Live));
+  make_emit(Mod0, e4asm_bc:allocate(StackNeed, 0, Live));
 process_op(Mod0, _Fun, {allocate_zero, StackNeed, Live}) ->
-  emit(Mod0, e4asm_bc:allocate(StackNeed, 0, Live));
+  make_emit(Mod0, e4asm_bc:allocate(StackNeed, 0, Live));
 process_op(Mod0, _Fun, {allocate_heap, StackNeed, HeapNeed, Live}) ->
-  emit(Mod0, e4asm_bc:allocate(StackNeed, HeapNeed, Live));
+  make_emit(Mod0, e4asm_bc:allocate(StackNeed, HeapNeed, Live));
 process_op(Mod0, _Fun, {allocate_heap_zero, StackNeed, HeapNeed, Live}) ->
-  emit(Mod0, e4asm_bc:allocate(StackNeed, HeapNeed, Live));
+  make_emit(Mod0, e4asm_bc:allocate(StackNeed, HeapNeed, Live));
 
 process_op(Mod0, _Fun, {get_tuple_element, Tuple, Index, Result}) ->
   Mod1 = register_value(Mod0, Tuple),
-  emit(Mod1, e4asm_bc:get_element(Tuple, Index, Result));
+  make_emit(Mod1, e4asm_bc:get_element(Tuple, Index, Result));
+
+process_op(Mod0, _Fun, {move, Src, Dst}) ->
+  make_emit(Mod0, e4asm_bc:move(Mod0, Src, Dst));
+
+process_op(Mod0, _Fun, {call_fun, Arity}) ->
+  make_emit(Mod0, e4asm_bc:call_fun(Mod0, Arity));
+
+process_op(Mod0, _Fun, {kill, Dst}) ->
+  make_emit(Mod0, e4asm_bc:set_nil(Mod0, Dst));
+
+process_op(Mod0, _Fun, {test_heap, Need, Live}) ->
+  make_emit(Mod0, e4asm_bc:test_heap(Mod0, Need, Live));
+
+process_op(Mod0, _Fun, {put_tuple, Size, Dst}) ->
+  make_emit(Mod0, e4asm_bc:put_tuple(Mod0, Size, Dst));
+process_op(Mod0, _Fun, {put, Val}) ->
+  make_emit(Mod0, e4asm_bc:put(Mod0, Val));
 
 process_op(_Mod0, Fun, Other) ->
   ?COMPILE_ERROR("Unknown op ~p in ~s", [Other, fun_str(Fun)]).
 
 
-emit(Mod0, Code) -> #{program => Mod0, op_bin => Code}.
+make_emit(Mod0, Code) -> #{program => Mod0, op_bin => Code}.
 
 
 fun_str(#{'$' := e4fun, name := N, arity := A}) ->
