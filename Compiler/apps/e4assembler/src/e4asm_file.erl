@@ -15,6 +15,7 @@ to_iolist(Prog = #{'$' := e4mod}) ->
     section("Im", encode_imports(Prog)),
     section("Xp", encode_exports(Prog)),
     section("Jt", encode_jumptabs(Prog)),
+    section("Fn", encode_lambdas(Prog)),
     []
   ], [
     "E4",
@@ -98,4 +99,17 @@ encode_jumptabs(Mod = #{'$' := e4mod, jumptabs := JTabs}) ->
 
 
 encode_jumptabs_one_jtab(J, Mod) ->
-  [e4c:varint(length(J/2))] ++ [e4asm_cte:encode(X, Mod) || X <- J].
+  [e4c:varint(length(J/2)),
+   [e4asm_cte:encode(X, Mod) || X <- J]
+  ].
+
+
+encode_lambdas(Mod = #{'$' := e4mod, lambdas := Lambdas}) ->
+  Sorted = lists:keysort(2, Lambdas), % assume orddict is a list of tuples
+  Bin = [encode_lambdas_one_lambda(L, Mod) || {L, _} <- Sorted],
+  erlang:iolist_to_binary([e4c:varint(length(Sorted)), Bin]).
+
+
+encode_lambdas_one_lambda({{f, F}, NumFree}, Mod) ->
+  [e4c:varint(F),
+   e4c:varint(NumFree)].

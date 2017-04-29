@@ -2,8 +2,25 @@
 -module(e4asm_bc).
 
 %% API
--export([func_info/3, call/2, bif/2, allocate/3, get_element/3, move/3,
-         call_fun/2, set_nil/2, test_heap/3, put_tuple/3, put/2, ret/1, select_val/4]).
+-export([
+  allocate/3,
+  bif/2,
+  call/2,
+  call_fun/2,
+  func_info/3,
+  get_element/3,
+  jump/1,
+  make_fun/3,
+  move/3,
+  put/2,
+  cons/3,
+  put_tuple/3,
+  ret/1,
+  select_val/4,
+  set_nil/2,
+  test_heap/3,
+  trim/1
+]).
 
 -define(E4BC_FUNC_INFO,   0).
 -define(E4BC_CALL_LOCAL,  1). % 4 local call flavours defined by bits 6 and 7
@@ -21,6 +38,11 @@
 -define(E4BC_RET0,        13).
 -define(E4BC_RETN,        14).
 -define(E4BC_SELECT_VAL,  15).
+-define(E4BC_CONS,        16).
+-define(E4BC_JUMP,        17).
+-define(E4BC_TRIM,        18).
+-define(E4BC_MAKE_FUN,    19).
+
 
 bc_op(X) -> <<X:8>>.
 %%bc_op(X, F1) -> <<(X bor bit_if(F1, 128)):8>>.
@@ -132,3 +154,25 @@ get_element(Tuple, Index, Result) ->
    e4asm_cte:encode(Tuple, #{}),
    e4asm_cte:encode(Index, #{}),
    e4asm_cte:encode(Result, #{})].
+
+
+cons(H, T, Dst) ->
+  [bc_op(?E4BC_CONS),
+   e4asm_cte:encode(H, #{}),
+   e4asm_cte:encode(T, #{}),
+   e4asm_cte:encode(Dst, #{})].
+
+
+jump(Dst) ->
+  [bc_op(?E4BC_JUMP),
+   e4asm_cte:encode(Dst, #{})].
+
+
+trim(N) ->
+  [bc_op(?E4BC_TRIM),
+   e4asm_cte:encode(N, #{})].
+
+
+make_fun({f, _} = L, NumFree, Mod) ->
+  [bc_op(?E4BC_MAKE_FUN),
+   e4asm_cte:encode({lambda, L, NumFree}, Mod)].

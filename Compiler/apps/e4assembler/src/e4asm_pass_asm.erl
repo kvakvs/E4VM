@@ -12,10 +12,11 @@
 compile(#{'$' := e4mod, funs := Funs0} = Mod0) ->
   %% For each fun, process it
   Mod1 = Mod0#{
-    imports => orddict:new(),
     atoms => orddict:new(),
-    literals => orddict:new(),
-    jumptabs => orddict:new()
+    imports => orddict:new(),
+    jumptabs => orddict:new(),
+    lambdas => orddict:new(),
+    literals => orddict:new()
   },
 
   Mod3 = lists:foldl(fun compile_fold_helper/2, Mod1, Funs0),
@@ -77,10 +78,13 @@ process_op(Mod0, _Fun, #{'$' := e4ret, dealloc := Dealloc}) ->
 
 process_op(Mod0, _Fun, {allocate, StackNeed, Live}) ->
   make_emit(Mod0, e4asm_bc:allocate(StackNeed, 0, Live));
+
 process_op(Mod0, _Fun, {allocate_zero, StackNeed, Live}) ->
   make_emit(Mod0, e4asm_bc:allocate(StackNeed, 0, Live));
+
 process_op(Mod0, _Fun, {allocate_heap, StackNeed, HeapNeed, Live}) ->
   make_emit(Mod0, e4asm_bc:allocate(StackNeed, HeapNeed, Live));
+
 process_op(Mod0, _Fun, {allocate_heap_zero, StackNeed, HeapNeed, Live}) ->
   make_emit(Mod0, e4asm_bc:allocate(StackNeed, HeapNeed, Live));
 
@@ -89,7 +93,6 @@ process_op(Mod0, _Fun, {get_tuple_element, Tuple, Index, Result}) ->
   make_emit(Mod1, e4asm_bc:get_element(Tuple, Index, Result));
 
 process_op(Mod0, _Fun, {move, Src, Dst}) ->
-  io:format("move ~p ~p~n", [Src, Dst]),
   Mod1 = register_value(Src, Mod0),
   make_emit(Mod1, e4asm_bc:move(Mod1, Src, Dst));
 
@@ -110,14 +113,33 @@ process_op(Mod0, Fun, {badmatch, Reg}) ->
   Call = #{'$' => e4bif, name => e4_badmatch, args => [Reg]},
   process_op(Mod0, Fun, Call);
 
+process_op(Mod0, Fun, {case_end, Reg}) ->
+  Call = #{'$' => e4bif, name => e4_casec, args => [Reg]},
+  process_op(Mod0, Fun, Call);
+
 process_op(Mod0, _Fun, {put_tuple, Size, Dst}) ->
   make_emit(Mod0, e4asm_bc:put_tuple(Mod0, Size, Dst));
-process_op(Mod0, _Fun, {put, Val}) ->
-  make_emit(Mod0, e4asm_bc:put(Mod0, Val));
 
-process_op(Mod0, Fun, {select_val, Src, Fail, Select}) ->
+process_op(Mod0, _Fun, {put, Val}) ->
+  Mod1 = register_value(Val, Mod0),
+  make_emit(Mod1, e4asm_bc:put(Mod1, Val));
+
+process_op(Mod0, _Fun, {select_val, Src, Fail, Select}) ->
   Mod1 = register_value_jumptab(Select, Mod0),
-  process_op(Mod0, Fun, e4asm_bc:select_val(Src, Fail, Select, Mod1));
+  make_emit(Mod0, e4asm_bc:select_val(Src, Fail, Select, Mod1));
+
+process_op(Mod0, _Fun, {put_list, H, T, Dst}) ->
+  make_emit(Mod0, e4asm_bc:cons(H, T, Dst));
+
+process_op(Mod0, _Fun, {jump, Dst}) ->
+  make_emit(Mod0, e4asm_bc:jump(Dst));
+
+process_op(Mod0, _Fun, {trim, N, _Unused}) ->
+  make_emit(Mod0, e4asm_bc:trim(N));
+
+process_op(Mod0, _Fun, {make_fun2, Label, _Index, _Uniq, NumFree}) ->
+  Mod1 = register_value_lambda(Label, NumFree, Mod0),
+  make_emit(Mod1, e4asm_bc:make_fun(Label, NumFree, Mod1));
 
 process_op(_Mod0, Fun, Other) ->
   ?COMPILE_ERROR("Unknown op ~p in source fun ~s", [Other, fun_str(Fun)]).
@@ -156,12 +178,11 @@ register_value({atom, A}, Mod0) ->
 register_value({extfunc, M, F, Arity}, Mod0) ->
   store_indexed_something({M, F, Arity}, imports, import_index, Mod0);
 
+register_value({literal, Lit}, Mod0) ->
+  store_indexed_something(Lit, literals, literal_index, Mod0);
+
 register_value(Other, _Mod) ->
   ?COMPILE_ERROR("don't know how to register_value ~p", [Other]).
-
-
-register_value_lit(Lit, Mod0 = #{'$' := e4mod}) ->
-  store_indexed_something(Lit, literals, literal_index, Mod0).
 
 
 register_call_target({f, _}, Mod0 = #{'$' := e4mod}) ->
@@ -184,6 +205,10 @@ register_value_jumptab(Select, Mod0 = #{'$' := e4mod}) ->
     true -> ok
   end,
   store_indexed_something(Select, jumptabs, jtabs_index, Mod0).
+
+
+register_value_lambda(Label, NumFree, Mod0) ->
+  store_indexed_something({Label, NumFree}, lambdas, lambda_index, Mod0).
 
 
 %% @doc Add value Val into orddict with key 'ValKey' in the module 'Mod',
