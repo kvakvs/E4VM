@@ -1,6 +1,6 @@
 TESTFILE=gb_trees
 TESTFILE2=test1
-TESTFILE3=mochijson
+TESTFILE3=mochijson2
 
 .PHONY: run1
 run1:

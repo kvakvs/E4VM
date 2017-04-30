@@ -17,6 +17,7 @@
   put_tuple/3,
   ret/1,
   select_val/4,
+  set_element/4,
   set_nil/2,
   test_heap/3,
   trim/1
@@ -42,6 +43,7 @@
 -define(E4BC_JUMP,        17).
 -define(E4BC_TRIM,        18).
 -define(E4BC_MAKE_FUN,    19).
+-define(E4BC_SET_ELEMENT, 20).
 
 
 bc_op(X) -> <<X:8>>.
@@ -176,3 +178,9 @@ trim(N) ->
 make_fun({f, _} = L, NumFree, Mod) ->
   [bc_op(?E4BC_MAKE_FUN),
    e4asm_cte:encode({lambda, L, NumFree}, Mod)].
+
+set_element(Value, Tuple, Pos, Mod) ->
+  [bc_op(?E4BC_SET_ELEMENT),
+   e4asm_cte:encode(Value, Mod),
+   e4asm_cte:encode(Tuple, Mod),
+   e4asm_cte:encode(Pos, Mod)].

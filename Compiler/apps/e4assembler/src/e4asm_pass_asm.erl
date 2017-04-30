@@ -141,6 +141,12 @@ process_op(Mod0, _Fun, {make_fun2, Label, _Index, _Uniq, NumFree}) ->
   Mod1 = register_value_lambda(Label, NumFree, Mod0),
   make_emit(Mod1, e4asm_bc:make_fun(Label, NumFree, Mod1));
 
+process_op(Mod0, _Fun, {set_tuple_element, Value, Tuple, Pos}) ->
+  Mod1 = register_value(Value, Mod0),
+  Mod2 = register_value(Tuple, Mod1),
+  Mod3 = register_value(Pos, Mod2),
+  make_emit(Mod3, e4asm_bc:set_element(Value, Tuple, Pos, Mod3));
+
 process_op(_Mod0, Fun, Other) ->
   ?COMPILE_ERROR("Unknown op ~p in source fun ~s", [Other, fun_str(Fun)]).
 
@@ -187,6 +193,7 @@ register_value(Other, _Mod) ->
 
 register_call_target({f, _}, Mod0 = #{'$' := e4mod}) ->
   Mod0;
+
 register_call_target({extfunc, M, F, Arity}, Mod0 = #{'$' := e4mod}) ->
   Mod1 = register_value(M, Mod0),
   Mod2 = register_value(F, Mod1),
