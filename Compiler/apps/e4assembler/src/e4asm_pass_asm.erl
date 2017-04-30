@@ -76,6 +76,16 @@ process_op(Mod0, _Fun, #{'$' := e4bif, args := Args, name := Name} = BifOp) ->
 process_op(Mod0, _Fun, #{'$' := e4ret, dealloc := Dealloc}) ->
   make_emit(Mod0, e4asm_bc:ret(Dealloc));
 
+process_op(Mod0, Fun, {test, TestName, Fail, _MaybeLive, Args, Result}) ->
+  Call = #{
+    '$' => e4bif,
+    name => TestName,
+    args => Args,
+    fail => Fail,
+    result => Result
+  },
+  process_op(Mod0, Fun, Call);
+
 process_op(Mod0, _Fun, {allocate, StackNeed, Live}) ->
   make_emit(Mod0, e4asm_bc:allocate(StackNeed, 0, Live));
 
@@ -106,15 +116,27 @@ process_op(Mod0, _Fun, {test_heap, Need, Live}) ->
   make_emit(Mod0, e4asm_bc:test_heap(Mod0, Need, Live));
 
 process_op(Mod0, Fun, {get_list, Src, H, T}) ->
-  Call = #{'$' => e4bif, name => e4_decons, args => [Src, H, T]},
+  Call = #{
+    '$' => e4bif,
+    name => e4_decons,
+    args => [Src, H, T]
+  },
   process_op(Mod0, Fun, Call);
 
 process_op(Mod0, Fun, {badmatch, Reg}) ->
-  Call = #{'$' => e4bif, name => e4_badmatch, args => [Reg]},
+  Call = #{
+    '$' => e4bif,
+    name => e4_badmatch,
+    args => [Reg]
+  },
   process_op(Mod0, Fun, Call);
 
 process_op(Mod0, Fun, {case_end, Reg}) ->
-  Call = #{'$' => e4bif, name => e4_casec, args => [Reg]},
+  Call = #{
+    '$' => e4bif,
+    name => e4_casec,
+    args => [Reg]
+  },
   process_op(Mod0, Fun, Call);
 
 process_op(Mod0, _Fun, {put_tuple, Size, Dst}) ->
@@ -137,6 +159,9 @@ process_op(Mod0, _Fun, {jump, Dst}) ->
 process_op(Mod0, _Fun, {trim, N, _Unused}) ->
   make_emit(Mod0, e4asm_bc:trim(N));
 
+process_op(Mod0, _Fun, {init, Y}) ->
+  make_emit(Mod0, e4asm_bc:clear_stack(Y));
+
 process_op(Mod0, _Fun, {make_fun2, Label, _Index, _Uniq, NumFree}) ->
   Mod1 = register_value_lambda(Label, NumFree, Mod0),
   make_emit(Mod1, e4asm_bc:make_fun(Label, NumFree, Mod1));
@@ -146,6 +171,9 @@ process_op(Mod0, _Fun, {set_tuple_element, Value, Tuple, Pos}) ->
   Mod2 = register_value(Tuple, Mod1),
   Mod3 = register_value(Pos, Mod2),
   make_emit(Mod3, e4asm_bc:set_element(Value, Tuple, Pos, Mod3));
+
+process_op(Mod0, _Fun, {'%', _Something}) ->
+  make_emit(Mod0, []);
 
 process_op(_Mod0, Fun, Other) ->
   ?COMPILE_ERROR("Unknown op ~p in source fun ~s", [Other, fun_str(Fun)]).
@@ -166,7 +194,8 @@ add_label(Mod0, _Fun, _L) ->
 %% @doc Inform the program Mod0 that there will be a value in the program,
 %% possibly a literal or an atom, so it will be added to the atom or literal
 %% table if needed.
-%%
+register_value({field_flags, _List}, Mod) -> Mod; % integer needs no reg
+
 register_value(Int, Mod) when is_integer(Int) -> Mod;
 
 register_value({integer, _}, Mod) -> Mod;

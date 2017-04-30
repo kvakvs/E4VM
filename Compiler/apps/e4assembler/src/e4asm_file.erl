@@ -110,6 +110,6 @@ encode_lambdas(Mod = #{'$' := e4mod, lambdas := Lambdas}) ->
   erlang:iolist_to_binary([e4c:varint(length(Sorted)), Bin]).
 
 
-encode_lambdas_one_lambda({{f, F}, NumFree}, Mod) ->
-  [e4c:varint(F),
+encode_lambdas_one_lambda({{f, Label}, NumFree}, Mod) ->
+  [e4c:varint(Label), % this should somehow resolve to atom function name maybe
    e4c:varint(NumFree)].

@@ -7,6 +7,7 @@
   bif/2,
   call/2,
   call_fun/2,
+  clear_stack/1,
   func_info/3,
   get_element/3,
   jump/1,
@@ -44,6 +45,7 @@
 -define(E4BC_TRIM,        18).
 -define(E4BC_MAKE_FUN,    19).
 -define(E4BC_SET_ELEMENT, 20).
+-define(E4BC_CLEAR_STACK, 21).
 
 
 bc_op(X) -> <<X:8>>.
@@ -179,8 +181,14 @@ make_fun({f, _} = L, NumFree, Mod) ->
   [bc_op(?E4BC_MAKE_FUN),
    e4asm_cte:encode({lambda, L, NumFree}, Mod)].
 
+
 set_element(Value, Tuple, Pos, Mod) ->
   [bc_op(?E4BC_SET_ELEMENT),
    e4asm_cte:encode(Value, Mod),
    e4asm_cte:encode(Tuple, Mod),
    e4asm_cte:encode(Pos, Mod)].
+
+
+clear_stack({y, Y}) ->
+  [bc_op(?E4BC_CLEAR_STACK),
+    e4c:varint(Y)].
