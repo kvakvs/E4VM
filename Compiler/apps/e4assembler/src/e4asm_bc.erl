@@ -48,13 +48,13 @@
 -define(E4BC_CLEAR_STACK, 21).
 
 
-bc_op(X) -> <<X:8>>.
+bc_op(X) -> X.
 %%bc_op(X, F1) -> <<(X bor bit_if(F1, 128)):8>>.
-bc_op(X, F1, F2) -> <<(X bor bit_if(F1, 128)
-                         bor bit_if(F2, 64)):8>>.
-bc_op(X, F1, F2, F3) -> <<(X bor bit_if(F1, 128)
-                             bor bit_if(F2, 64)
-                             bor bit_if(F3, 32)):8>>.
+bc_op(X, F1, F2) -> (X bor bit_if(F1, 128)
+                       bor bit_if(F2, 64)).
+bc_op(X, F1, F2, F3) -> (X bor bit_if(F1, 128)
+                           bor bit_if(F2, 64)
+                           bor bit_if(F3, 32)).
 
 
 bit_if(true, X) -> X;

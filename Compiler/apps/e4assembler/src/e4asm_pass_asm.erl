@@ -39,42 +39,58 @@ compile_fold_helper({FunArity, F0 = #{'$' := e4fun}},
 
 process_fun(Fun = #{'$' := e4fun, code := Code0}, M0) ->
   X = lists:foldl(
-    fun(Op, State) -> process_fun_helper(Fun, Op, State) end,
-    #{binary => [], program => M0},
+    fun(Op, State) -> process_fun_fold_helper(Fun, Op, State) end,
+    #{'$' => fun_state,
+      binary => [],
+      labels => orddict:new(),
+      program => M0},
     Code0
   ),
-  #{binary := Code1, program := M1} = X,
-  {Fun#{code := Code1}, M1}.
+  #{'$' := fun_state,
+    binary := Code1,
+    labels := Labels,
+    program := M1} = X,
+  {Fun#{code := lists:reverse(Code1),
+        labels => Labels},
+   M1}.
 
-process_fun_helper(Fun = #{'$' := e4fun},
-                   Op0,
-                   #{binary := Accum, program := Mod0}) ->
-  #{op_bin := Op1,
+
+process_fun_fold_helper(_Fun, {label, F},
+                        #{'$' := fun_state,
+                          binary := Accum,
+                          labels := Labels} = FState) ->
+  Labels1 = orddict:store(F, iolist_size(Accum), Labels),
+  FState#{labels => Labels1};
+
+process_fun_fold_helper(Fun = #{'$' := e4fun},
+                        Op0,
+                        #{'$' := fun_state,
+                          binary := Accum,
+                          program := Mod0} = FState) ->
+  #{'$' := processop_result,
+    op_bin := Op1,
     program := Mod1} = process_op(Mod0, Fun, Op0),
-  #{binary => [Op1 | Accum],
-    program => Mod1}.
+  FState#{binary => [Op1 | Accum],
+          program => Mod1}.
 
 
 -spec process_op(e4mod(), e4fun(), tuple() | atom()) -> e4mod().
-process_op(Mod0, Fun, {label, L}) ->
-  make_emit(add_label(Mod0, Fun, L), []);
-
 process_op(Mod0, _Fun,
            {func_info, _Mod, FunName, Arity}) ->
   Mod1 = register_value(FunName, Mod0),
-  make_emit(Mod1, e4asm_bc:func_info(Mod1, FunName, Arity));
+  make_result(Mod1, e4asm_bc:func_info(Mod1, FunName, Arity));
 
 process_op(Mod0, _Fun, #{'$' := e4call, target := Target} = CallOp) ->
   Mod1 = register_call_target(Target, Mod0),
-  make_emit(Mod1, e4asm_bc:call(Mod1, CallOp));
+  make_result(Mod1, e4asm_bc:call(Mod1, CallOp));
 
 process_op(Mod0, _Fun, #{'$' := e4bif, args := Args, name := Name} = BifOp) ->
   Mod1 = register_value(Name, Mod0),
   Mod2 = register_valuelist(Args, Mod1),
-  make_emit(Mod2, e4asm_bc:bif(Mod2, BifOp));
+  make_result(Mod2, e4asm_bc:bif(Mod2, BifOp));
 
 process_op(Mod0, _Fun, #{'$' := e4ret, dealloc := Dealloc}) ->
-  make_emit(Mod0, e4asm_bc:ret(Dealloc));
+  make_result(Mod0, e4asm_bc:ret(Dealloc));
 
 process_op(Mod0, Fun, {test, TestName, Fail, _MaybeLive, Args, Result}) ->
   Call = #{
@@ -87,33 +103,33 @@ process_op(Mod0, Fun, {test, TestName, Fail, _MaybeLive, Args, Result}) ->
   process_op(Mod0, Fun, Call);
 
 process_op(Mod0, _Fun, {allocate, StackNeed, Live}) ->
-  make_emit(Mod0, e4asm_bc:allocate(StackNeed, 0, Live));
+  make_result(Mod0, e4asm_bc:allocate(StackNeed, 0, Live));
 
 process_op(Mod0, _Fun, {allocate_zero, StackNeed, Live}) ->
-  make_emit(Mod0, e4asm_bc:allocate(StackNeed, 0, Live));
+  make_result(Mod0, e4asm_bc:allocate(StackNeed, 0, Live));
 
 process_op(Mod0, _Fun, {allocate_heap, StackNeed, HeapNeed, Live}) ->
-  make_emit(Mod0, e4asm_bc:allocate(StackNeed, HeapNeed, Live));
+  make_result(Mod0, e4asm_bc:allocate(StackNeed, HeapNeed, Live));
 
 process_op(Mod0, _Fun, {allocate_heap_zero, StackNeed, HeapNeed, Live}) ->
-  make_emit(Mod0, e4asm_bc:allocate(StackNeed, HeapNeed, Live));
+  make_result(Mod0, e4asm_bc:allocate(StackNeed, HeapNeed, Live));
 
 process_op(Mod0, _Fun, {get_tuple_element, Tuple, Index, Result}) ->
   Mod1 = register_value(Tuple, Mod0),
-  make_emit(Mod1, e4asm_bc:get_element(Tuple, Index, Result));
+  make_result(Mod1, e4asm_bc:get_element(Tuple, Index, Result));
 
 process_op(Mod0, _Fun, {move, Src, Dst}) ->
   Mod1 = register_value(Src, Mod0),
-  make_emit(Mod1, e4asm_bc:move(Mod1, Src, Dst));
+  make_result(Mod1, e4asm_bc:move(Mod1, Src, Dst));
 
 process_op(Mod0, _Fun, {call_fun, Arity}) ->
-  make_emit(Mod0, e4asm_bc:call_fun(Mod0, Arity));
+  make_result(Mod0, e4asm_bc:call_fun(Mod0, Arity));
 
 process_op(Mod0, _Fun, {kill, Dst}) ->
-  make_emit(Mod0, e4asm_bc:set_nil(Mod0, Dst));
+  make_result(Mod0, e4asm_bc:set_nil(Mod0, Dst));
 
 process_op(Mod0, _Fun, {test_heap, Need, Live}) ->
-  make_emit(Mod0, e4asm_bc:test_heap(Mod0, Need, Live));
+  make_result(Mod0, e4asm_bc:test_heap(Mod0, Need, Live));
 
 process_op(Mod0, Fun, {get_list, Src, H, T}) ->
   Call = #{
@@ -140,55 +156,53 @@ process_op(Mod0, Fun, {case_end, Reg}) ->
   process_op(Mod0, Fun, Call);
 
 process_op(Mod0, _Fun, {put_tuple, Size, Dst}) ->
-  make_emit(Mod0, e4asm_bc:put_tuple(Mod0, Size, Dst));
+  make_result(Mod0, e4asm_bc:put_tuple(Mod0, Size, Dst));
 
 process_op(Mod0, _Fun, {put, Val}) ->
   Mod1 = register_value(Val, Mod0),
-  make_emit(Mod1, e4asm_bc:put(Mod1, Val));
+  make_result(Mod1, e4asm_bc:put(Mod1, Val));
 
 process_op(Mod0, _Fun, {select_val, Src, Fail, Select}) ->
   Mod1 = register_value_jumptab(Select, Mod0),
-  make_emit(Mod0, e4asm_bc:select_val(Src, Fail, Select, Mod1));
+  make_result(Mod0, e4asm_bc:select_val(Src, Fail, Select, Mod1));
 
 process_op(Mod0, _Fun, {put_list, H, T, Dst}) ->
-  make_emit(Mod0, e4asm_bc:cons(H, T, Dst));
+  make_result(Mod0, e4asm_bc:cons(H, T, Dst));
 
 process_op(Mod0, _Fun, {jump, Dst}) ->
-  make_emit(Mod0, e4asm_bc:jump(Dst));
+  make_result(Mod0, e4asm_bc:jump(Dst));
 
 process_op(Mod0, _Fun, {trim, N, _Unused}) ->
-  make_emit(Mod0, e4asm_bc:trim(N));
+  make_result(Mod0, e4asm_bc:trim(N));
 
 process_op(Mod0, _Fun, {init, Y}) ->
-  make_emit(Mod0, e4asm_bc:clear_stack(Y));
+  make_result(Mod0, e4asm_bc:clear_stack(Y));
 
 process_op(Mod0, _Fun, {make_fun2, Label, _Index, _Uniq, NumFree}) ->
   Mod1 = register_value_lambda(Label, NumFree, Mod0),
-  make_emit(Mod1, e4asm_bc:make_fun(Label, NumFree, Mod1));
+  make_result(Mod1, e4asm_bc:make_fun(Label, NumFree, Mod1));
 
 process_op(Mod0, _Fun, {set_tuple_element, Value, Tuple, Pos}) ->
   Mod1 = register_value(Value, Mod0),
   Mod2 = register_value(Tuple, Mod1),
   Mod3 = register_value(Pos, Mod2),
-  make_emit(Mod3, e4asm_bc:set_element(Value, Tuple, Pos, Mod3));
+  make_result(Mod3, e4asm_bc:set_element(Value, Tuple, Pos, Mod3));
 
 process_op(Mod0, _Fun, {'%', _Something}) ->
-  make_emit(Mod0, []);
+  make_result(Mod0, []);
 
 process_op(_Mod0, Fun, Other) ->
   ?COMPILE_ERROR("Unknown op ~p in source fun ~s", [Other, fun_str(Fun)]).
 
 
-make_emit(Mod0, Code) ->
-  #{program => Mod0, op_bin => Code}.
+make_result(Mod0, Code) ->
+  #{'$' => processop_result,
+    program => Mod0,
+    op_bin => Code}.
 
 
 fun_str(#{'$' := e4fun, name := N, arity := A}) ->
   io_lib:format("~s/~B", [N, A]).
-
-
-add_label(Mod0, _Fun, _L) ->
-  Mod0.
 
 
 %% @doc Inform the program Mod0 that there will be a value in the program,
