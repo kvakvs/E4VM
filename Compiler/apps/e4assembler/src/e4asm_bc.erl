@@ -28,8 +28,8 @@
 -define(E4BC_CALL_LOCAL,  1). % 4 local call flavours defined by bits 6 and 7
 -define(E4BC_CALL_EXT,    2). % 4   ext call flavours defined by bits 6 and 7
 -define(E4BC_BIF,         3).
--define(E4BC_ALLOC_S,     4).
--define(E4BC_ALLOC_S_H,   5).
+-define(E4BC_ALLOC_STACK,       4).
+-define(E4BC_ALLOC_STACK_HEAP,  5).
 -define(E4BC_GET_ELEMENT, 6).
 -define(E4BC_MOVE,        7).
 -define(E4BC_CALL_FUN,    8).
@@ -141,12 +141,12 @@ ret(Dealloc) -> [bc_op(?E4BC_RETN), e4asm_cte:encode(Dealloc, #{})].
 
 
 allocate(StackNeed, 0, Live) ->
-  [bc_op(?E4BC_ALLOC_S),
+  [bc_op(?E4BC_ALLOC_STACK),
    e4asm_cte:encode(StackNeed, #{}),
    e4asm_cte:encode(Live, #{})];
 
 allocate(StackNeed, HeapNeed, Live) ->
-  [bc_op(?E4BC_ALLOC_S_H),
+  [bc_op(?E4BC_ALLOC_STACK_HEAP),
    e4asm_cte:encode(StackNeed, #{}),
    e4asm_cte:encode(HeapNeed, #{}),
    e4asm_cte:encode(Live, #{})].

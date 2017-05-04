@@ -1,3 +1,9 @@
+# Temporary files used for whatever reasons
+*.txt
+e4c_pass*.txt
+j1c_pass*.txt
+
+# Erlang temporary and build output
 .rebar3
 _*
 .eunit
@@ -15,7 +21,6 @@ logs
 _build
 .idea
 
-e4c_pass*.txt
-j1c_pass*.txt
+# Output directories?
 deps/*
 out/*
