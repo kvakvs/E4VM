@@ -12,7 +12,13 @@ instructions and smaller size.
 Building on PC
 --------------
 
-* Create a build directory, for example `mkdir build_`.
-* Enter build directory: `cd build_`.
-* Run CMake on it: `cmake ..`
+* Create a build directory, for example ``mkdir build_``.
+* Enter build directory: ``cd build_``.
+* Run CMake on it: ``cmake ..``
 * `make`
+
+Contributions
+-------------
+
+At this time contributions are **not** welcome. Sorry.
+I work on it and you don't.
