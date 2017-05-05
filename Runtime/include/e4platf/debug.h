@@ -53,12 +53,12 @@ void debug_printf(const char* format, ...);
 #define E4TODO(T) \
   e4::failf(BOLDYELLOW "TODO:" RESET " %s (%s:%d)\n", T, __FILE__, __LINE__);
 
-#define E4FAIL(T)                                                          \
-  e4::failf(BOLDRED "FAIL:" RESET " %s:%d -- " BOLDYELLOW "%s\n" RESET, T, \
-            __FILE__, __LINE__);
+#define E4FAIL(T)                                                         \
+  e4::failf(BOLDRED "FAIL:" RESET " %s:%d -- " BOLDYELLOW "%s\n" RESET,   \
+            __FILE__, __LINE__, T);
 
 // Choose a debug value in debug build
-#define E4CHOICE(DEBUG, NODEBUG) ((void)(NODEBUG), DEBUG)
+#define E4CHOICE(DEBUG, NODEBUG) (DEBUG)
 #define E4LOG(A) debug_printf(A);
 #define E4LOG1(A, V) debug_printf(A, V);
 #define E4LOG2(A, V1, V2) debug_printf(A, V1, V2);
@@ -74,7 +74,7 @@ void debug_printf(const char* format, ...);
 #define E4FAIL(T) e4::failf("FAIL:%s\n", T);
 
 // Choose a nodebug value in release
-#define E4CHOICE(DEBUG, NODEBUG) ((void)(DEBUG), NODEBUG)
+#define E4CHOICE(DEBUG, NODEBUG) (NODEBUG)
 #define E4LOG(A) (void)0
 #define E4LOG1(A, V) (void)0
 #define E4LOG2(A, V1, V2) (void)0
