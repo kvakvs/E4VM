@@ -10,7 +10,7 @@ int main(int /*argc*/, const char** /*argv [] */) {
   e4::VM vm;
   using e4std::String;
 
-  vm.modules_.path_add(String("e4compile/priv"));
+  vm.modules_.path_add(String("../Compiler/priv"));
   auto mod_name = vm.add_atom(String("test1"));
   vm.modules_.load(vm, mod_name);
 

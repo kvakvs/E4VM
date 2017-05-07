@@ -65,10 +65,12 @@ class Module {
   CodeAddress get_export_address(const Export& exp) const;
 
  private:
-  void load_atoms(const ByteView& adata, Vector<String>& out);
   void load_literals(const ByteView& adata);
   void load_exports(const ByteView& adata, const Vector<Term>& atoms_lookup);
   void load_labels(const ByteView& adata);
+
+  void load_atoms_section(Vector <e4::Term>& atoms_t,
+                          const e4std::BoxView<uint8_t>& section_view);
 };
 
 }  // ns e4

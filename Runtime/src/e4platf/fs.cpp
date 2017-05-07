@@ -19,6 +19,7 @@ Vector<uint8_t> read(const Vector<String>& search_paths, const char* fn) {
 #if E4FEATURE_FS
   for (auto& path : search_paths) {
     auto try_path = path + "/" + fn;
+    printf("%s\n", try_path.c_str());
     if (exists(try_path)) {
       return File::read_file(try_path.c_str());
     }

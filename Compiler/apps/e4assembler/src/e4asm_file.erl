@@ -25,7 +25,9 @@ to_iolist(Prog = #{'$' := e4mod}) ->
 
 
 section(Tag, Data) ->
-  [Tag, e4c:varint(byte_size(Data)), Data].
+  [Tag,
+   <<(byte_size(Data)):32/big>>,
+   Data]. % TODO: 4 alignment for ARM
 
 
 %% @doc Replace file ext in the filename with e4b

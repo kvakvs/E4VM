@@ -13,7 +13,7 @@ namespace e4 {
 
 Term CodeManager::load(VM& vm, Term modn) {
   String mod_filename(vm.find_atom(modn));
-  mod_filename += ".beam";
+  mod_filename += ".e4b";
 
   auto data = platf::fs::read(paths_, mod_filename.c_str());
   auto m = new Module(vm);

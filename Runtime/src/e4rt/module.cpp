@@ -13,48 +13,53 @@
 
 namespace e4 {
 
-constexpr Word SIG_SIZE = 4;  // module and section signature length
-constexpr const char* SIG_MODULE = "E4J1";  // Erl-Forth J1Forth Flavour
+constexpr Word SIG_SIZE = 2;  // module and section signature length
+constexpr const char* SIG_MODULE = "E4";  // Erl-Forth J1Forth Flavour
 
-constexpr const char* SIG_ATOMS = "ATOM";  // atoms section tag
-constexpr const char* SIG_CODE = "CODE";   // code section tag
-constexpr const char* SIG_LTRL = "LTRL";   // literals section tag
-constexpr const char* SIG_EXPT = "EXPT";   // exports section tag
+constexpr const char* SIG_ATOMS = "At";  // atoms section tag
+constexpr const char* SIG_CODE = "Co";   // code section tag
+constexpr const char* SIG_LTRL = "Lt";   // literals section tag
+constexpr const char* SIG_EXPT = "Xp";   // exports section tag
 constexpr const char* SIG_LABL = "LABL";   // labels section tag
 
 void Module::load(const ByteView& data) {
   tool::Reader bsr(data);
 
+  // Read header E4
   bsr.assert_and_advance(SIG_MODULE, ByteSize(4));
-  ByteSize all_sz(bsr.read_varint_u<Word>());
+
+  ByteSize all_sz(bsr.read_big_u32());
   bsr.assert_have(all_sz);
 
-  char section_sig[5] = {0, 0, 0, 0, 0};
+  // Storage for section headers
+  char section_sig[SIG_SIZE+1] = {0, };
   Vector<Term> atoms_t;  // after loaded, will be used in exports
 
-  while (bsr.have(ByteSize(SIG_SIZE))) {
+  // Read another section, and switch based on its value
+  while (bsr.have(ByteSize(SIG_SIZE + 4))) {
+    // Section header 2 characters and Size:32/big
     bsr.read<char>(section_sig, SIG_SIZE);
-    ByteSize section_sz(bsr.read_varint_u<Word>());
+    ByteSize section_sz(bsr.read_big_u32());
+
     auto section_view = ByteView(bsr.pos(), section_sz.bytes());
 
     if (not::memcmp(section_sig, SIG_ATOMS, SIG_SIZE)) {
       //
-      // Atoms table
+      // Atoms table (atom[0] is module name)
       //
-      Vector<String> atoms;
-      load_atoms(section_view, /*out*/ atoms);
-      name_ = vm_.add_atom(atoms.front());
-      for (const auto& a : atoms) {
-        atoms_t.push_back(vm_.add_atom(a));
-      }
+      this->load_atoms_section(/*out*/atoms_t, section_view);
+      this->name_ = atoms_t.front();
+
     } else if (not::memcmp(section_sig, SIG_CODE, SIG_SIZE)) {
       //
       // Code
       //
       code_.resize(section_sz.bytes());
-      ::memcpy(code_.data(), bsr.pos(), section_sz.bytes());
+      std::copy(bsr.pos(), bsr.pos() + section_sz.bytes(), code_.data());
+      // ::memcpy(code_.data(), bsr.pos(), section_sz.bytes());
 
       // TODO: set up literal refs in code
+
     } else if (not::memcmp(section_sig, SIG_LTRL, SIG_SIZE)) {
       //
       // Literals table
@@ -75,27 +80,27 @@ void Module::load(const ByteView& data) {
   // TODO: set up atom refs in code
 }
 
-void Module::load_literals(const ByteView& adata) {
-  tool::Reader bsr(adata);
-  Word n = bsr.read_varint_u<Word>();
-  literals_.reserve(n);
+void Module::load_atoms_section(Vector <e4::Term>& atoms_t,
+                                const e4std::BoxView<uint8_t>& section_view) {
+  tool::Reader bsr(section_view);
+  Word count = bsr.read_varint_u<Word>();
 
-  for (Word i = 0; i < n; ++i) {
-    const auto lit = ExtTerm::read_with_marker(vm_, literal_heap_, bsr);
-    literals_.push_back(lit);
+//  this->name_ = this->vm_.add_atom(result.front());
+  for (Word i = 0; i < count; ++i) {
+    auto a = bsr.read_varlength_string();
+    atoms_t.push_back(this->vm_.add_atom(a));
   }
 }
 
-// Reads atom table and populates a string vector. Does not populate
-// the global atom table.
-void Module::load_atoms(const ByteView& adata, Vector<String>& result) {
-  tool::Reader bsr(adata);
-  Word n = bsr.read_varint_u<Word>();
-  result.clear();
-  result.reserve(n);
 
-  for (Word i = 0; i < n; ++i) {
-    result.push_back(bsr.read_varlength_string());
+void Module::load_literals(const ByteView& adata) {
+  tool::Reader bsr(adata);
+  Word count = bsr.read_varint_u<Word>();
+  literals_.reserve(count);
+
+  for (Word i = 0; i < count; ++i) {
+    const auto lit = ExtTerm::read_with_marker(vm_, literal_heap_, bsr);
+    literals_.push_back(lit);
   }
 }
 

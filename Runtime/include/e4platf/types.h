@@ -22,15 +22,15 @@
 namespace e4 {
 
 #if E4_WORD_SIZE == 64
-using Word = uint64_t;
-using SignedWord = int64_t;
-constexpr Word BYTES_PER_WORD = 8;
+  using Word = uint64_t;
+  using SignedWord = int64_t;
+  constexpr Word BYTES_PER_WORD = 8;
 #elif E4_WORD_SIZE == 32
-using Word = uint32_t;
-using SignedWord = int32_t;
-constexpr Word BYTES_PER_WORD = 4;
+  using Word = uint32_t;
+  using SignedWord = int32_t;
+  constexpr Word BYTES_PER_WORD = 4;
 #else
-#error E4_WORD_SIZE other than 32/64 not supported yet
+  #error E4_WORD_SIZE other than 32/64 not supported yet
 #endif
 constexpr Word BITS_PER_WORD = sizeof(Word) * 8;
 
