@@ -5,19 +5,16 @@
 
 #pragma once
 
-#include <cstdint>
-#include <string>
-
-#include "e4std/array.h"
-#include "e4std/map.h"
-#include "e4std/string.h"
-#include "e4std/vector.h"
-
-#include "e4std/sizes.h"
-#include "e4std/stuff.h"
-
 #include "e4platf/debug.h"
 #include "e4platf/mem.h"
+#include "e4std/array.h"
+#include "e4std/map.h"
+#include "e4std/sizes.h"
+#include "e4std/string.h"
+#include "e4std/stuff.h"
+#include "e4std/vector.h"
+#include <cstdint>
+#include <string>
 
 namespace e4 {
 

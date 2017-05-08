@@ -212,7 +212,23 @@ class ConsCell {
   Term tail_;
 };
 
-using Arity = Word;  // TODO: Use a smaller type but alignment will eat it away
+class Arity { // TODO: Use a smaller type but alignment will eat it away
+  Word  val_;
+public:
+  explicit Arity(Word x): val_(x) {}
+
+  bool operator < (const Arity& other) const {
+    return val_ < other.val_;
+  }
+
+  bool operator == (const Arity& other) const {
+    return val_ == other.val_;
+  }
+
+  template <typename T> T get() const {
+    return static_cast<T>(val_);
+  }
+};
 
 class MFArity {
  public:
@@ -235,7 +251,9 @@ class MFArgs {
   MFArgs(Term m, Term f, const ArrayRef<Term>& args)
     : mod_(m), fun_(f), args_(args) {}
 
-  MFArity as_mfarity() const { return MFArity(mod_, fun_, args_.count()); }
+  MFArity as_mfarity() const {
+    return MFArity(mod_, fun_, Arity {args_.count()});
+  }
 
 #if E4DEBUG
   void print(const VM& vm) const;

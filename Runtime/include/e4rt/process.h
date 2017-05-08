@@ -52,7 +52,7 @@ class RuntimeContext {
 
   explicit RuntimeContext(const RangeChecker& rc) : range_checker_(rc) {}
 
-  Instruction fetch() {
+  uint8_t fetch() {
     auto instr = pc_.fetch();
     // TODO: check code end/code range?
     pc_.advance();

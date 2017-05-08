@@ -45,7 +45,7 @@
 -define(E4BC_TRIM,        18).
 -define(E4BC_MAKE_FUN,    19).
 -define(E4BC_SET_ELEMENT, 20).
--define(E4BC_CLEAR_STACK, 21).
+-define(E4BC_CLEAR_STACK, 21). % use Set_nil instead?
 
 
 bc_op(X) -> X.

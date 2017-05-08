@@ -20,20 +20,21 @@ constexpr const char* SIG_ATOMS = "At";  // atoms section tag
 constexpr const char* SIG_CODE = "Co";   // code section tag
 constexpr const char* SIG_LTRL = "Lt";   // literals section tag
 constexpr const char* SIG_EXPT = "Xp";   // exports section tag
+constexpr const char* SIG_IMPT = "Im";   // imports section tag
 constexpr const char* SIG_LABL = "LABL";   // labels section tag
 
 void Module::load(const ByteView& data) {
   tool::Reader bsr(data);
 
   // Read header E4
-  bsr.assert_and_advance(SIG_MODULE, ByteSize(4));
+  bsr.assert_and_advance(SIG_MODULE, ByteSize(SIG_SIZE));
 
   ByteSize all_sz(bsr.read_big_u32());
   bsr.assert_have(all_sz);
 
   // Storage for section headers
   char section_sig[SIG_SIZE+1] = {0, };
-  Vector<Term> atoms_t;  // after loaded, will be used in exports
+  Vector<Term> atoms_tab;  // after loaded, will be used in exports
 
   // Read another section, and switch based on its value
   while (bsr.have(ByteSize(SIG_SIZE + 4))) {
@@ -47,8 +48,8 @@ void Module::load(const ByteView& data) {
       //
       // Atoms table (atom[0] is module name)
       //
-      this->load_atoms_section(/*out*/atoms_t, section_view);
-      this->name_ = atoms_t.front();
+      this->load_atoms_section(/*out*/atoms_tab, section_view);
+      this->name_ = atoms_tab.front();
 
     } else if (not::memcmp(section_sig, SIG_CODE, SIG_SIZE)) {
       //
@@ -67,12 +68,22 @@ void Module::load(const ByteView& data) {
       E4ASSERT(literals_.empty());
       E4ASSERT(literal_heap_.empty());
       load_literals(section_view);
+
     } else if (not::memcmp(section_sig, SIG_EXPT, SIG_SIZE)) {
-      load_exports(section_view, atoms_t);
+      load_exports(section_view, atoms_tab);
+
+    } else if (not::memcmp(section_sig, SIG_IMPT, SIG_SIZE)) {
+      load_imports(section_view, atoms_tab);
+
     } else if (not::memcmp(section_sig, SIG_LABL, SIG_SIZE)) {
       load_labels(section_view);
+
     } else {
-      E4FAIL("Unknown section");
+#if E4DEBUG
+      e4::failf("e4b loader: Unknown section '%s'", section_sig);
+#else
+      E4FAIL("bad module: unk section");
+#endif
     }
 
     bsr.advance(section_sz);
@@ -114,7 +125,7 @@ void Module::load_exports(const ByteView& adata,
     auto fn_atom_index = bsr.read_varint_u<Word>();
 
     E4ASSERT(atoms_lookup.size() > fn_atom_index);
-    auto arity = bsr.read_varint_u<Arity>();
+    Arity arity { bsr.read_varint_u<Word>() };
     auto offset = bsr.read_varint_u<Word>();
 
     Export ex(atoms_lookup[fn_atom_index], arity, offset);
@@ -150,6 +161,11 @@ void Module::load_labels(const ByteView& adata) {
   }
 }
 
+void Module::load_imports(const ByteView &adata,
+                          const Vector<Term> &atoms_lookup) {
+
+}
+
 int Export::compare_pvoid(const void* a, const void* b) {
   auto pa = static_cast<const Export*>(a);
   auto pb = static_cast<const Export*>(b);
@@ -169,7 +185,7 @@ int Export::compare_pvoid(const void* a, const void* b) {
 #if E4DEBUG
 void Export::print(const VM& vm) const {
   vm.print(fun_);
-  ::printf("/%zu", static_cast<size_t>(arity_));
+  ::printf("/%zu", arity_.get<size_t>());
 }
 #endif  // DEBUG
 
