@@ -23,10 +23,17 @@ using e4std::ByteView;
 // Element in exports table. Used to find functions referred by {M,F,Arity}
 // from the outside
 class Export {
-public:
+private:
   Term fun_;
   Word offset_;  // how far from the module code start, in 16bit words
   Arity arity_;
+
+public:
+  const Term &get_fun() const { return fun_; }
+
+  Word get_offset() const { return offset_; }
+
+  const Arity &get_arity() const { return arity_; }
 
   explicit Export() : Export(NON_VALUE, Arity {0}, 0) {}
 
@@ -42,12 +49,36 @@ public:
 
 
 class Import {
-public:
+private:
   Term mod_;
   Term fun_;
   Arity arity_;
 
+public:
+  const Term &get_mod() const { return mod_; }
+
+  const Term &get_fun() const { return fun_; }
+
+  const Arity &get_arity() const { return arity_; }
+
   Import(Term m, Term f, Arity a) : mod_(m), fun_(f), arity_(a) {}
+};
+
+
+// A list of pairs [value | label] to use in select_val jumps
+class JumpTable {
+private:
+  using Pair = std::tuple<Term, Word>;
+  Vector<Pair> pairs_;
+
+public:
+  JumpTable(Word capacity) {
+    pairs_.reserve(capacity);
+  }
+
+  void push_back(Term t, Word label) {
+    pairs_.emplace_back(t, label);
+  }
 };
 
 
@@ -55,12 +86,12 @@ class Module {
 private:
   Term name_ = NON_VALUE;  // atom name
   PODVector<uint8_t> code_;
-  PODVector<Word> labels_;  // labels table TODO: merge with code maybe?
 
   PODVector<Term> literals_;
   Heap literal_heap_;
   PODVector<Export> exports_;
   PODVector<Import> imports_;
+  Vector<JumpTable> jump_tables_;
 
   VM &vm_;
 
@@ -79,14 +110,16 @@ public:
 private:
   void load_literals(const ByteView &adata);
 
-  void load_exports(const ByteView &adata, const Vector<Term> &atoms_lookup);
+  void load_exports(const ByteView &adata,
+                    const Vector<Term> &atoms_lookup);
 
-  void load_imports(const ByteView &adata, const Vector<Term> &atoms_lookup);
-
-  void load_labels(const ByteView &adata);
+  void load_imports(const ByteView &adata,
+                    const Vector<Term> &atoms_lookup);
 
   void load_atoms_section(Vector<e4::Term> &atoms_t,
                           const e4std::BoxView<uint8_t> &section_view);
+
+  void load_jump_tables(const ByteView &adata);
 };
 
 }  // ns e4

@@ -24,6 +24,7 @@ constexpr const char* SIG_IMPT = "Im";   // imports section tag
 constexpr const char* SIG_JMPT = "Jt";   // jump table tag
 constexpr const char* SIG_FUNT = "Fn";   // function table tag
 
+
 void Module::load(const ByteView& data) {
   tool::Reader bsr(data);
 
@@ -77,7 +78,7 @@ void Module::load(const ByteView& data) {
       load_imports(section_view, atoms_tab);
 
     } else if (not::memcmp(section_sig, SIG_JMPT, SIG_SIZE)) {
-//      load_jt(section_view);
+      load_jump_tables(section_view);
 
     } else if (not::memcmp(section_sig, SIG_FUNT, SIG_SIZE)) {
 //      load_fun_table(section_view);
@@ -95,10 +96,11 @@ void Module::load(const ByteView& data) {
   // TODO: set up atom refs in code
 }
 
+
 void Module::load_atoms_section(Vector <e4::Term>& atoms_t,
                                 const e4std::BoxView<uint8_t>& section_view) {
   tool::Reader bsr(section_view);
-  Word count = bsr.read_varint_u<Word>();
+  Word count = bsr.read_varint_u();
 
 //  this->name_ = this->vm_.add_atom(result.front());
   for (Word i = 0; i < count; ++i) {
@@ -110,7 +112,7 @@ void Module::load_atoms_section(Vector <e4::Term>& atoms_t,
 
 void Module::load_literals(const ByteView& adata) {
   tool::Reader bsr(adata);
-  Word count = bsr.read_varint_u<Word>();
+  Word count = bsr.read_varint_u();
   literals_.reserve(count);
 
   for (Word i = 0; i < count; ++i) {
@@ -119,18 +121,19 @@ void Module::load_literals(const ByteView& adata) {
   }
 }
 
+
 void Module::load_exports(const ByteView& adata,
                           const Vector<Term>& atoms_lookup) {
   tool::Reader bsr(adata);
-  Word n = bsr.read_varint_u<Word>();
+  Word n = bsr.read_varint_u();
   exports_.reserve(n);
 
   for (Word i = 0; i < n; ++i) {
-    auto fn_atom_index = bsr.read_varint_u<Word>();
+    auto fn_atom_index = bsr.read_varint_u();
 
     E4ASSERT(atoms_lookup.size() > fn_atom_index);
-    Arity arity { bsr.read_varint_u<Word>() };
-    auto offset = bsr.read_varint_u<Word>();
+    Arity arity { bsr.read_varint_u() };
+    auto offset = bsr.read_varint_u();
 
     Export ex(atoms_lookup[fn_atom_index], arity, offset);
     exports_.push_back(ex);
@@ -142,6 +145,7 @@ void Module::load_exports(const ByteView& adata,
             });
 }
 
+
 Export* Module::find_export(const MFArity& mfa) const {
   Export sample(mfa.fun_, mfa.arity_, 0);
   auto r = e4std::binary_search(exports_.begin(), exports_.end(), sample,
@@ -151,34 +155,26 @@ Export* Module::find_export(const MFArity& mfa) const {
   return const_cast<Export*>(r);
 }
 
+
 CodeAddress Module::get_export_address(const Export& exp) const {
-  return CodeAddress(code_.data() + exp.offset_);
+  return CodeAddress(code_.data() + exp.get_offset());
 }
 
-void Module::load_labels(const ByteView& adata) {
-//  tool::Reader bsr(adata);
-//  Word n = bsr.read_varint_u<Word>();
-//  labels_.reserve(n);
-//
-//  for (Word i = 0; i < n; ++i) {
-//    labels_.push_back(bsr.read_varint_u<Word>());
-//  }
-}
 
 void Module::load_imports(const ByteView &adata,
                           const Vector<Term> &atoms_lookup) {
   tool::Reader bsr(adata);
-  Word count = bsr.read_varint_u<Word>();
+  Word count = bsr.read_varint_u();
   imports_.reserve(count);
 
   for (Word i = 0; i < count; ++i) {
-    auto mod_atom_index = bsr.read_varint_u<Word>();
+    auto mod_atom_index = bsr.read_varint_u();
     E4ASSERT(atoms_lookup.size() > mod_atom_index);
 
-    auto fn_atom_index = bsr.read_varint_u<Word>();
+    auto fn_atom_index = bsr.read_varint_u();
     E4ASSERT(atoms_lookup.size() > fn_atom_index);
 
-    Arity arity { bsr.read_varint_u<Word>() };
+    Arity arity { bsr.read_varint_u() };
 
     Import im(atoms_lookup[mod_atom_index],
               atoms_lookup[fn_atom_index],
@@ -186,6 +182,26 @@ void Module::load_imports(const ByteView &adata,
     imports_.push_back(im);
   }
 }
+
+void Module::load_jump_tables(const ByteView &adata) {
+  tool::Reader bsr(adata);
+  Word count = bsr.read_varint_u();
+
+  jump_tables_.reserve(count);
+
+  for (Word i = 0; i < count; ++i) {
+    auto jt_size = bsr.read_varint_u();
+    jump_tables_.emplace_back(jt_size);
+
+    auto &jt = jump_tables_.back();
+    for (Word j = 0; j < jt_size; ++j) {
+      const auto term = bsr.read_compact_term();
+      jt.push_back(term,
+                   bsr.read_varint_u());
+    }
+  }
+}
+
 
 int Export::compare_pvoid(const void* a, const void* b) {
   auto pa = static_cast<const Export*>(a);
@@ -202,6 +218,7 @@ int Export::compare_pvoid(const void* a, const void* b) {
   }
   return 1;
 }
+
 
 #if E4DEBUG
 void Export::print(const VM& vm) const {

@@ -5,17 +5,15 @@
 
 #pragma once
 
-#include <string.h>
-
 #include "e4platf/conf.h"
 #include "e4platf/debug.h"
 #include "e4platf/messages.h"
 #include "e4platf/types.h"
-
+#include "e4rt/term.h"
 #include "e4std/view.h"
+#include <string.h>
 
-namespace e4 {
-namespace tool {
+namespace e4 { namespace tool {
 
 class Reader {
  private:
@@ -77,7 +75,7 @@ class Reader {
   }
 
   // Unsigned varint, word
-  template <typename T>
+  template <typename T = Word>
   T read_varint_u() {
     int safety_limit = sizeof(T) + 1;  // limit loop
     T result = 0;
@@ -145,6 +143,8 @@ class Reader {
     }
     return result;
   }
+
+  Term read_compact_term();
 };
 
 }  // ns e4::tool

@@ -33,19 +33,23 @@ SET(E4_RUNTIME_SOURCES
     include/e4rt/messages.h
     include/e4rt/module.h
     include/e4rt/process.h
+    include/e4rt/range_checker.h
+    include/e4rt/scheduler.h
     include/e4rt/term.h
     include/e4rt/term_as_map_key.h
     include/e4rt/term_tag.h
     include/e4rt/vm.h
     src/e4rt/atom_store.cpp
-    src/e4rt/binary.cpp
+    #src/e4rt/binary.cpp
+    src/e4rt/bytecode.cpp
     src/e4rt/code_mgr.cpp
     src/e4rt/ext_term_format.cpp
     src/e4rt/module.cpp
     src/e4rt/process.cpp
+    src/e4rt/scheduler.cpp
     src/e4rt/term.cpp
     src/e4rt/vm.cpp
-    src/e4rt/scheduler.cpp include/e4rt/scheduler.h src/e4rt/bytecode.cpp include/e4rt/range_checker.h)
+    )
 
 ## Helpers and OS abstraction library
 SET(E4_PLATF_SOURCES
@@ -55,6 +59,7 @@ SET(E4_PLATF_SOURCES
     include/e4platf/fs.h
     include/e4platf/mem.h
     include/e4platf/types.h
+    src/e4platf/byte_stream_reader.cpp
     src/e4platf/debug.cpp
     src/e4platf/fs.cpp
     src/e4platf/mem.cpp
