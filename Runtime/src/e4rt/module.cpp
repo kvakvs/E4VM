@@ -21,7 +21,8 @@ constexpr const char* SIG_CODE = "Co";   // code section tag
 constexpr const char* SIG_LTRL = "Lt";   // literals section tag
 constexpr const char* SIG_EXPT = "Xp";   // exports section tag
 constexpr const char* SIG_IMPT = "Im";   // imports section tag
-constexpr const char* SIG_LABL = "LABL";   // labels section tag
+constexpr const char* SIG_JMPT = "Jt";   // jump table tag
+constexpr const char* SIG_FUNT = "Fn";   // function table tag
 
 void Module::load(const ByteView& data) {
   tool::Reader bsr(data);
@@ -75,8 +76,11 @@ void Module::load(const ByteView& data) {
     } else if (not::memcmp(section_sig, SIG_IMPT, SIG_SIZE)) {
       load_imports(section_view, atoms_tab);
 
-    } else if (not::memcmp(section_sig, SIG_LABL, SIG_SIZE)) {
-      load_labels(section_view);
+    } else if (not::memcmp(section_sig, SIG_JMPT, SIG_SIZE)) {
+//      load_jt(section_view);
+
+    } else if (not::memcmp(section_sig, SIG_FUNT, SIG_SIZE)) {
+//      load_fun_table(section_view);
 
     } else {
 #if E4DEBUG
@@ -152,18 +156,35 @@ CodeAddress Module::get_export_address(const Export& exp) const {
 }
 
 void Module::load_labels(const ByteView& adata) {
-  tool::Reader bsr(adata);
-  Word n = bsr.read_varint_u<Word>();
-  labels_.reserve(n);
-
-  for (Word i = 0; i < n; ++i) {
-    labels_.push_back(bsr.read_varint_u<Word>());
-  }
+//  tool::Reader bsr(adata);
+//  Word n = bsr.read_varint_u<Word>();
+//  labels_.reserve(n);
+//
+//  for (Word i = 0; i < n; ++i) {
+//    labels_.push_back(bsr.read_varint_u<Word>());
+//  }
 }
 
 void Module::load_imports(const ByteView &adata,
                           const Vector<Term> &atoms_lookup) {
+  tool::Reader bsr(adata);
+  Word count = bsr.read_varint_u<Word>();
+  imports_.reserve(count);
 
+  for (Word i = 0; i < count; ++i) {
+    auto mod_atom_index = bsr.read_varint_u<Word>();
+    E4ASSERT(atoms_lookup.size() > mod_atom_index);
+
+    auto fn_atom_index = bsr.read_varint_u<Word>();
+    E4ASSERT(atoms_lookup.size() > fn_atom_index);
+
+    Arity arity { bsr.read_varint_u<Word>() };
+
+    Import im(atoms_lookup[mod_atom_index],
+              atoms_lookup[fn_atom_index],
+              arity);
+    imports_.push_back(im);
+  }
 }
 
 int Export::compare_pvoid(const void* a, const void* b) {

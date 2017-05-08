@@ -46,6 +46,8 @@ public:
   Term mod_;
   Term fun_;
   Arity arity_;
+
+  Import(Term m, Term f, Arity a) : mod_(m), fun_(f), arity_(a) {}
 };
 
 
@@ -58,6 +60,7 @@ private:
   PODVector<Term> literals_;
   Heap literal_heap_;
   PODVector<Export> exports_;
+  PODVector<Import> imports_;
 
   VM &vm_;
 
