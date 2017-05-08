@@ -21,7 +21,7 @@ class VoidResult {
   bool is_fail() const { return what_ != nullptr; }
   const char* get_fail() const { return what_; }
 
-  void assert() const {
+  void dassert() const {
 #if E4DEBUG
     if (is_fail()) {
       E4ASSERT(what_);

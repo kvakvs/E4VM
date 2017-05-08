@@ -10,7 +10,7 @@
 // A custom, badly written replacement for stupid vector which operates raw
 // blocks of uniform size, zeroes memory and ignores C++ constructors
 //
-namespace e4std::impl {
+namespace e4std { namespace impl {
 
 #if 0
 static constexpr ::size_t VECTOR_MIN_GROWTH = 4;
@@ -70,4 +70,4 @@ class VectorImpl {
 }
 #endif // 0
 
-}  // ns e4std::impl
+}}  // ns e4std::impl

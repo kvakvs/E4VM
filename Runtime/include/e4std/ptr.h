@@ -13,7 +13,7 @@
 
 #include <stddef.h>
 #include <cstdint>
-#include <bits/unique_ptr.h>
+#include <memory>
 
 namespace e4std {
 

@@ -1,25 +1,26 @@
-cmake_minimum_required(VERSION 3.5)
-project(E4VM)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.5)
+PROJECT(E4VM CXX)
 
-set(CMAKE_CXX_STANDARD 14)
+SET(CMAKE_CXX_STANDARD 14)
+SET(E4_INVOKE_PVS 0)
+IF("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+    SET(E4_GCC 0)
+ELSE()
+    SET(E4_GCC 1)
+ENDIF()
 
-#set(CMAKE_C_COMPILER    /usr/bin/clang)
-#set(CMAKE_CXX_COMPILER  /usr/bin/clang++)
-#set(CMAKE_C_COMPILER    /usr/bin/gcc)
-#set(CMAKE_CXX_COMPILER  /usr/bin/g++)
-
-set(COMPILATION_INTERMEDIATE_RESULTS    0)
+SET(COMPILATION_INTERMEDIATE_RESULTS    0)
 
 ## We do not use standard C++ library here, but we DO use C++ startup/exit code
 #add_definitions(-nostdinc++)
 
 ##
 ##
-include_directories(${CMAKE_SOURCE_DIR}/include)
+INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/include)
 
 ## Erlang Runtime system for E4VM: types, bifs, memory etc
 ## Minus the VM itself this later can become a runtime library for compiled Erl
-set(E4_RUNTIME_SOURCES
+SET(E4_RUNTIME_SOURCES
     include/e4.h
     include/e4rt/atom_store.h
     include/e4rt/binary.h
@@ -47,7 +48,7 @@ set(E4_RUNTIME_SOURCES
     src/e4rt/scheduler.cpp include/e4rt/scheduler.h src/e4rt/bytecode.cpp include/e4rt/range_checker.h)
 
 ## Helpers and OS abstraction library
-set(E4_PLATF_SOURCES
+SET(E4_PLATF_SOURCES
     include/e4platf/byte_stream_reader.h
     include/e4platf/conf.h
     include/e4platf/debug.h
@@ -60,7 +61,7 @@ set(E4_PLATF_SOURCES
     )
 
 # Minimal badly written replacements for C++ stuff optimized for size
-set(E4_STD_SOURCES
+SET(E4_STD_SOURCES
     include/e4std/array.h
     include/e4std/complicated.h
     include/e4std/free_fun.h
@@ -77,77 +78,83 @@ set(E4_STD_SOURCES
     src/e4std/vector.cpp
     )
 
-set(EMU_SOURCES
+SET(EMU_SOURCES
     src/main.cpp
     )
 
-if(CMAKE_BUILD_TYPE MATCHES Debug)
-    add_definitions(-O0 -g -ggdb -DE4DEBUG=1 -fno-inline)
-else()
-    add_definitions(-Os -g0 -DE4DEBUG=0)
-endif()
+IF(CMAKE_BUILD_TYPE MATCHES Debug)
+    ADD_DEFINITIONS(-O0 -g -ggdb -DE4DEBUG=1 -fno-inline)
+ELSE()
+    ADD_DEFINITIONS(-Os -g0 -DE4DEBUG=0)
+ENDIF()
 
-add_definitions(
+ADD_DEFINITIONS(
     -DE4FEATURE_FS=1
     -DE4_WORD_SIZE=64
 )
-add_definitions(
-    -std=c++17
+ADD_DEFINITIONS(
+    -std=c++14
     -fno-rtti
-    -fno-exceptions
+    #-fno-exceptions
     -fno-unroll-loops
 )
-add_definitions(
+ADD_DEFINITIONS(
     -Wall -Werror
 )
 
-if(CMAKE_CXX_COMPILER MATCHES clang)
-    add_definitions(
+IF(CMAKE_CXX_COMPILER MATCHES clang)
+    ADD_DEFINITIONS(
         -Weverything
         -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-gnu-anonymous-struct
         -Wno-zero-length-array -Wno-nested-anon-types
         -Wno-format-nonliteral -Wno-global-constructors
     )
-else()
-    add_definitions(-ffunction-sections -Wl,--gc-sections)
-endif()
+ELSE()
+    IF(E4_GCC)
+        ADD_DEFINITIONS(-ffunction-sections -Wl,--gc-sections)
+    ENDIF()
+ENDIF()
 
-add_library(e4_runtime  ${E4_RUNTIME_SOURCES})
-add_library(e4_platform ${E4_PLATF_SOURCES})
-add_library(e4_std      ${E4_STD_SOURCES})
+ADD_LIBRARY(e4_runtime  ${E4_RUNTIME_SOURCES})
+ADD_LIBRARY(e4_platform ${E4_PLATF_SOURCES})
+ADD_LIBRARY(e4_std      ${E4_STD_SOURCES})
 
-add_executable(e4emu ${EMU_SOURCES})
-target_link_libraries(e4emu
+ADD_EXECUTABLE(e4emu ${EMU_SOURCES})
+TARGET_LINK_LIBRARIES(e4emu
     e4_runtime e4_platform e4_std)
 
-if (COMPILATION_INTERMEDIATE_RESULTS)
-    target_compile_options(e4_std       PUBLIC -save-temps)
-    target_compile_options(e4_platform  PUBLIC -save-temps)
-    target_compile_options(e4_runtime   PUBLIC -save-temps)
+IF(COMPILATION_INTERMEDIATE_RESULTS)
+    TARGET_COMPILE_OPTIONS(e4_std       PUBLIC -save-temps)
+    TARGET_COMPILE_OPTIONS(e4_platform  PUBLIC -save-temps)
+    TARGET_COMPILE_OPTIONS(e4_runtime   PUBLIC -save-temps)
 
-    target_compile_options(e4emu-debug  PUBLIC -save-temps)
-endif()
+    TARGET_COMPILE_OPTIONS(e4emu-debug  PUBLIC -save-temps)
+ENDIF()
 
 ## -static-libgcc -static-libstdc++ -static -flto
-if(CMAKE_BUILD_TYPE MATCHES Debug)
-    set_target_properties(e4emu
-        PROPERTIES LINK_FLAGS "-flto -static")
-else()
-    set_target_properties(e4emu
-        PROPERTIES LINK_FLAGS "-flto")
-endif()
+IF(E4_GCC)
+    IF(CMAKE_BUILD_TYPE MATCHES Debug)
+        set_target_properties(e4emu
+            PROPERTIES LINK_FLAGS "-flto -static")
+    ELSE()
+        set_target_properties(e4emu
+            PROPERTIES LINK_FLAGS "-flto")
+    ENDIF()
+ENDIF(E4_GCC)
 
 ##
 ## PVS-Studio Static Checker
 ##
-include(PVS-Studio.cmake)
-pvs_studio_add_target(
-    TARGET analyze ALL
-    OUTPUT FORMAT tasklist
-    PREPROCESSOR gcc
-    LOG "PVS-report.tasks"
-    ANALYZE e4_runtime e4_platform e4_std e4emu
-    CXX_FLAGS ${PREPROCESSOR_ADDITIONAL_FLAGS}
-    C_FLAGS ${PREPROCESSOR_ADDITIONAL_FLAGS}
-    CONFIG "${CMAKE_SOURCE_DIR}/PVS-Studio.cfg"
-)
+IF(E4_INVOKE_PVS)
+    INCLUDE(PVS-Studio.cmake)
+    pvs_studio_add_target(
+        TARGET analyze ALL
+        OUTPUT FORMAT tasklist
+        PREPROCESSOR gcc
+        LOG "PVS-report.tasks"
+        ANALYZE e4_runtime e4_platform e4_std e4emu
+        CXX_FLAGS ${PREPROCESSOR_ADDITIONAL_FLAGS}
+        C_FLAGS ${PREPROCESSOR_ADDITIONAL_FLAGS}
+        CONFIG "${CMAKE_SOURCE_DIR}/PVS-Studio.cfg"
+    )
+ENDIF()
