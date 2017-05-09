@@ -11,19 +11,19 @@
 
 namespace e4 {
 
-Term CodeManager::load(VM& vm, Term modn) {
-  String mod_filename(vm.find_atom(modn));
+Term CodeManager::load(Term modn) {
+  String mod_filename(vm_.find_atom(modn));
   mod_filename += ".e4b";
 
   auto data = platf::fs::read(paths_, mod_filename.c_str());
-  auto m = new Module(vm);
+  auto m = new Module(vm_);
   m->load(ByteView(data));
-  add(m);
+  register_module(m);
   return m->name();
 }
 
-void CodeManager::add(Module* m) {
-  auto mname = m->name();
+void CodeManager::register_module(Module *m) {
+  Term mname = m->name();
   auto old_m = mods_.find(mname);
 #if E4FEATURE_HOTCODELOAD
   if (old_m) {
@@ -36,6 +36,8 @@ void CodeManager::add(Module* m) {
   }
   mods_.remove(mname);
 #endif
+
+  vm_.print(mname);
   mods_.insert(mname, m);
 }
 

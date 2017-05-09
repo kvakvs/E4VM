@@ -132,7 +132,9 @@ public:
 class Module {
 private:
   Term name_ = NON_VALUE;  // atom name
+
   PODVector<uint8_t> code_;
+
   ModuleEnv env_;
 
   VM &vm_;
@@ -142,7 +144,9 @@ public:
 
   void load(const ByteView &data);
 
-  Term name() const { return name_; }
+  Term name() const {
+    return name_;
+  }
 
   Export *find_export(const MFArity &mfa) const;
 

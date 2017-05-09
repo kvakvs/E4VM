@@ -12,7 +12,7 @@ int main(int /*argc*/, const char** /*argv [] */) {
 
   vm.modules_.path_add(String("../Compiler/priv"));
   auto mod_name = vm.add_atom(String("test1"));
-  vm.modules_.load(vm, mod_name);
+  vm.modules_.load(mod_name);
 
   e4::MFArgs mfargs(mod_name, mod_name, e4std::ArrayRef<e4::Term>());
   // vm.print_atoms();

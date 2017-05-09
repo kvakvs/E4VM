@@ -38,7 +38,9 @@ class VM {
   RangeChecker range_checker_;
 
   explicit VM()
-      : binary_heap_(1024), range_checker_(nullptr, nullptr)
+      : modules_(*this),
+        binary_heap_(1024),
+        range_checker_(nullptr, nullptr)
   {}  //-V730
 
   void run();

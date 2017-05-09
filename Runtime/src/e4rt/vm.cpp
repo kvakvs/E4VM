@@ -37,7 +37,7 @@ Term VM::add_atom(const String& atom_name) {
 
 Node* VM::dist_this_node() {
 #if E4FEATURE_ERLDIST
-  E4TODO("implement Node and this node variable")
+  E4TODO("notimpl dist_this_node");
 #endif
   return this_node_;
 }
@@ -79,29 +79,33 @@ void VM::print_imm(Term t) const {
       debug_printf("'%s'", find_atom(t));
     } break;
     case immediate_tag::SmallInt: {
+      debug_printf("%d", t.as_small_.val_);
     } break;
     case immediate_tag::ShortPid: {
     } break;
     case immediate_tag::ShortPort: {
     } break;
     case immediate_tag::FpRegister: {
+      debug_printf("#fp<%d>", t.as_imm_.val_);
     } break;
     case immediate_tag::Catch: {
     } break;
     case immediate_tag::XRegister: {
+      debug_printf("#x<%d>", t.as_imm_.val_);
     } break;
     case immediate_tag::YRegister: {
+      debug_printf("#y<%d>", t.as_imm_.val_);
     } break;
     case immediate_tag::Special: {
     } break;
   }
 }
+#endif  // DEBUG
 
 const char* VM::find_atom(Term atom) const {
   E4ASSERT(atom.is_atom());
   return atoms_.find(atom);
 }
-#endif  // DEBUG
 
 #ifdef DEBUG
 #define VMDBG(T) e4::debug_printf("vm loop: " T "\n")

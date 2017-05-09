@@ -9,10 +9,10 @@
 -include_lib("e4assembler/include/e4asm.hrl").
 
 
-compile(#{'$' := e4mod, funs := Funs0} = Mod0) ->
+compile(#{'$' := e4mod, funs := Funs0, mod := ModName} = Mod0) ->
   %% For each fun, process it
   Mod1 = Mod0#{
-    atoms => orddict:new(),
+    atoms => orddict:from_list([{ModName, 0}]),
     imports => orddict:new(),
     jumptabs => orddict:new(),
     lambdas => orddict:new(),
@@ -22,8 +22,8 @@ compile(#{'$' := e4mod, funs := Funs0} = Mod0) ->
   Mod3 = lists:foldl(fun compile_fold_helper/2, Mod1, Funs0),
   %Mod3 = Mod2#{'$' := e4asmmod, funs => Funs1},
 
-  e4c:debug_write_term("e4asm_pass_asm.txt", Mod3),
-  io:format("~s~n~p~n", [color:redb("E4ASM PASS ASM"), Mod3]),
+  %e4c:debug_write_term("e4asm_pass_asm.txt", Mod3),
+  %io:format("~s~n~p~n", [color:redb("E4ASM PASS ASM"), Mod3]),
   Mod3.
 
 %% Folding over orddict will give us pairs {Key, Value}

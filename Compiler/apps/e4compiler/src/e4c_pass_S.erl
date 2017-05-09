@@ -10,8 +10,8 @@
 process({Module, Exports, Attrs, Forms, _}) ->
   Funs = process_forms(Forms, orddict:new()),
 
-  e4c:debug_write_term("e4c_pass_S.txt", Funs),
-  io:format("~s~n~p~n", [color:redb("E4C PASS S"), Funs]),
+  %e4c:debug_write_term("e4c_pass_S.txt", Funs),
+  %io:format("~s~n~p~n", [color:redb("E4C PASS S"), Funs]),
 
   #{'$' => e4mod,
     mod => Module,

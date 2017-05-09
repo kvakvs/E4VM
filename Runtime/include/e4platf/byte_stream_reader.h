@@ -158,7 +158,8 @@ class Reader {
   }
 
   // Parse a compacted term, using module env as a source for table lookups
-  Term read_compact_term(ModuleEnv& env, const ModuleLoaderState& lstate);
+  Term read_compact_term(const ModuleEnv& env,
+                         const ModuleLoaderState& lstate);
 
   Word read_cte_word(uint8_t b) {
     if (not (b & 0b100)) {

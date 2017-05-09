@@ -18,18 +18,21 @@ class VM;
 
 class CodeManager {
  private:
+  VM& vm_;
+
   Map<Term, Module*> mods_;
+
   Vector<String> paths_;  // Code search paths, starting with "."
 
  public:
-  explicit CodeManager() : mods_() {
+  explicit CodeManager(VM& vm) : vm_(vm), mods_() {
     // TODO: load preloaded modules
     paths_.push_back(String("."));
   }
 
-  Term load(VM& vm, Term name);
+  Term load(Term name);
 
-  void add(Module* m);
+  void register_module(Module *m);
 
   const Module* find(Term name) const {
     auto node = mods_.find(name);

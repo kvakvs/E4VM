@@ -30,7 +30,7 @@ enum class CteExtendedTag: uint8_t {
 };
 
 
-Term Reader::read_compact_term(ModuleEnv& env,
+Term Reader::read_compact_term(const ModuleEnv& env,
                                const ModuleLoaderState& lstate) {
   auto b = read_byte();
   auto tag = CteTag(b & 7);
@@ -73,7 +73,7 @@ Term Reader::read_compact_term(ModuleEnv& env,
           break;
 
         case CteExtendedTag::Literal:
-          break;
+          return env.get_literal(read_cte_word(read_byte()));
       }
       break;
   }
