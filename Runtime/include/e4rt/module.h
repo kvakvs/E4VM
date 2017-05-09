@@ -24,7 +24,9 @@ using e4std::ByteView;
 class Export {
 private:
   Term fun_;
-  Word offset_;  // how far from the module code start, in 16bit words
+
+  Word offset_;  // where the code begins
+
   Arity arity_;
 
 public:
@@ -106,12 +108,22 @@ protected:
 
   PODVector<Term> literals_;
   Heap literal_heap_;
+
   PODVector<Export> exports_;
+
   PODVector<Import> imports_;
+
   Vector<JumpTable> jump_tables_;
+
+  PODVector<Word> labels_;
 
 public:
   explicit ModuleEnv(): literal_heap_(64) {
+  }
+
+  const Word get_label(size_t i) const {
+    E4ASSERT(i > 0);
+    return labels_[i - 1];
   }
 
   const Term &get_literal(size_t i) const {
@@ -161,8 +173,11 @@ private:
   void load_imports(const ByteView &adata,
                     const ModuleLoaderState& lstate);
 
-  void load_atoms_section(MUTABLE ModuleLoaderState& lstate,
-                          const e4std::BoxView<uint8_t> &section_view);
+  void load_atoms_section(const e4std::BoxView<uint8_t> &section_view,
+                          MUTABLE ModuleLoaderState& lstate);
+
+  void load_labels(const ByteView &adata,
+                   MUTABLE ModuleLoaderState& lstate);
 
   void load_jump_tables(const ByteView &adata,
                         const ModuleLoaderState& lstate);

@@ -6,6 +6,6 @@
 
 namespace e4 {
 
-uint8_t* CodeAddress::BASE_ADDR = nullptr;
+const uint8_t* CodeAddress::BASE_ADDR = nullptr;
 
 }  // ns e4

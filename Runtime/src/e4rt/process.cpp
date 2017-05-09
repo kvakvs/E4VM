@@ -20,8 +20,10 @@ VoidResult Process::apply(const MFArgs& mfargs) {
 
   // Reverse order: push args
   auto arg_first = mfargs.args_.first();
-  for (const Term* arg = arg_first + mfargs.args_.count(); arg != arg_first;
-       --arg) {
+  for (const Term* arg = arg_first + mfargs.args_.count();
+       arg != arg_first;
+       --arg)
+  {
     context_.stack_.push_term(*arg);
   }
 

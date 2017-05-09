@@ -10,8 +10,9 @@ to_iolist(Prog = #{'$' := e4mod}) ->
   Content = [
     %% section("LABL", Compr, encode_labels(Compr, Prog)), % goes before code
     section("Co", encode_code(Prog)),
+    section("Lb", encode_labels(Prog)), % must go before exports
     section("Lt", encode_literals(Prog)),
-    section("At", encode_atoms(Prog)),
+    section("At", encode_atoms(Prog)), % must go before: imp/exports, jtabs
     section("Im", encode_imports(Prog)),
     section("Xp", encode_exports(Prog)),
     section("Jt", encode_jumptabs(Prog)),
@@ -39,7 +40,7 @@ bin_filename(F) ->
 %% @doc Convert code from each function in the mod object to a single block of
 %% code in the module file
 encode_code(#{'$' := e4mod, funs := Funs}) ->
-  Bin = [maps:get(code, F) || {_FunArity, F} <- Funs],
+  Bin = [maps:get(binary, F) || {_FunArity, F} <- Funs],
   erlang:iolist_to_binary(Bin).
 
 
@@ -55,17 +56,27 @@ encode_atoms_one_atom(A) when is_atom(A) ->
   [<<(byte_size(StrA)):8>>, StrA].
 
 
+%% @doc Convert labels to label section in the module file
+encode_labels(#{'$' := e4mod, labels := Labels}) ->
+  io:format("labels ~p~n", [Labels]),
+  Sorted = lists:keysort(2, Labels), % assume orddict is a list of tuples
+  Bin = [encode_labels_one_label(L) || {_, L} <- Sorted],
+  erlang:iolist_to_binary([e4c:varint(length(Sorted)), Bin]).
+
+
+encode_labels_one_label(L) ->
+  [e4c:varint(L)].
+
+
 %% @doc Convert atoms from mod object to atom section in the module file
 encode_exports(#{'$' := e4mod, exports := Exports, atoms := Atoms}) ->
-  Sorted = lists:keysort(2, Exports), % assume orddict is a list of tuples
-  io:format("exports ~p~n", [Sorted]),
+  Sorted = lists:keysort(1, Exports), % assume orddict is a list of tuples
   Bin = [encode_exports_one_export(F, Arity, Atoms)
          || {F, Arity} <- Sorted],
   erlang:iolist_to_binary([e4c:varint(length(Sorted)), Bin]).
 
 
 encode_exports_one_export(F, Arity, Atoms) ->
-  io:format("export ~p/~p~n", [F, Arity]),
   FIndex = orddict:fetch(F, Atoms),
   <<(e4c:varint(FIndex))/binary,
     (e4c:varint(Arity))/binary>>.

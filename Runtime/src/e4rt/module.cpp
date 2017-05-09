@@ -16,12 +16,13 @@ constexpr Word SIG_SIZE = 2;  // module and section signature length
 constexpr const char* SIG_MODULE = "E4";  // Erl-Forth J1Forth Flavour
 
 constexpr const char* SIG_ATOMS = "At";  // atoms section tag
-constexpr const char* SIG_CODE = "Co";   // code section tag
-constexpr const char* SIG_LTRL = "Lt";   // literals section tag
-constexpr const char* SIG_EXPT = "Xp";   // exports section tag
-constexpr const char* SIG_IMPT = "Im";   // imports section tag
-constexpr const char* SIG_JMPT = "Jt";   // jump table tag
-constexpr const char* SIG_FUNT = "Fn";   // function table tag
+constexpr const char* SIG_LBLS  = "Lb";  // labels section tag
+constexpr const char* SIG_CODE  = "Co";  // code section tag
+constexpr const char* SIG_LTRL  = "Lt";  // literals section tag
+constexpr const char* SIG_EXPT  = "Xp";  // exports section tag
+constexpr const char* SIG_IMPT  = "Im";  // imports section tag
+constexpr const char* SIG_JMPT  = "Jt";  // jump table tag
+constexpr const char* SIG_FUNT  = "Fn";  // function table tag
 
 
 void Module::load(const ByteView& data) {
@@ -49,7 +50,7 @@ void Module::load(const ByteView& data) {
       //
       // Atoms table (atom[0] is module name)
       //
-      this->load_atoms_section(MUTABLE lstate, section_view);
+      this->load_atoms_section(section_view, MUTABLE lstate);
       this->name_ = lstate.get_atom(0);
 
     } else if (not::memcmp(section_sig, SIG_CODE, SIG_SIZE)) {
@@ -69,6 +70,9 @@ void Module::load(const ByteView& data) {
       E4ASSERT(env_.literals_.empty());
       E4ASSERT(env_.literal_heap_.empty());
       load_literals(section_view);
+
+    } else if (not::memcmp(section_sig, SIG_LBLS, SIG_SIZE)) {
+      load_labels(section_view, MUTABLE lstate);
 
     } else if (not::memcmp(section_sig, SIG_EXPT, SIG_SIZE)) {
       load_exports(section_view, lstate);
@@ -96,8 +100,8 @@ void Module::load(const ByteView& data) {
 }
 
 
-void Module::load_atoms_section(MUTABLE ModuleLoaderState& lstate,
-                                const e4std::BoxView<uint8_t>& section_view) {
+void Module::load_atoms_section(const e4std::BoxView<uint8_t>& section_view,
+                                MUTABLE ModuleLoaderState& lstate) {
   tool::Reader bsr(section_view);
   Word count = bsr.read_varint_u();
   lstate.reserve_atoms(count);
@@ -132,11 +136,12 @@ void Module::load_exports(const ByteView& adata,
     auto fn_atom_index = bsr.read_varint_u();
 
     Arity arity { bsr.read_varint_u() };
-    auto offset = bsr.read_varint_u();
+    auto label = bsr.read_varint_u();
 
+    // Create and insert an export, resolve label index to an offset
     Export ex(lstate.get_atom(fn_atom_index),
               arity,
-              offset);
+              env_.get_label(label));
     env_.exports_.push_back(ex);
   }
   // We then use binary search so better this be sorted
@@ -205,6 +210,17 @@ void Module::load_jump_tables(const ByteView &adata,
       const auto term = bsr.read_compact_term(env_, lstate);
       jt.push_back(term, bsr.read_varint_u());
     }
+  }
+}
+
+void Module::load_labels(const ByteView &adata, ModuleLoaderState &lstate) {
+  tool::Reader bsr(adata);
+  Word count = bsr.read_varint_u();
+
+  env_.labels_.reserve(count);
+
+  for (Word i = 0; i < count; ++i) {
+    env_.labels_.push_back(bsr.read_varint_u());
   }
 }
 

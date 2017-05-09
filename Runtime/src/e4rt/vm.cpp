@@ -131,26 +131,36 @@ void VM::run() {
   auto pc_last = pc0 + 100;
 
 fetch:
-  Instruction instr8 = (Instruction)(*pc0);
-  E4LOG2("[%p] %02x ", pc0, instr8);
+  Instruction instruction = (Instruction)(*pc0);
+  E4LOG2("[%p] %02x ", pc0, instruction);
   pc0++;
 
-//  switch (instr8.unsigned_.instr_tag_) {
-//    // A common instruction
-//    case j1_instr_t::JUMP: {  // A common instruction
-//      auto instr16 = context_.fetch(instr8);
-//      E4LOG1("%02x ", instr16.raw_ >> 8);
-//
-//      auto offs = instr16.signed_.val_;
-//      E4LOG2("JMP %s0x%x\n", offs < 0 ? "-" : "", std::abs(offs));
+  switch (instruction) {
+    case instr::FuncInfo:break;
+    case instr::CallLocal:break;
+    case instr::CallExt:break;
+    case instr::Bif:break;
+    case instr::AllocStack:break;
+    case instr::AllocStackHeap:break;
+    case instr::GetElement:break;
+    case instr::Move:break;
+    case instr::CallFun:break;
+    case instr::SetNil:break;
+    case instr::TestHeap:break;
+    case instr::PutTuple:break;
+    case instr::Put:break;
+    case instr::Ret0:break;
+    case instr::RetN:break;
+    case instr::SelectVal:break;
+    case instr::Cons:break;
+    case instr::Jump:
 //      proc->jump_rel(offs);
-//    } break;
-//
-//    case j1_instr_t::GET_ELEMENT:
-//      E4TODO("getel");
-//    case j1_instr_t::ENTER:
-//      E4TODO("enter");
-//  }
+      break;
+    case instr::Trim:break;
+    case instr::MakeFun:break;
+    case instr::SetElement:break;
+    case instr::ClearStack:break;
+  }
 
   E4LOG("\n");
   if (pc0 < pc_last) goto fetch;

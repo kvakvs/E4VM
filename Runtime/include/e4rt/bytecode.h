@@ -1,5 +1,4 @@
-// This is an open source non-commercial project. Dear PVS-Studio, please check
-// it.
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
 // PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 //
 
@@ -38,32 +37,35 @@ typedef enum {
 } // instr
 using Instruction = instr::Type;
 
+
+//
+// A pointer to code, abstracting away memory access to be able to optimize
+// this later and avoid unaligned byte reads
+//
 class CodeAddress {
-  Word index_ = 0;
-  // Start of code array used as the pointer base
-  static uint8_t* BASE_ADDR;
+  const uint8_t *ptr_ = nullptr;
+  static const uint8_t *BASE_ADDR;
 
- public:
+public:
   CodeAddress() = default;
-  explicit CodeAddress(Word offset) : index_(offset) {}
-  explicit CodeAddress(const uint8_t* p) : index_(p - BASE_ADDR) {}
 
-  static uint8_t* base() { return BASE_ADDR; }
+  explicit CodeAddress(const uint8_t *p) : ptr_(p) {}
 
-  uint8_t* ptr() { return BASE_ADDR + index_; }
+  static const uint8_t *get_base() { return BASE_ADDR; }
 
-  Word get_index() const { return index_; }
+  const uint8_t *ptr() const { return ptr_; }
 
-  const uint8_t* ptr() const { return BASE_ADDR + index_; }
+  uint8_t fetch() const { return *ptr_; }
 
-  uint8_t fetch() const { return *ptr(); }
-
-  CodeAddress& operator+=(SignedWord s) {
-    index_ += s;
+  CodeAddress& operator += (Word s) {
+    ptr_ += s;
     return *this;
   }
 
-  void advance() { index_++; }
+  CodeAddress& operator ++ () {
+    ptr_++;
+    return *this;
+  }
 };
 
 }  // ns e4

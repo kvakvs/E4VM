@@ -13,6 +13,7 @@
 namespace e4 {
 using e4std::VoidResult;
 
+
 // Stack implementation
 // TODO: stack base pointer to address args and variables together
 // TODO: some generic stack frame implementation for enter/leave. Dynamic heap
@@ -39,7 +40,9 @@ class Stack {
   Term pop_term() { return Term(pop()); }
 };
 
+
 constexpr Word INIT_PROCESS_HEAP = 64;  // first size for process heap (words)
+
 
 // VM runtime context which gets swapped into VM loop and out
 class RuntimeContext {
@@ -49,35 +52,30 @@ class RuntimeContext {
   RangeChecker range_checker_;
 
   explicit RuntimeContext(const RangeChecker& rc) : range_checker_(rc) {}
-
-  uint8_t fetch() {
-    auto instr = pc_.fetch();
-    // TODO: check code end/code range?
-    pc_.advance();
-    return instr;
-  }
 };
+
 
 enum class ProcessPriority : uint8_t { Normal, High };
 
+
 class Process {
- private:
+private:
   Term pid_;
   Heap heap_;
-  VM& vm_;
+  VM &vm_;
   // [pid()] -- linked processes
-  Term links_ = NIL;
+//  Term links_ = NIL;
   // [pid()] -- processes which monitor this process
-  Term monitors_ = NIL;
+//  Term monitors_ = NIL;
   ProcessPriority prio_ = ProcessPriority::Normal;
 
- public:
+public:
   RuntimeContext context_;
 
- public:
+public:
   Process() = delete;
 
-  explicit Process(VM& vm, Term pid);
+  explicit Process(VM &vm, Term pid);
 
   Term self() const { return pid_; }
 
@@ -85,19 +83,12 @@ class Process {
 
   // Sets arguments and enters mfarity with args, does not wait for execution
   // but just sets instruction pointer instead
-  E4_NODISCARD VoidResult apply(const MFArgs& mfargs);
+  E4_NODISCARD VoidResult apply(const MFArgs &mfargs);
 
   // TODO: maybe belongs to runtime context
   void jump(CodeAddress newpc) {
-    E4LOG1("[proc] jump 0x%zx\n", newpc.get_index());
+    E4LOG1("[proc] jump %p\n", newpc.ptr());
     context_.pc_ = newpc;
-  }
-
-  // TODO: maybe belongs to runtime context
-  void jump_rel(SignedWord offs) {
-    E4ASSERT(offs != 0);
-    E4LOG1("[proc] jump-rel %zd\n", offs);
-    context_.pc_ += offs;
   }
 };
 

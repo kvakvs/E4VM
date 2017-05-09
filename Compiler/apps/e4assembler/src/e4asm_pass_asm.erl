@@ -13,6 +13,7 @@ compile(#{'$' := e4mod, funs := Funs0, mod := ModName} = Mod0) ->
   %% For each fun, process it
   Mod1 = Mod0#{
     atoms => orddict:from_list([{ModName, 0}]),
+    labels => orddict:new(),
     imports => orddict:new(),
     jumptabs => orddict:new(),
     lambdas => orddict:new(),
@@ -32,7 +33,7 @@ compile_fold_helper({FunArity, F0 = #{'$' := e4fun}},
                     Mod0 = #{'$' := e4mod}) ->
   {F1, Mod1} = process_fun(F0, Mod0),
 
-  NewFuns = orddict:store(FunArity, F1, maps:get(funs, Mod0)),
+  NewFuns = orddict:store(FunArity, F1, maps:get(funs, Mod1, orddict:new())),
   Mod1#{funs := NewFuns}.
 
 %%%-----------------------------------------------------------------------------
@@ -46,13 +47,14 @@ process_fun(Fun = #{'$' := e4fun, code := Code0}, M0) ->
       program => M0},
     Code0
   ),
+
   #{'$' := fun_state,
     binary := Code1,
     labels := Labels,
     program := M1} = X,
-  {Fun#{code := lists:reverse(Code1),
-        labels => Labels},
-   M1}.
+
+  M2 = merge_labels(M1, Labels),
+  {Fun#{ binary => lists:reverse(Code1) }, M2}.
 
 
 process_fun_fold_helper(_Fun, {label, F},
@@ -72,6 +74,27 @@ process_fun_fold_helper(Fun = #{'$' := e4fun},
     program := Mod1} = process_op(Mod0, Fun, Op0),
   FState#{binary => [Op1 | Accum],
           program => Mod1}.
+
+
+%% Takes offset as the size of all existing binary code in the module
+%% Merges NewLabels with Offset into the module
+merge_labels(Mod = #{'$' := e4mod,
+                     funs := Funs,
+                     labels := Labels0}, NewLabels) ->
+  %% Count sizes for code in all existing functions
+  Offset = lists:foldl(
+    fun({_Key, #{'$' := e4fun, binary := B}}, Sum) -> Sum + iolist_size(B);
+       ({_Key, _}, Sum) -> Sum
+    end, 0, Funs),
+
+  Labels1 = lists:foldl(
+    fun ({L, LOffs}, Acc) ->
+      orddict:store(L, LOffs + Offset, Acc)
+    end,
+    Labels0, NewLabels
+  ),
+
+  Mod#{labels => Labels1}.
 
 
 -spec process_op(e4mod(), e4fun(), tuple() | atom()) -> e4mod().
