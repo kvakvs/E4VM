@@ -7,6 +7,9 @@
 
 #include "e4platf/conf.h"
 
+// A decorator to explicitly mark a mutable argument
+#define MUTABLE
+
 namespace e4 {
 
 E4_NORETURN void fail(const char* m);

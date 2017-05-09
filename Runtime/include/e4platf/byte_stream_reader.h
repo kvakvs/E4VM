@@ -16,6 +16,7 @@
 namespace e4 {
 
 class ModuleEnv;
+class ModuleLoaderState;
 
 namespace tool {
 
@@ -148,8 +149,16 @@ class Reader {
     return result;
   }
 
+  Float read_float() {
+    Float val;
+    // protocol stores floats as 8 bytes always. In memory we might store as
+    // 4 or 8 bytes
+    read((char *)&val, Count(sizeof(double)));
+    return val;
+  }
+
   // Parse a compacted term, using module env as a source for table lookups
-  Term read_compact_term(ModuleEnv& env);
+  Term read_compact_term(ModuleEnv& env, const ModuleLoaderState& lstate);
 
   Word read_cte_word(uint8_t b) {
     if (not (b & 0b100)) {

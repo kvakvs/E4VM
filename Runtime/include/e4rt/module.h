@@ -82,6 +82,23 @@ public:
 };
 
 
+// Loader state to pass as argument to those who need it
+class ModuleLoaderState {
+private:
+  Vector<Term> atoms_; // atoms table from the module file, for lookups
+
+public:
+  void reserve_atoms(size_t n) { atoms_.reserve(n); }
+
+  void add_atom(Term a) { atoms_.push_back(a); }
+
+  Term get_atom(size_t i) const {
+    E4ASSERT(atoms_.size() > i);
+    return atoms_[i];
+  }
+};
+
+
 // Captures things private for a module, groups them for convenient passing
 // to those who might need it
 class ModuleEnv {
@@ -136,15 +153,16 @@ private:
   void load_literals(const ByteView &adata);
 
   void load_exports(const ByteView &adata,
-                    const Vector<Term> &atoms_lookup);
+                    const ModuleLoaderState& lstate);
 
   void load_imports(const ByteView &adata,
-                    const Vector<Term> &atoms_lookup);
+                    const ModuleLoaderState& lstate);
 
-  void load_atoms_section(Vector<e4::Term> &atoms_t,
+  void load_atoms_section(MUTABLE ModuleLoaderState& lstate,
                           const e4std::BoxView<uint8_t> &section_view);
 
-  void load_jump_tables(const ByteView &adata);
+  void load_jump_tables(const ByteView &adata,
+                        const ModuleLoaderState& lstate);
 };
 
 }  // ns e4

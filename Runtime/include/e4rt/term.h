@@ -29,13 +29,15 @@ constexpr Creation ORIG_CREATION = 0;
 constexpr Creation INTERNAL_CREATION = 255;
 }  // ns dist
 
+
 namespace pid {
 static constexpr Word PID_ID_SIZE = 15;
 static constexpr Word PID_DATA_SIZE = 28;  // for 32bit maximum
 static constexpr Word PID_SERIAL_SIZE = (PID_DATA_SIZE - PID_ID_SIZE);
 static_assert(PID_DATA_SIZE + BOXED_TAG_BITS <= BITS_PER_WORD,
-              "Pid does not fit the machine Word");
+              "Pid doesn't fit into the Word");
 }  // ns pid
+
 
 class Term {
  private:
@@ -156,6 +158,13 @@ class Term {
     return result;
   }
 
+  static Term make_integer(Word val) {
+    if (val < (1UL << IMM1_VALUE_BITS)) {
+      return make_small(static_cast<SignedWord>(val));
+    }
+    E4FAIL("do bigint here");
+  }
+
 //
 // PID Aspect
 // Stuff goes into a box, so we only store a boxed header here
@@ -195,7 +204,31 @@ class Term {
   //        }
 
   bool is_value() const;
+
+  //
+  // Register Aspect
+  //
+
+  static constexpr Term make_xreg(Word i) {
+    return Term(primary_tag::Immediate, immediate_tag::XRegister, i);
+  }
+
+  static constexpr Term make_yreg(Word i) {
+    return Term(primary_tag::Immediate, immediate_tag::YRegister, i);
+  }
+
+  static constexpr Term make_fpreg(Word i) {
+    return Term(primary_tag::Immediate, immediate_tag::FpRegister, i);
+  }
+
+  //
+  // Floating Point Aspect
+  //
+
+  // Will return NIL if floats are disabled
+  static Term make_float(Float f);
 };
+
 
 static_assert(sizeof(Term) == sizeof(Word), "Term must have size of 1 word");
 
@@ -206,11 +239,13 @@ constexpr Term NIL = Term(primary_tag::Immediate, immediate_tag::Special, 0);
 constexpr Term NON_VALUE =
   Term(primary_tag::Immediate, immediate_tag::Special, 1);
 
+
 class ConsCell {
  public:
   Term head_;
   Term tail_;
 };
+
 
 class Arity { // TODO: Use a smaller type but alignment will eat it away
   Word  val_;
@@ -230,6 +265,7 @@ public:
   }
 };
 
+
 class MFArity {
  public:
   Term mod_;
@@ -240,8 +276,10 @@ class MFArity {
   MFArity(Term m, Term f, Arity a) : mod_(m), fun_(f), arity_(a) {}
 };
 
+
 using e4std::ArrayRef;
 class VM;
+
 
 class MFArgs {
  public:

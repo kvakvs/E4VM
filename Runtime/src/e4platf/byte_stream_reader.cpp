@@ -30,40 +30,44 @@ enum class CteExtendedTag: uint8_t {
 };
 
 
-e4::Term Reader::read_compact_term(ModuleEnv& env) {
+Term Reader::read_compact_term(ModuleEnv& env,
+                               const ModuleLoaderState& lstate) {
   auto b = read_byte();
-  switch (CteTag(b & 7)) {
-    case CteTag::Literal:
-      return env.get_literal(read_cte_word(b));
+  auto tag = CteTag(b & 7);
 
-    case CteTag::Integer:
-      break;
+  // Pre-read, in an attempt to reduce amount of calls to read_cte_word
+  auto bword = tag < CteTag::Extended ? read_cte_word(b) : 0;
+
+  switch (tag) {
+    case CteTag::Literal:
+      return env.get_literal(bword);
 
     case CteTag::Atom:
-      break;
+      return lstate.get_atom(bword);
 
     case CteTag::XReg:
-      break;
+      return Term::make_xreg(bword);
 
     case CteTag::YReg:
-      break;
+      return Term::make_yreg(bword);
 
     case CteTag::Label:
-      break;
-
+      // fallthrough
+    case CteTag::Integer:
+      // fallthrough
     case CteTag::Character:
-      break;
+      return Term::make_integer(bword);
 
     case CteTag::Extended:
       switch (CteExtendedTag(b)) {
         case CteExtendedTag::Float:
-          break;
+          return Term::make_float(read_float());
 
         case CteExtendedTag::List:
           break;
 
         case CteExtendedTag::FloatReg:
-          break;
+          return Term::make_fpreg(read_cte_word(read_byte()));
 
         case CteExtendedTag::AllocList:
           break;

@@ -31,6 +31,14 @@ namespace e4 {
 #endif
 constexpr Word BITS_PER_WORD = sizeof(Word) * 8;
 
+
+#if E4FEATURE_FLOAT
+using Float = double;
+#else
+using Float = Word;
+#endif
+
+
 // Ensure that casting to word will not lose any bits
 template <typename ContainerType, typename ValueType>
 constexpr bool fits_in(ValueType i) {

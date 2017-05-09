@@ -1,13 +1,11 @@
-// This is an open source non-commercial project. Dear PVS-Studio, please check
-// it.
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
 // PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 //
-
-#include <stdio.h>
 
 #include "e4rt/box.h"
 #include "e4rt/term.h"
 #include "e4rt/vm.h"
+#include <stdio.h>
 
 namespace e4 {
 
@@ -22,6 +20,14 @@ Term Term::make_tuple(TupleBoxHeader* tuple_box) {
 
 bool Term::is_value() const {
   return raw_ != NON_VALUE.raw_;
+}
+
+Term Term::make_float(Float f) {
+#if E4FEATURE_FLOAT
+  E4FAIL("notimpl make_float");
+#else
+  return NIL;
+#endif
 }
 
 TupleBoxHeader::operator Term() const {
