@@ -13,7 +13,11 @@
 #include "e4std/view.h"
 #include <string.h>
 
-namespace e4 { namespace tool {
+namespace e4 {
+
+class ModuleEnv;
+
+namespace tool {
 
 class Reader {
  private:
@@ -144,7 +148,45 @@ class Reader {
     return result;
   }
 
-  Term read_compact_term();
+  // Parse a compacted term, using module env as a source for table lookups
+  Term read_compact_term(ModuleEnv& env);
+
+  Word read_cte_word(uint8_t b) {
+    if (not (b & 0b100)) {
+      // Bit 3 is 0 marks that 4 following bits contain the value
+      return (Word)b >> 4;
+    } else {
+      // Bit 3 is 1, but...
+      if (not (b & 0b1000)) {
+        // Bit 4 is 0, marks that the following 3 bits (most significant) and
+        // the following byte (least significant) will contain the 11-bit value
+        return ((Word)b & 0b1110'0000) << 3 | (Word)read_byte();
+      } else {
+        // Bit 4 is 1 means that bits 5-6-7 contain amount of bytes+2 to store
+        // the value
+        size_t bytes = ((Word)b & 0b1110'0000 >> 5) + 2;
+        if (bytes == 9) {
+          // bytes=9 means upper 5 bits were set to 1, special case 0b11111xxx
+          // which means that following nested tagged value encodes size,
+          // followed by the bytes (Size+9)
+          bytes = read_cte_word(read_byte());
+        }
+        return read_word(bytes);
+      } // if larger than 11 bits
+    } // if larger than 4 bits
+  }
+
+  Word read_word(size_t bytes) {
+    Word result = 0;
+
+    E4ASSERT(sizeof(Word) <= bytes); // must fit else have to form bigint
+    // TODO: handle bigint or maybe just fail here?
+
+    for (size_t i = 0; i < bytes; ++i) {
+      result = (result << 8) | read_byte();
+    }
+    return result;
+  }
 };
 
 }  // ns e4::tool

@@ -82,10 +82,11 @@ public:
 };
 
 
-class Module {
-private:
-  Term name_ = NON_VALUE;  // atom name
-  PODVector<uint8_t> code_;
+// Captures things private for a module, groups them for convenient passing
+// to those who might need it
+class ModuleEnv {
+protected:
+  friend class Module;
 
   PODVector<Term> literals_;
   Heap literal_heap_;
@@ -93,10 +94,34 @@ private:
   PODVector<Import> imports_;
   Vector<JumpTable> jump_tables_;
 
+public:
+  explicit ModuleEnv(): literal_heap_(64) {
+  }
+
+  const Term &get_literal(size_t i) const {
+    return literals_[i];
+  }
+
+  const Export &get_export(size_t i) const {
+    return exports_[i];
+  }
+
+  const Import &get_import(size_t i) const {
+    return imports_[i];
+  }
+};
+
+
+class Module {
+private:
+  Term name_ = NON_VALUE;  // atom name
+  PODVector<uint8_t> code_;
+  ModuleEnv env_;
+
   VM &vm_;
 
 public:
-  explicit Module(VM &vm) : literal_heap_(64), vm_(vm) {}
+  explicit Module(VM &vm) : env_(), vm_(vm) {}
 
   void load(const ByteView &data);
 

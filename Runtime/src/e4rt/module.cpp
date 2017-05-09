@@ -67,8 +67,8 @@ void Module::load(const ByteView& data) {
       //
       // Literals table
       //
-      E4ASSERT(literals_.empty());
-      E4ASSERT(literal_heap_.empty());
+      E4ASSERT(env_.literals_.empty());
+      E4ASSERT(env_.literal_heap_.empty());
       load_literals(section_view);
 
     } else if (not::memcmp(section_sig, SIG_EXPT, SIG_SIZE)) {
@@ -113,11 +113,11 @@ void Module::load_atoms_section(Vector <e4::Term>& atoms_t,
 void Module::load_literals(const ByteView& adata) {
   tool::Reader bsr(adata);
   Word count = bsr.read_varint_u();
-  literals_.reserve(count);
+  env_.literals_.reserve(count);
 
   for (Word i = 0; i < count; ++i) {
-    const auto lit = ExtTerm::read_with_marker(vm_, literal_heap_, bsr);
-    literals_.push_back(lit);
+    const auto lit = ExtTerm::read_with_marker(vm_, env_.literal_heap_, bsr);
+    env_.literals_.push_back(lit);
   }
 }
 
@@ -126,7 +126,7 @@ void Module::load_exports(const ByteView& adata,
                           const Vector<Term>& atoms_lookup) {
   tool::Reader bsr(adata);
   Word n = bsr.read_varint_u();
-  exports_.reserve(n);
+  env_.exports_.reserve(n);
 
   for (Word i = 0; i < n; ++i) {
     auto fn_atom_index = bsr.read_varint_u();
@@ -136,22 +136,29 @@ void Module::load_exports(const ByteView& adata,
     auto offset = bsr.read_varint_u();
 
     Export ex(atoms_lookup[fn_atom_index], arity, offset);
-    exports_.push_back(ex);
+    env_.exports_.push_back(ex);
   }
   // We then use binary search so better this be sorted
-  std::sort(exports_.begin(), exports_.end(),
-            [](const Export& a, const Export& b) -> bool {
-              return Export::compare_pvoid(&a, &b) < 0;
-            });
+  std::sort(
+    env_.exports_.begin(),
+    env_.exports_.end(),
+    [](const Export &a, const Export &b) -> bool {
+      return Export::compare_pvoid(&a, &b) < 0;
+    }
+  );
 }
 
 
 Export* Module::find_export(const MFArity& mfa) const {
   Export sample(mfa.fun_, mfa.arity_, 0);
-  auto r = e4std::binary_search(exports_.begin(), exports_.end(), sample,
-                              [](const Export& a, const Export& b) -> bool {
-                                return Export::compare_pvoid(&a, &b) == 0;
-                              });
+  auto r = e4std::binary_search(
+    env_.exports_.begin(),
+    env_.exports_.end(),
+    sample,
+    [](const Export &a, const Export &b) -> bool {
+      return Export::compare_pvoid(&a, &b) == 0;
+    }
+  );
   return const_cast<Export*>(r);
 }
 
@@ -165,7 +172,7 @@ void Module::load_imports(const ByteView &adata,
                           const Vector<Term> &atoms_lookup) {
   tool::Reader bsr(adata);
   Word count = bsr.read_varint_u();
-  imports_.reserve(count);
+  env_.imports_.reserve(count);
 
   for (Word i = 0; i < count; ++i) {
     auto mod_atom_index = bsr.read_varint_u();
@@ -179,23 +186,24 @@ void Module::load_imports(const ByteView &adata,
     Import im(atoms_lookup[mod_atom_index],
               atoms_lookup[fn_atom_index],
               arity);
-    imports_.push_back(im);
+    env_.imports_.push_back(im);
   }
 }
+
 
 void Module::load_jump_tables(const ByteView &adata) {
   tool::Reader bsr(adata);
   Word count = bsr.read_varint_u();
 
-  jump_tables_.reserve(count);
+  env_.jump_tables_.reserve(count);
 
   for (Word i = 0; i < count; ++i) {
     auto jt_size = bsr.read_varint_u();
-    jump_tables_.emplace_back(jt_size);
+    env_.jump_tables_.emplace_back(jt_size);
 
-    auto &jt = jump_tables_.back();
+    auto &jt = env_.jump_tables_.back();
     for (Word j = 0; j < jt_size; ++j) {
-      const auto term = bsr.read_compact_term();
+      const auto term = bsr.read_compact_term(env_);
       jt.push_back(term,
                    bsr.read_varint_u());
     }

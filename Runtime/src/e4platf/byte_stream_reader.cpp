@@ -2,8 +2,9 @@
 // PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 //
 
-#include <e4rt/term.h>
-#include <e4platf/byte_stream_reader.h>
+#include "e4platf/byte_stream_reader.h"
+#include "e4rt/module.h"
+//#include "e4rt/term.h"
 
 namespace e4 { namespace tool {
 
@@ -28,11 +29,12 @@ enum class CteExtendedTag: uint8_t {
   Literal   = 0b0101'0111,
 };
 
-e4::Term Reader::read_compact_term() {
+
+e4::Term Reader::read_compact_term(ModuleEnv& env) {
   auto b = read_byte();
   switch (CteTag(b & 7)) {
     case CteTag::Literal:
-      break;
+      return env.get_literal(read_cte_word(b));
 
     case CteTag::Integer:
       break;
