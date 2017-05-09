@@ -11,7 +11,7 @@
 namespace e4 {
 
 namespace instr {
-enum {
+typedef enum {
   FuncInfo = 0,
   CallLocal = 1,
   CallExt = 2,
@@ -34,8 +34,9 @@ enum {
   MakeFun = 19,
   SetElement = 20,
   ClearStack = 21, // setnil instead?
-};
+} Type;
 } // instr
+using Instruction = instr::Type;
 
 class CodeAddress {
   Word index_ = 0;

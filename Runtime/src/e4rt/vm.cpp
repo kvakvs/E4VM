@@ -1,5 +1,4 @@
-// This is an open source non-commercial project. Dear PVS-Studio, please check
-// it.
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
 // PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 //
 
@@ -126,11 +125,15 @@ void VM::run() {
              // TODO: perform maintenance tasks, enter energy saving idle
   }
 
-//  auto& context_ = proc->context_;
-//fetch:
-//  auto pc0 = context_.pc_.get_index();
-//  uint8_t instr8 = context_.fetch();
-//  E4LOG2("[%x] %02x ", pc0, instr8.raw_);
+  auto& context_ = proc->context_;
+
+  auto pc0 = context_.pc_.ptr();
+  auto pc_last = pc0 + 100;
+
+fetch:
+  Instruction instr8 = (Instruction)(*pc0);
+  E4LOG2("[%p] %02x ", pc0, instr8);
+  pc0++;
 
 //  switch (instr8.unsigned_.instr_tag_) {
 //    // A common instruction
@@ -149,7 +152,8 @@ void VM::run() {
 //      E4TODO("enter");
 //  }
 
-//  goto fetch;
+  E4LOG("\n");
+  if (pc0 < pc_last) goto fetch;
 }
 
 }  // ns e4
