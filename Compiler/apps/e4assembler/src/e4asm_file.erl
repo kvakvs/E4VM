@@ -58,12 +58,14 @@ encode_atoms_one_atom(A) when is_atom(A) ->
 %% @doc Convert atoms from mod object to atom section in the module file
 encode_exports(#{'$' := e4mod, exports := Exports, atoms := Atoms}) ->
   Sorted = lists:keysort(2, Exports), % assume orddict is a list of tuples
+  io:format("exports ~p~n", [Sorted]),
   Bin = [encode_exports_one_export(F, Arity, Atoms)
-         || {{F, Arity}, _} <- Sorted],
+         || {F, Arity} <- Sorted],
   erlang:iolist_to_binary([e4c:varint(length(Sorted)), Bin]).
 
 
 encode_exports_one_export(F, Arity, Atoms) ->
+  io:format("export ~p/~p~n", [F, Arity]),
   FIndex = orddict:fetch(F, Atoms),
   <<(e4c:varint(FIndex))/binary,
     (e4c:varint(Arity))/binary>>.

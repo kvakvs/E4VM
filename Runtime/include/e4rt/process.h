@@ -46,8 +46,7 @@ constexpr Word INIT_PROCESS_HEAP = 64;  // first size for process heap (words)
 class RuntimeContext {
  public:
   CodeAddress pc_;
-  Stack ds_;  // data stack
-  Stack rs_;  // return stack
+  Stack stack_;  // data stack
   RangeChecker range_checker_;
 
   explicit RuntimeContext(const RangeChecker& rc) : range_checker_(rc) {}

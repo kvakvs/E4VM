@@ -37,7 +37,6 @@ void CodeManager::register_module(Module *m) {
   mods_.remove(mname);
 #endif
 
-  vm_.print(mname);
   mods_.insert(mname, m);
 }
 
