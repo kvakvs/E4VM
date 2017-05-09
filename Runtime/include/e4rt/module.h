@@ -99,6 +99,7 @@ public:
   }
 };
 
+constexpr Word BAD_LABEL = ~0UL;
 
 // Captures things private for a module, groups them for convenient passing
 // to those who might need it
@@ -122,7 +123,9 @@ public:
   }
 
   const Word get_label(size_t i) const {
-    E4ASSERT(i > 0);
+    if (not i) {
+      return BAD_LABEL;
+    }
     return labels_[i - 1];
   }
 
