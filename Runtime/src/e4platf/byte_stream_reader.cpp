@@ -36,7 +36,10 @@ Term Reader::read_compact_term(const ModuleEnv& env,
   auto tag = CteTag(b & 7);
 
   // Pre-read, in an attempt to reduce amount of calls to read_cte_word
-  auto bword = tag < CteTag::Extended ? read_cte_word(b) : 0;
+  Word bword = 0;
+  if (tag < CteTag::Extended) {
+    ptr_ = read_cte_word(ptr_, b, MUTABLE bword);
+  }
 
   switch (tag) {
     case CteTag::Literal:
@@ -66,14 +69,20 @@ Term Reader::read_compact_term(const ModuleEnv& env,
         case CteExtendedTag::List:
           break;
 
-        case CteExtendedTag::FloatReg:
-          return Term::make_fpreg(read_cte_word(read_byte()));
+        case CteExtendedTag::FloatReg: {
+          Word fp;
+          ptr_ = read_cte_word(ptr_, read_byte(), MUTABLE fp);
+          return Term::make_fpreg(fp);
+        }
 
         case CteExtendedTag::AllocList:
           break;
 
-        case CteExtendedTag::Literal:
-          return env.get_literal(read_cte_word(read_byte()));
+        case CteExtendedTag::Literal: {
+          Word lit;
+          ptr_ = read_cte_word(ptr_, read_byte(), MUTABLE lit);
+          return env.get_literal(lit);
+        }
       }
       break;
   }

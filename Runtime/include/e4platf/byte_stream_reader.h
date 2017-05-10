@@ -20,6 +20,84 @@ class ModuleLoaderState;
 
 namespace tool {
 
+// Reads varint encoded integer where highest bit marks whether it is the
+// last byte (bit 7 is 0) or there are more (bit 7 is 1).
+inline const uint8_t*
+read_varint(const uint8_t *ptr, MUTABLE Word& out) {
+  int safety_limit = sizeof(Word) + 1;  // limit loop
+  Word result = 0;
+  while (safety_limit) {
+    uint8_t n = *(ptr++);
+
+    result <<= 7;
+    result |= (n & 0x7F);
+
+    if ((n & 0x80) == 0) {
+      out = result;
+      return ptr;
+    }
+
+    safety_limit--;
+  }
+  E4FAIL(platferr::r_varint_too_long);
+}
+
+
+// Reads 'bytes' amount of bytes as a big endian unsigned and returns the result
+inline const uint8_t*
+read_serialized_bytes_as_word(const uint8_t* ptr,
+                              size_t bytes,
+                              MUTABLE Word& result) {
+  result = 0;
+
+  E4ASSERT(sizeof(Word) <= bytes); // must fit else have to form bigint
+  // TODO: handle bigint or maybe just fail here?
+
+  for (size_t i = 0; i < bytes; ++i) {
+    result = (result << 8) | *(ptr++);
+  }
+  return ptr;
+}
+
+
+// Gathers up bits from the first byte 'b' and possibly following bytes, to form
+// an integer encoded with Compact Term Encoding (used in BEAM)
+inline const uint8_t*
+read_cte_word(const uint8_t* ptr,
+              uint8_t b,
+              MUTABLE Word& result) {
+  if (not (b & 0b100)) {
+    // Bit 3 is 0 marks that 4 following bits contain the value
+    result = (Word)b >> 4;
+    return ptr;
+
+  } else {
+    // Bit 3 is 1, but...
+    if (not (b & 0b1000)) {
+      // Bit 4 is 0, marks that the following 3 bits (most significant) and
+      // the following byte (least significant) will contain the 11-bit value
+      result = ((Word)b & 0b1110'0000) << 3 | (Word)*(ptr++);
+      return ptr;
+
+    } else {
+      // Bit 4 is 1 means that bits 5-6-7 contain amount of bytes+2 to store
+      // the value
+      size_t bytes = ((Word)b & 0b1110'0000 >> 5) + 2;
+      if (bytes == 9) {
+        // bytes=9 means upper 5 bits were set to 1, special case 0b11111xxx
+        // which means that following nested tagged value encodes size,
+        // followed by the bytes (Size+9)
+        auto bnext = *(ptr++);
+        ptr = read_cte_word(ptr, bnext, MUTABLE bytes);
+      }
+
+      ptr = read_serialized_bytes_as_word(ptr, bytes, MUTABLE result);
+      return ptr;
+    } // if larger than 11 bits
+  } // if larger than 4 bits
+}
+
+
 class Reader {
  private:
   const uint8_t* ptr_;
@@ -82,22 +160,8 @@ class Reader {
   // Unsigned varint, word
   template <typename T = Word>
   T read_varint_u() {
-    int safety_limit = sizeof(T) + 1;  // limit loop
-    T result = 0;
-    while (end_ > ptr_) {
-      uint8_t n = read_byte();
-      result <<= 7;
-      result |= (n & 0x7F);
-      if ((n & 0x80) == 0) {
-        break;
-      }
-
-      if (safety_limit) {
-        safety_limit--;
-      } else {
-        E4FAIL(platferr::r_varint_too_long);
-      }
-    }
+    T result;
+    ptr_ = read_varint(ptr_, MUTABLE result);
     return result;
   }
 
@@ -160,43 +224,6 @@ class Reader {
   // Parse a compacted term, using module env as a source for table lookups
   Term read_compact_term(const ModuleEnv& env,
                          const ModuleLoaderState& lstate);
-
-  Word read_cte_word(uint8_t b) {
-    if (not (b & 0b100)) {
-      // Bit 3 is 0 marks that 4 following bits contain the value
-      return (Word)b >> 4;
-    } else {
-      // Bit 3 is 1, but...
-      if (not (b & 0b1000)) {
-        // Bit 4 is 0, marks that the following 3 bits (most significant) and
-        // the following byte (least significant) will contain the 11-bit value
-        return ((Word)b & 0b1110'0000) << 3 | (Word)read_byte();
-      } else {
-        // Bit 4 is 1 means that bits 5-6-7 contain amount of bytes+2 to store
-        // the value
-        size_t bytes = ((Word)b & 0b1110'0000 >> 5) + 2;
-        if (bytes == 9) {
-          // bytes=9 means upper 5 bits were set to 1, special case 0b11111xxx
-          // which means that following nested tagged value encodes size,
-          // followed by the bytes (Size+9)
-          bytes = read_cte_word(read_byte());
-        }
-        return read_word(bytes);
-      } // if larger than 11 bits
-    } // if larger than 4 bits
-  }
-
-  Word read_word(size_t bytes) {
-    Word result = 0;
-
-    E4ASSERT(sizeof(Word) <= bytes); // must fit else have to form bigint
-    // TODO: handle bigint or maybe just fail here?
-
-    for (size_t i = 0; i < bytes; ++i) {
-      result = (result << 8) | read_byte();
-    }
-    return result;
-  }
 };
 
 }  // ns e4::tool

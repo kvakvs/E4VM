@@ -142,14 +142,14 @@ ret(Dealloc) -> [bc_op(?E4BC_RETN), e4asm_cte:encode(Dealloc, #{})].
 
 allocate(StackNeed, 0, Live) ->
   [bc_op(?E4BC_ALLOC_STACK),
-   e4asm_cte:encode(StackNeed, #{}),
-   e4asm_cte:encode(Live, #{})];
+   e4c:varint(StackNeed),
+   e4c:varint(Live)];
 
 allocate(StackNeed, HeapNeed, Live) ->
   [bc_op(?E4BC_ALLOC_STACK_HEAP),
-   e4asm_cte:encode(StackNeed, #{}),
-   e4asm_cte:encode(HeapNeed, #{}),
-   e4asm_cte:encode(Live, #{})].
+   e4c:varint(StackNeed),
+   e4c:varint(HeapNeed),
+   e4c:varint(Live)].
 
 
 get_element(Tuple, Index, Result) ->
