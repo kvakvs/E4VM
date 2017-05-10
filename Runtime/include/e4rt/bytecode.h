@@ -11,28 +11,28 @@ namespace e4 {
 
 namespace instr {
 typedef enum {
-  FuncInfo = 0,
-  CallLocal = 1,
-  CallExt = 2,
-  Bif = 3,
-  AllocStack = 4,
-  AllocStackHeap = 5,
-  GetElement = 6,
-  Move = 7,
-  CallFun = 8,
-  SetNil = 9,
-  TestHeap = 10,
-  PutTuple = 11,
-  Put = 12,
-  Ret0 = 13,
-  RetN = 14,
-  SelectVal = 15,
-  Cons = 16,
-  Jump = 17,
-  Trim = 18,
-  MakeFun = 19,
-  SetElement = 20,
-  ClearStack = 21, // setnil instead?
+  FuncInfo = 0,     // 0
+  CallLocal,
+  CallExt,
+  Bif,
+  AllocStack,
+  AllocStackHeap,   // 5
+  GetElement,
+  Move,
+  CallFun,
+  SetNil,
+  TestHeap,         // 10
+  PutTuple,
+  Put,
+  Ret0,
+  RetN,
+  SelectVal,        // 15
+  Cons,
+  Jump,
+  Trim,
+  MakeFun,
+  SetElement,       // 20
+  ClearStack        // use setnil instead?
 } Type;
 } // instr
 using Instruction = instr::Type;

@@ -1,4 +1,6 @@
 %%% @doc Given simplified assembly AST produce binary E4 VM bytecode.
+%%% The bytecode is ready to run on the target device without extra
+%%% preprocessing at the loading time (using switch-dispatch)
 
 -module(e4asm_pass_asm).
 

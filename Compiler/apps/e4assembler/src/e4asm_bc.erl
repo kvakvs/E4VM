@@ -24,28 +24,30 @@
   trim/1
 ]).
 
--define(E4BC_FUNC_INFO,   0).
--define(E4BC_CALL_LOCAL,  1). % 4 local call flavours defined by bits 6 and 7
--define(E4BC_CALL_EXT,    2). % 4   ext call flavours defined by bits 6 and 7
--define(E4BC_BIF,         3).
+%% Highest 2 or 3 bits of opcode byte may be used for flags
+
+-define(E4BC_FUNC_INFO,         0).
+-define(E4BC_CALL_LOCAL,        1).
+-define(E4BC_CALL_EXT,          2).
+-define(E4BC_BIF,               3).
 -define(E4BC_ALLOC_STACK,       4).
 -define(E4BC_ALLOC_STACK_HEAP,  5).
--define(E4BC_GET_ELEMENT, 6).
--define(E4BC_MOVE,        7).
--define(E4BC_CALL_FUN,    8).
--define(E4BC_SET_NIL,     9).
--define(E4BC_TEST_HEAP,   10).
--define(E4BC_PUT_TUPLE,   11).
--define(E4BC_PUT,         12).
--define(E4BC_RET0,        13).
--define(E4BC_RETN,        14).
--define(E4BC_SELECT_VAL,  15).
--define(E4BC_CONS,        16).
--define(E4BC_JUMP,        17).
--define(E4BC_TRIM,        18).
--define(E4BC_MAKE_FUN,    19).
--define(E4BC_SET_ELEMENT, 20).
--define(E4BC_CLEAR_STACK, 21). % use Set_nil instead?
+-define(E4BC_GET_ELEMENT,       6).
+-define(E4BC_MOVE,              7).
+-define(E4BC_CALL_FUN,          8).
+-define(E4BC_SET_NIL,           9).
+-define(E4BC_TEST_HEAP,         10).
+-define(E4BC_PUT_TUPLE,         11).
+-define(E4BC_PUT,               12).
+-define(E4BC_RET0,              13).
+-define(E4BC_RETN,              14).
+-define(E4BC_SELECT_VAL,        15).
+-define(E4BC_CONS,              16).
+-define(E4BC_JUMP,              17).
+-define(E4BC_TRIM,              18).
+-define(E4BC_MAKE_FUN,          19).
+-define(E4BC_SET_ELEMENT,       20).
+-define(E4BC_CLEAR_STACK,       21). % use Set_nil instead?
 
 
 bc_op(X) -> X.
