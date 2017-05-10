@@ -123,7 +123,7 @@ call(Mod = #{'$' := e4mod},
 
 
 bif(Mod = #{'$' := e4mod},
-    Bif = #{'$' := e4bif, args := Args, name := Name}) ->
+    Bif = #{'$' := e4bif, args := _Args, name := Name}) ->
   %% TODO: Args
   %% TODO: Gc
   Gc = maps:get(gc, Bif, 0),

@@ -71,15 +71,17 @@ encode_labels_one_label(L) ->
 %% @doc Convert atoms from mod object to atom section in the module file
 encode_exports(#{'$' := e4mod, exports := Exports, atoms := Atoms}) ->
   Sorted = lists:keysort(1, Exports), % assume orddict is a list of tuples
-  Bin = [encode_exports_one_export(F, Arity, Atoms)
-         || {F, Arity} <- Sorted],
+  io:format("~p~n", [Sorted]),
+  Bin = [encode_exports_one_export(FunArity, Label, Atoms)
+         || {FunArity, Label} <- Sorted],
   erlang:iolist_to_binary([e4c:varint(length(Sorted)), Bin]).
 
 
-encode_exports_one_export(F, Arity, Atoms) ->
-  FIndex = orddict:fetch(F, Atoms),
+encode_exports_one_export({Fun, Arity}, Label, Atoms) ->
+  FIndex = orddict:fetch(Fun, Atoms),
   <<(e4c:varint(FIndex))/binary,
-    (e4c:varint(Arity))/binary>>.
+    (e4c:varint(Arity))/binary,
+    (e4c:varint(Label))/binary>>.
 
 
 encode_imports(#{'$' := e4mod, imports := Imports, atoms := Atoms}) ->

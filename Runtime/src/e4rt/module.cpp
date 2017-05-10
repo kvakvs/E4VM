@@ -149,7 +149,7 @@ void Module::load_exports(const ByteView& adata,
     env_.exports_.begin(),
     env_.exports_.end(),
     [](const Export &a, const Export &b) -> bool {
-      return Export::compare_pvoid(&a, &b) < 0;
+      return Export::compare_less_pvoid(&a, &b);
     }
   );
 }
@@ -157,15 +157,17 @@ void Module::load_exports(const ByteView& adata,
 
 Export* Module::find_export(const MFArity& mfa) const {
   Export sample(mfa.fun_, mfa.arity_, 0);
-  auto r = e4std::binary_search(
+  auto r = const_cast<Export*>(e4std::binary_search(
     env_.exports_.begin(),
     env_.exports_.end(),
     sample,
     [](const Export &a, const Export &b) -> bool {
-      return Export::compare_pvoid(&a, &b) == 0;
+        return Export::compare_less_pvoid(&a, &b);
     }
-  );
-  return const_cast<Export*>(r);
+  ));
+  E4ASSERT(mfa.fun_.raw_equal(r->get_fun())
+           && mfa.arity_ == r->get_arity());
+  return r;
 }
 
 
@@ -225,7 +227,7 @@ void Module::load_labels(const ByteView &adata, ModuleLoaderState &lstate) {
 }
 
 
-int Export::compare_pvoid(const void* a, const void* b) {
+int Export::compare_pvoid(const void *a, const void *b) {
   auto pa = static_cast<const Export*>(a);
   auto pb = static_cast<const Export*>(b);
 

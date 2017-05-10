@@ -93,6 +93,10 @@ class Term {
 
   Term() : raw_(0) {}
 
+  bool raw_equal(const Term& other) const {
+    return raw_ == other.raw_;
+  }
+
   explicit Term(ConsCell* cell_ptr)
     : as_primary_(primary_tag::Cons, ptr_to_val1(cell_ptr)) {}
 
@@ -259,7 +263,7 @@ public:
     return val_ == other.val_;
   }
 
-  template <typename T> T get() const {
+  template <typename T = Word> T get() const {
     return static_cast<T>(val_);
   }
 };

@@ -51,11 +51,17 @@ public:
 
   explicit CodeAddress(const uint8_t *p) : ptr_(p) {}
 
-  static const uint8_t *get_base() { return BASE_ADDR; }
+  static const uint8_t *get_base() {
+    return BASE_ADDR;
+  }
 
-  const uint8_t *ptr() const { return ptr_; }
+  const uint8_t *ptr() const {
+    return ptr_;
+  }
 
-  uint8_t fetch() const { return *ptr_; }
+  uint8_t fetch() const {
+    return *ptr_;
+  }
 
   CodeAddress& operator += (Word s) {
     ptr_ += s;

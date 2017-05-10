@@ -25,23 +25,39 @@ class Export {
 private:
   Term fun_;
 
-  Word offset_;  // where the code begins
-
   Arity arity_;
 
+  Word offset_;  // where the code begins
+
 public:
-  const Term &get_fun() const { return fun_; }
-
-  Word get_offset() const { return offset_; }
-
-  const Arity &get_arity() const { return arity_; }
-
   explicit Export() : Export(NON_VALUE, Arity {0}, 0) {}
 
-  Export(Term f, Arity a, Word offs) : fun_(f), offset_(offs), arity_(a) {}
+  Export(Term f, Arity a, Word offs)
+          : fun_(f), arity_(a), offset_(offs) {
+  }
+
+  const Term &get_fun() const {
+    return fun_;
+  }
+
+  Word get_offset() const {
+    return offset_;
+  }
+
+  const Arity &get_arity() const {
+    return arity_;
+  }
 
   // Compares two exports as void* vs void*, returns -1 if a<b, 1 if a>b, or 0
   static int compare_pvoid(const void *a, const void *b);
+
+  static bool compare_less_pvoid(const void *a, const void *b) {
+    return compare_pvoid(a, b) < 0;
+  }
+
+  bool operator == (const Export& other) const {
+    return fun_.raw_equal(other.fun_) && arity_ == other.arity_;
+  }
 
 #if E4DEBUG
   void print(const VM &vm) const;
