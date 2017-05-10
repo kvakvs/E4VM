@@ -34,6 +34,9 @@ debug(Filename) ->
   arguments_loop([Filename]).
 
 start(_StartType, Args) ->
+  %% TODO: Asking for trouble here but hell is this fast
+  put(e4_machine_word_bits, 64),
+
   arguments_loop(Args),
   init:stop().
 

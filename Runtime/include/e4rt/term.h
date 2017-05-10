@@ -6,7 +6,6 @@
 
 #include "e4platf/conf.h"
 #include "e4platf/types.h"
-
 #include "e4rt/box.h"
 #include "e4rt/term_tag.h"
 
