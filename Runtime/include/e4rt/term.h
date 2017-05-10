@@ -287,10 +287,14 @@ class VM;
 class MFArgs {
  public:
   Term mod_;
+
   Term fun_;
+
   ArrayRef<Term> args_;
+
   MFArgs(Term m, Term f, const ArrayRef<Term>& args)
-    : mod_(m), fun_(f), args_(args) {}
+    : mod_(m), fun_(f), args_(args) {
+  }
 
   MFArity as_mfarity() const {
     return MFArity(mod_, fun_, Arity {args_.count()});

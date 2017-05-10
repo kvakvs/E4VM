@@ -142,6 +142,10 @@ void Module::load_exports(const ByteView& adata,
     Export ex(lstate.get_atom(fn_atom_index),
               arity,
               env_.get_label(label));
+
+    ex.print(vm_);
+    ::printf("\n");
+
     env_.exports_.push_back(ex);
   }
   // We then use binary search so better this be sorted
@@ -167,6 +171,7 @@ Export* Module::find_export(const MFArity& mfa) const {
   ));
   E4ASSERT(mfa.fun_.raw_equal(r->get_fun())
            && mfa.arity_ == r->get_arity());
+  r->print(vm_);
   return r;
 }
 
@@ -246,8 +251,9 @@ int Export::compare_pvoid(const void *a, const void *b) {
 
 #if E4DEBUG
 void Export::print(const VM& vm) const {
+  ::printf("#exp<");
   vm.print(fun_);
-  ::printf("/%zu", arity_.get<size_t>());
+  ::printf("/%zu>@%zu", arity_.get<size_t>(), offset_);
 }
 #endif  // DEBUG
 

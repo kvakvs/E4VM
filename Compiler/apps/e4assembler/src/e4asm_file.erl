@@ -59,7 +59,7 @@ encode_atoms_one_atom(A) when is_atom(A) ->
 %% @doc Convert labels to label section in the module file
 encode_labels(#{'$' := e4mod, labels := Labels}) ->
   io:format("labels ~p~n", [Labels]),
-  Sorted = lists:keysort(2, Labels), % assume orddict is a list of tuples
+  Sorted = lists:keysort(1, Labels), % assume orddict is a list of tuples
   Bin = [encode_labels_one_label(L) || {_, L} <- Sorted],
   erlang:iolist_to_binary([e4c:varint(length(Sorted)), Bin]).
 

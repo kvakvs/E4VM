@@ -154,8 +154,8 @@ process_fun([{line, _} | Tail], Mod0, Out) ->
 
 process_fun([FunInfo = {func_info, {atom, _ModName}, {atom, Fun}, Arity},
              Lbl = {label, Label} | Tail], Mod0, Out) ->
-  Mod1 = mark_function_start(Fun, Arity, Label+1, Mod0),
-   process_fun(Tail, Mod1, [FunInfo, Lbl | Out]);
+  Mod1 = mark_function_start(Fun, Arity, Label, Mod0),
+  process_fun(Tail, Mod1, [FunInfo, Lbl | Out]);
 
 process_fun([Code | Tail], Mod0, Out) ->
   process_fun(Tail, Mod0, [Code | Out]).
