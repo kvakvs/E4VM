@@ -21,6 +21,7 @@ logs
 _build
 .idea
 
-# Output directories?
+# Rebar and IntelliJ Output directories
 deps/*
 out/*
+classes/*
