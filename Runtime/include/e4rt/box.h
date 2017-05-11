@@ -39,31 +39,44 @@ class Term;
 //
 class BoxHeaderWord {
  private:
-  PrimaryTag primary_tag_ : TAG1_TAG_BITS;
-  BoxTag tag_ : BOXED_TAG_BITS;  // least-significant goes first
+  Word primary_tag_ : PRIMARY_TAG_BITS;
+
+  Word tag_ : BOXED_TAG_BITS;  // least-significant goes first
+
   Word val_ : BOXED_VALUE_BITS;
+
+  PrimaryTag primary_tag() const {
+    return static_cast<PrimaryTag>(primary_tag_);
+  }
 
  public:
   constexpr BoxHeaderWord(BoxTag t, Word val)
-    : primary_tag_(primary_tag::Header), tag_(t), val_(val) {}
+    : primary_tag_(static_cast<Word>(PrimaryTag::Header)),
+      tag_(t),
+      val_(val) {
+  }
+
+  void set_primary_tag(PrimaryTag pt) {
+    primary_tag_ = static_cast<Word>(pt);
+  }
 
   void set_tag(BoxTag t) {
-    E4ASSERT(primary_tag_ == primary_tag::Header);
+    E4ASSERT(primary_tag() == PrimaryTag::Header);
     tag_ = t;
   }
 
   BoxTag tag() const {
-    E4ASSERT(primary_tag_ == primary_tag::Header);
-    return tag_;
+    E4ASSERT(primary_tag() == PrimaryTag::Header);
+    return static_cast<BoxTag>(tag_);
   }
 
   void set_val(Word a) {
-    E4ASSERT(primary_tag_ == primary_tag::Header);
+    E4ASSERT(primary_tag() == PrimaryTag::Header);
     val_ = a;
   }
 
   Word val() const {
-    E4ASSERT(primary_tag_ == primary_tag::Header);
+    E4ASSERT(primary_tag() == PrimaryTag::Header);
     return val_;
   }
 
@@ -71,7 +84,7 @@ class BoxHeaderWord {
   template <class T>
   static BoxHeaderWord* setup_a_box(T* memory, BoxTag bt, Word val) {
     auto hword = reinterpret_cast<BoxHeaderWord*>(memory);
-    hword->primary_tag_ = primary_tag::Header;
+    hword->set_primary_tag(PrimaryTag::Header);
     hword->set_tag(bt);
     hword->set_val(val);
     return hword;

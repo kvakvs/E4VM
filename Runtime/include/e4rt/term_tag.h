@@ -10,41 +10,51 @@
 namespace e4 {
 
 // primary tag bits
-constexpr Word TAG1_TAG_BITS = 2;
-constexpr Word TAG1_VALUE_BITS = BITS_PER_WORD - TAG1_TAG_BITS;
-constexpr Word TAG1_VALUE_MASK = (~0ULL) << TAG1_TAG_BITS;
+constexpr Word PRIMARY_TAG_BITS = 2;
+constexpr Word PRIMARY_VALUE_BITS = BITS_PER_WORD - PRIMARY_TAG_BITS;
+constexpr Word PRIMARY_VALUE_MASK = (~0ULL) << PRIMARY_TAG_BITS;
 
-namespace primary_tag {
-typedef enum {
+enum class PrimaryTag : Word {
   Header = 0,
-  Boxed,
-  Cons,
-  Immediate,
-} Type;
-}  // ns primary_tag
-using PrimaryTag = primary_tag::Type;
+  Cons = 1,
+  Boxed = 2,
+  Immediate = 3,
+};  // ns primary_tag
 
-// TODO: There's IMMED1 and IMMED2 on E///VM
-namespace immediate_tag {
-typedef enum {
-  Atom = 0,  //(0 << PRIMARY_SIZE) | IMMED1,
-  SmallInt = 1,
-  ShortPid = 2,
-  ShortPort = 4,
-  FpRegister = 6,
-  Catch = 8,
-  XRegister = 10,
-  YRegister = 12,
-  Special = 14,  // includes nil,noval,rip
-} Type;
-}  // ns immediate_tag
-using ImmediateTag = immediate_tag::Type;
+enum class Immed1Tag {
+  Pid = 0,
+  Port = 1,
+  Immed2 = 2,
+  Small = 3
+};
 
-constexpr Word IMM1_TAG_BITS = 4;
-constexpr Word IMM1_VALUE_BITS = BITS_PER_WORD - IMM1_TAG_BITS - TAG1_TAG_BITS;
+enum class Immed2Tag {
+  Atom = 0,
+  Catch = 1,
+  Immed3 = 2,
+  Special = 3
+};
+
+enum class Immed3Tag {
+  XReg = 0,
+  YReg = 1,
+  _Unused = 2,
+  FloatReg = 3
+};
+
+constexpr Word IMM1_TAG_BITS = 2;
+constexpr Word IMM1_VALUE_BITS = PRIMARY_VALUE_BITS - IMM1_TAG_BITS;
+constexpr Word IMM1_MAX_VALUE = (1UL << IMM1_VALUE_BITS) - 1;
+
+constexpr Word IMM2_TAG_BITS = 2;
+constexpr Word IMM2_VALUE_BITS = IMM1_VALUE_BITS - IMM2_TAG_BITS;
+constexpr Word IMM2_MAX_VALUE = (1UL << IMM2_VALUE_BITS) - 1;
+
+constexpr Word IMM3_TAG_BITS = 2;
+constexpr Word IMM3_VALUE_BITS = IMM2_VALUE_BITS - IMM3_TAG_BITS;
+constexpr Word IMM3_MAX_VALUE = (1UL << IMM3_VALUE_BITS) - 1;
 
 static constexpr Word BOXED_TAG_BITS = 4;
-static constexpr Word BOXED_VALUE_BITS =
-  BITS_PER_WORD - BOXED_TAG_BITS - TAG1_TAG_BITS;
+static constexpr Word BOXED_VALUE_BITS = PRIMARY_VALUE_BITS - BOXED_TAG_BITS;
 
 }  // ns e4

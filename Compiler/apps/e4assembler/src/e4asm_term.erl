@@ -8,7 +8,10 @@
 -module(e4asm_term).
 
 %% API
--export([encode/2]).
+-export([encode/2, encode16/2]).
+
+-include_lib("e4compiler/include/e4c.hrl").
+-include_lib("compiler/src/beam_opcodes.hrl").
 
 
 -define(TAG_IMMED, 3).
@@ -39,42 +42,51 @@ imm2(Imm2Tag, Value) ->
 
 %% @doc Construct a word-sized bit structure resembling memory term format for
 %% fast use in VM without recoding and rewriting
-encode({x, X}, _Mod) -> beam_asm:encode(?tag_x, X);
 
-encode({y, Y}, _Mod) -> beam_asm:encode(?tag_y, Y);
-
-encode({f, F}, _Mod) -> beam_asm:encode(?tag_f, F);
-
-encode(nil, _Mod) -> beam_asm:encode(?tag_a, 0);
-
-encode([], _Mod) -> beam_asm:encode(?tag_a, 0);
-
-encode({atom, Atom}, Mod = #{'$' := e4mod}) ->
-  %% Assume atom already exists, will crash if it doesn't
-  beam_asm:encode(?tag_a, index_of(Atom, atoms, Mod) + 1);
-
-encode({extfunc, Mod, Fun, Arity}, Mod0 = #{'$' := e4mod}) ->
-  ImportIndex = index_of({Mod, Fun, Arity}, imports, Mod0),
-  beam_asm:encode(?tag_u, ImportIndex);
-
-encode({lambda, Label, NumFree}, Mod0 = #{'$' := e4mod}) ->
-  LambdaIndex = index_of({Label, NumFree}, lambdas, Mod0),
-  beam_asm:encode(?tag_u, LambdaIndex);
-
-encode({jumptab, JTab}, Mod0 = #{'$' := e4mod}) ->
-  JTabIndex = index_of(JTab, jumptabs, Mod0),
-  beam_asm:encode(?tag_u, JTabIndex);
-
-encode({literal, Lit}, Mod0 = #{'$' := e4mod}) ->
-  LitIndex = index_of(Lit, literals, Mod0),
-  beam_asm:encode(?tag_u, LitIndex);
-
-encode(X, _Mod) when is_integer(X) -> beam_asm:encode(?tag_u, X);
-
-encode({integer, X}, _Mod) -> beam_asm:encode(?tag_u, X);
+encode(nil, _Mod) -> imm1;
+%%
+%%encode([], _Mod) -> beam_asm:encode(?tag_a, 0);
+%%
+%%encode({atom, Atom}, Mod = #{'$' := e4mod}) ->
+%%  %% Assume atom already exists, will crash if it doesn't
+%%  beam_asm:encode(?tag_a, index_of(Atom, atoms, Mod) + 1);
+%%
+%%encode({extfunc, Mod, Fun, Arity}, Mod0 = #{'$' := e4mod}) ->
+%%  ImportIndex = index_of({Mod, Fun, Arity}, imports, Mod0),
+%%  beam_asm:encode(?tag_u, ImportIndex);
+%%
+%%encode({lambda, Label, NumFree}, Mod0 = #{'$' := e4mod}) ->
+%%  LambdaIndex = index_of({Label, NumFree}, lambdas, Mod0),
+%%  beam_asm:encode(?tag_u, LambdaIndex);
+%%
+%%encode({jumptab, JTab}, Mod0 = #{'$' := e4mod}) ->
+%%  JTabIndex = index_of(JTab, jumptabs, Mod0),
+%%  beam_asm:encode(?tag_u, JTabIndex);
+%%
+%%encode({literal, Lit}, Mod0 = #{'$' := e4mod}) ->
+%%  LitIndex = index_of(Lit, literals, Mod0),
+%%  beam_asm:encode(?tag_u, LitIndex);
+%%
+%%encode(X, _Mod) when is_integer(X) -> beam_asm:encode(?tag_u, X);
+%%
+%%encode({integer, X}, _Mod) -> beam_asm:encode(?tag_u, X);
 
 encode(X, _Mod) ->
   ?COMPILE_ERROR("do not know how to encode ~p", [X]).
+
+
+%% @doc Encode a smaller value into 16 bit space
+encode16({x, X}, Width, _Mod) ->
+  <<X:(Width - 3), ?tag_x:3>>;
+
+encode16({y, Y}, Width, _Mod) ->
+  <<Y:(Width - 3), ?tag_y:3>>;
+
+encode16({f, Label}, Width, _Mod) ->
+  <<Label:(Width - 3), ?tag_f:3>>;
+
+encode16(X, _Mod) ->
+  ?COMPILE_ERROR("do not know how to encode16 ~p", [X]).
 
 
 index_of(Value, Key, Mod) ->

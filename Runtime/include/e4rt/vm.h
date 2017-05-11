@@ -65,6 +65,10 @@ class VM {
   void print_imm(Term t) const;
 //    void print_atoms() const;
 #endif
+
+  void print_imm_imm3(const Term &t) const;
+
+  void print_imm_imm2(const Term &t) const;
 };
 
 }  // ns e4

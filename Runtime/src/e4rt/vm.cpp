@@ -56,15 +56,15 @@ Process* VM::spawn(Term parent_pid, const MFArgs& mfargs) {
 
 #if E4DEBUG
 void VM::print(Term t) const {
-  switch (t.as_primary_.tag_) {
-    case primary_tag::Immediate: {
+  switch (t.as_primary_.get_primary_tag()) {
+    case PrimaryTag::Immediate: {
       print_imm(t);
     } break;
-    case primary_tag::Boxed: {
+    case PrimaryTag::Boxed: {
     } break;
-    case primary_tag::Header: {
+    case PrimaryTag::Header: {
     } break;
-    case primary_tag::Cons: {
+    case PrimaryTag::Cons: {
     } break;
   }
 }
@@ -72,32 +72,73 @@ void VM::print(Term t) const {
 
 #if E4DEBUG
 void VM::print_imm(Term t) const {
-  switch (t.as_imm_.imm_tag_) {
-    case immediate_tag::Atom: {
+  if (t.is_immed1()) {
+    switch (t.as_imm1_.get_imm1_tag()) {
+      case Immed1Tag::Small: {
+        debug_printf("%d", t.as_imm1_.get_signed_val());
+      } break;
+
+      case Immed1Tag::Pid: {
+        debug_printf("#pid<%zu>", t.as_imm1_.get_value());
+      } break;
+
+      case Immed1Tag::Port: {
+        debug_printf("#port<%zu>", t.as_imm1_.get_value());
+      } break;
+
+      case Immed1Tag::Immed2: {
+        print_imm_imm2(t);
+      } break;
+    }
+  }
+}
+
+void VM::print_imm_imm2(const Term &t) const {
+  switch (t.as_imm2_.get_imm2_tag()) {
+    case Immed2Tag::Atom: {
       debug_printf("'%s'", find_atom(t));
     } break;
-    case immediate_tag::SmallInt: {
-      debug_printf("%d", t.as_small_.val_);
+
+    case Immed2Tag::Catch:
+      break;
+
+    case Immed2Tag::Special: {
+      switch (t.as_imm2_.get_value()) {
+        case 0:
+          debug_printf("[]");
+          break;
+        case 1:
+          debug_printf("#NonV");
+          break;
+        default:
+          break;
+      }
     } break;
-    case immediate_tag::ShortPid: {
-    } break;
-    case immediate_tag::ShortPort: {
-    } break;
-    case immediate_tag::FpRegister: {
-      debug_printf("#fp<%d>", t.as_imm_.val_);
-    } break;
-    case immediate_tag::Catch: {
-    } break;
-    case immediate_tag::XRegister: {
-      debug_printf("#x<%d>", t.as_imm_.val_);
-    } break;
-    case immediate_tag::YRegister: {
-      debug_printf("#y<%d>", t.as_imm_.val_);
-    } break;
-    case immediate_tag::Special: {
+
+    case Immed2Tag::Immed3: {
+      print_imm_imm3(t);
     } break;
   }
 }
+
+void VM::print_imm_imm3(const Term &t) const {
+  switch (t.as_imm3_.get_imm3_tag()) {
+    case Immed3Tag::FloatReg: {
+      debug_printf("#fp<%d>", t.as_imm3_.get_value());
+    } break;
+
+    case Immed3Tag::XReg: {
+      debug_printf("#x<%d>", t.as_imm3_.get_value());
+    } break;
+
+    case Immed3Tag::YReg: {
+      debug_printf("#y<%d>", t.as_imm3_.get_value());
+    } break;
+
+    case Immed3Tag::_Unused: break;
+  }
+}
+
 #endif  // DEBUG
 
 const char* VM::find_atom(Term atom) const {

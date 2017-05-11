@@ -22,13 +22,11 @@ bool Term::is_value() const {
   return raw_ != NON_VALUE.raw_;
 }
 
-Term Term::make_float(Float f) {
 #if E4FEATURE_FLOAT
+Term Term::make_float(Float f) {
   E4FAIL("notimpl make_float");
-#else
-  return NIL;
-#endif
 }
+#endif
 
 TupleBoxHeader::operator Term() const {
   return Term::box_wrap(this);

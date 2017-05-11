@@ -40,40 +40,133 @@ static_assert(PID_DATA_SIZE + BOXED_TAG_BITS <= BITS_PER_WORD,
 class Term {
  private:
   // Term representation as primary_tag:2 + value in the remaining bits
-  struct PrimaryTaggedWord {
-    PrimaryTag tag_ : TAG1_TAG_BITS;
-    Word val_ : TAG1_VALUE_BITS;
+  class PrimaryTaggedWord {
+  private:
+    Word tag_ : PRIMARY_TAG_BITS;
 
+    Word val_ : PRIMARY_VALUE_BITS;
+
+  public:
     PrimaryTaggedWord() {}  //-V730
 
-    constexpr PrimaryTaggedWord(PrimaryTag pt, Word v) : tag_(pt), val_(v) {}
-  };
+    constexpr PrimaryTaggedWord(PrimaryTag pt, Word v)
+      : tag_(static_cast<Word>(pt)),
+        val_(v) {
+    }
 
-  // Represents term as primary_tag:2 + immediate_tag:4 + value
-  struct ImmediateTaggedWord {
-    PrimaryTag primary_tag_ : TAG1_TAG_BITS;
-    ImmediateTag imm_tag_ : IMM1_TAG_BITS;
+    constexpr PrimaryTag get_primary_tag() const {
+      return static_cast<PrimaryTag>(tag_);
+    }
+  };
+  static_assert(sizeof(PrimaryTaggedWord) == sizeof(Word),
+                "PrimaryTaggedWord must have size of 1 word");
+
+  // Represents immed1 term as <<value, immed1_tag:2, IMMED:2>>
+  class Immed1TaggedWord {
+  private:
+    Word primary_tag_ : PRIMARY_TAG_BITS;
+
+    Word imm1_tag_ : IMM1_TAG_BITS;
+
     Word val_ : IMM1_VALUE_BITS;
 
-    ImmediateTaggedWord() {}  //-V730
+  public:
+    Immed1TaggedWord() {}  //-V730
 
-    constexpr ImmediateTaggedWord(PrimaryTag pt, ImmediateTag it, Word v)
-      : primary_tag_(pt), imm_tag_(it), val_(v) {}
+    constexpr Immed1TaggedWord(Immed1Tag it, Word v)
+      : primary_tag_(static_cast<Word>(PrimaryTag::Immediate)),
+        imm1_tag_(static_cast<Word>(it)),
+        val_(v) {
+    }
+
+    constexpr Immed1TaggedWord(Immed1Tag it, SignedWord v)
+      : primary_tag_(static_cast<Word>(PrimaryTag::Immediate)),
+        imm1_tag_(static_cast<Word>(it)),
+        val_(static_cast<Word>(v)) {
+    }
+
+    constexpr Immed1Tag get_imm1_tag() const {
+      return static_cast<Immed1Tag>(imm1_tag_);
+    }
+
+    constexpr Word get_value() const {
+      return val_;
+    }
+    
+    constexpr SignedWord get_signed_val() const {
+      return static_cast<SignedWord>(val_);
+    }
   };
+  static_assert(sizeof(Immed1TaggedWord) == sizeof(Word),
+                "Immed1TaggedWord must have size of 1 word");
 
-  // Represents term as a small integer
-  // primary_tag:2 + immediate_tag:4=0x1 + value which overlays 3 bits of
-  // the immediate tag, hence why it is only 1 bit and is always true
-  struct SmallTaggedImmediateWord {
-    PrimaryTag primary_tag_ : TAG1_TAG_BITS;
-    bool imm_tag_ : 1;
-    SignedWord val_ : (TAG1_VALUE_BITS - 1);
+  // Represents immed2 term as <<value, immed2_tag:2, ?IMM1_IMM2:2, IMMED:2>>
+  class Immed2TaggedWord {
+  private:
+    Word primary_tag_ : PRIMARY_TAG_BITS;
 
-    SmallTaggedImmediateWord() {}  //-V730
+    Word imm1_tag_ : IMM1_TAG_BITS;
 
-    explicit constexpr SmallTaggedImmediateWord(SignedWord val)
-      : primary_tag_(primary_tag::Immediate), imm_tag_(true), val_(val) {}
+    Word imm2_tag_ : IMM2_TAG_BITS;
+
+    Word val_ : IMM2_VALUE_BITS;
+
+  public:
+    Immed2TaggedWord() {}  //-V730
+
+    constexpr Immed2TaggedWord(Immed2Tag it, Word v)
+            : primary_tag_(static_cast<Word>(PrimaryTag::Immediate)),
+              imm1_tag_(static_cast<Word>(Immed1Tag::Immed2)),
+              imm2_tag_(static_cast<Word>(it)),
+              val_(v) {
+    }
+
+    constexpr Immed2Tag get_imm2_tag() const {
+      return static_cast<Immed2Tag>(imm2_tag_);
+    }
+
+    constexpr Word get_value() const {
+      return val_;
+    }
   };
+  static_assert(sizeof(Immed2TaggedWord) == sizeof(Word),
+                "Immed2TaggedWord must have size of 1 word");
+
+  // Represents (special for E4) immed3 term as
+  // <<value, immed3_tag:2, ?IMM2_IMM3:2, ?IMM1_IMM2:2, IMMED:2>>
+  class Immed3TaggedWord {
+  private:
+    Word primary_tag_ : PRIMARY_TAG_BITS;
+
+    Word imm1_tag_ : IMM1_TAG_BITS;
+
+    Word imm2_tag_ : IMM2_TAG_BITS;
+
+    Word imm3_tag_ : IMM3_TAG_BITS;
+
+    Word val_ : IMM3_VALUE_BITS;
+
+  public:
+    Immed3TaggedWord() {}  //-V730
+
+    constexpr Immed3TaggedWord(Immed3Tag it, Word v)
+      : primary_tag_(static_cast<Word>(PrimaryTag::Immediate)),
+        imm1_tag_(static_cast<Word>(Immed1Tag::Immed2)),
+        imm2_tag_(static_cast<Word>(Immed2Tag::Immed3)),
+        imm3_tag_(static_cast<Word>(it)),
+        val_(v) {
+    }
+
+    constexpr Immed3Tag get_imm3_tag() const {
+      return static_cast<Immed3Tag>(imm3_tag_);
+    }
+
+    constexpr Word get_value() const {
+      return val_;
+    }
+  };
+  static_assert(sizeof(Immed3TaggedWord) == sizeof(Word),
+                "Immed3TaggedWord must have size of 1 word");
 
   // contains zero arity tuple header. Use box_wrap() on address of this
   static TupleBoxHeader empty_tuple_;
@@ -82,8 +175,9 @@ class Term {
   union {
     Word raw_;
     PrimaryTaggedWord as_primary_;
-    ImmediateTaggedWord as_imm_;
-    SmallTaggedImmediateWord as_small_;
+    Immed1TaggedWord as_imm1_;
+    Immed2TaggedWord as_imm2_;
+    Immed3TaggedWord as_imm3_;
   };
 
  public:
@@ -97,20 +191,30 @@ class Term {
   }
 
   explicit Term(ConsCell* cell_ptr)
-    : as_primary_(primary_tag::Cons, ptr_to_val1(cell_ptr)) {}
+    : as_primary_(PrimaryTag::Cons, ptr_to_val1(cell_ptr)) {}
 
-  explicit constexpr Term(PrimaryTag pt, ImmediateTag itag, Word val2)
-    : as_imm_(pt, itag, val2) {}
+  explicit constexpr Term(Immed1Tag itag, Word val2)
+    : as_imm1_(itag, val2) {}
 
-  explicit constexpr Term(PrimaryTag pt, Word val1) : as_primary_(pt, val1) {}
+  explicit constexpr Term(Immed1Tag itag, SignedWord val2)
+    : as_imm1_(itag, val2) {}
+
+  explicit constexpr Term(Immed2Tag itag, Word val2)
+    : as_imm2_(itag, val2) {}
+
+  explicit constexpr Term(Immed3Tag itag, Word val3)
+    : as_imm3_(itag, val3) {}
+
+  explicit constexpr Term(PrimaryTag pt, Word val1)
+    : as_primary_(pt, val1) {}
 
   // Get raw word
   Word get_raw() const { return raw_; }
 
   // Construct an atom from atom index
-  static Term make_atom(Word a) {
-    E4ASSERT(a < (1UL << IMM1_VALUE_BITS));
-    return Term(primary_tag::Immediate, immediate_tag::Atom, a);
+  static constexpr Term make_atom(Word a) {
+    E4ASSERT(a <= IMM2_MAX_VALUE);
+    return Term(Immed2Tag::Atom, a);
   }
 
   //
@@ -118,46 +222,60 @@ class Term {
   //
 
   constexpr bool is_immediate() const {
-    return as_imm_.primary_tag_ == primary_tag::Immediate;
+    return as_primary_.get_primary_tag() == PrimaryTag::Immediate;
   }
 
-  bool is_atom() const { return as_imm_.imm_tag_ == immediate_tag::Atom; }
+  // TODO: Check if this produces efficient assembly
+  constexpr bool is_immed1() const {
+    return is_immediate() && as_imm1_.get_imm1_tag() != Immed1Tag::Immed2;
+  }
 
-  bool is_boxed() const { return as_primary_.tag_ == primary_tag::Boxed; }
+  // TODO: Check if this produces efficient assembly
+  constexpr bool is_immed2() const {
+    return is_immediate() && as_imm1_.get_imm1_tag() == Immed1Tag::Immed2;
+  }
+
+  // TODO: Check if this produces efficient assembly
+  constexpr bool is_atom() const {
+    return is_immed2() && as_imm2_.get_imm2_tag() == Immed2Tag::Atom;
+  }
+
+  bool is_boxed() const {
+    return as_primary_.get_primary_tag() == PrimaryTag::Boxed;
+  }
 
   // A pointer with 2 bits trimmed to fit into val1_ of a term
   template <typename T>
   static Word ptr_to_val1(const T* ptr) {
-    Word result = reinterpret_cast<Word>(ptr) & TAG1_VALUE_MASK;
+    Word result = reinterpret_cast<Word>(ptr) & PRIMARY_VALUE_MASK;
     E4ASSERT(fits_in<Word>(result));
     return reinterpret_cast<Word>(result);
   }
 
   template <typename T>
   static Term box_wrap(T* ptr) {
-    return Term(primary_tag::Boxed, ptr_to_val1(ptr));
+    return Term(PrimaryTag::Boxed, ptr_to_val1(ptr));
   }
 
   BoxHeaderWord* unbox() const {
     E4ASSERT(is_boxed());
-    return reinterpret_cast<BoxHeaderWord*>(raw_ & TAG1_VALUE_MASK);
+    return reinterpret_cast<BoxHeaderWord*>(raw_ & PRIMARY_VALUE_MASK);
   }
 
   //
   // Tuple Aspect
   //
-  static Term make_zero_tuple() { return box_wrap(&empty_tuple_); }
+  static Term make_zero_tuple() {
+    return box_wrap(&empty_tuple_);
+  }
 
   static Term make_tuple(TupleBoxHeader* tuple_box);
 
   //
   // Small Integer Aspect
   //
-  static Term make_small(SignedWord s) {
-    // TODO: Maybe can be optimized by providing an appropriate ctor
-    Term result(primary_tag::Immediate, 0);
-    result.as_small_.val_ = s;
-    return result;
+  constexpr static Term make_small(SignedWord s) {
+    return Term(PrimaryTag::Immediate, s);
   }
 
   static Term make_integer(Word val) {
@@ -187,12 +305,12 @@ class Term {
   }
 
   // Data arg is created using Term::make_pid_data
-  static Term make_short_pid(Word data) {
-    return Term(primary_tag::Immediate, immediate_tag::ShortPid, data);
+  static constexpr Term make_short_pid(Word data) {
+    return Term(Immed1Tag::Pid, data);
   }
 
   constexpr bool is_short_pid() const {
-    return is_immediate() && as_imm_.imm_tag_ == immediate_tag::ShortPid;
+    return is_immed1() && as_imm1_.get_imm1_tag() == Immed1Tag::Pid;
   }
 
   bool is_remote_pid() const {
@@ -212,34 +330,48 @@ class Term {
   //
 
   static constexpr Term make_xreg(Word i) {
-    return Term(primary_tag::Immediate, immediate_tag::XRegister, i);
+    return Term(Immed3Tag::XReg, i);
   }
 
   static constexpr Term make_yreg(Word i) {
-    return Term(primary_tag::Immediate, immediate_tag::YRegister, i);
+    return Term(Immed3Tag::YReg, i);
   }
 
   static constexpr Term make_fpreg(Word i) {
-    return Term(primary_tag::Immediate, immediate_tag::FpRegister, i);
+    return Term(Immed3Tag::FloatReg, i);
   }
 
   //
   // Floating Point Aspect
   //
 
-  // Will return NIL if floats are disabled
+#if E4FEATURE_FLOAT
   static Term make_float(Float f);
+#else
+  static Term make_float(Float f) {
+    return make_nil();
+  }
+#endif
+
+  //
+  // Special values and imm3 stuff
+  //
+
+  static constexpr Term make_nil() {
+    return Term(Immed2Tag::Special, 0);
+  }
+
+  static constexpr Term make_nonvalue() {
+    return Term(Immed2Tag::Special, 0);
+  }
 };
 
 
 static_assert(sizeof(Term) == sizeof(Word), "Term must have size of 1 word");
 
-// TODO: This belongs to Immediate2 namespace
-constexpr Term NIL = Term(primary_tag::Immediate, immediate_tag::Special, 0);
+constexpr Term NIL = Term::make_nil();
 
-// TODO: This belongs to Immediate2 namespace
-constexpr Term NON_VALUE =
-  Term(primary_tag::Immediate, immediate_tag::Special, 1);
+constexpr Term NON_VALUE = Term::make_nonvalue();
 
 
 class ConsCell {
