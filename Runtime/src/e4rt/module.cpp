@@ -103,7 +103,7 @@ void Module::load(const ByteView& data) {
 void Module::load_atoms_section(const e4std::BoxView<uint8_t>& section_view,
                                 MUTABLE ModuleLoaderState& lstate) {
   tool::Reader bsr(section_view);
-  Word count = bsr.read_varint_u();
+  Word count = bsr.read_big_u32();
   lstate.reserve_atoms(count);
 
 //  this->name_ = this->vm_.add_atom(result.front());
@@ -116,7 +116,7 @@ void Module::load_atoms_section(const e4std::BoxView<uint8_t>& section_view,
 
 void Module::load_literals(const ByteView& adata) {
   tool::Reader bsr(adata);
-  Word count = bsr.read_varint_u();
+  Word count = bsr.read_big_u32();
   env_.literals_.reserve(count);
 
   for (Word i = 0; i < count; ++i) {
@@ -129,7 +129,7 @@ void Module::load_literals(const ByteView& adata) {
 void Module::load_exports(const ByteView& adata,
                           const ModuleLoaderState& lstate) {
   tool::Reader bsr(adata);
-  Word n = bsr.read_varint_u();
+  Word n = bsr.read_big_u32();
   env_.exports_.reserve(n);
 
   for (Word i = 0; i < n; ++i) {
@@ -184,7 +184,7 @@ CodeAddress Module::get_export_address(const Export& exp) const {
 void Module::load_imports(const ByteView &adata,
                           const ModuleLoaderState& lstate) {
   tool::Reader bsr(adata);
-  Word count = bsr.read_varint_u();
+  Word count = bsr.read_big_u32();
   env_.imports_.reserve(count);
 
   for (Word i = 0; i < count; ++i) {
@@ -204,7 +204,7 @@ void Module::load_imports(const ByteView &adata,
 void Module::load_jump_tables(const ByteView &adata,
                               const ModuleLoaderState& lstate) {
   tool::Reader bsr(adata);
-  Word count = bsr.read_varint_u();
+  Word count = bsr.read_big_u32();
 
   env_.jump_tables_.reserve(count);
 
@@ -222,7 +222,7 @@ void Module::load_jump_tables(const ByteView &adata,
 
 void Module::load_labels(const ByteView &adata, ModuleLoaderState &lstate) {
   tool::Reader bsr(adata);
-  Word count = bsr.read_varint_u();
+  Word count = bsr.read_big_u32();
 
   env_.labels_.reserve(count);
 

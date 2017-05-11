@@ -92,7 +92,7 @@ class Term {
     constexpr Word get_value() const {
       return val_;
     }
-    
+
     constexpr SignedWord get_signed_val() const {
       return static_cast<SignedWord>(val_);
     }

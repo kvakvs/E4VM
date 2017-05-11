@@ -19,15 +19,15 @@ to_iolist(Prog = #{'$' := e4mod}) ->
     section("Fn", encode_lambdas(Prog)),
     []
   ], [
-    "E4",
-    <<(iolist_size(Content)):32/big>>,
+    version("E432", "E464", get(e4_machine_word_bits)),
+    big32(iolist_size(Content)),
     Content
   ].
 
 
 section(Tag, Data) ->
   [Tag,
-   <<(byte_size(Data)):32/big>>,
+   big32(byte_size(Data)),
    Data]. % TODO: 4 alignment for ARM
 
 
@@ -48,7 +48,7 @@ encode_code(#{'$' := e4mod, funs := Funs}) ->
 encode_atoms(#{'$' := e4mod, atoms := Atoms}) ->
   Sorted = lists:keysort(2, Atoms), % assume orddict is a list of tuples
   Bin = [encode_atoms_one_atom(A) || {A, _} <- Sorted],
-  erlang:iolist_to_binary([e4c:varint(length(Sorted)), Bin]).
+  erlang:iolist_to_binary([big32(length(Sorted)), Bin]).
 
 
 encode_atoms_one_atom(A) when is_atom(A) ->
@@ -61,7 +61,7 @@ encode_labels(#{'$' := e4mod, labels := Labels}) ->
   io:format("labels ~p~n", [Labels]),
   Sorted = lists:keysort(1, Labels), % assume orddict is a list of tuples
   Bin = [encode_labels_one_label(L) || {_, L} <- Sorted],
-  erlang:iolist_to_binary([e4c:varint(length(Sorted)), Bin]).
+  erlang:iolist_to_binary([big32(length(Sorted)), Bin]).
 
 
 encode_labels_one_label(L) ->
@@ -74,7 +74,7 @@ encode_exports(#{'$' := e4mod, exports := Exports, atoms := Atoms}) ->
   io:format("~p~n", [Sorted]),
   Bin = [encode_exports_one_export(FunArity, Label, Atoms)
          || {FunArity, Label} <- Sorted],
-  erlang:iolist_to_binary([e4c:varint(length(Sorted)), Bin]).
+  erlang:iolist_to_binary([big32(length(Sorted)), Bin]).
 
 
 encode_exports_one_export({Fun, Arity}, Label, Atoms) ->
@@ -88,7 +88,7 @@ encode_imports(#{'$' := e4mod, imports := Imports, atoms := Atoms}) ->
   Sorted = lists:keysort(2, Imports), % assume orddict is a list of tuples
   Bin = [encode_exports_one_import(M, F, Arity, Atoms)
          || {{M, F, Arity}, _} <- Sorted],
-  erlang:iolist_to_binary([e4c:varint(length(Sorted)), Bin]).
+  erlang:iolist_to_binary([big32(length(Sorted)), Bin]).
 
 
 encode_exports_one_import(M, F, Arity, Atoms) ->
@@ -102,7 +102,7 @@ encode_exports_one_import(M, F, Arity, Atoms) ->
 encode_literals(#{'$' := e4mod, literals := Lit}) ->
   Sorted = lists:keysort(2, Lit), % assume orddict is a list of tuples
   Bin = [encode_literals_one_literal(L) || {L, _} <- Sorted],
-  erlang:iolist_to_binary([e4c:varint(length(Sorted)), Bin]).
+  erlang:iolist_to_binary([big32(length(Sorted)), Bin]).
 
 
 encode_literals_one_literal(L) ->
@@ -112,7 +112,7 @@ encode_literals_one_literal(L) ->
 encode_jumptabs(Mod = #{'$' := e4mod, jumptabs := JTabs}) ->
   Sorted = lists:keysort(2, JTabs), % assume orddict is a list of tuples
   Bin = [encode_jumptabs_one_jtab(J, Mod) || {J, _} <- Sorted],
-  erlang:iolist_to_binary([e4c:varint(length(Sorted)), Bin]).
+  erlang:iolist_to_binary([big32(length(Sorted)), Bin]).
 
 
 encode_jumptabs_one_jtab(J, Mod) ->
@@ -124,9 +124,17 @@ encode_jumptabs_one_jtab(J, Mod) ->
 encode_lambdas(Mod = #{'$' := e4mod, lambdas := Lambdas}) ->
   Sorted = lists:keysort(2, Lambdas), % assume orddict is a list of tuples
   Bin = [encode_lambdas_one_lambda(L, Mod) || {L, _} <- Sorted],
-  erlang:iolist_to_binary([e4c:varint(length(Sorted)), Bin]).
+  erlang:iolist_to_binary([big32(length(Sorted)), Bin]).
 
 
 encode_lambdas_one_lambda({{f, Label}, NumFree}, Mod) ->
   [e4c:varint(Label), % this should somehow resolve to atom function name maybe
    e4c:varint(NumFree)].
+
+
+version(V32, _V64, 32) -> V32;
+version(_V32, V64, 64) -> V64.
+
+
+big32(X) ->
+  <<X:32/big>>.

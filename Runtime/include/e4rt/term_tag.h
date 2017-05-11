@@ -38,7 +38,7 @@ enum class Immed2Tag {
 enum class Immed3Tag {
   XReg = 0,
   YReg = 1,
-  _Unused = 2,
+  Label = 2,
   FloatReg = 3
 };
 

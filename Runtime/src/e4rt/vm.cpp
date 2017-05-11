@@ -131,11 +131,13 @@ void VM::print_imm_imm3(const Term &t) const {
       debug_printf("#x<%d>", t.as_imm3_.get_value());
     } break;
 
+    case Immed3Tag::Label: {
+      debug_printf("#label<%d>", t.as_imm3_.get_value());
+    } break;
+
     case Immed3Tag::YReg: {
       debug_printf("#y<%d>", t.as_imm3_.get_value());
     } break;
-
-    case Immed3Tag::_Unused: break;
   }
 }
 
