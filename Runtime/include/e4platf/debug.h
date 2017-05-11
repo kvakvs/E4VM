@@ -82,7 +82,7 @@ void debug_printf(const char* format, ...);
 
 // Choose a debug value in debug build
 #define E4CHOICE(DEBUG, NODEBUG) (DEBUG)
-#define E4LOG(A) debug_printf(A);
+#define E4LOG0(A) debug_printf(A);
 #define E4LOG1(A, V) debug_printf(A, V);
 #define E4LOG2(A, V1, V2) debug_printf(A, V1, V2);
 #define E4LOG3(A, V1, V2, V3) debug_printf(A, V1, V2, V3);

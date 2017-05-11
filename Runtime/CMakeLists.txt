@@ -2,7 +2,9 @@ CMAKE_MINIMUM_REQUIRED(VERSION 3.5)
 PROJECT(E4VM CXX)
 
 SET(CMAKE_CXX_STANDARD 14)
+
 SET(E4_INVOKE_PVS 0)
+
 IF("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
     SET(E4_GCC 0)
 ELSE()
@@ -49,6 +51,7 @@ SET(E4_RUNTIME_SOURCES
     src/e4rt/scheduler.cpp
     src/e4rt/term.cpp
     src/e4rt/vm.cpp
+    src/e4rt/vm_loop.cpp
     )
 
 ## Helpers and OS abstraction library

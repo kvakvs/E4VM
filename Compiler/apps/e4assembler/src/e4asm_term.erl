@@ -2,7 +2,7 @@
 %%% to be executed.
 %%% Because we're building module image, runnable as soon as its loaded (and
 %%% after the references updated), it must have all terms correctly sized, and
-%%% small values must be compacted.
+%%% small values may be compacted at the cost of an extra opcode.
 %%% @end
 
 -module(e4asm_term).
@@ -14,6 +14,7 @@
 -include_lib("compiler/src/beam_opcodes.hrl").
 
 
+-define(TAG_HEADER, 0).
 -define(TAG_IMMED, 3).
 
 -define(IMM1_PID, 0).
@@ -31,17 +32,31 @@
 -define(IMM3_LABEL, 2).
 -define(IMM3_FLOATREG, 3).
 
+%% Use header tag for special values, will be rewritten on module load
+%% <<Value, E4_*:2, TAG_HEADER:2>>
+-define(E4_LITERAL, 0).
+-define(E4_ATOM, 1).
+
 
 %% @doc How wide are the terms.
 term_bits() ->
-  %% TODO: Asking for trouble here but hell is this fast
+  %% TODO: Asking for trouble here but hell is get/put fast
   get(e4_machine_word_bits).
 
 imm1_bits() -> term_bits() - 4.
 
+header_bits() -> term_bits() - 4.
+
 imm2_bits() -> term_bits() - 6.
 
 imm3_bits() -> term_bits() - 8.
+
+
+header(HTag, Value) ->
+  case integer_fits_imm1(Value) of
+    true -> <<Value:(header_bits()), HTag:2, ?TAG_HEADER:2>>;
+    false -> ?COMPILE_ERROR("encode header value won't fit ~p", [Value])
+  end.
 
 
 imm1(Imm1Tag, Value) ->
@@ -87,7 +102,7 @@ encode([], _Mod) ->
 
 encode({atom, Atom}, Mod = #{'$' := e4mod}) ->
   %% Assume atom already exists, will crash if it doesn't
-  imm2(?IMM2_ATOM, index_of(Atom, atoms, Mod) + 1);
+  header(?E4_ATOM, index_of(Atom, atoms, Mod) + 1);
 
 encode({extfunc, Mod, Fun, Arity}, Mod0 = #{'$' := e4mod}) ->
   ImportIndex = index_of({Mod, Fun, Arity}, imports, Mod0),
@@ -103,7 +118,7 @@ encode({lambda, Label, NumFree}, Mod0 = #{'$' := e4mod}) ->
 
 encode({literal, Lit}, Mod0 = #{'$' := e4mod}) ->
   LitIndex = index_of(Lit, literals, Mod0),
-  imm2(?IMM2_ATOM, LitIndex);
+  header(?E4_LITERAL, LitIndex);
 
 encode(X, Mod) when is_integer(X) ->
   encode({integer, X}, Mod);

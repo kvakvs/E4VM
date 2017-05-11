@@ -50,6 +50,14 @@ constexpr bool hot_code_load() { return (E4FEATURE_HOTCODELOAD != 0); }
 
 constexpr bool DEBUG_MODE = (E4DEBUG != 0);
 
+
+#if defined(__arm__)
+  #define E4_ARM 1
+#else
+  #define E4_ARM 0
+#endif
+
+
 #undef BIG_ENDIAN
 #undef LITTLE_ENDIAN
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
