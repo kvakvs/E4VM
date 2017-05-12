@@ -7,15 +7,15 @@
 
 namespace e4 {
 
-VoidResult Process::apply(const MFArgs& mfargs) {
+Error Process::apply(const MFArgs& mfargs) {
   auto mod = vm_.modules_.find(mfargs.mod_);
-  if (!mod) {
-    return VoidResult::fail(e4err::mod_not_exist);
+  if (not mod) {
+    return Error::fail(e4err::mod_not_exist);
   }
 
   auto pexport = mod->find_export(mfargs.as_mfarity());
-  if (!pexport) {
-    return VoidResult::fail(e4err::code_undef);
+  if (not pexport) {
+    return Error::fail(e4err::code_undef);
   }
 
   // Reverse order: push args
@@ -29,7 +29,7 @@ VoidResult Process::apply(const MFArgs& mfargs) {
 
   E4LOG0("[proc] apply\n");
   jump(mod->get_export_address(*pexport));
-  return VoidResult::success();
+  return Error::success();
 }
 
 Process::Process(VM& vm, Term pid)

@@ -11,7 +11,7 @@
 #include "e4std/complicated.h"
 
 namespace e4 {
-using e4::VoidResult;
+using e4::Error;
 
 
 // Stack implementation
@@ -83,7 +83,7 @@ public:
 
   // Sets arguments and enters mfarity with args, does not wait for execution
   // but just sets instruction pointer instead
-  E4_NODISCARD VoidResult apply(const MFArgs &mfargs);
+  E4_NODISCARD Error apply(const MFArgs &mfargs);
 
   // TODO: maybe belongs to runtime context
   void jump(CodeAddress newpc) {

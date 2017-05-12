@@ -92,7 +92,7 @@ SET(EMU_SOURCES
 
 IF(CMAKE_BUILD_TYPE MATCHES Debug)
     ADD_DEFINITIONS(
-            -Os
+            -O0
             -ggdb
             -DE4DEBUG=1
             -fno-unroll-loops

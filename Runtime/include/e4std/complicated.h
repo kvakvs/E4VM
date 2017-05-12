@@ -4,23 +4,25 @@
 
 #pragma once
 
-// Functional style error handling (Maybe/VoidResult) and
-// type unions (Either/Option)
-//
 namespace e4 {
 
-class VoidResult {
+class Error {
   const char* what_ = nullptr;
-  explicit VoidResult(const char* w) : what_(w) {}
 
- public:
-  static VoidResult success() { return VoidResult(nullptr); }
-  static VoidResult fail(const char* w) { return VoidResult(w); }
+  explicit Error(const char* w) : what_(w) {}
+
+public:
+  static Error success() { return Error(nullptr); }
+
+  static Error fail(const char* w) { return Error(w); }
+
   bool is_success() const { return what_ == nullptr; }
+
   bool is_fail() const { return what_ != nullptr; }
+
   const char* get_fail() const { return what_; }
 
-  void dassert() const {
+  void assert_success() const {
 #if E4DEBUG
     if (is_fail()) {
       E4ASSERT(what_);

@@ -45,8 +45,9 @@ Process* VM::spawn(Term parent_pid, const MFArgs& mfargs) {
   auto pid = sched_.make_pid();
 
   auto proc = platf::SystemAllocator::alloc_one<Process>(*this, pid);
-  auto apply_res = proc->apply(mfargs);
-  apply_res.dassert();
+
+  auto err = proc->apply(mfargs);
+  err.assert_success();
 
   auto result = proc.get();
   sched_.register_proc(result);

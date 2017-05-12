@@ -155,12 +155,9 @@ void Module::load_exports(const BoxView<uint8_t>& adata,
     auto label = bsr.read_varint_u();
 
     // Create and insert an export, resolve label index to an offset
-    auto ex = new (env_.exports_.get() + i) Export (
+    new (env_.exports_.get() + i) Export (
       lstate.get_atom(fn_atom_index), arity, env_.get_label(label)
     );
-
-    ex->print(vm_);
-    ::printf("\n");
   }
 
   // We then use binary search so better this be sorted
