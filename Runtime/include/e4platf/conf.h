@@ -61,10 +61,10 @@ constexpr bool DEBUG_MODE = (E4DEBUG != 0);
 #undef BIG_ENDIAN
 #undef LITTLE_ENDIAN
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-#define G_BIGENDIAN 0
+#define E4_BIG_ENDIAN 0
 constexpr bool BIG_ENDIAN = false;
 #else
-#define G_BIGENDIAN 1
+#define E4_BIG_ENDIAN 1
 constexpr bool BIG_ENDIAN = true;
 #endif
 

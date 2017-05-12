@@ -61,6 +61,8 @@ public:
 
 #if E4DEBUG
   void print(const VM &vm) const;
+#else
+  void print(const VM &vm) const {}
 #endif  // DEBUG
 };
 
@@ -163,7 +165,7 @@ class Module {
 private:
   Term name_ = NON_VALUE;  // atom name
 
-  PODVector<uint8_t> code_;
+  UniqueArrayPtr<uint8_t> code_;
 
   ModuleEnv env_;
 

@@ -98,9 +98,9 @@ void debug_printf(const char* format, ...);
 
 // Choose a nodebug value in release
 #define E4CHOICE(DEBUG, NODEBUG) (NODEBUG)
-#define E4LOG(A) (void)0
-#define E4LOG1(A, V) (void)0
-#define E4LOG2(A, V1, V2) (void)0
+#define E4LOG0(A)             (void)0
+#define E4LOG1(A, V)          (void)0
+#define E4LOG2(A, V1, V2)     (void)0
 #define E4LOG3(A, V1, V2, V3) (void)0
 #endif
 

@@ -192,13 +192,42 @@ class Reader {
     return result;
   }
 
-  Word read_big_u32() {
-    Word result =
-      (static_cast<Word>(ptr_[0]) << 24) | (static_cast<Word>(ptr_[1]) << 16) |
-      (static_cast<Word>(ptr_[2]) << 8) | static_cast<Word>(ptr_[3]);
+
+  uint32_t read_big_u32() {
+    uint32_t result;
+
+#if E4_BIG_ENDIAN
+    result = platf::unaligned_read<Word>(ptr_);
+#else
+    result =
+        (static_cast<uint32_t>(ptr_[0]) << 24)
+      | (static_cast<uint32_t>(ptr_[1]) << 16)
+      | (static_cast<uint32_t>(ptr_[2]) << 8)
+      |  static_cast<uint32_t>(ptr_[3]);
+#endif
+
     ptr_ += 4;
     return result;
   }
+
+  uint64_t read_big_u64() {
+    uint64_t result;
+
+    result = E4_BIG_TO_NATIVE64(platf::unaligned_read<Word>(ptr_));
+
+    ptr_ += 4;
+    return result;
+  }
+
+
+  Term read_term() {
+#if E4_WORD_SIZE == 32
+    return Term(read_big_u32());
+#elif E4_WORD_SIZE == 64
+    return Term(read_big_u64());
+#endif
+  }
+
 
   SignedWord read_big_s(Word bytes) {
     SignedWord result = read_byte();

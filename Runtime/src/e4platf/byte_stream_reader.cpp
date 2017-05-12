@@ -4,7 +4,6 @@
 
 #include "e4platf/byte_stream_reader.h"
 #include "e4rt/module.h"
-//#include "e4rt/term.h"
 
 namespace e4 { namespace tool {
 

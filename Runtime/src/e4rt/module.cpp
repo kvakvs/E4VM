@@ -13,7 +13,14 @@
 namespace e4 {
 
 constexpr Word SIG_SIZE = 2;  // module and section signature length
-constexpr const char* SIG_MODULE = "E4";  // Erl-Forth J1Forth Flavour
+constexpr const char* SIG_MODULE = "E4";  // Erl-Forth BEAM-like format
+
+// This is asserted in loader code below
+#if E4_WORD_SIZE == 32
+constexpr const char* SIG_MODULE_BITNESS = "32";  // E432 marks 4 byte terms
+#elif E4_WORD_SIZE == 64
+constexpr const char* SIG_MODULE_BITNESS = "64";  // E464 marks 8 byte terms
+#endif
 
 constexpr const char* SIG_ATOMS = "At";  // atoms section tag
 constexpr const char* SIG_LBLS  = "Lb";  // labels section tag
@@ -31,12 +38,15 @@ void Module::load(const ByteView& data) {
   // Read header E4
   bsr.assert_and_advance(SIG_MODULE, ByteSize(SIG_SIZE));
 
-  ByteSize all_sz(bsr.read_big_u32());
-  bsr.assert_have(all_sz);
+  // Read bitness, E432 or E464 and assert
+  bsr.assert_and_advance(SIG_MODULE_BITNESS, ByteSize(SIG_SIZE));
 
   // Storage for section headers
   char section_sig[SIG_SIZE+1] = {0, };
   ModuleLoaderState lstate;
+
+  ByteSize all_sz(bsr.read_big_u32());
+  bsr.assert_have(all_sz);
 
   // Read another section, and switch based on its value
   while (bsr.have(ByteSize(SIG_SIZE + 4))) {
@@ -55,11 +65,13 @@ void Module::load(const ByteView& data) {
 
     } else if (not::memcmp(section_sig, SIG_CODE, SIG_SIZE)) {
       //
-      // Code
+      // Code section
       //
-      code_.resize(section_sz.bytes());
-      std::copy(bsr.pos(), bsr.pos() + section_sz.bytes(), code_.data());
-      // ::memcpy(code_.data(), bsr.pos(), section_sz.bytes());
+      auto c_data = platf::ArrayAlloc::alloc<uint8_t>(section_sz.bytes());
+      code_.reset(c_data);
+      std::copy(bsr.pos(),
+                bsr.pos() + section_sz.bytes(),
+                c_data);
 
       // TODO: set up literal refs in code
 
@@ -177,7 +189,7 @@ Export* Module::find_export(const MFArity& mfa) const {
 
 
 CodeAddress Module::get_export_address(const Export& exp) const {
-  return CodeAddress(code_.data() + exp.get_offset());
+  return CodeAddress(code_.get() + exp.get_offset());
 }
 
 
@@ -214,7 +226,7 @@ void Module::load_jump_tables(const ByteView &adata,
 
     auto &jt = env_.jump_tables_.back();
     for (Word j = 0; j < jt_size; ++j) {
-      const auto term = bsr.read_compact_term(env_, lstate);
+      const auto term = bsr.read_term();
       jt.push_back(term, bsr.read_varint_u());
     }
   }

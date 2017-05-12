@@ -21,12 +21,26 @@ namespace platf {
 // portable unaligned memory read
 template <typename T, typename U>
 inline T unaligned_read(const U* src) {
-//  T result;
-//  ::memcpy((void *)&result, (void *)src, sizeof(T));
-//  return result;
   E4PACKED const T* src2 = (const T *)src;
   return *src2;
 }
+
+//
+// Endian Swap helpers
+//
+
+#if E4_BIG_ENDIAN
+  #define E4_BIG_TO_NATIVE32
+  #define E4_BIG_TO_NATIVE64
+  #define E4_NATIVE_TO_BIG32
+  #define E4_NATIVE_TO_BIG64
+#else
+  // GCC 4.3+ builtins
+  #define E4_BIG_TO_NATIVE32 __builtin_bswap32
+  #define E4_BIG_TO_NATIVE64 __builtin_bswap64
+  #define E4_NATIVE_TO_BIG32 __builtin_bswap32
+  #define E4_NATIVE_TO_BIG64 __builtin_bswap64
+#endif
 
 //
 // Allocates a single object on general heap
