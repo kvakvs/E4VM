@@ -1,5 +1,4 @@
-// This is an open source non-commercial project. Dear PVS-Studio, please check
-// it.
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
 // PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 //
 
@@ -15,6 +14,7 @@
 #include "e4std/vector.h"
 #include <cstdint>
 #include <string>
+#include <unordered_map>
 
 namespace e4 {
 
@@ -51,26 +51,26 @@ using SignedCount = SignedWord;
 
 // size types for byte and word arrays
 template <typename T, typename Storage = ::size_t>
-using GenericSize = e4std::GenericSize<T, Storage>;
+using GenericSize = e4::GenericSize<T, Storage>;
 using ByteSize = GenericSize<uint8_t>;
 using WordSize = GenericSize<Word>;  // Word is same as Term
 
 template <class TType>
-using Vector = e4std::Vector<TType>;
+using Vector = e4::Vector<TType>;
 template <class TType>
-using PODVector = e4std::PODVector<TType>;
+using PODVector = e4::PODVector<TType>;
 
-template <class TType, Word ARRAY_SIZE>
-using Array = e4std::Array<TType, ARRAY_SIZE>;
+//template <class TType, Word ARRAY_SIZE>
+//using Array = e4::Array<TType, ARRAY_SIZE>;
 
 template <class TKey, class TValue>
-using Map = e4std::Map<TKey, TValue>;
+using HashMap = std::unordered_map<TKey, TValue>;
 
-using String = e4std::String;
+using String = e4::String;
 
 template <class Type>
-using UniquePtr = e4std::UniquePtr<Type>;
+using UniquePtr = e4::UniquePtr<Type>;
 template <class Type>
-using UniqueArrayPtr = e4std::UniqueArrayPtr<Type>;
+using UniqueArrayPtr = e4::UniqueArrayPtr<Type>;
 
 }  // ns e4

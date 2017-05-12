@@ -11,7 +11,7 @@
 
 #include <algorithm>
 
-namespace e4std {
+namespace e4 {
 
 //
 // std::runtime_error
@@ -39,4 +39,4 @@ const T* binary_search(ForwardIt first, ForwardIt last,
   return nullptr;
 }
 
-}  // ns e4std
+}  // ns e4

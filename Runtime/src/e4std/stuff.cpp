@@ -5,8 +5,8 @@
 
 #include "e4std/stuff.h"
 
-namespace e4std {
+namespace e4 {
 
 RuntimeError::~RuntimeError() {}
 
-}  // ns e4std
+}  // ns e4

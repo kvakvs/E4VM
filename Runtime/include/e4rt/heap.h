@@ -17,7 +17,7 @@ class Heap {
  private:
   Word capacity_;
   Word htop_;
-  UniqueArrayPtr<Word> heap_;
+  UniquePtr<Word> heap_;
 
  public:
   explicit Heap(Word init_size) : capacity_(0), htop_(0) {
@@ -67,7 +67,7 @@ class Heap {
   }
 
   void alloc_heap(Word size) {
-    heap_ = e4std::make_array<Word>(size);
+    heap_ = platf::SystemAllocator::alloc_raw<Word>(size);
     capacity_ = size;
   }
 };

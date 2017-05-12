@@ -44,13 +44,13 @@ Process* VM::spawn(Term parent_pid, const MFArgs& mfargs) {
 
   auto pid = sched_.make_pid();
 
-  using platf::SingleAlloc;
-  auto proc = SingleAlloc::alloc_class<Process>(*this, pid);
+  auto proc = platf::SystemAllocator::alloc_one<Process>(*this, pid);
   auto apply_res = proc->apply(mfargs);
   apply_res.dassert();
 
-  sched_.register_proc(proc);
-  return proc;
+  auto result = proc.get();
+  sched_.register_proc(result);
+  return result;
 }
 
 #if E4DEBUG

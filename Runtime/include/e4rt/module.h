@@ -17,7 +17,7 @@
 namespace e4 {
 
 class VM;
-using e4std::ByteView;
+//using e4::ByteView;
 
 // Element in exports table. Used to find functions referred by {M,F,Arity}
 // from the outside
@@ -112,16 +112,23 @@ public:
 // Loader state to pass as argument to those who need it
 class ModuleLoaderState {
 private:
-  Vector<Term> atoms_; // atoms table from the module file, for lookups
+  Word atom_i_ = 0;
+  UniquePtr<Term> atoms_; // atoms table from the module file, for lookups
 
 public:
-  void reserve_atoms(size_t n) { atoms_.reserve(n); }
+  void reserve_atoms(size_t count) {
+    atoms_ = platf::SystemAllocator::alloc_raw<Term>(count);
+  }
 
-  void add_atom(Term a) { atoms_.push_back(a); }
+  void add_atom(Term a) {
+    auto aptr = atoms_.get();
+    aptr[atom_i_++] = a;
+  }
 
   Term get_atom(size_t i) const {
-    E4ASSERT(atoms_.size() > i);
-    return atoms_[i];
+    E4ASSERT(atom_i_ > i);
+    auto aptr = atoms_.get();
+    return aptr[i];
   }
 };
 
@@ -133,12 +140,16 @@ class ModuleEnv {
 protected:
   friend class Module;
 
-  PODVector<Term> literals_;
+  Word literals_count_ = 0;
+  UniquePtr<Term> literals_;
+
   Heap literal_heap_;
 
-  PODVector<Export> exports_;
+  Word exports_count_ = 0;
+  UniquePtr<Export> exports_;
 
-  PODVector<Import> imports_;
+  Word imports_count_ = 0;
+  UniquePtr<Import> imports_;
 
   Vector<JumpTable> jump_tables_;
 
@@ -156,15 +167,15 @@ public:
   }
 
   const Term &get_literal(size_t i) const {
-    return literals_[i];
+    return literals_.get()[i];
   }
 
   const Export &get_export(size_t i) const {
-    return exports_[i];
+    return exports_.get()[i];
   }
 
   const Import &get_import(size_t i) const {
-    return imports_[i];
+    return imports_.get()[i];
   }
 };
 
@@ -177,38 +188,38 @@ private:
 
   ModuleEnv env_;
 
-  VM &vm_;
+  VM& vm_;
 
 public:
-  explicit Module(VM &vm) : env_(), vm_(vm) {}
+  explicit Module(VM& vm) : env_(), vm_(vm) {}
 
-  void load(const ByteView &data);
+  void load(const BoxView<uint8_t>& data);
 
   Term name() const {
     return name_;
   }
 
-  Export *find_export(const MFArity &mfa) const;
+  Export* find_export(const MFArity& mfa) const;
 
   // Adds code start to export offset
-  CodeAddress get_export_address(const Export &exp) const;
+  CodeAddress get_export_address(const Export& exp) const;
 
 private:
-  void load_literals(const ByteView &adata);
+  void load_literals(const BoxView<uint8_t>& adata);
 
-  void load_exports(const ByteView &adata,
+  void load_exports(const BoxView<uint8_t>& adata,
                     const ModuleLoaderState& lstate);
 
-  void load_imports(const ByteView &adata,
+  void load_imports(const BoxView<uint8_t>& adata,
                     const ModuleLoaderState& lstate);
 
-  void load_atoms_section(const e4std::BoxView<uint8_t> &section_view,
+  void load_atoms_section(const BoxView<uint8_t>& section_view,
                           MUTABLE ModuleLoaderState& lstate);
 
-  void load_labels(const ByteView &adata,
+  void load_labels(const BoxView<uint8_t>& adata,
                    MUTABLE ModuleLoaderState& lstate);
 
-  void load_jump_tables(const ByteView &adata,
+  void load_jump_tables(const BoxView<uint8_t>& adata,
                         const ModuleLoaderState& lstate);
 };
 

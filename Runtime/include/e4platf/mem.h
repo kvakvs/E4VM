@@ -5,6 +5,7 @@
 #pragma once
 
 #include "e4platf/conf.h"
+#include "e4std/ptr.h"
 #include "e4std/stuff.h"
 #include <cstdint>
 #include <cstring>
@@ -42,36 +43,27 @@ inline T unaligned_read(const U* src) {
 #endif
 
 //
-// Allocates a single object on general heap
+// Sys allocator delivers memory using simple new calls, no special memory
+// handling is here
 //
-struct SingleAlloc {
+struct SystemAllocator {
+  // Allocates a single object on general heap
   template <class Type, class... Args>
-  E4_NODISCARD static Type* alloc_class(Args&&... args) {
-    return new Type(std::forward<Args>(args)...);
+  E4_NODISCARD static e4::UniquePtr<Type> alloc_one(Args&&... args) {
+    return e4::UniquePtr<Type> (new Type(std::forward<Args>(args)...));
   }
 
-  template <class T>
-  static void free(T* p) {
-    if (p) {
-      delete p;
-    }
-  }
-};
-
-//
-// Allocates array on general heap
-//
-struct ArrayAlloc {
-  template <class T>
-  E4_NODISCARD static T* alloc(::size_t sz) {
-    return new T[sz];
+  // Allocates array on general heap
+  template <class Type>
+  E4_NODISCARD static e4::UniqueArrayPtr<Type> alloc(::size_t sz) {
+    return e4::UniqueArrayPtr<Type> (new Type[sz]);
   }
 
-  template <class T>
-  static void free(T* p) {
-    if (p) {
-      delete[] p;
-    }
+  // Allocates array on general heap, raw: no constructors called
+  template <class Type>
+  E4_NODISCARD static e4::UniquePtr<Type> alloc_raw(::size_t sz) {
+    auto mem = new uint8_t[sizeof(Type) * sz];
+    return e4::UniquePtr<Type> (reinterpret_cast<Type*>(mem));
   }
 };
 

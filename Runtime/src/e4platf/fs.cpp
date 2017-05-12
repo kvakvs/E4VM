@@ -14,7 +14,8 @@ namespace fs {
 
 IMPL_EXCEPTION(Filesystem)
 
-Vector<uint8_t> read(const Vector<String>& search_paths, const char* fn) {
+e4::Box<uint8_t>
+read(const Vector<String>& search_paths, const char* fn) {
 #if E4FEATURE_FS
   for (auto& path : search_paths) {
     auto try_path = path + "/" + fn;
@@ -39,23 +40,28 @@ bool exists(String& path) {
 #endif
 }
 
-Vector<uint8_t> File::read_file() {
+e4::Box<uint8_t> File::read_file() {
   ::fseek(f_, 0, SEEK_END);
   Count size = static_cast<Count>(::ftell(f_));
-
-  Vector<uint8_t> result(size);
-
   ::fseek(f_, 0, SEEK_SET);
-  auto sz_read = ::fread(result.data(), 1, size, f_);
+
+  e4::Box<uint8_t> result(
+    std::move(platf::SystemAllocator::alloc_raw<uint8_t>(size)),
+    size
+  );
+
+  auto sz_read = ::fread(result.get(), 1, size, f_);
+
   if (sz_read != size * 1) {
     E4FAIL("read err");
   }
+
   return result;
 }
 
-Vector<uint8_t> File::read_file(const char* fn) {
+e4::Box<uint8_t> File::read_file(const char* fn) {
   File f(fn, "rb");
   return f.read_file();
 }
-}
-}  // ns platf::fs
+
+}}  // ns platf::fs

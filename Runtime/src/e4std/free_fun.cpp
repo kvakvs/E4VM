@@ -4,7 +4,7 @@
 
 #include "e4std/free_fun.h"
 
-namespace e4std {
+namespace e4 {
 
 template <>
 bool compare_equal(const char* a, const char* b) {
@@ -16,4 +16,4 @@ bool compare_less(const char* a, const char* b) {
   return ::strcmp(a, b) < 0;
 }
 
-}  // ns e4std
+}  // ns e4

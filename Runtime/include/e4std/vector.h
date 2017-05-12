@@ -20,7 +20,7 @@
 #include <functional>
 #include <vector>
 
-namespace e4std {
+namespace e4 {
 
 #if 0
 static constexpr ::size_t VECTOR_MIN_GROWTH = 4;
@@ -129,13 +129,13 @@ class Vector {
 
       auto datap = data_.get();
       for (auto i = size_; i < newlength; ++i) {
-        e4std::destruct(datap + i);
-        e4std::construct_in(datap + i);
+        e4::destruct(datap + i);
+        e4::construct_in(datap + i);
       }
       return;
     }
     E4ASSERT(newlength > 0);
-    auto newdata = e4std::make_array<ValueType>(newlength);
+    auto newdata = e4::make_array<ValueType>(newlength);
     if (data_) {  // there may possibly be empty src data
       E4ASSERT(newlength >= size_);
       ::memmove(newdata.get(), data_.get(), size_);
@@ -199,7 +199,7 @@ class Vector {
       return;
     }
     E4ASSERT(newcap > size_);
-    auto newdata = e4std::make_array<ValueType>(newcap);
+    auto newdata = e4::make_array<ValueType>(newcap);
     if (size_) {
       std::move(data_.get(), data_.get() + size_, newdata.get());
     }
@@ -356,4 +356,4 @@ class PODVector : public impl::VectorImpl {
 template <class T> using Vector = std::vector<T>;
 template <class T> using PODVector = std::vector<T>;
 
-}  // ns e4std
+}  // ns e4

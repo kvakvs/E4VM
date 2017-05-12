@@ -6,13 +6,13 @@
 
 int main(int /*argc*/, const char** /*argv [] */) {
   e4::VM vm;
-  using e4std::String;
+  using e4::String;
 
   vm.modules_.path_add(String("../Compiler/priv"));
   auto mod_name = vm.add_atom(String("test1"));
   vm.modules_.load(mod_name);
 
-  e4::MFArgs mfargs(mod_name, mod_name, e4std::ArrayRef<e4::Term>());
+  e4::MFArgs mfargs(mod_name, mod_name, e4::ArrayRef<e4::Term>());
   // vm.print_atoms();
   auto root_proc = vm.spawn(e4::NON_VALUE, mfargs);
   (void)root_proc;

@@ -7,7 +7,7 @@
 
 #include <cstdint>
 
-namespace e4std {
+namespace e4 {
 
 // Generic size type which respects units
 template <class StoredType, class StorageType = ::size_t>
@@ -36,4 +36,4 @@ class GenericSize {
   }
 };
 
-}  // ns e4std
+}  // ns e4

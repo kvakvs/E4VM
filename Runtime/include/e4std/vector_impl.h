@@ -10,7 +10,7 @@
 // A custom, badly written replacement for stupid vector which operates raw
 // blocks of uniform size, zeroes memory and ignores C++ constructors
 //
-namespace e4std { namespace impl {
+namespace e4 { namespace impl {
 
 #if 0
 static constexpr ::size_t VECTOR_MIN_GROWTH = 4;
@@ -35,7 +35,7 @@ class VectorImpl {
       return;
     }
     E4ASSERT(newlength > 0);
-    auto newdata = e4std::make_array<uint8_t>(newlength * element_size);
+    auto newdata = e4::make_array<uint8_t>(newlength * element_size);
     if (data_) {  // there may possibly be empty src data
       E4ASSERT(newlength >= size_);
       ::memmove(newdata.get(), data_.get(), size_);
@@ -49,7 +49,7 @@ class VectorImpl {
       return;
     }
     E4ASSERT(newcap > size_);
-    auto newdata = e4std::make_array<uint8_t>(newcap * element_size);
+    auto newdata = e4::make_array<uint8_t>(newcap * element_size);
     auto newdatap = newdata.get();
     if (size_) {
       auto datap = data_.get();
@@ -70,4 +70,4 @@ class VectorImpl {
 }
 #endif // 0
 
-}}  // ns e4std::impl
+}}  // ns e4::impl

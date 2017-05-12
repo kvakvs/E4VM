@@ -11,7 +11,7 @@
 #include "e4std/complicated.h"
 
 namespace e4 {
-using e4std::VoidResult;
+using e4::VoidResult;
 
 
 // Stack implementation

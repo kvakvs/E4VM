@@ -3,9 +3,9 @@
 // PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 //
 
-//#include "e4std/vector.h"
+//#include "e4/vector.h"
 
-namespace e4std {
+namespace e4 {
 namespace impl {
 
 // void* binary_search(const void* from, const void* to, ::size_t stride,
@@ -14,4 +14,4 @@ namespace impl {
 //}
 
 }  // ns impl
-}  // ns e4std
+}  // ns e4

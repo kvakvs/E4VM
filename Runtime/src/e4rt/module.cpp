@@ -32,7 +32,7 @@ constexpr const char* SIG_JMPT  = "Jt";  // jump table tag
 constexpr const char* SIG_FUNT  = "Fn";  // function table tag
 
 
-void Module::load(const ByteView& data) {
+void Module::load(const BoxView<uint8_t> & data) {
   tool::Reader bsr(data);
 
   // Read header E4
@@ -48,13 +48,15 @@ void Module::load(const ByteView& data) {
   ByteSize all_sz(bsr.read_big_u32());
   bsr.assert_have(all_sz);
 
+  using A = platf::SystemAllocator;
+
   // Read another section, and switch based on its value
   while (bsr.have(ByteSize(SIG_SIZE + 4))) {
     // Section header 2 characters and Size:32/big
     bsr.read<char>(section_sig, SIG_SIZE);
     ByteSize section_sz(bsr.read_big_u32());
 
-    auto section_view = ByteView(bsr.pos(), section_sz.bytes());
+    auto section_view = BoxView<uint8_t> (bsr.pos(), section_sz.bytes());
 
     if (not::memcmp(section_sig, SIG_ATOMS, SIG_SIZE)) {
       //
@@ -67,11 +69,10 @@ void Module::load(const ByteView& data) {
       //
       // Code section
       //
-      auto c_data = platf::ArrayAlloc::alloc<uint8_t>(section_sz.bytes());
-      code_.reset(c_data);
+      auto code_ = A::alloc_raw<uint8_t>(section_sz.bytes());
       std::copy(bsr.pos(),
                 bsr.pos() + section_sz.bytes(),
-                c_data);
+                code_.get());
 
       // TODO: set up literal refs in code
 
@@ -79,7 +80,7 @@ void Module::load(const ByteView& data) {
       //
       // Literals table
       //
-      E4ASSERT(env_.literals_.empty());
+      E4ASSERT(not env_.literals_);
       E4ASSERT(env_.literal_heap_.empty());
       load_literals(section_view);
 
@@ -112,7 +113,7 @@ void Module::load(const ByteView& data) {
 }
 
 
-void Module::load_atoms_section(const e4std::BoxView<uint8_t>& section_view,
+void Module::load_atoms_section(const e4::BoxView<uint8_t>& section_view,
                                 MUTABLE ModuleLoaderState& lstate) {
   tool::Reader bsr(section_view);
   Word count = bsr.read_big_u32();
@@ -126,44 +127,46 @@ void Module::load_atoms_section(const e4std::BoxView<uint8_t>& section_view,
 }
 
 
-void Module::load_literals(const ByteView& adata) {
+void Module::load_literals(const BoxView<uint8_t>& adata) {
   tool::Reader bsr(adata);
-  Word count = bsr.read_big_u32();
-  env_.literals_.reserve(count);
+  Word count = env_.literals_count_ = bsr.read_big_u32();
+
+  env_.literals_ = platf::SystemAllocator::alloc_raw<Term>(count);
+  auto l_data = env_.literals_.get();
 
   for (Word i = 0; i < count; ++i) {
     const auto lit = ExtTerm::read_with_marker(vm_, env_.literal_heap_, bsr);
-    env_.literals_.push_back(lit);
+    l_data[i] = lit;
   }
 }
 
 
-void Module::load_exports(const ByteView& adata,
+void Module::load_exports(const BoxView<uint8_t>& adata,
                           const ModuleLoaderState& lstate) {
   tool::Reader bsr(adata);
-  Word n = bsr.read_big_u32();
-  env_.exports_.reserve(n);
+  Word count = env_.exports_count_ = bsr.read_big_u32();
 
-  for (Word i = 0; i < n; ++i) {
+  env_.exports_ = platf::SystemAllocator::alloc_raw<Export>(count);
+
+  for (Word i = 0; i < count; ++i) {
     auto fn_atom_index = bsr.read_varint_u();
 
     Arity arity { bsr.read_varint_u() };
     auto label = bsr.read_varint_u();
 
     // Create and insert an export, resolve label index to an offset
-    Export ex(lstate.get_atom(fn_atom_index),
-              arity,
-              env_.get_label(label));
+    auto ex = new (env_.exports_.get() + i) Export (
+      lstate.get_atom(fn_atom_index), arity, env_.get_label(label)
+    );
 
-    ex.print(vm_);
+    ex->print(vm_);
     ::printf("\n");
-
-    env_.exports_.push_back(ex);
   }
+
   // We then use binary search so better this be sorted
   std::sort(
-    env_.exports_.begin(),
-    env_.exports_.end(),
+    env_.exports_.get(),
+    env_.exports_.get() + count,
     [](const Export &a, const Export &b) -> bool {
       return Export::compare_less_pvoid(&a, &b);
     }
@@ -173,9 +176,9 @@ void Module::load_exports(const ByteView& adata,
 
 Export* Module::find_export(const MFArity& mfa) const {
   Export sample(mfa.fun_, mfa.arity_, 0);
-  auto r = const_cast<Export*>(e4std::binary_search(
-    env_.exports_.begin(),
-    env_.exports_.end(),
+  auto r = const_cast<Export*>(e4::binary_search(
+    env_.exports_.get(),
+    env_.exports_.get() + env_.exports_count_,
     sample,
     [](const Export &a, const Export &b) -> bool {
         return Export::compare_less_pvoid(&a, &b);
@@ -193,11 +196,12 @@ CodeAddress Module::get_export_address(const Export& exp) const {
 }
 
 
-void Module::load_imports(const ByteView &adata,
+void Module::load_imports(const BoxView<uint8_t> &adata,
                           const ModuleLoaderState& lstate) {
   tool::Reader bsr(adata);
-  Word count = bsr.read_big_u32();
-  env_.imports_.reserve(count);
+  Word count = env_.imports_count_ = bsr.read_big_u32();
+
+  env_.imports_ = platf::SystemAllocator::alloc_raw<Import>(count);
 
   for (Word i = 0; i < count; ++i) {
     auto mod_atom_index = bsr.read_varint_u();
@@ -205,15 +209,14 @@ void Module::load_imports(const ByteView &adata,
 
     Arity arity { bsr.read_varint_u() };
 
-    Import im(lstate.get_atom(mod_atom_index),
-              lstate.get_atom(fn_atom_index),
-              arity);
-    env_.imports_.push_back(im);
+    new (env_.imports_.get() + i) Import (
+      lstate.get_atom(mod_atom_index), lstate.get_atom(fn_atom_index), arity
+    );
   }
 }
 
 
-void Module::load_jump_tables(const ByteView &adata,
+void Module::load_jump_tables(const BoxView<uint8_t> &adata,
                               const ModuleLoaderState& lstate) {
   tool::Reader bsr(adata);
   Word count = bsr.read_big_u32();
@@ -232,7 +235,8 @@ void Module::load_jump_tables(const ByteView &adata,
   }
 }
 
-void Module::load_labels(const ByteView &adata, ModuleLoaderState &lstate) {
+void Module::load_labels(const BoxView<uint8_t> &adata,
+                         ModuleLoaderState &lstate) {
   tool::Reader bsr(adata);
   Word count = bsr.read_big_u32();
 
@@ -248,9 +252,9 @@ int Export::compare_pvoid(const void *a, const void *b) {
   auto pa = static_cast<const Export*>(a);
   auto pb = static_cast<const Export*>(b);
 
-  if (e4std::compare_less(pa->fun_, pb->fun_)) {
+  if (e4::compare_less(pa->fun_, pb->fun_)) {
     return -1;
-  } else if (e4std::compare_equal(pa->fun_, pb->fun_)) {
+  } else if (e4::compare_equal(pa->fun_, pb->fun_)) {
     if (pa->arity_ < pb->arity_) {
       return -1;
     } else if (pa->arity_ == pb->arity_) {

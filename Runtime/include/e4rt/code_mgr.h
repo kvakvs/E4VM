@@ -20,7 +20,7 @@ class CodeManager {
  private:
   VM& vm_;
 
-  Map<Term, Module*> mods_;
+  HashMap<Term, UniquePtr<Module>> mods_;
 
   Vector<String> paths_;  // Code search paths, starting with "."
 
@@ -32,11 +32,11 @@ class CodeManager {
 
   Term load(Term name);
 
-  void register_module(Module *m);
+  void register_module(UniquePtr<Module> && m);
 
   const Module* find(Term name) const {
     auto node = mods_.find(name);
-    return node ? node->value_ : nullptr;
+    return (node != mods_.end()) ? node->second.get() : nullptr;
   }
 
   void path_add(const String& p) { paths_.push_back(p); }

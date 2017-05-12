@@ -7,7 +7,7 @@
 // Functional style error handling (Maybe/VoidResult) and
 // type unions (Either/Option)
 //
-namespace e4std {
+namespace e4 {
 
 class VoidResult {
   const char* what_ = nullptr;
@@ -37,4 +37,4 @@ class VoidResult {
 // public:
 //};
 
-}  // ns e4std
+}  // ns e4

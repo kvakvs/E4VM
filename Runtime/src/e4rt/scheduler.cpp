@@ -11,14 +11,16 @@ namespace e4 {
 Term Scheduler::make_pid() {
   auto t = Term::make_short_pid(pid_counter_++);
   // TODO: implement wrap when word counter overflows
-  E4ASSERT(processes_.find(t) == nullptr);
+  E4ASSERT(processes_.find(t) == processes_.end());
   return t;
 }
 
+
 void Scheduler::register_proc(Process* p) {
-  processes_.insert(p->self(), p);
+  processes_[p->self()] = p;
   schedule(p);
 }
+
 
 void Scheduler::schedule(Process* p) {
 //  E4ASSERT(not runq_normal_.contains_val(p));
@@ -33,6 +35,7 @@ void Scheduler::schedule(Process* p) {
   }
 }
 
+
 Process* Scheduler::next() {
   Process* n = next_high();
   if (not n) {
@@ -42,6 +45,7 @@ Process* Scheduler::next() {
   return n;
 }
 
+
 Process* Scheduler::next_normal() {
   auto qsize = runq_normal_.size();
   if (not qsize) {
@@ -50,6 +54,7 @@ Process* Scheduler::next_normal() {
   q_ptr_normal_ = (q_ptr_normal_ + 1) % qsize;
   return runq_normal_[q_ptr_normal_];
 }
+
 
 Process* Scheduler::next_high() {
   high_advantage_ = (high_advantage_ + 1) % SCHED_HIGH_ADVANTAGE;

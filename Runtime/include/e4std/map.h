@@ -1,5 +1,4 @@
-// This is an open source non-commercial project. Dear PVS-Studio, please check
-// it.
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
 // PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 //
 
@@ -11,7 +10,9 @@
 #include <e4platf/mem.h>
 #include "e4std/free_fun.h"
 
-namespace e4std {
+namespace e4 {
+
+#if 0
 
 template <class KeyType, class ValueType>
 struct MapNode {
@@ -27,7 +28,9 @@ struct MapNode {
     : key_(k), value_(v), left_(left), right_(right) {}
 };
 
-template <class KeyType, class ValueType, class Allocator = platf::SingleAlloc>
+template <class KeyType,
+          class ValueType,
+          class Allocator = platf::SystemAllocator>
 class Map {
  public:
   using NodeType = MapNode<KeyType, ValueType>;
@@ -41,8 +44,8 @@ class Map {
     if (root_) {
       insert_helper(root_, key, val);
     } else {
-      // TODO: use alloc class in g_platf/mem.h
-      root_ = Allocator::template alloc_class<NodeType>(key, val);
+      // TODO: use alloc class in platf/mem.h
+      root_ = Allocator::template alloc_one<NodeType>(key, val);
     }
   }
 
@@ -160,5 +163,6 @@ class Map {
     }
   }
 };
+#endif //0
 
-}  // ns e4std
+}  // ns e4

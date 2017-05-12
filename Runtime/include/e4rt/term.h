@@ -8,6 +8,7 @@
 #include "e4platf/types.h"
 #include "e4rt/box.h"
 #include "e4rt/term_tag.h"
+#include <functional>
 
 namespace e4 {
 
@@ -185,6 +186,10 @@ class Term {
   explicit constexpr Term(Word x) : raw_(x) {}
 
   Term() : raw_(0) {}
+
+  bool operator == (const Term& other) const {
+    return raw_equal(other);
+  }
 
   bool raw_equal(const Term& other) const {
     return raw_ == other.raw_;
@@ -411,7 +416,7 @@ class MFArity {
 };
 
 
-using e4std::ArrayRef;
+using e4::ArrayRef;
 class VM;
 
 
@@ -437,3 +442,12 @@ class MFArgs {
 };
 
 }  // ns e4
+
+
+namespace std {
+  template<> struct hash<e4::Term> {
+    size_t operator()(const e4::Term &t) const {
+      return std::hash<e4::Word>()(t.get_raw());
+    }
+  };
+} // ns std.hash

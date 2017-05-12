@@ -15,7 +15,7 @@
 
 #include <string.h>
 
-namespace e4std {
+namespace e4 {
 
 using String = std::string;
 #if 0
@@ -105,4 +105,4 @@ class String {
 };
 #endif // 0
 
-}  // ns e4std
+}  // ns e4

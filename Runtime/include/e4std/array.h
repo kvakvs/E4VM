@@ -10,7 +10,7 @@
 
 #include <cstddef>
 
-namespace e4std {
+namespace e4 {
 
 template <class ValueType, unsigned int size>
 class Array {};
@@ -31,4 +31,4 @@ class ArrayRef {
   ValueType* first() { return ptr_; }
 };
 
-}  // ns e4std
+}  // ns e4

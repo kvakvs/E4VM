@@ -69,14 +69,14 @@ constexpr bool BIG_ENDIAN = true;
 #endif
 
 #define DECL_EXCEPTION(NAME)                               \
-  class NAME##Error : public e4std::RuntimeError {         \
+  class NAME##Error : public e4::RuntimeError {         \
    public:                                                 \
-    NAME##Error(const char* e) : e4std::RuntimeError(e) {} \
+    NAME##Error(const char* e) : e4::RuntimeError(e) {} \
     virtual const char* what() const noexcept;             \
   };
 #define IMPL_EXCEPTION(NAME)                       \
   const char* NAME##Error::what() const noexcept { \
-    return e4std::RuntimeError::what();            \
+    return e4::RuntimeError::what();            \
   }
 #define DECL_IMPL_EXCEPTION(NAME) DECL_EXCEPTION(NAME) IMPL_EXCEPTION(NAME)
 

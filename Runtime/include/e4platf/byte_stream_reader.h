@@ -105,7 +105,7 @@ class Reader {
   const uint8_t* end_;
 
  public:
-  explicit Reader(const e4std::BoxView<uint8_t>& data)
+  explicit Reader(const BoxView<uint8_t> & data)
     : ptr_(data.cbegin()), end_(data.cend()) {}
 
   // Advance by 1 byte, assert its value equal to 'value'

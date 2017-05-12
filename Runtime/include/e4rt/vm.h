@@ -23,7 +23,7 @@ DECL_EXCEPTION(CodeServer)
 DECL_EXCEPTION(Process)
 
 class Process;
-using e4std::ArrayRef;
+using e4::ArrayRef;
 
 // Erlang-Forth Abstract Machine (E4VM)
 class VM {

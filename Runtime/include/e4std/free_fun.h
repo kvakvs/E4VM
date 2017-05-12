@@ -6,7 +6,7 @@
 
 #include <string.h>
 
-namespace e4std {
+namespace e4 {
 
 // C style C++ constructor without args: constructs a class of some type in dst
 using CtorFun0 = void (*)(void* dst);
@@ -46,4 +46,4 @@ bool compare_less(const char* a, const char* b);
 // C style comparison function which returns -1 if a<b, 1 if a>b else 0
 using VoidpCompareFun = int (*)(const void* a, const void* b);
 
-}  // ns e4std
+}  // ns e4
