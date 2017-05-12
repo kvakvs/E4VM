@@ -91,9 +91,18 @@ SET(EMU_SOURCES
     )
 
 IF(CMAKE_BUILD_TYPE MATCHES Debug)
-    ADD_DEFINITIONS(-O0 -ggdb -DE4DEBUG=1 -fno-inline)
+    ADD_DEFINITIONS(
+            -Os
+            -ggdb
+            -DE4DEBUG=1
+            -fno-unroll-loops
+    )
 ELSE()
-    ADD_DEFINITIONS(-Os -g0 -DE4DEBUG=0)
+    ADD_DEFINITIONS(
+            -Os
+            -g0
+            -DE4DEBUG=0
+    )
 ENDIF()
 
 ADD_DEFINITIONS(
@@ -104,7 +113,6 @@ ADD_DEFINITIONS(
     -std=c++14
     -fno-rtti
     #-fno-exceptions
-    -fno-unroll-loops
 )
 ADD_DEFINITIONS(
     -Wall -Werror
@@ -119,7 +127,10 @@ IF(CMAKE_CXX_COMPILER MATCHES clang)
     )
 ELSE()
     IF(E4_GCC)
-        ADD_DEFINITIONS(-ffunction-sections -Wl,--gc-sections)
+        ADD_DEFINITIONS(
+                -ffunction-sections
+                -Wl,--gc-sections
+        )
     ENDIF()
 ENDIF()
 
@@ -139,16 +150,19 @@ IF(COMPILATION_INTERMEDIATE_RESULTS)
     TARGET_COMPILE_OPTIONS(e4emu-debug  PUBLIC -save-temps)
 ENDIF()
 
-## -static-libgcc -static-libstdc++ -static -flto
-IF(E4_GCC)
-    IF(CMAKE_BUILD_TYPE MATCHES Debug)
-        set_target_properties(e4emu
-            PROPERTIES LINK_FLAGS "-flto -static")
-    ELSE()
-        set_target_properties(e4emu
-            PROPERTIES LINK_FLAGS "-flto")
-    ENDIF()
-ENDIF(E4_GCC)
+#IF(E4_GCC)
+#    IF(CMAKE_BUILD_TYPE MATCHES Debug)
+#        SET_TARGET_PROPERTIES(e4emu PROPERTIES LINK_FLAGS
+#                "-flto -static -static-libgcc -static-libstdc++")
+#    ELSE()
+#        SET_TARGET_PROPERTIES(e4emu PROPERTIES LINK_FLAGS
+#                "-flto -static -static-libgcc -static-libstdc++")
+#    ENDIF()
+#ELSE()
+#ENDIF(E4_GCC)
+
+#SET_TARGET_PROPERTIES(e4emu PROPERTIES LINK_FLAGS
+#        "-static -static-libgcc -static-libstdc++")
 
 ##
 ## PVS-Studio Static Checker

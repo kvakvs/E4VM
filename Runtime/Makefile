@@ -1,12 +1,15 @@
-DEBUG_EMU=cmake-build-debug/e4emu
+E4BUILDDIR=cmake-build-debug
+E4EMU=${E4BUILDDIR}/e4emu
+
+${E4EMU}: compile
 
 .PHONY: gdb
 gdb: compile
-	gdb ${DEBUG_EMU}
+	gdb ${E4EMU}
 
 .PHONY: compile
 compile:
-	cd cmake-build-debug && $(MAKE) -j; cd ..
+	cd ${E4BUILDDIR} && $(MAKE) -j; cd ..
 
 .PHONY: lic-add
 lic-add:
@@ -25,9 +28,17 @@ lic-rm:
 .PHONY: plog
 plog:
 	plog-converter -t tasklist -a "GA:1,2;64:1;CS" \
-		cmake-build-debug/PVS-Studio/src/main.cpp.plog
+		${E4BUILDDIR}/PVS-Studio/src/main.cpp.plog
 
 .PHONY: valgrind
 valgrind: compile
 	valgrind --log-file=valgrind.log \
-		cmake-build-debug/gleam_d
+		${E4EMU}
+
+#
+# Invoke nm and size tools to print section sizes of the executable
+#
+.PHONY: sizes
+sizes: ${E4EMU}
+	nm --print-size --size-sort --radix=d ${E4EMU} | sort -k 2 -r > size_report_1.txt && \
+	size -A -d ${E4EMU} > size_report_2.txt

@@ -101,6 +101,7 @@ read_cte_word(const uint8_t* ptr,
 class Reader {
  private:
   const uint8_t* ptr_;
+
   const uint8_t* end_;
 
  public:
@@ -109,6 +110,7 @@ class Reader {
 
   // Advance by 1 byte, assert its value equal to 'value'
   void assert_byte(uint8_t value) { E4ASSERT(value == read_byte()); }
+
 
   template <class T>
   void assert_and_advance(const T* content, ByteSize sz) {
@@ -119,10 +121,12 @@ class Reader {
     ptr_ += sz.bytes();
   }
 
+
   template <class StoredType>
   bool have(GenericSize<StoredType> sz) const {
     return end_ - ptr_ >= static_cast<SignedWord>(sz.bytes());
   }
+
 
   template <class StoredType>
   void assert_have(GenericSize<StoredType> want_have) const {
@@ -130,7 +134,11 @@ class Reader {
     E4ASSERT_GTE(have_remaining, static_cast<SignedWord>(want_have.bytes()));
   }
 
-  const uint8_t* pos() const { return ptr_; }
+
+  const uint8_t* pos() const {
+    return ptr_;
+  }
+
 
   // Looks ahead if next bytes are same as the 'sample'
   template <class StoredType>
@@ -139,16 +147,19 @@ class Reader {
     return 0 == ::memcmp(sample, ptr_, sz.bytes());
   }
 
+
   template <class StoredType>
   void advance(GenericSize<StoredType> sz) {
     assert_have(sz);
     ptr_ += sz.bytes();
   }
 
+
   uint8_t read_byte() {
     assert_have(ByteSize(1));
     return *(ptr_++);
   }
+
 
   template <class T>
   void read(T* dst, Count units) {
@@ -157,6 +168,7 @@ class Reader {
     advance(GenericSize<T>(units));
   }
 
+
   // Unsigned varint, word
   template <typename T = Word>
   T read_varint_u() {
@@ -164,6 +176,7 @@ class Reader {
     ptr_ = read_varint(ptr_, MUTABLE result);
     return result;
   }
+
 
   String read_varlength_string() {
     auto sz = ByteSize(read_varint_u<Word>());
@@ -175,6 +188,7 @@ class Reader {
     return result;
   }
 
+
   String read_string(Word size) {
     assert_have(ByteSize(size));
     String result;
@@ -185,38 +199,25 @@ class Reader {
     return result;
   }
 
-  Word read_big_u16() {
-    Word result =
-      (static_cast<Word>(ptr_[0]) << 8) | static_cast<Word>(ptr_[1]);
+
+  uint16_t read_big_u16() {
+    uint16_t r = platf::big_to_native(platf::unaligned_read<uint16_t>(ptr_));
     ptr_ += 2;
-    return result;
+    return r;
   }
 
 
   uint32_t read_big_u32() {
-    uint32_t result;
-
-#if E4_BIG_ENDIAN
-    result = platf::unaligned_read<Word>(ptr_);
-#else
-    result =
-        (static_cast<uint32_t>(ptr_[0]) << 24)
-      | (static_cast<uint32_t>(ptr_[1]) << 16)
-      | (static_cast<uint32_t>(ptr_[2]) << 8)
-      |  static_cast<uint32_t>(ptr_[3]);
-#endif
-
+    uint32_t r = platf::big_to_native(platf::unaligned_read<uint32_t>(ptr_));
     ptr_ += 4;
-    return result;
+    return r;
   }
 
+
   uint64_t read_big_u64() {
-    uint64_t result;
-
-    result = E4_BIG_TO_NATIVE64(platf::unaligned_read<Word>(ptr_));
-
-    ptr_ += 4;
-    return result;
+    uint64_t r = platf::big_to_native(platf::unaligned_read<uint64_t>(ptr_));
+    ptr_ += 8;
+    return r;
   }
 
 
@@ -242,13 +243,16 @@ class Reader {
     return result;
   }
 
+
   Float read_float() {
     Float val;
     // protocol stores floats as 8 bytes always. In memory we might store as
     // 4 or 8 bytes
+    // TODO: endian conversion for floats?
     read((char *)&val, Count(sizeof(double)));
     return val;
   }
+
 
   // Parse a compacted term, using module env as a source for table lookups
   Term read_compact_term(const ModuleEnv& env,

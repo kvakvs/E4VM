@@ -6,6 +6,7 @@
 
 #include "e4platf/conf.h"
 #include "e4std/stuff.h"
+#include <cstdint>
 #include <cstring>
 #include <stddef.h>
 
@@ -30,16 +31,14 @@ inline T unaligned_read(const U* src) {
 //
 
 #if E4_BIG_ENDIAN
-  #define E4_BIG_TO_NATIVE32
-  #define E4_BIG_TO_NATIVE64
-  #define E4_NATIVE_TO_BIG32
-  #define E4_NATIVE_TO_BIG64
+  constexpr uint16_t big_to_native(uint16_t x) { return x; }
+  constexpr uint32_t big_to_native(uint32_t x) { return x; }
+  constexpr uint64_t big_to_native(uint64_t x) { return x; }
 #else
   // GCC 4.3+ builtins
-  #define E4_BIG_TO_NATIVE32 __builtin_bswap32
-  #define E4_BIG_TO_NATIVE64 __builtin_bswap64
-  #define E4_NATIVE_TO_BIG32 __builtin_bswap32
-  #define E4_NATIVE_TO_BIG64 __builtin_bswap64
+  constexpr uint16_t big_to_native(uint16_t x) { return __builtin_bswap16(x); }
+  constexpr uint32_t big_to_native(uint32_t x) { return __builtin_bswap32(x); }
+  constexpr uint64_t big_to_native(uint64_t x) { return __builtin_bswap64(x); }
 #endif
 
 //

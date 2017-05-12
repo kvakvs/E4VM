@@ -74,13 +74,21 @@ private:
   Arity arity_;
 
 public:
-  const Term &get_mod() const { return mod_; }
+  const Term &get_mod() const {
+    return mod_;
+  }
 
-  const Term &get_fun() const { return fun_; }
+  const Term &get_fun() const {
+    return fun_;
+  }
 
-  const Arity &get_arity() const { return arity_; }
+  const Arity &get_arity() const {
+    return arity_;
+  }
 
-  Import(Term m, Term f, Arity a) : mod_(m), fun_(f), arity_(a) {}
+  Import(Term m, Term f, Arity a)
+    : mod_(m), fun_(f), arity_(a) {
+  }
 };
 
 
