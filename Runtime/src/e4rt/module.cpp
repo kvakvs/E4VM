@@ -69,7 +69,7 @@ void Module::load(const BoxView<uint8_t> & data) {
       //
       // Code section
       //
-      auto code_ = A::alloc_raw<uint8_t>(section_sz.bytes());
+      code_ = A::alloc_raw<uint8_t>(section_sz.bytes());
       std::copy(bsr.pos(),
                 bsr.pos() + section_sz.bytes(),
                 code_.get());
@@ -214,7 +214,7 @@ void Module::load_imports(const BoxView<uint8_t> &adata,
 
 
 void Module::load_jump_tables(const BoxView<uint8_t> &adata,
-                              const ModuleLoaderState& lstate) {
+                              const ModuleLoaderState& /* lstate */) {
   tool::Reader bsr(adata);
   Word count = bsr.read_big_u32();
 
@@ -232,8 +232,8 @@ void Module::load_jump_tables(const BoxView<uint8_t> &adata,
   }
 }
 
-void Module::load_labels(const BoxView<uint8_t> &adata,
-                         ModuleLoaderState &lstate) {
+void Module::load_labels(const BoxView<uint8_t>& adata,
+                         ModuleLoaderState& /*lstate*/ ) {
   tool::Reader bsr(adata);
   Word count = bsr.read_big_u32();
 

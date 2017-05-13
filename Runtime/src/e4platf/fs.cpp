@@ -46,7 +46,7 @@ e4::Box<uint8_t> File::read_file() {
   ::fseek(f_, 0, SEEK_SET);
 
   e4::Box<uint8_t> result(
-    std::move(platf::SystemAllocator::alloc_raw<uint8_t>(size)),
+    platf::SystemAllocator::alloc_raw<uint8_t>(size),
     size
   );
 

@@ -50,27 +50,29 @@ using Count = Word;
 using SignedCount = SignedWord;
 
 // size types for byte and word arrays
-template <typename T, typename Storage = ::size_t>
-using GenericSize = e4::GenericSize<T, Storage>;
-using ByteSize = GenericSize<uint8_t>;
-using WordSize = GenericSize<Word>;  // Word is same as Term
+template <typename GRAN, typename STORAGE = ::size_t>
+using GenericSize = T_GenericSize<GRAN, STORAGE>;
 
-template <class TType>
-using Vector = e4::Vector<TType>;
-template <class TType>
-using PODVector = e4::PODVector<TType>;
+using ByteSize = T_GenericSize<uint8_t>;
 
-//template <class TType, Word ARRAY_SIZE>
-//using Array = e4::Array<TType, ARRAY_SIZE>;
+using WordSize = T_GenericSize<Word>;  // Word is same as Term
 
-template <class TKey, class TValue>
-using HashMap = std::unordered_map<TKey, TValue>;
+template <class VALUE>
+using Vector = std::vector<VALUE>;
 
-using String = e4::String;
+// Stupid vector which does not bother with constructing/destructing
+template <class VALUE>
+using PODVector = std::vector<VALUE>;
 
-template <class Type>
-using UniquePtr = e4::UniquePtr<Type>;
-template <class Type>
-using UniqueArrayPtr = e4::UniqueArrayPtr<Type>;
+template <class KEY, class VALUE>
+using HashMap = std::unordered_map<KEY, VALUE>;
+
+using String = std::string;
+
+template <class TYPE>
+using UniquePtr = std::unique_ptr<TYPE>;
+
+template <class TYPE>
+using UniqueArrayPtr = std::unique_ptr<TYPE[]>;
 
 }  // ns e4

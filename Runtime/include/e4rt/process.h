@@ -55,7 +55,10 @@ class RuntimeContext {
 };
 
 
-enum class ProcessPriority : uint8_t { Normal, High };
+enum class ProcessPriority : Word {
+  Normal,
+  High
+};
 
 
 class Process {

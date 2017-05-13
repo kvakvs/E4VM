@@ -16,8 +16,6 @@ SET(COMPILATION_INTERMEDIATE_RESULTS    0)
 ## We do not use standard C++ library here, but we DO use C++ startup/exit code
 #add_definitions(-nostdinc++)
 
-##
-##
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/include)
 
 ## Erlang Runtime system for E4VM: types, bifs, memory etc
@@ -42,7 +40,6 @@ SET(E4_RUNTIME_SOURCES
     include/e4rt/term_tag.h
     include/e4rt/vm.h
     src/e4rt/atom_store.cpp
-    #src/e4rt/binary.cpp
     src/e4rt/bytecode.cpp
     src/e4rt/code_mgr.cpp
     src/e4rt/ext_term_format.cpp
@@ -86,36 +83,35 @@ SET(E4_STD_SOURCES
     src/e4std/vector.cpp
     )
 
-SET(EMU_SOURCES
-    src/main.cpp
-    )
+SET(EMU_SOURCES src/main.cpp)
 
-IF(CMAKE_BUILD_TYPE MATCHES Debug)
+IF (CMAKE_BUILD_TYPE MATCHES Debug)
     ADD_DEFINITIONS(
-            -O0
-            -ggdb
-            -DE4DEBUG=1
-            -fno-unroll-loops
+        -O0
+        -ggdb
+        -DE4DEBUG=1
+        -fno-unroll-loops
     )
-ELSE()
+ELSE ()
     ADD_DEFINITIONS(
-            -Os
-            -g0
-            -DE4DEBUG=0
+        -Os
+        -g0
+        -DE4DEBUG=0
     )
-ENDIF()
+ENDIF ()
 
 ADD_DEFINITIONS(
     -DE4FEATURE_FS=1
     -DE4_WORD_SIZE=64
 )
 ADD_DEFINITIONS(
-    -std=c++14
+    -std=c++17
     -fno-rtti
     #-fno-exceptions
 )
 ADD_DEFINITIONS(
     -Wall -Werror
+    -Wno-unused-private-field
 )
 
 IF(CMAKE_CXX_COMPILER MATCHES clang)

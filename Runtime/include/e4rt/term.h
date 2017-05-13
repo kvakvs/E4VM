@@ -45,10 +45,11 @@ class Term {
   private:
     Word tag_ : PRIMARY_TAG_BITS;
 
-    Word val_ : PRIMARY_VALUE_BITS;
+    E4_MAYBE_UNUSED Word val_ : PRIMARY_VALUE_BITS;
 
   public:
-    PrimaryTaggedWord() {}  //-V730
+    PrimaryTaggedWord() {
+    }  //-V730
 
     constexpr PrimaryTaggedWord(PrimaryTag pt, Word v)
       : tag_(static_cast<Word>(pt)),
@@ -65,7 +66,7 @@ class Term {
   // Represents immed1 term as <<value, immed1_tag:2, IMMED:2>>
   class Immed1TaggedWord {
   private:
-    Word primary_tag_ : PRIMARY_TAG_BITS;
+    E4_MAYBE_UNUSED Word primary_tag_ : PRIMARY_TAG_BITS;
 
     Word imm1_tag_ : IMM1_TAG_BITS;
 
@@ -104,9 +105,9 @@ class Term {
   // Represents immed2 term as <<value, immed2_tag:2, ?IMM1_IMM2:2, IMMED:2>>
   class Immed2TaggedWord {
   private:
-    Word primary_tag_ : PRIMARY_TAG_BITS;
+    E4_MAYBE_UNUSED Word primary_tag_ : PRIMARY_TAG_BITS;
 
-    Word imm1_tag_ : IMM1_TAG_BITS;
+    E4_MAYBE_UNUSED Word imm1_tag_ : IMM1_TAG_BITS;
 
     Word imm2_tag_ : IMM2_TAG_BITS;
 
@@ -137,11 +138,11 @@ class Term {
   // <<value, immed3_tag:2, ?IMM2_IMM3:2, ?IMM1_IMM2:2, IMMED:2>>
   class Immed3TaggedWord {
   private:
-    Word primary_tag_ : PRIMARY_TAG_BITS;
+    E4_MAYBE_UNUSED Word primary_tag_ : PRIMARY_TAG_BITS;
 
-    Word imm1_tag_ : IMM1_TAG_BITS;
+    E4_MAYBE_UNUSED Word imm1_tag_ : IMM1_TAG_BITS;
 
-    Word imm2_tag_ : IMM2_TAG_BITS;
+    E4_MAYBE_UNUSED Word imm2_tag_ : IMM2_TAG_BITS;
 
     Word imm3_tag_ : IMM3_TAG_BITS;
 
@@ -280,7 +281,7 @@ class Term {
   // Small Integer Aspect
   //
   constexpr static Term make_small(SignedWord s) {
-    return Term(PrimaryTag::Immediate, s);
+    return Term(Immed1Tag::Small, s);
   }
 
   static Term make_integer(Word val) {
@@ -353,7 +354,7 @@ class Term {
 #if E4FEATURE_FLOAT
   static Term make_float(Float f);
 #else
-  static Term make_float(Float f) {
+  static Term make_float(Float) {
     return make_nil();
   }
 #endif

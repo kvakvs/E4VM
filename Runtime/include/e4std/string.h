@@ -17,7 +17,7 @@
 
 namespace e4 {
 
-using String = std::string;
+using T_String = std::string;
 #if 0
 class String {
  private:

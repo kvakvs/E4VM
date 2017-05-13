@@ -11,17 +11,17 @@ namespace e4 {
 
 // Generic size type which respects units
 template <class StoredType, class StorageType = ::size_t>
-class GenericSize {
+class T_GenericSize {
  private:
   static constexpr ::size_t UNIT_SIZE = sizeof(StoredType);
   // stores amount in units (UNIT_SIZE), multiply when bytes are requested
   StorageType units_;
 
  public:
-  GenericSize(const GenericSize<StoredType, StorageType>& other)
+  T_GenericSize(const T_GenericSize<StoredType, StorageType>& other)
     : units_(other.units_) {}
 
-  explicit GenericSize(::size_t n) : units_(n) {}
+  explicit T_GenericSize(::size_t n) : units_(n) {}
 
   // Returns byte size to store this count of units
   StorageType bytes() const { return units_ * UNIT_SIZE; }

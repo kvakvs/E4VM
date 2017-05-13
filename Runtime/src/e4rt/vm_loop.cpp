@@ -28,7 +28,7 @@ fetch:
   pc0++;
 
   // Those 3 masked bits may contain extra flags for the command
-  instruction = (Instruction)(instruction_raw & 0b0001'1111);
+  instruction = static_cast<Instruction>(instruction_raw & 0b0001'1111);
 
   switch (instruction) {
     case instr::FuncInfo: {

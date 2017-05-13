@@ -159,7 +159,7 @@ public:
   explicit ModuleEnv(): literal_heap_(64) {
   }
 
-  const Word get_label(size_t i) const {
+  Word get_label(size_t i) const {
     if (not i) {
       return BAD_LABEL;
     }
@@ -184,7 +184,7 @@ class Module {
 private:
   Term name_ = NON_VALUE;  // atom name
 
-  UniqueArrayPtr<uint8_t> code_;
+  UniquePtr<uint8_t> code_;
 
   ModuleEnv env_;
 

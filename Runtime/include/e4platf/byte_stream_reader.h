@@ -68,7 +68,7 @@ read_cte_word(const uint8_t* ptr,
               MUTABLE Word& result) {
   if (not (b & 0b100)) {
     // Bit 3 is 0 marks that 4 following bits contain the value
-    result = (Word)b >> 4;
+    result = static_cast<Word>(b) >> 4;
     return ptr;
 
   } else {
@@ -76,13 +76,14 @@ read_cte_word(const uint8_t* ptr,
     if (not (b & 0b1000)) {
       // Bit 4 is 0, marks that the following 3 bits (most significant) and
       // the following byte (least significant) will contain the 11-bit value
-      result = ((Word)b & 0b1110'0000) << 3 | (Word)*(ptr++);
+      result = (static_cast<Word>(b) & 0b1110'0000) << 3
+               | static_cast<Word>(*(ptr++));
       return ptr;
 
     } else {
       // Bit 4 is 1 means that bits 5-6-7 contain amount of bytes+2 to store
       // the value
-      size_t bytes = ((Word)b & 0b1110'0000 >> 5) + 2;
+      size_t bytes = (static_cast<Word>(b) & 0b1110'0000 >> 5) + 2;
       if (bytes == 9) {
         // bytes=9 means upper 5 bits were set to 1, special case 0b11111xxx
         // which means that following nested tagged value encodes size,
@@ -249,7 +250,7 @@ class Reader {
     // protocol stores floats as 8 bytes always. In memory we might store as
     // 4 or 8 bytes
     // TODO: endian conversion for floats?
-    read((char *)&val, Count(sizeof(double)));
+    read(reinterpret_cast<char *>(&val), Count(sizeof(double)));
     return val;
   }
 

@@ -23,7 +23,7 @@ namespace platf {
 // portable unaligned memory read
 template <typename T, typename U>
 inline T unaligned_read(const U* src) {
-  E4PACKED const T* src2 = (const T *)src;
+  E4PACKED const T* src2 = reinterpret_cast<const T *>(src);
   return *src2;
 }
 
@@ -49,19 +49,22 @@ inline T unaligned_read(const U* src) {
 struct SystemAllocator {
   // Allocates a single object on general heap
   template <class Type, class... Args>
-  E4_NODISCARD static e4::UniquePtr<Type> alloc_one(Args&&... args) {
+  static e4::UniquePtr<Type>
+  alloc_one(Args&&... args) {
     return e4::UniquePtr<Type> (new Type(std::forward<Args>(args)...));
   }
 
   // Allocates array on general heap
   template <class Type>
-  E4_NODISCARD static e4::UniqueArrayPtr<Type> alloc(::size_t sz) {
+  static e4::UniqueArrayPtr<Type>
+  alloc_many(::size_t sz) {
     return e4::UniqueArrayPtr<Type> (new Type[sz]);
   }
 
   // Allocates array on general heap, raw: no constructors called
   template <class Type>
-  E4_NODISCARD static e4::UniquePtr<Type> alloc_raw(::size_t sz) {
+  static e4::UniquePtr<Type>
+  alloc_raw(::size_t sz) {
     auto mem = new uint8_t[sizeof(Type) * sz];
     return e4::UniquePtr<Type> (reinterpret_cast<Type*>(mem));
   }
