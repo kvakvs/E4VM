@@ -64,12 +64,14 @@ enum class ProcessPriority : Word {
 class Process {
 private:
   Term pid_;
+
   Heap heap_;
-  VM &vm_;
+
   // [pid()] -- linked processes
 //  Term links_ = NIL;
   // [pid()] -- processes which monitor this process
 //  Term monitors_ = NIL;
+
   ProcessPriority prio_ = ProcessPriority::Normal;
 
 public:
@@ -78,7 +80,7 @@ public:
 public:
   Process() = delete;
 
-  explicit Process(VM &vm, Term pid);
+  explicit Process(Term pid);
 
   Term self() const { return pid_; }
 
@@ -86,7 +88,7 @@ public:
 
   // Sets arguments and enters mfarity with args, does not wait for execution
   // but just sets instruction pointer instead
-  E4_NODISCARD Error apply(const MFArgs &mfargs);
+  E4_NODISCARD Error apply(const MFArgs& mfargs);
 
   // TODO: maybe belongs to runtime context
   void jump(CodeAddress newpc) {

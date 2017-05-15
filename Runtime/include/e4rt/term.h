@@ -232,11 +232,6 @@ class Term {
   }
 
   // TODO: Check if this produces efficient assembly
-  constexpr bool is_immed1() const {
-    return is_immediate() && as_imm1_.get_imm1_tag() != Immed1Tag::Immed2;
-  }
-
-  // TODO: Check if this produces efficient assembly
   constexpr bool is_immed2() const {
     return is_immediate() && as_imm1_.get_imm1_tag() == Immed1Tag::Immed2;
   }
@@ -316,7 +311,7 @@ class Term {
   }
 
   constexpr bool is_short_pid() const {
-    return is_immed1() && as_imm1_.get_imm1_tag() == Immed1Tag::Pid;
+    return is_immediate() && as_imm1_.get_imm1_tag() == Immed1Tag::Pid;
   }
 
   bool is_remote_pid() const {
@@ -324,10 +319,6 @@ class Term {
   }
 
   bool is_pid() const { return is_short_pid() || is_remote_pid(); }
-
-  //        constexpr Word short_pid_get_value() const {
-  //            return imm_val_;
-  //        }
 
   bool is_value() const;
 
@@ -381,26 +372,30 @@ constexpr Term NON_VALUE = Term::make_nonvalue();
 
 
 class ConsCell {
- public:
+public:
   Term head_;
+
   Term tail_;
 };
 
 
 class Arity { // TODO: Use a smaller type but alignment will eat it away
-  Word  val_;
-public:
-  explicit Arity(Word x): val_(x) {}
+private:
+  Word val_;
 
-  bool operator < (const Arity& other) const {
+public:
+  explicit Arity(Word x) : val_(x) {}
+
+  bool operator<(const Arity& other) const {
     return val_ < other.val_;
   }
 
-  bool operator == (const Arity& other) const {
+  bool operator==(const Arity& other) const {
     return val_ == other.val_;
   }
 
-  template <typename T = Word> T get() const {
+  template<typename T = Word>
+  T get() const {
     return static_cast<T>(val_);
   }
 };

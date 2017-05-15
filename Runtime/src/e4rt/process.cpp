@@ -8,9 +8,13 @@
 namespace e4 {
 
 Error Process::apply(const MFArgs& mfargs) {
-  auto mod = vm_.modules_.find(mfargs.mod_);
+  auto p_vm = vm();
+  p_vm->modules_.debug_print();
+
+  auto mod = p_vm->modules_.find(mfargs.mod_);
+
   if (not mod) {
-    return Error::fail(e4err::mod_not_exist);
+    return Error::fail(e4err::mod_not_found);
   }
 
   auto pexport = mod->find_export(mfargs.as_mfarity());
@@ -32,11 +36,10 @@ Error Process::apply(const MFArgs& mfargs) {
   return Error::success();
 }
 
-Process::Process(VM& vm, Term pid)
+Process::Process(Term pid)
     : pid_(pid),
       heap_(INIT_PROCESS_HEAP),
-      vm_(vm),
-      context_(vm.get_code_range_checker())
+      context_(vm()->get_code_range_checker())
 {
 }
 

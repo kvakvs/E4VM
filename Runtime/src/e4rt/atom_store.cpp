@@ -1,4 +1,5 @@
 #include "e4rt/atom_store.h"
+#include "e4rt/vm.h"
 
 namespace e4 {
 
@@ -27,20 +28,31 @@ const char* AtomStore::intern(const char* s) {
   E4ASSERT(not find(s).is_value());  // assert does not already exist
 
   // if last block is full (capacity cannot accomodate s)
-  if (block_capacity_ < len) {
+  if (block_remaining_ < len) {
     auto mem = platf::SystemAllocator::alloc_raw<char>(BLOCK_SZ);
     block_pos_ = mem.get();
-    block_capacity_ = BLOCK_SZ;
+    block_remaining_ = BLOCK_SZ;
     blocks_.push_back(std::move(mem));
   }
 
   // now store and return stored position
   auto dst = block_pos_;
-  block_capacity_ += len;
+  block_remaining_ += len;
   block_pos_ += len;
 
   ::strcpy(dst, s);
   return dst;
 }
+
+
+#if E4DEBUG
+void AtomStore::debug_print() {
+  for (auto p: str_to_atom_) {
+    ::printf("%s -> ", p.first);
+    vm()->print(p.second);
+    ::printf("\n");
+  }
+}
+#endif
 
 }  // ns e4

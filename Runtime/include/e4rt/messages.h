@@ -20,8 +20,8 @@ DEF_ERR(etf_bad_tag,
 DEF_ERR(etf_bad_pid, E4CHOICE("Bad pid while reading ext term", "E:!Pid"))
 DEF_ERR(etf_atom_expected, E4CHOICE("Atom is expected", "E:Atom?"))
 
-DEF_ERR(mod_not_exist, E4CHOICE("Module not found", "M:NX"))
-DEF_ERR(proc_not_exist, E4CHOICE("Process pid not found", "P:NX"))
+DEF_ERR(mod_not_found, E4CHOICE("Module not found", "M:NX"))
+DEF_ERR(proc_not_found, E4CHOICE("Process pid not found", "P:NX"))
 
 DEF_ERR(code_undef, E4CHOICE("Function is not found or not exported",
                              "C:Undef"))

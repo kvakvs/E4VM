@@ -12,40 +12,39 @@ namespace e4 {
 DECL_IMPL_EXCEPTION(ExternalTerm)
 
 // Reads long atom as string and attempts to create it in atom table.
-Term ExtTerm::read_atom_string_i16(VM& vm, tool::Reader& r) {
+Term ExtTerm::read_atom_string_i16(tool::Reader& r) {
   Word sz = r.read_big_u16();
   String atom_str = r.read_string(sz);
-  return vm.add_atom(atom_str);
+  return vm()->add_atom(atom_str);
 }
 
 // Reads short atom as string and attempts to create it in atom table.
-Term ExtTerm::read_atom_string_i8(VM& vm, tool::Reader& r) {
+Term ExtTerm::read_atom_string_i8(tool::Reader& r) {
   Word sz = r.read_byte();
   String atom_str = r.read_string(sz);
-  return vm.add_atom(atom_str);
+  return vm()->add_atom(atom_str);
 }
 
 // Reads tag byte, then reads long or short atom as string and attempts to
 // create it in atom table.
-Term ExtTerm::read_tagged_atom_string(VM& vm, tool::Reader& r) {
+Term ExtTerm::read_tagged_atom_string(tool::Reader& r) {
   Tag tag = static_cast<Tag>(r.read_byte());
   if (tag == Tag::AtomExt) {
-    return read_atom_string_i16(vm, r);
+    return read_atom_string_i16(r);
   } else if (tag == Tag::SmallAtomExt) {
-    return read_atom_string_i8(vm, r);
+    return read_atom_string_i8(r);
   }
   E4FAIL(e4err::etf_atom_expected);
 }
 
-Node* ExtTerm::get_node(VM& vm, Term /*sysname*/, dist::Creation /*creation*/) {
+Node* ExtTerm::get_node(Term /*sysname*/, dist::Creation /*creation*/) {
 #if E4FEATURE_ERLDIST
   E4TODO("distribution support pid etf")
 #endif
-  return vm.dist_this_node();
+  return vm()->dist_this_node();
 }
 
-Term ExtTerm::make_pid(VM& vm,
-                       Term sysname,
+Term ExtTerm::make_pid(Term sysname,
                        Word id,
                        Word serial,
                        uint8_t creation) {
@@ -54,9 +53,9 @@ Term ExtTerm::make_pid(VM& vm,
   }
   // TODO: check valid creation
   Word data = Term::make_pid_data(serial, id);
-  auto node = get_node(vm, sysname, creation);
+  auto node = get_node(sysname, creation);
 
-  if (node == vm.dist_this_node()) {
+  if (node == vm()->dist_this_node()) {
     return Term::make_short_pid(data);
   }
 #if E4FEATURE_ERLDIST
@@ -66,7 +65,7 @@ Term ExtTerm::make_pid(VM& vm,
   E4FAIL(e4err::no_feat_erldist);
 }
 
-Term ExtTerm::read_tuple(VM& vm, Heap& heap, tool::Reader& r, Word arity) {
+Term ExtTerm::read_tuple(Heap& heap, tool::Reader& r, Word arity) {
   if (arity == 0) {
     return Term::make_zero_tuple();
   }
@@ -76,16 +75,16 @@ Term ExtTerm::read_tuple(VM& vm, Heap& heap, tool::Reader& r, Word arity) {
 
   // fill elements or die horribly if something does not decode
   for (Word i = 0; i < arity; ++i) {
-    Term read_val = ExtTerm::read(vm, heap, r);
+    Term read_val = ExtTerm::read(heap, r);
     tuple->set_element(i, read_val.get_raw());
   }
 
   return Term::make_tuple(tuple);
 }
 
-Term ExtTerm::read_with_marker(VM& vm, Heap& heap, tool::Reader& r) {
+Term ExtTerm::read_with_marker(Heap& heap, tool::Reader& r) {
   r.assert_byte(ETF_MARKER);
-  return ExtTerm::read(vm, heap, r);
+  return ExtTerm::read(heap, r);
 }
 
 #if E4FEATURE_MAPS
@@ -130,7 +129,7 @@ Term ExtTerm::read_string_ext(Heap& heap, tool::Reader& r) {
   return result;
 }
 
-Term ExtTerm::read_list_ext(VM& vm, Heap& heap, tool::Reader& r) {
+Term ExtTerm::read_list_ext(Heap& heap, tool::Reader& r) {
   Word length = r.read_big_u32();
 
   Term result = NIL;
@@ -138,16 +137,16 @@ Term ExtTerm::read_list_ext(VM& vm, Heap& heap, tool::Reader& r) {
 
   for (SignedWord i = static_cast<SignedWord>(length) - 1; i >= 0; i--) {
     ConsCell* cons = heap.allocate_cons();
-    cons->head_ = ExtTerm::read(vm, heap, r);
+    cons->head_ = ExtTerm::read(heap, r);
     *ref = Term(cons);
     ref = &cons->tail_;
   }
 
-  *ref = ExtTerm::read(vm, heap, r);
+  *ref = ExtTerm::read(heap, r);
   return result;
 }
 
-Term ExtTerm::read_binary(VM& vm, Heap& heap, tool::Reader& r) {
+Term ExtTerm::read_binary(Heap& heap, tool::Reader& r) {
   Word length = r.read_big_u32();
   if (length <= PROCBIN_THRESHOLD) {
     auto pbox = make_proc_binary(heap, ByteSize(length));
@@ -155,13 +154,13 @@ Term ExtTerm::read_binary(VM& vm, Heap& heap, tool::Reader& r) {
     r.read(data, length);
     return Term::box_wrap(pbox);
   }
-  auto rcbox = make_rc_binary(vm, ByteSize(length));
+  auto rcbox = make_rc_binary(ByteSize(length));
   uint8_t* data = rcbox->bin_->data_;
   r.read(data, length);
   return Term::box_wrap(rcbox);
 }
 
-Term ExtTerm::read(VM& vm, Heap& heap, tool::Reader& r) {
+Term ExtTerm::read(Heap& heap, tool::Reader& r) {
   auto t = static_cast<Tag>(r.read_byte());
   switch (t) {
     case Tag::Compressed:
@@ -207,11 +206,11 @@ Term ExtTerm::read(VM& vm, Heap& heap, tool::Reader& r) {
 
     case Tag::AtomUtf8Ext:  // fall through
     case Tag::AtomExt:
-      return read_atom_string_i16(vm, r);
+      return read_atom_string_i16(r);
 
     case Tag::SmallAtomUtf8Ext:  // fall through
     case Tag::SmallAtomExt:
-      return read_atom_string_i8(vm, r);
+      return read_atom_string_i8(r);
 
     case Tag::ReferenceExt: {
       // format: N atom string, 4byte id, 1byte creation
@@ -233,17 +232,17 @@ Term ExtTerm::read(VM& vm, Heap& heap, tool::Reader& r) {
 
     case Tag::PidExt: {
       // format: N atom string, 4byte id, 4byte serial, 1byte cre
-      Term node = read_tagged_atom_string(vm, r);
+      Term node = read_tagged_atom_string(r);
       Word id = r.read_big_u32();
       Word serial = r.read_big_u32();
       uint8_t creation = r.read_byte();
-      return make_pid(vm, node, id, serial, creation);
+      return make_pid(node, id, serial, creation);
     }  // end reference_ext
 
     case Tag::SmallTupleExt:
-      return read_tuple(vm, heap, r, r.read_byte());
+      return read_tuple(heap, r, r.read_byte());
     case Tag::LargeTupleExt:
-      return read_tuple(vm, heap, r, r.read_big_u32());
+      return read_tuple(heap, r, r.read_big_u32());
 
     case Tag::MapExt:
 #if E4FEATURE_MAPS
@@ -258,10 +257,10 @@ Term ExtTerm::read(VM& vm, Heap& heap, tool::Reader& r) {
     case Tag::StringExt:
       return read_string_ext(heap, r);
     case Tag::ListExt:
-      return read_list_ext(vm, heap, r);
+      return read_list_ext(heap, r);
 
     case Tag::BinaryExt:
-      return read_binary(vm, heap, r);
+      return read_binary(heap, r);
     case Tag::BitBinaryExt:
       E4TODO("read bit-binary etf");
 

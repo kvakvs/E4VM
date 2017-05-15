@@ -11,22 +11,23 @@ namespace e4 {
 
 
 Term CodeManager::load(Term modn) {
-  String mod_filename(vm_.find_atom(modn));
+  String mod_filename(vm()->find_atom(modn));
 
   mod_filename += ".e4b";
 
   auto data = platf::fs::read(paths_, mod_filename.c_str());
-  auto m = platf::SystemAllocator::alloc_one<Module>(vm_);
+  auto m = platf::SystemAllocator::alloc_one<Module>();
 
   m->load(BoxView<uint8_t>::view(data));
 
-  register_module(m.get());
-  return m->name();
+  auto tmp = m->get_name();
+  register_module(std::move(m));
+  return tmp;
 }
 
 
-void CodeManager::register_module(Module* m) {
-  Term m_name = m->name();
+void CodeManager::register_module(UniquePtr<Module>&& m) {
+  Term m_name = m->get_name();
 
   #if E4FEATURE_HOTCODELOAD
   auto old_m = mods_.find(m_name);
@@ -36,17 +37,27 @@ void CodeManager::register_module(Module* m) {
   }
 #endif
 
-  mods_[m_name] = m;
+  mods_.emplace(m_name, std::move(m));
 }
 
 
 const Module* CodeManager::find(Term name) const {
   ::printf("find module ");
-  vm_.print(name);
+  vm()->print(name);
   ::printf("\n");
 
   auto node = mods_.find(name);
-  return (node != mods_.end()) ? node->second : nullptr;
+  return (node != mods_.end()) ? node->second.get() : nullptr;
 }
+
+
+#if E4DEBUG
+void CodeManager::debug_print() {
+  for (auto& p: mods_) {
+    vm()->print(p.first);
+    ::printf(" -> %p\n", p.second.get());
+  }
+}
+#endif
 
 }  // ns e4

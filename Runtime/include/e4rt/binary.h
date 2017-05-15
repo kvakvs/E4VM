@@ -47,13 +47,14 @@ ProcBinaryBox* make_proc_binary(Heap& heap, GenericSize<T> size) {
   return pbin;
 }
 
+
 template <typename T>
-RCBinaryBox* make_rc_binary(VM& vm, GenericSize<T> size) {
+RCBinaryBox* make_rc_binary(GenericSize<T> size) {
   E4LOG1("bin: new rcbin %zu b\n", size.bytes());
   // Too large, we allocate an RCBinaryBox instead
   auto w_size = Heap::word_size(GenericSize<RCBinaryBox>(1));
   auto newbox =
-    vm.binary_heap_.allocate_box(w_size, BoxTag::RCBinary, size.bytes());
+    vm()->binary_heap_.allocate_box(w_size, BoxTag::RCBinary, size.bytes());
   auto rcbin = reinterpret_cast<RCBinaryBox*>(newbox);
   rcbin->header_.set_tag(BoxTag::RCBinary);
   rcbin->header_.set_val(0);

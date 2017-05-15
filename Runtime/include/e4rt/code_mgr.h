@@ -16,27 +16,31 @@ class VM;
 
 class CodeManager {
 private:
-  VM& vm_;
-
-  HashMap<Term, Module*> mods_;
+  HashMap<Term, UniquePtr<Module>> mods_;
 
   Vector<String> paths_;  // Code search paths, starting with "."
 
 public:
-  explicit CodeManager(VM& vm) : vm_(vm), mods_() {
+  explicit CodeManager(): mods_() {
     // TODO: load preloaded modules
     paths_.push_back(String("."));
   }
 
   Term load(Term name);
 
-  void register_module(Module* m);
+  void register_module(UniquePtr<Module>&& m);
 
   const Module* find(Term name) const;
 
   void path_add(const String& p) {
     paths_.push_back(p);
   }
+
+#if E4DEBUG
+  void debug_print();
+#else
+  void debug_print() {}
+#endif
 };
 
 }  // ns e4

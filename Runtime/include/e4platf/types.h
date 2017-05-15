@@ -40,6 +40,7 @@ using Float = Word;
 
 
 // Ensure that casting to word will not lose any bits
+// TODO: Make this count bits instead of runtime checking the value
 template <typename ContainerType, typename ValueType>
 constexpr bool fits_in(ValueType i) {
   return static_cast<ValueType>(static_cast<ContainerType>(i)) == i;

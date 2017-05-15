@@ -122,7 +122,7 @@ void Module::load_atoms_section(const e4::BoxView<uint8_t>& section_view,
 //  this->name_ = this->vm_.add_atom(result.front());
   for (Word i = 0; i < count; ++i) {
     auto a = bsr.read_varlength_string();
-    lstate.add_atom(this->vm_.add_atom(a));
+    lstate.add_atom(vm()->add_atom(a));
   }
 }
 
@@ -135,7 +135,7 @@ void Module::load_literals(const BoxView<uint8_t>& adata) {
   auto l_data = env_.literals_.get();
 
   for (Word i = 0; i < count; ++i) {
-    const auto lit = ExtTerm::read_with_marker(vm_, env_.literal_heap_, bsr);
+    const auto lit = ExtTerm::read_with_marker(env_.literal_heap_, bsr);
     l_data[i] = lit;
   }
 }
@@ -183,7 +183,7 @@ Export* Module::find_export(const MFArity& mfa) const {
   ));
   E4ASSERT(mfa.fun_.raw_equal(r->get_fun())
            && mfa.arity_ == r->get_arity());
-  r->print(vm_);
+  r->print();
   return r;
 }
 
@@ -263,9 +263,9 @@ int Export::compare_pvoid(const void *a, const void *b) {
 
 
 #if E4DEBUG
-void Export::print(const VM& vm) const {
+void Export::print() const {
   ::printf("#exp<");
-  vm.print(fun_);
+  vm()->print(fun_);
   ::printf("/%zu>@%zu", arity_.get<size_t>(), offset_);
 }
 #endif  // DEBUG

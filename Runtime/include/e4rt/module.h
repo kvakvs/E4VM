@@ -60,9 +60,9 @@ public:
   }
 
 #if E4DEBUG
-  void print(const VM &vm) const;
+  void print() const;
 #else
-  void print(const VM &vm) const {}
+  void print() const {}
 #endif  // DEBUG
 };
 
@@ -113,6 +113,7 @@ public:
 class ModuleLoaderState {
 private:
   Word atom_i_ = 0;
+
   UniquePtr<Term> atoms_; // atoms table from the module file, for lookups
 
 public:
@@ -188,14 +189,12 @@ private:
 
   ModuleEnv env_;
 
-  VM& vm_;
-
 public:
-  explicit Module(VM& vm) : env_(), vm_(vm) {}
+  explicit Module() : env_() {}
 
   void load(const BoxView<uint8_t>& data);
 
-  Term name() const {
+  Term get_name() const {
     return name_;
   }
 

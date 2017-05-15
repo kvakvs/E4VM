@@ -53,26 +53,25 @@ class ExtTerm {
     SmallAtomUtf8Ext = 119,
   };  // enum
 
-  static Term read_atom_string_i16(VM& vm, tool::Reader& r);
-  static Term read_atom_string_i8(VM& vm, tool::Reader& r);
-  static Term read_tagged_atom_string(VM& vm, tool::Reader& r);
-  static Node* get_node(VM& vm, Term /*sysname*/, dist::Creation /*creation*/);
-  static Term make_pid(VM& vm,
-                       Term sysname,
+  static Term read_atom_string_i16(tool::Reader& r);
+  static Term read_atom_string_i8(tool::Reader& r);
+  static Term read_tagged_atom_string(tool::Reader& r);
+  static Node* get_node(Term /*sysname*/, dist::Creation /*creation*/);
+  static Term make_pid(Term sysname,
                        Word id,
                        Word serial,
                        uint8_t creation);
-  static Term read_tuple(VM& vm, Heap& heap, tool::Reader& r, Word arity);
+  static Term read_tuple(Heap& heap, tool::Reader& r, Word arity);
   static Term read_string_ext(Heap& heap, tool::Reader& r);
-  static Term read_list_ext(VM& vm, Heap& heap, tool::Reader& r);
-  static Term read_binary(VM& vm, Heap& heap, tool::Reader& r);
+  static Term read_list_ext(Heap& heap, tool::Reader& r);
+  static Term read_binary(Heap& heap, tool::Reader& r);
 
  public:
   // Term will be stored on heap (reads byte=131 first as an ETF tag)
-  static Term read_with_marker(VM& vm, Heap& heap, tool::Reader& r);
+  static Term read_with_marker(Heap& heap, tool::Reader& r);
 
   // Term will be stored on heap (reads type tag first)
-  static Term read(VM& vm, Heap& heap, tool::Reader& r);
+  static Term read(Heap& heap, tool::Reader& r);
 };
 
 }  // ns e4

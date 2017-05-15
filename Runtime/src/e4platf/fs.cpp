@@ -19,7 +19,6 @@ read(const Vector<String>& search_paths, const char* fn) {
 #if E4FEATURE_FS
   for (auto& path : search_paths) {
     auto try_path = path + "/" + fn;
-    printf("%s\n", try_path.c_str());
     if (exists(try_path)) {
       return File::read_file(try_path.c_str());
     }
@@ -40,7 +39,8 @@ bool exists(String& path) {
 #endif
 }
 
-e4::Box<uint8_t> File::read_file() {
+e4::Box<uint8_t>
+File::read_file() {
   ::fseek(f_, 0, SEEK_END);
   Count size = static_cast<Count>(::ftell(f_));
   ::fseek(f_, 0, SEEK_SET);
@@ -59,7 +59,8 @@ e4::Box<uint8_t> File::read_file() {
   return result;
 }
 
-e4::Box<uint8_t> File::read_file(const char* fn) {
+e4::Box<uint8_t>
+File::read_file(const char* fn) {
   File f(fn, "rb");
   return f.read_file();
 }

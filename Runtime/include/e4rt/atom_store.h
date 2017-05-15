@@ -15,7 +15,7 @@ private:
 
   Vector<UniquePtr<char>> blocks_;
 
-  size_t block_capacity_ = 0;
+  size_t block_remaining_ = 0;
 
   char* block_pos_ = nullptr;
 
@@ -33,6 +33,12 @@ public:
   const char* find(Term atom) const;
 
   Term find(const char* s) const;  // returns NON_VALUE or an atom
+
+#if E4DEBUG
+  void debug_print();
+#else
+  void debug_print() {}
+#endif
 
 private:
   // Copies s to blocks_ forever (or allocates a new block)
