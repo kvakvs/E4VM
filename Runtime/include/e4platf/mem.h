@@ -20,13 +20,6 @@ namespace platf {
   #define E4PACKED
 #endif
 
-// portable unaligned memory read
-template <typename T, typename U>
-inline T unaligned_read(const U* src) {
-  E4PACKED const T* src2 = reinterpret_cast<const T *>(src);
-  return *src2;
-}
-
 //
 // Endian Swap helpers
 //
@@ -41,6 +34,20 @@ inline T unaligned_read(const U* src) {
   constexpr uint32_t big_to_native(uint32_t x) { return __builtin_bswap32(x); }
   constexpr uint64_t big_to_native(uint64_t x) { return __builtin_bswap64(x); }
 #endif
+
+// portable unaligned memory read
+template <typename VALUE, typename PTRTYPE>
+inline VALUE unaligned_read(const PTRTYPE* src) {
+  E4PACKED const VALUE* src2 = reinterpret_cast<const VALUE *>(src);
+  return *src2;
+}
+
+// portable unaligned memory read with an optional byte-swap
+template <typename VALUE, typename PTRTYPE>
+inline VALUE unaligned_read_big(const PTRTYPE* src) {
+  E4PACKED const VALUE* src2 = reinterpret_cast<const VALUE *>(src);
+  return big_to_native(*src2);
+}
 
 //
 // Sys allocator delivers memory using simple new calls, no special memory

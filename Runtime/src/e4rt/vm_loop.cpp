@@ -32,38 +32,39 @@ fetch:
 
   switch (instruction) {
     case instr::FuncInfo: {
-      Word fn, ar;
-      pc0 = e4::tool::read_varint(pc0, MUTABLE fn);
-      pc0 = e4::tool::read_varint(pc0, MUTABLE ar);
+      Word fn = platf::unaligned_read_big<Word>(pc0);
+      Word ar = platf::unaligned_read_big<Word>(pc0 + BYTES_PER_WORD);
+      pc0 += 2 * BYTES_PER_WORD;
       E4LOG3("[%p] func_info fun=%zu arity=%zu\n", pc0, fn, ar);
     } break;
 
     case instr::CallLocal: {
-      Word lbl;
-      pc0 = e4::tool::read_varint(pc0, MUTABLE lbl);
+      Word lbl = platf::unaligned_read_big<Word>(pc0);
+      pc0 += BYTES_PER_WORD;
       E4LOG2("[%p] call_local label=%zu\n", pc0, lbl);
     } break;
 
     case instr::CallExt: {
-      Word import_i;
-      pc0 = e4::tool::read_varint(pc0, MUTABLE import_i);
+      Word import_i = platf::unaligned_read_big<Word>(pc0);
+      pc0 += BYTES_PER_WORD;
       E4LOG2("[%p] call_ext import=%zu\n", pc0, import_i);
     } break;
 
     case instr::Bif: {
-      Word name;
-      pc0 = e4::tool::read_varint(pc0, MUTABLE name);
+      Word name = platf::unaligned_read_big<Word>(pc0);
+      pc0 += BYTES_PER_WORD;
       E4LOG2("[%p] bif name=%zu\n", pc0, name);
     } break;
 
-    case instr::AllocStack: {
-      Word stack_need, live;
-      pc0 = e4::tool::read_varint(pc0, MUTABLE stack_need);
-      pc0 = e4::tool::read_varint(pc0, MUTABLE live);
-      E4LOG3("[%p] alloc_stack need=%zu live=%zu\n", pc0, stack_need, live);
+    case instr::Alloc: {
+      Word arg0 = platf::unaligned_read_big<Word>(pc0);
+      Word stack_need = arg0 & 0b1111111111;
+      Word heap_need = (arg0 >> 10) & 0b1111111111;
+      Word live = (arg0 >> 20) & 0b1111111111;
+      pc0 += BYTES_PER_WORD;
+      E4LOG4("[%p] alloc need=%zu heap=%zu live=%zu\n",
+             pc0, stack_need, heap_need, live);
     } break;
-
-    case instr::AllocStackHeap: {} break;
 
     case instr::GetElement: {} break;
 

@@ -15,24 +15,23 @@ typedef enum {
   CallLocal,
   CallExt,
   Bif,
-  AllocStack,
-  AllocStackHeap,   // 5
-  GetElement,
+  Alloc,
+  GetElement,       // 5
   Move,
   CallFun,
   SetNil,
-  TestHeap,         // 10
-  PutTuple,
+  TestHeap,
+  PutTuple,         // 10
   Put,
   Ret0,
   RetN,
-  SelectVal,        // 15
-  Cons,
+  SelectVal,
+  Cons,             // 15
   Jump,
   Trim,
   MakeFun,
-  SetElement,       // 20
-  ClearStack        // use setnil instead?
+  SetElement,
+  ClearStack        // 20 -- use setnil instead?
 } Type;
 } // instr
 using Instruction = instr::Type;

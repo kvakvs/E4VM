@@ -24,30 +24,31 @@
   trim/1
 ]).
 
+-include_lib("e4compiler/include/e4c.hrl").
+
 %% Highest 2 or 3 bits of opcode byte may be used for flags
 
 -define(E4BC_FUNC_INFO,         0).
 -define(E4BC_CALL_LOCAL,        1).
 -define(E4BC_CALL_EXT,          2).
 -define(E4BC_BIF,               3).
--define(E4BC_ALLOC_STACK,       4).
--define(E4BC_ALLOC_STACK_HEAP,  5).
--define(E4BC_GET_ELEMENT,       6).
--define(E4BC_MOVE,              7).
--define(E4BC_CALL_FUN,          8).
--define(E4BC_SET_NIL,           9).
--define(E4BC_TEST_HEAP,         10).
--define(E4BC_PUT_TUPLE,         11).
--define(E4BC_PUT,               12).
--define(E4BC_RET0,              13).
--define(E4BC_RETN,              14).
--define(E4BC_SELECT_VAL,        15).
--define(E4BC_CONS,              16).
--define(E4BC_JUMP,              17).
--define(E4BC_TRIM,              18).
--define(E4BC_MAKE_FUN,          19).
--define(E4BC_SET_ELEMENT,       20).
--define(E4BC_CLEAR_STACK,       21). % use Set_nil instead?
+-define(E4BC_ALLOC,             4).
+-define(E4BC_GET_ELEMENT,       5).
+-define(E4BC_MOVE,              6).
+-define(E4BC_CALL_FUN,          7).
+-define(E4BC_SET_NIL,           8).
+-define(E4BC_TEST_HEAP,         9).
+-define(E4BC_PUT_TUPLE,         10).
+-define(E4BC_PUT,               11).
+-define(E4BC_RET0,              12).
+-define(E4BC_RETN,              13).
+-define(E4BC_SELECT_VAL,        14).
+-define(E4BC_CONS,              15).
+-define(E4BC_JUMP,              16).
+-define(E4BC_TRIM,              17).
+-define(E4BC_MAKE_FUN,          18).
+-define(E4BC_SET_ELEMENT,       19).
+-define(E4BC_CLEAR_STACK,       20). % use Set_nil instead?
 
 
 bc_op(X) -> X.
@@ -109,9 +110,8 @@ set_nil(Mod = #{'$' := e4mod}, Dst) ->
    e4asm_term:encode(Dst, Mod)].
 
 
-
 call(Mod = #{'$' := e4mod},
-     Call = #{'$' := e4call, arity := A, target := Target}) ->
+     Call = #{'$' := e4call, arity := _A, target := Target}) ->
   Tail = maps:get(tailcall, Call, false),
   Dealloc = maps:get(dealloc, Call, 0),
   %% TODO: Dealloc
@@ -142,16 +142,16 @@ ret(_Dealloc = 0) -> [bc_op(?E4BC_RET0)];
 ret(Dealloc) -> [bc_op(?E4BC_RETN), e4asm_term:encode(Dealloc, #{})].
 
 
-allocate(StackNeed, 0, Live) ->
-  [bc_op(?E4BC_ALLOC_STACK),
-   e4c:varint(StackNeed),
-   e4c:varint(Live)];
-
 allocate(StackNeed, HeapNeed, Live) ->
-  [bc_op(?E4BC_ALLOC_STACK_HEAP),
-   e4c:varint(StackNeed),
-   e4c:varint(HeapNeed),
-   e4c:varint(Live)].
+  RemainingBits = get(e4_machine_word_bits) - 30,
+  assert_integer_fits("allocate.StackNeed", StackNeed, 10),
+  assert_integer_fits("allocate.HeapNeed", HeapNeed, 10),
+  assert_integer_fits("allocate.Live", Live, 10),
+  [bc_op(?E4BC_ALLOC),
+   <<StackNeed:10,
+     HeapNeed:10,
+     Live:10,
+     0:RemainingBits>>].
 
 
 get_element(Tuple, Index, Result) ->
@@ -194,3 +194,12 @@ set_element(Value, Tuple, Pos, Mod) ->
 clear_stack({y, Y}) ->
   [bc_op(?E4BC_CLEAR_STACK),
     e4c:varint(Y)].
+
+
+assert_integer_fits(Name, N, Bits) ->
+  Bin = <<N:Bits>>,
+  <<N1:Bits>> = Bin,
+  case N == N1 of
+    true -> ok;
+    false -> ?COMPILE_ERROR("Value ~s does not fit into ~B bits", [Name, Bits])
+  end.
