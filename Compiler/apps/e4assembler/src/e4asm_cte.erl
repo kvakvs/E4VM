@@ -17,7 +17,10 @@ encode({y, Y}, _Mod) -> beam_asm:encode(?tag_y, Y);
 
 encode({f, F}, _Mod) -> beam_asm:encode(?tag_f, F);
 
-encode(nil, _Mod) -> beam_asm:encode(?tag_a, 0);
+encode(nil, Mod) -> encode([], Mod);
+
+% Special value used in BIF opcode and others, to mark unused arg
+encode(ignore, Mod) -> encode([], Mod);
 
 encode([], _Mod) -> beam_asm:encode(?tag_a, 0);
 

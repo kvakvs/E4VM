@@ -59,12 +59,12 @@ process_fun(Fun = #{'$' := e4fun, code := Code0}, M0) ->
   {Fun#{ binary => lists:reverse(Code1) }, M2}.
 
 
-process_fun_fold_helper(_Fun, {label, F},
-                        #{'$' := fun_state,
-                          binary := Accum,
-                          labels := Labels} = FState) ->
-  Labels1 = orddict:store(F, iolist_size(Accum), Labels),
-  FState#{labels => Labels1};
+%%process_fun_fold_helper(_Fun, {label, F},
+%%                        #{'$' := fun_state,
+%%                          binary := Accum,
+%%                          labels := Labels} = FState) ->
+%%  Labels1 = orddict:store(F, iolist_size(Accum), Labels),
+%%  FState#{labels => Labels1};
 
 process_fun_fold_helper(Fun = #{'$' := e4fun},
                         Op0,
@@ -212,6 +212,9 @@ process_op(Mod0, _Fun, {set_tuple_element, Value, Tuple, Pos}) ->
   Mod2 = register_value(Tuple, Mod1),
   Mod3 = register_value(Pos, Mod2),
   make_result(Mod3, e4asm_bc:set_element(Value, Tuple, Pos, Mod3));
+
+process_op(Mod0, _Fun, {label, F}) ->
+  make_result(Mod0, e4asm_bc:label(F));
 
 process_op(Mod0, _Fun, {'%', _Something}) ->
   make_result(Mod0, []);

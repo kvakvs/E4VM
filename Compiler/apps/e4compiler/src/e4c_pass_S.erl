@@ -152,16 +152,16 @@ process_fun([{line, _} | Tail], Mod0, Out) ->
   %% TODO: maybe debug info comes from here
   process_fun(Tail, Mod0, Out);
 
-process_fun([FunInfo = {func_info, {atom, _ModName}, {atom, Fun}, Arity},
-             Lbl = {label, Label} | Tail], Mod0, Out) ->
-  Mod1 = mark_function_start(Fun, Arity, Label, Mod0),
-  process_fun(Tail, Mod1, [FunInfo, Lbl | Out]);
+%%process_fun([FunInfo = {func_info, {atom, _ModName}, {atom, Fun}, Arity},
+%%             Lbl = {label, Label} | Tail], Mod0, Out) ->
+%%  Mod1 = mark_function_start(Fun, Arity, Label, Mod0),
+%%  process_fun(Tail, Mod1, [FunInfo, Lbl | Out]);
 
 process_fun([Code | Tail], Mod0, Out) ->
   process_fun(Tail, Mod0, [Code | Out]).
 
 
-mark_function_start(Fun, Arity, Label,
-                    Mod0 = #{'$' := e4mod, exports := Exports}) ->
-  Exports1 = orddict:store({Fun, Arity}, Label, Exports),
-  Mod0#{exports => Exports1}.
+%%mark_function_start(Fun, Arity, Label,
+%%                    Mod0 = #{'$' := e4mod, exports := Exports}) ->
+%%  Exports1 = orddict:store({Fun, Arity}, Label, Exports),
+%%  Mod0#{exports => Exports1}.

@@ -6,11 +6,10 @@
 -export([to_iolist/1, bin_filename/1]).
 
 to_iolist(Prog = #{'$' := e4mod}) ->
-%%  Compr = uncompressed, % value: uncompressed | gzipped
   Content = [
     %% section("LABL", Compr, encode_labels(Compr, Prog)), % goes before code
     section("Co", encode_code(Prog)),
-    section("Lb", encode_labels(Prog)), % must go before exports
+    %section("Lb", encode_labels(Prog)), % must go before exports
     section("Lt", encode_literals(Prog)),
     section("At", encode_atoms(Prog)), % must go before: imp/exports, jtabs
     section("Im", encode_imports(Prog)),
@@ -56,16 +55,16 @@ encode_atoms_one_atom(A) when is_atom(A) ->
   [<<(byte_size(StrA)):8>>, StrA].
 
 
-%% @doc Convert labels to label section in the module file
-encode_labels(#{'$' := e4mod, labels := Labels}) ->
-  io:format("labels ~p~n", [Labels]),
-  Sorted = lists:keysort(1, Labels), % assume orddict is a list of tuples
-  Bin = [encode_labels_one_label(L) || {_, L} <- Sorted],
-  erlang:iolist_to_binary([big32(length(Sorted)), Bin]).
+%% @d oc Convert labels to label section in the module file
+%%encode_labels(#{'$' := e4mod, labels := Labels}) ->
+%%  io:format("labels ~p~n", [Labels]),
+%%  Sorted = lists:keysort(1, Labels), % assume orddict is a list of tuples
+%%  Bin = [encode_labels_one_label(L) || {_, L} <- Sorted],
+%%  erlang:iolist_to_binary([big32(length(Sorted)), Bin]).
 
 
-encode_labels_one_label(L) ->
-  [e4c:varint(L)].
+%%encode_labels_one_label(L) ->
+%%  [e4c:varint(L)].
 
 
 %% @doc Convert atoms from mod object to atom section in the module file
@@ -127,7 +126,7 @@ encode_lambdas(Mod = #{'$' := e4mod, lambdas := Lambdas}) ->
   erlang:iolist_to_binary([big32(length(Sorted)), Bin]).
 
 
-encode_lambdas_one_lambda({{f, Label}, NumFree}, Mod) ->
+encode_lambdas_one_lambda({{f, Label}, NumFree}, _Mod) ->
   [e4c:varint(Label), % this should somehow resolve to atom function name maybe
    e4c:varint(NumFree)].
 

@@ -50,7 +50,7 @@ fetch:
       E4LOG2("[%p] call_ext import=%zu\n", pc0, import_i);
     } break;
 
-    case instr::Bif: {
+    case instr::CallBif: {
       Word name = platf::unaligned_read_big<Word>(pc0);
       pc0 += BYTES_PER_WORD;
       E4LOG2("[%p] bif name=%zu\n", pc0, name);
