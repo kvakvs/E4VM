@@ -68,6 +68,12 @@ using PODVector = std::vector<VALUE>;
 template <class KEY, class VALUE>
 using HashMap = std::unordered_map<KEY, VALUE>;
 
+template <class KEY, class VALUE, class HASHER>
+using HashMap2 = std::unordered_map<KEY, VALUE, HASHER>;
+
+template <class KEY, class VALUE, class HASHER, class COMPARATOR>
+using HashMap3 = std::unordered_map<KEY, VALUE, HASHER, COMPARATOR>;
+
 using String = std::string;
 
 template <class TYPE>

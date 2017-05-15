@@ -17,11 +17,10 @@ IMPL_EXCEPTION(Scheduler)
 IMPL_EXCEPTION(CodeServer)
 IMPL_EXCEPTION(Process)
 
-Term VM::add_atom(const String& atom_name) {
-  auto atom_name_s = atom_name.c_str();
 
+Term VM::add_atom(const char* atom_name) {
   // Try find atom (already exists)
-  auto exists = atom_store_.find(atom_name_s);
+  auto exists = atom_store_.find_atom(atom_name);
   if (exists.is_value()) {  // duplicate
     return exists;
   }
@@ -29,10 +28,9 @@ Term VM::add_atom(const String& atom_name) {
   E4ASSERT(fits_in<Word>(atom_store_.size()));  // 64bit machine with 32bit words
 
   // Add atom to direct lookup and reverse lookup table
-  auto a = Term::make_atom(atom_id_++);
-  atom_store_.insert(a, atom_name_s);
-  return a;
+  return atom_store_.insert(atom_name);
 }
+
 
 Node* VM::dist_this_node() {
 #if E4FEATURE_ERLDIST
@@ -40,6 +38,7 @@ Node* VM::dist_this_node() {
 #endif
   return this_node_;
 }
+
 
 Process* VM::spawn(Term parent_pid, const MFArgs& mfargs) {
   (void)parent_pid;
@@ -105,7 +104,7 @@ void VM::print_imm(Term t) const {
 void VM::print_imm_imm2(const Term &t) const {
   switch (t.as_imm2_.get_imm2_tag()) {
     case Immed2Tag::Atom: {
-      return debug_printf("'%s'", find_atom(t));
+      return debug_printf("a#%d:'%s'", t.as_imm2_.get_value(), find_atom(t));
     }
 
     case Immed2Tag::Catch:
@@ -154,7 +153,7 @@ void VM::print_imm_imm3(const Term &t) const {
 
 const char* VM::find_atom(Term atom) const {
   E4ASSERT(atom.is_atom());
-  return atom_store_.find(atom);
+  return atom_store_.find_atom(atom);
 }
 
 }  // ns e4

@@ -1,0 +1,3 @@
+size_report*.txt
+cmake-build-*/
+build-*/

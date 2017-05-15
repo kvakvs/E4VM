@@ -35,8 +35,6 @@ private:
 public:
   static VM* singleton_;
 
-  Word atom_id_ = 0;
-
   AtomStore atom_store_;
 
   CodeManager modules_;
@@ -60,7 +58,7 @@ public:
   //
   // Atom storage stuff
   //
-  Term add_atom(const String& atom_name);
+  Term add_atom(const char* atom_name);
 
   const char* find_atom(Term atom) const;
 

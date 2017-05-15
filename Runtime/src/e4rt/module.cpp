@@ -122,7 +122,7 @@ void Module::load_atoms_section(const e4::BoxView<uint8_t>& section_view,
 //  this->name_ = this->vm_.add_atom(result.front());
   for (Word i = 0; i < count; ++i) {
     auto a = bsr.read_varlength_string();
-    lstate.add_atom(vm()->add_atom(a));
+    lstate.add_atom(vm()->add_atom(a.c_str()));
   }
 }
 

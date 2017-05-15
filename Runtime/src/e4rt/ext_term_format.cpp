@@ -15,14 +15,14 @@ DECL_IMPL_EXCEPTION(ExternalTerm)
 Term ExtTerm::read_atom_string_i16(tool::Reader& r) {
   Word sz = r.read_big_u16();
   String atom_str = r.read_string(sz);
-  return vm()->add_atom(atom_str);
+  return vm()->add_atom(atom_str.c_str());
 }
 
 // Reads short atom as string and attempts to create it in atom table.
 Term ExtTerm::read_atom_string_i8(tool::Reader& r) {
   Word sz = r.read_byte();
   String atom_str = r.read_string(sz);
-  return vm()->add_atom(atom_str);
+  return vm()->add_atom(atom_str.c_str());
 }
 
 // Reads tag byte, then reads long or short atom as string and attempts to

@@ -9,7 +9,7 @@ int main(int /*argc*/, const char** /*argv [] */) {
   using e4::String;
 
   vm.modules_.path_add(String("../Compiler/priv"));
-  auto mod_name = vm.add_atom(String("test1"));
+  auto mod_name = vm.add_atom("test1");
   vm.modules_.load(mod_name);
 
   e4::MFArgs mfargs(mod_name, mod_name, e4::ArrayRef<e4::Term>());

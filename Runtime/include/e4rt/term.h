@@ -437,6 +437,14 @@ class MFArgs {
 #endif
 };
 
+namespace impl {
+  struct TermHasher {
+    std::size_t operator()(Term t) const {
+      return std::hash<Word>()(t.get_raw());
+    }
+  };
+} // ns impl
+
 }  // ns e4
 
 

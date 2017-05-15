@@ -30,7 +30,7 @@ public:
 
   void register_module(UniquePtr<Module>&& m);
 
-  const Module* find(Term name) const;
+  Module* find_module(Term name) const;
 
   void path_add(const String& p) {
     paths_.push_back(p);

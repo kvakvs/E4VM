@@ -8,11 +8,9 @@
 namespace e4 {
 
 Error Process::apply(const MFArgs& mfargs) {
-  auto p_vm = vm();
-  p_vm->modules_.debug_print();
+  vm()->modules_.debug_print();
 
-  auto mod = p_vm->modules_.find(mfargs.mod_);
-
+  auto mod = vm()->modules_.find_module(mfargs.mod_);
   if (not mod) {
     return Error::fail(e4err::mod_not_found);
   }

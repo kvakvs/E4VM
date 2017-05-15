@@ -41,7 +41,7 @@ void CodeManager::register_module(UniquePtr<Module>&& m) {
 }
 
 
-const Module* CodeManager::find(Term name) const {
+Module* CodeManager::find_module(Term name) const {
   ::printf("find module ");
   vm()->print(name);
   ::printf("\n");
