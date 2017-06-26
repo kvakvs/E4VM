@@ -3,25 +3,34 @@
 -module(e4asm_file).
 
 %% API
--export([to_iolist/1, bin_filename/1]).
+-export([to_iolist/2, bin_filename/1]).
 
-to_iolist(Prog = #{'$' := e4mod}) ->
+%% @doc Given a e4mod module object creates its final binary representation
+%% which is then written by the caller (e4asm_compile module).
+-spec to_iolist(Format :: text | binary, Program :: map()) -> iolist().
+to_iolist(Format, Prog = #{'$' := e4mod}) ->
   Content = [
     %% section("LABL", Compr, encode_labels(Compr, Prog)), % goes before code
-    section("Co", encode_code(Prog)),
-    %section("Lb", encode_labels(Prog)), % must go before exports
-    section("Lt", encode_literals(Prog)),
-    section("At", encode_atoms(Prog)), % must go before: imp/exports, jtabs
-    section("Im", encode_imports(Prog)),
-    section("Xp", encode_exports(Prog)),
-    section("Jt", encode_jumptabs(Prog)),
-    section("Fn", encode_lambdas(Prog)),
+    section(Format, "Co", encode_code(Prog)),
+    %section(Format, "Lb", encode_labels(Prog)), % must go before exports
+    section(Format, "Lt", encode_literals(Prog)),
+    % atoms must go before: imp/exports, jtabs
+    section(Format, "At", encode_atoms(Prog)),
+    section(Format, "Im", encode_imports(Prog)),
+    section(Format, "Xp", encode_exports(Prog)),
+    section(Format, "Jt", encode_jumptabs(Prog)),
+    section(Format, "Fn", encode_lambdas(Prog)),
     []
-  ], [
-    version("E432", "E464", get(e4_machine_word_bits)),
-    big32(iolist_size(Content)),
+  ],
+  [
+    module_header(Format, iolist_size(Content)),
     Content
   ].
+
+
+module_header(binary, ContentSize) ->
+  version("E432", "E464", get(e4_machine_word_bits)),
+  big32(ContentSize).
 
 
 section(Tag, Data) ->

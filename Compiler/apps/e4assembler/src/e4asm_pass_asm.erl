@@ -44,14 +44,14 @@ process_fun(Fun = #{'$' := e4fun, code := Code0}, M0) ->
   X = lists:foldl(
     fun(Op, State) -> process_fun_fold_helper(Fun, Op, State) end,
     #{'$' => fun_state,
-      binary => [],
+      output => [],
       labels => orddict:new(),
       program => M0},
     Code0
   ),
 
   #{'$' := fun_state,
-    binary := Code1,
+    output := Code1,
     labels := Labels,
     program := M1} = X,
 
@@ -59,22 +59,15 @@ process_fun(Fun = #{'$' := e4fun, code := Code0}, M0) ->
   {Fun#{ binary => lists:reverse(Code1) }, M2}.
 
 
-%%process_fun_fold_helper(_Fun, {label, F},
-%%                        #{'$' := fun_state,
-%%                          binary := Accum,
-%%                          labels := Labels} = FState) ->
-%%  Labels1 = orddict:store(F, iolist_size(Accum), Labels),
-%%  FState#{labels => Labels1};
-
 process_fun_fold_helper(Fun = #{'$' := e4fun},
                         Op0,
                         #{'$' := fun_state,
-                          binary := Accum,
+                          output := Accum,
                           program := Mod0} = FState) ->
   #{'$' := processop_result,
-    op_bin := Op1,
+    output := Output1,
     program := Mod1} = process_op(Mod0, Fun, Op0),
-  FState#{binary => [Op1 | Accum],
+  FState#{output => [Output1 | Accum],
           program => Mod1}.
 
 
@@ -226,7 +219,7 @@ process_op(_Mod0, Fun, Other) ->
 make_result(Mod0, Code) ->
   #{'$' => processop_result,
     program => Mod0,
-    op_bin => Code}.
+    output => Code}.
 
 
 fun_str(#{'$' := e4fun, name := N, arity := A}) ->

@@ -67,75 +67,69 @@
 -define(E4BC_TEST_HEAP,         16#2B).
 
 
+encode_value(X, Mod) -> 
+  e4asm_simple_encoding:encode(X, Mod).
+
 
 bc_op(X) -> X.
-%%%%bc_op(X, F1) -> <<(X bor bit_if(F1, 128)):8>>.
-%%bc_op(X, F1, F2) -> (X bor bit_if(F1, 128)
-%%                       bor bit_if(F2, 64)).
-%%bc_op(X, F1, F2, F3) -> (X bor bit_if(F1, 128)
-%%                           bor bit_if(F2, 64)
-%%                           bor bit_if(F3, 32)).
-
-
-%%bit_if(true, X) -> X;
-%%bit_if(false, _X) -> 0.
 
 
 label(F) ->
   [bc_op(?E4BC_LABEL),
-   e4asm_cte:encode(F, #{})].
+   encode_value(F, #{})].
 
 
 func_info(Mod = #{'$' := e4mod}, F, Arity) ->
   [bc_op(?E4BC_FUNC_INFO),
-   e4asm_cte:encode(F    , Mod),
-   e4asm_cte:encode(Arity, Mod)].
+   encode_value(F    , Mod),
+   encode_value(Arity, Mod)].
 
 
 test_heap(Mod = #{'$' := e4mod}, Need, Live) ->
   [bc_op(?E4BC_TEST_HEAP),
-   e4asm_cte:encode(Need, Mod),
-   e4asm_cte:encode(Live, Mod)].
+   encode_value(Need, Mod),
+   encode_value(Live, Mod)].
 
 
 put_tuple(Mod = #{'$' := e4mod}, Size, Dst) ->
   [bc_op(?E4BC_PUT_TUPLE),
-   e4asm_cte:encode(Size, Mod),
-   e4asm_cte:encode(Dst, Mod)].
+   encode_value(Size, Mod),
+   encode_value(Dst, Mod)].
 
 
 put(Mod = #{'$' := e4mod}, Val) ->
   [bc_op(?E4BC_PUT),
-   e4asm_cte:encode(Val, Mod)].
+   encode_value(Val, Mod)].
 
 
 move(Mod = #{'$' := e4mod}, Src, Dst) ->
   [bc_op(?E4BC_MOVE),
-   e4asm_cte:encode(Src, Mod),
-   e4asm_cte:encode(Dst, Mod)].
+   encode_value(Src, Mod),
+   encode_value(Dst, Mod)].
 
 
 select_val(Src, Fail, Select, Mod = #{'$' := e4mod}) ->
   [bc_op(?E4BC_SELECT_VAL),
-   e4asm_cte:encode(Src, Mod),
-   e4asm_cte:encode(Fail, Mod),
-   e4asm_cte:encode({jumptab, Select}, Mod)].
+   encode_value(Src, Mod),
+   encode_value(Fail, Mod),
+   encode_value({jumptab, Select}, Mod)].
 
 
 call_fun(Mod = #{'$' := e4mod}, Arity) ->
   [bc_op(?E4BC_CALL_FUN),
-   e4asm_cte:encode(Arity, Mod)].
+   encode_value(Arity, Mod)].
 
 
 set_nil(Mod = #{'$' := e4mod}, Dst) ->
   [bc_op(?E4BC_SET_NIL),
-   e4asm_cte:encode(Dst, Mod)].
+   encode_value(Dst, Mod)].
 
 
 call(Mod = #{'$' := e4mod},
      Call = #{'$' := e4call, arity := _A, target := Target}) ->
   Tail = maps:get(tailcall, Call, false),
   Dealloc = maps:get(dealloc, Call, 0),
+
   %% TODO: Dealloc
   case Target of
     {f, TargetLabel} ->
@@ -143,15 +137,16 @@ call(Mod = #{'$' := e4mod},
                true -> ?E4BC_CALL_LOCAL_TAIL;
                false -> ?E4BC_CALL_LOCAL
              end),
-       e4c:varint(TargetLabel),
-       e4c:varint(Dealloc)];
+       encode_value(TargetLabel, Mod),
+       encode_value(Dealloc, Mod)];
+
     {extfunc, _, _, _} = MFA ->
       [bc_op(case Tail of
                true -> ?E4BC_CALL_EXT_TAIL;
                false -> ?E4BC_CALL_EXT
              end),
-       e4asm_cte:encode(MFA, Mod),
-       e4c:varint(Dealloc)]
+       encode_value(MFA, Mod),
+       encode_value(Dealloc, Mod)]
   end.
 
 
@@ -168,11 +163,11 @@ bif(Mod = #{'$' := e4mod},
      ignore ->
        bc_op(?E4BC_BIF);
      N ->
-       [bc_op(?E4BC_BIF_GC), e4asm_cte:encode(N, Mod)]
+       [bc_op(?E4BC_BIF_GC), encode_value(N, Mod)]
    end,
-   e4asm_cte:encode(Fail, Mod),
-   e4asm_cte:encode({atom, Name}, Mod),
-   e4asm_cte:encode(Result, Mod)].
+   encode_value(Fail, Mod),
+   encode_value({atom, Name}, Mod),
+   encode_value(Result, Mod)].
 
 
 ret(_Dealloc = 0) ->
@@ -180,7 +175,7 @@ ret(_Dealloc = 0) ->
 
 ret(Dealloc) ->
   [bc_op(?E4BC_RETN),
-   e4asm_cte:encode(Dealloc, #{})].
+   encode_value(Dealloc, #{})].
 
 
 allocate(StackNeed, HeapNeed, Live) ->
@@ -188,52 +183,52 @@ allocate(StackNeed, HeapNeed, Live) ->
   assert_integer_fits("allocate.HeapNeed", HeapNeed, 10),
   assert_integer_fits("allocate.Live", Live, 10),
   [bc_op(?E4BC_ALLOC),
-   e4asm_cte:encode(StackNeed, #{}),
-   e4asm_cte:encode(HeapNeed, #{}),
-   e4asm_cte:encode(Live, #{})
+   encode_value(StackNeed, #{}),
+   encode_value(HeapNeed, #{}),
+   encode_value(Live, #{})
    ].
 
 
 get_element(Tuple, Index, Result) ->
   %% TODO: Result
   [bc_op(?E4BC_GET_ELEMENT),
-   e4asm_cte:encode(Tuple, #{}),
-   e4asm_cte:encode(Index, #{}),
-   e4asm_cte:encode(Result, #{})].
+   encode_value(Tuple, #{}),
+   encode_value(Index, #{}),
+   encode_value(Result, #{})].
 
 
 cons(H, T, Dst) ->
   [bc_op(?E4BC_CONS),
-   e4asm_cte:encode(H, #{}),
-   e4asm_cte:encode(T, #{}),
-   e4asm_cte:encode(Dst, #{})].
+   encode_value(H, #{}),
+   encode_value(T, #{}),
+   encode_value(Dst, #{})].
 
 
 jump(Dst) ->
   [bc_op(?E4BC_JUMP),
-   e4asm_cte:encode(Dst, #{})].
+   encode_value(Dst, #{})].
 
 
 trim(N) ->
   [bc_op(?E4BC_TRIM),
-   e4asm_cte:encode(N, #{})].
+   encode_value(N, #{})].
 
 
 make_fun({f, _} = L, NumFree, Mod) ->
   [bc_op(?E4BC_MAKE_FUN),
-   e4asm_cte:encode({lambda, L, NumFree}, Mod)].
+   encode_value({lambda, L, NumFree}, Mod)].
 
 
 set_element(Value, Tuple, Pos, Mod) ->
   [bc_op(?E4BC_SET_ELEMENT),
-   e4asm_cte:encode(Value, Mod),
-   e4asm_cte:encode(Tuple, Mod),
-   e4asm_cte:encode(Pos, Mod)].
+   encode_value(Value, Mod),
+   encode_value(Tuple, Mod),
+   encode_value(Pos, Mod)].
 
 
 clear_stack({y, _} = Y) ->
   [bc_op(?E4BC_CLEAR_STACK),
-   e4asm_cte:encode(Y, #{})].
+   encode_value(Y, #{})].
 
 
 assert_integer_fits(Name, N, Bits) ->
