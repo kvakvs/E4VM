@@ -56,7 +56,7 @@ process_fun(Fun = #{'$' := e4fun, code := Code0}, M0) ->
     program := M1} = X,
 
   M2 = merge_labels(M1, Labels),
-  {Fun#{ binary => lists:reverse(Code1) }, M2}.
+  {Fun#{ output => lists:reverse(Code1) }, M2}.
 
 
 process_fun_fold_helper(Fun = #{'$' := e4fun},

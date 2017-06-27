@@ -11,7 +11,7 @@
 to_iolist(Format, Prog = #{'$' := e4mod}) ->
   Content = [
     %% section("LABL", Compr, encode_labels(Compr, Prog)), % goes before code
-    section(Format, "Co", encode_code(Prog)),
+    section(Format, "Co", encode_code(Format, Prog)),
     %section(Format, "Lb", encode_labels(Prog)), % must go before exports
     section(Format, "Lt", encode_literals(Prog)),
     % atoms must go before: imp/exports, jtabs
@@ -23,7 +23,7 @@ to_iolist(Format, Prog = #{'$' := e4mod}) ->
     []
   ],
   [
-    module_header(Format, iolist_size(Content)),
+    module_header(Format, erlang:iolist_size(Content)),
     Content
   ].
 
@@ -33,10 +33,13 @@ module_header(binary, ContentSize) ->
   big32(ContentSize).
 
 
-section(Tag, Data) ->
+section(binary, Tag, Data) ->
   [Tag,
    big32(byte_size(Data)),
-   Data]. % TODO: 4 alignment for ARM
+   Data]; % TODO: 4 alignment for ARM
+
+section(text, Tag, Data) ->
+  {Tag, Data}.
 
 
 %% @doc Replace file ext in the filename with e4b
@@ -47,9 +50,18 @@ bin_filename(F) ->
 
 %% @doc Convert code from each function in the mod object to a single block of
 %% code in the module file
-encode_code(#{'$' := e4mod, funs := Funs}) ->
-  Bin = [maps:get(binary, F) || {_FunArity, F} <- Funs],
-  erlang:iolist_to_binary(Bin).
+encode_code(binary, #{'$' := e4mod, funs := Funs}) ->
+  Bin = [maps:get(output, F) || {_FunArity, F} <- Funs],
+  erlang:iolist_to_binary(Bin);
+
+encode_code(text, #{'$' := e4mod, funs := Funs}) ->
+  Bin = [maps:get(output, F) || {_FunArity, F} <- Funs],
+  Bin1 = binary_to_list(iolist_to_binary(Bin)),
+  io:format("~B = ~p~n", [length(Bin1), Bin1]),
+  H = e4asm_huffman:encode(Bin1),
+  HCode = maps:get(code, H),
+  io:format("~B", [byte_size(HCode)]),
+  HCode. % TODO: Encode tree also
 
 
 %% @doc Convert atoms from mod object to atom section in the module file

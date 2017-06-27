@@ -17,7 +17,7 @@ process(InputPath, Input) ->
 %% @doc Format the resulting bytecode as text (for debug and simplicity) or
 %% as a binary (for final deployment).
 save_output(Format, BC, OutputPath) ->
-  e4c:try_do("Save " + erlang:atom_to_list(Format) + " output",
+  e4c:try_do("Save " ++ erlang:atom_to_list(Format) ++ " output",
              fun() ->
                IOList = e4asm_file:to_iolist(Format, BC),
                file:write_file(OutputPath, iolist_to_binary(IOList))
