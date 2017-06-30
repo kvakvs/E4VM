@@ -48,20 +48,33 @@ bin_filename(F) ->
   string:sub_string(F, 1, RDot) ++ "e4b".
 
 
+%% @doc Given a list of {Opcode, [Args]} create iolist
+encode_code_ops([], Acc) ->
+  lists:reverse(Acc);
+encode_code_ops(Code, Acc) ->
+  erlang:error(not_implemented).
+
+
 %% @doc Convert code from each function in the mod object to a single block of
 %% code in the module file
 encode_code(binary, #{'$' := e4mod, funs := Funs}) ->
-  Bin = [maps:get(output, F) || {_FunArity, F} <- Funs],
-  erlang:iolist_to_binary(Bin);
+  %% Here we have list of functions, which are lists of commands, each command
+  %% is a tuple {Opcode, Args}
+  Funs = [maps:get(output, F) || {_FunArity, F} <- Funs],
+  %% Encode ops in each fun
+  IO = lists:map(fun(F) -> encode_code_ops(F, []) end, Funs),
+  %% Create a nice binary out of it
+  erlang:iolist_to_binary(IO);
 
 encode_code(text, #{'$' := e4mod, funs := Funs}) ->
-  Bin = [maps:get(output, F) || {_FunArity, F} <- Funs],
-  Bin1 = binary_to_list(iolist_to_binary(Bin)),
-  io:format("~B = ~p~n", [length(Bin1), Bin1]),
-  H = e4asm_huffman:encode(Bin1),
-  HCode = maps:get(code, H),
-  io:format("~B", [byte_size(HCode)]),
-  HCode. % TODO: Encode tree also
+  %% Collect code output for every function in the module
+  %% TODO: Store functions separately + optimize unused?
+  Bin = [maps:get(output, F) || {_FunArity, F} <- Funs].
+  % io:format("~B = ~p~n", [length(Bin1), Bin1]),
+  % H = e4asm_huffman:encode(Bin1),
+  % HCode = maps:get(code, H),
+  % io:format("~B", [byte_size(HCode)]),
+  % HCode. % TODO: Encode tree also
 
 
 %% @doc Convert atoms from mod object to atom section in the module file

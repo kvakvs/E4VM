@@ -67,7 +67,11 @@
 -define(E4BC_TEST_HEAP,         16#2B).
 
 
-encode_value(X, Mod) -> 
+encode_value(X) ->
+  encode_value(X, #{}).
+
+
+encode_value(X, Mod) ->
   e4asm_simple_encoding:encode(X, Mod).
 
 
@@ -75,54 +79,54 @@ bc_op(X) -> X.
 
 
 label(F) ->
-  [bc_op(?E4BC_LABEL),
-   encode_value(F, #{})].
+  Args = [encode_value(F)],
+  {bc_op(?E4BC_LABEL), Args}.
 
 
 func_info(Mod = #{'$' := e4mod}, F, Arity) ->
-  [bc_op(?E4BC_FUNC_INFO),
-   encode_value(F    , Mod),
-   encode_value(Arity, Mod)].
+  Args = [encode_value(F, Mod),
+          encode_value(Arity, Mod)],
+  {bc_op(?E4BC_FUNC_INFO), Args}.
 
 
 test_heap(Mod = #{'$' := e4mod}, Need, Live) ->
-  [bc_op(?E4BC_TEST_HEAP),
-   encode_value(Need, Mod),
-   encode_value(Live, Mod)].
+  Args = [encode_value(Need, Mod),
+          encode_value(Live, Mod)],
+  {bc_op(?E4BC_TEST_HEAP), Args}.
 
 
 put_tuple(Mod = #{'$' := e4mod}, Size, Dst) ->
-  [bc_op(?E4BC_PUT_TUPLE),
-   encode_value(Size, Mod),
-   encode_value(Dst, Mod)].
+  Args = [encode_value(Size, Mod),
+          encode_value(Dst, Mod)],
+  {bc_op(?E4BC_PUT_TUPLE), Args}.
 
 
 put(Mod = #{'$' := e4mod}, Val) ->
-  [bc_op(?E4BC_PUT),
-   encode_value(Val, Mod)].
+  Args = [encode_value(Val, Mod)],
+  {bc_op(?E4BC_PUT), Args}.
 
 
 move(Mod = #{'$' := e4mod}, Src, Dst) ->
-  [bc_op(?E4BC_MOVE),
-   encode_value(Src, Mod),
-   encode_value(Dst, Mod)].
+  Args = [encode_value(Src, Mod),
+          encode_value(Dst, Mod)],
+  {bc_op(?E4BC_MOVE), Args}.
 
 
 select_val(Src, Fail, Select, Mod = #{'$' := e4mod}) ->
-  [bc_op(?E4BC_SELECT_VAL),
-   encode_value(Src, Mod),
-   encode_value(Fail, Mod),
-   encode_value({jumptab, Select}, Mod)].
+  Args = [encode_value(Src, Mod),
+          encode_value(Fail, Mod),
+          encode_value({jumptab, Select}, Mod)],
+  {bc_op(?E4BC_SELECT_VAL), Args}.
 
 
 call_fun(Mod = #{'$' := e4mod}, Arity) ->
-  [bc_op(?E4BC_CALL_FUN),
-   encode_value(Arity, Mod)].
+  Args = [encode_value(Arity, Mod)],
+  {bc_op(?E4BC_CALL_FUN), Args}.
 
 
 set_nil(Mod = #{'$' := e4mod}, Dst) ->
-  [bc_op(?E4BC_SET_NIL),
-   encode_value(Dst, Mod)].
+  Args = [encode_value(Dst, Mod)],
+  {bc_op(?E4BC_SET_NIL), Args}.
 
 
 call(Mod = #{'$' := e4mod},
@@ -159,76 +163,76 @@ bif(Mod = #{'$' := e4mod},
   Fail = maps:get(fail, Bif, ignore),
   %% TODO: Result
   Result = maps:get(result, Bif, ignore),
-  [case Gc of
-     ignore ->
-       bc_op(?E4BC_BIF);
-     N ->
-       [bc_op(?E4BC_BIF_GC), encode_value(N, Mod)]
-   end,
-   encode_value(Fail, Mod),
-   encode_value({atom, Name}, Mod),
-   encode_value(Result, Mod)].
+  Opcode = case Gc of
+             ignore ->
+               bc_op(?E4BC_BIF);
+             N ->
+               [bc_op(?E4BC_BIF_GC), encode_value(N, Mod)]
+           end,
+  Args = [encode_value(Fail, Mod),
+          encode_value({atom, Name}, Mod),
+          encode_value(Result, Mod)],
+  {Opcode, Args}.
 
 
 ret(_Dealloc = 0) ->
-  [bc_op(?E4BC_RET0)];
+  {bc_op(?E4BC_RET0), []};
 
 ret(Dealloc) ->
-  [bc_op(?E4BC_RETN),
-   encode_value(Dealloc, #{})].
+  Args = [encode_value(Dealloc)],
+  {bc_op(?E4BC_RETN), Args}.
 
 
 allocate(StackNeed, HeapNeed, Live) ->
   assert_integer_fits("allocate.StackNeed", StackNeed, 10),
   assert_integer_fits("allocate.HeapNeed", HeapNeed, 10),
   assert_integer_fits("allocate.Live", Live, 10),
-  [bc_op(?E4BC_ALLOC),
-   encode_value(StackNeed, #{}),
-   encode_value(HeapNeed, #{}),
-   encode_value(Live, #{})
-   ].
+  Args = [encode_value(StackNeed),
+          encode_value(HeapNeed),
+          encode_value(Live)],
+  {bc_op(?E4BC_ALLOC), Args}.
 
 
 get_element(Tuple, Index, Result) ->
   %% TODO: Result
-  [bc_op(?E4BC_GET_ELEMENT),
-   encode_value(Tuple, #{}),
-   encode_value(Index, #{}),
-   encode_value(Result, #{})].
+  Args = [encode_value(Tuple),
+          encode_value(Index),
+          encode_value(Result)],
+  {bc_op(?E4BC_GET_ELEMENT), Args}.
 
 
 cons(H, T, Dst) ->
-  [bc_op(?E4BC_CONS),
-   encode_value(H, #{}),
-   encode_value(T, #{}),
-   encode_value(Dst, #{})].
+  Args = [encode_value(H),
+          encode_value(T),
+          encode_value(Dst)],
+  {bc_op(?E4BC_CONS), Args}.
 
 
 jump(Dst) ->
-  [bc_op(?E4BC_JUMP),
-   encode_value(Dst, #{})].
+  Args = [encode_value(Dst, #{})],
+  {bc_op(?E4BC_JUMP), Args}.
 
 
 trim(N) ->
-  [bc_op(?E4BC_TRIM),
-   encode_value(N, #{})].
+  Args = [encode_value(N, #{})],
+  {bc_op(?E4BC_TRIM), Args}.
 
 
 make_fun({f, _} = L, NumFree, Mod) ->
-  [bc_op(?E4BC_MAKE_FUN),
-   encode_value({lambda, L, NumFree}, Mod)].
+  Args = [encode_value({lambda, L, NumFree}, Mod)],
+  {bc_op(?E4BC_MAKE_FUN), Args}.
 
 
 set_element(Value, Tuple, Pos, Mod) ->
-  [bc_op(?E4BC_SET_ELEMENT),
-   encode_value(Value, Mod),
-   encode_value(Tuple, Mod),
-   encode_value(Pos, Mod)].
+  Args = [encode_value(Value, Mod),
+          encode_value(Tuple, Mod),
+          encode_value(Pos, Mod)],
+  {bc_op(?E4BC_SET_ELEMENT), Args}.
 
 
 clear_stack({y, _} = Y) ->
-  [bc_op(?E4BC_CLEAR_STACK),
-   encode_value(Y, #{})].
+  Args = [encode_value(Y)],
+  {bc_op(?E4BC_CLEAR_STACK), Args}.
 
 
 assert_integer_fits(Name, N, Bits) ->
