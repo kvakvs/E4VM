@@ -6,6 +6,7 @@
 %% Result: Writes binary e4b file with bytecode.
 -spec process(string(), #{}) -> ok.
 process(InputPath, Input) ->
+  e4asm_stats:init(),  % frequency stats are collected here
   BC = e4c:try_do(
     "e4asm_pass_asm - Assembly to binary",
     fun() -> e4asm_pass_asm:compile(Input) end

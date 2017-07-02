@@ -1,7 +1,7 @@
 %%% @doc BEAM Compact Term encoding, also used in Ericsson's BEAM files
 %%% @end
 
--module(e4asm_cte).
+-module(e4asm_encode_cte).
 
 %% API
 -export([encode/2]).

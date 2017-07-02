@@ -4,7 +4,13 @@
 
 -module(e4asm_huffman).
 
--export([encode/1, decode/2, main/1]).
+-export([encode_funs/1, decode/2, main/1]).
+
+%% @doc Given the module (for labels) and list of compiled funs with operators
+%% {Opcode, Arg} produce frequency tree and encode each fun separately.
+encode_funs(#{'$' := e4mod, funs := Funs}) ->
+  lists:map(fun encode_one_fun/1, Funs).
+
 
 encode(Text) ->
   Tree = tree(freq_table(Text)),

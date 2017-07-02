@@ -32,8 +32,8 @@
 %% Special commands (parsed at load time, errors etc)
 %%
 -define(E4BC_FUNC_INFO,         16#01).
--define(E4BC_LABEL,             16#02). % removed at load time
--define(E4BC_LINE_INFO,         16#03). % removed at load time % UNUSED
+-define(E4BC_LABEL,             16#02).
+-define(E4BC_LINE_INFO,         16#03). % UNUSED
 
 %%
 %% Flow control
@@ -66,26 +66,29 @@
 -define(E4BC_CLEAR_STACK,       16#2A). % use Set_nil instead?
 -define(E4BC_TEST_HEAP,         16#2B).
 
+-define(LIMIT_MAXARITY,         256).
 
 encode_value(X) ->
   encode_value(X, #{}).
 
 
-encode_value(X, Mod) ->
-  e4asm_simple_encoding:encode(X, Mod).
+encode_value(X, _Mod) ->
+  <<X:32/big>>.
 
 
 bc_op(X) -> X.
 
 
 label(F) ->
-  Args = [encode_value(F)],
-  {bc_op(?E4BC_LABEL), Args}.
+  e4asm_stats:count_opcode(label),
+  {bc_op(?E4BC_LABEL), encode_value(F)}.
 
 
 func_info(Mod = #{'$' := e4mod}, F, Arity) ->
+  e4asm_stats:count_opcode(func_info),
+  assert(Arity < ?LIMIT_MAXARITY, "Arity for func_info is too big"),
   Args = [encode_value(F, Mod),
-          encode_value(Arity, Mod)],
+          <<Arity:8>>],
   {bc_op(?E4BC_FUNC_INFO), Args}.
 
 
@@ -242,3 +245,7 @@ assert_integer_fits(Name, N, Bits) ->
     true -> ok;
     false -> ?COMPILE_ERROR("Value ~s does not fit into ~B bits", [Name, Bits])
   end.
+
+
+assert(true, _) -> ok;
+assert(false, Text) -> ?COMPILE_ERROR(Text).

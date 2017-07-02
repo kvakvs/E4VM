@@ -1,28 +1,35 @@
-%%% @doc BEAM Compact Term encoding, also used in Ericsson's BEAM files
+%%% @doc Integer encoding for any value with fixed bit header and user-defined
+%%% bit width for the value. Returns an integer.
 %%% @end
 
--module(e4asm_simple_encoding).
+-module(e4asm_encode_int).
 
 %% API
 -export([encode/2]).
 
 -include_lib("e4compiler/include/e4c.hrl").
--include_lib("compiler/src/beam_opcodes.hrl").
 
-%% @doc See docs/compact-encoding.rst
-%% The logic is based on beam_asm:encode_arg in the compiler app
-encode({x, X}, _Mod) -> beam_asm:encode(?tag_x, X);
+%% TODO: Maybe use huffman tree for tags based on their frequency.
+%% Use fixed width tag for now
+-define(BIT_HEADER_SIZE,  3).
+-define(BIT_TAG_X,        0).
+-define(BIT_TAG_Y,        1).
+-define(BIT_TAG_NIL,      2).
 
-encode({y, Y}, _Mod) -> beam_asm:encode(?tag_y, Y);
+encode({x, X}, Bits) ->
+  tagged_value(?BIT_TAG_X, X, Bits);
 
-encode({f, F}, _Mod) -> beam_asm:encode(?tag_f, F);
+encode({y, Y}, Bits) ->
+  tagged_value(?BIT_TAG_Y, Y, Bits);
 
-encode(nil, Mod) -> encode([], Mod);
+encode({f, F}, Bits) ->  % labels cannot intermix with data, so just plain int
+  <<F:Bits/unsigned-big>>;
 
-% Special value used in BIF opcode and others, to mark unused arg
-encode(ignore, Mod) -> encode([], Mod);
-
-encode([], _Mod) -> beam_asm:encode(?tag_a, 0);
+%% Ignore is a special value used to mark an unused arg
+encode(NIL, _Bits) when NIL =:= nil orelse
+                        NIL =:= [] orelse
+                        NIL =:= ignore ->
+  <<?BIT_TAG_NIL:?BIT_HEADER_SIZE>>;
 
 encode({atom, Atom}, Mod = #{'$' := e4mod}) ->
   %% Assume atom already exists, will crash if it doesn't
@@ -50,6 +57,10 @@ encode({integer, X}, _Mod) -> beam_asm:encode(?tag_u, X);
 
 encode(X, _Mod) ->
   ?COMPILE_ERROR("do not know how to encode ~p", [X]).
+
+
+tagged_value(Tag, Value, Bits) ->
+  <<Tag:?BIT_HEADER_SIZE, Value:Bits/unsigned-big>>.
 
 
 index_of(Value, Key, Mod) ->
