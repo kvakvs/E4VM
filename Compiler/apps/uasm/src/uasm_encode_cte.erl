@@ -24,23 +24,23 @@ encode(ignore, Mod) -> encode([], Mod);
 
 encode([], _Mod) -> beam_asm:encode(?tag_a, 0);
 
-encode({atom, Atom}, Mod = #{'$' := e4mod}) ->
+encode({atom, Atom}, Mod = #{'$' := module}) ->
   %% Assume atom already exists, will crash if it doesn't
   beam_asm:encode(?tag_a, index_of(Atom, atoms, Mod) + 1);
 
-encode({extfunc, Mod, Fun, Arity}, Mod0 = #{'$' := e4mod}) ->
+encode({extfunc, Mod, Fun, Arity}, Mod0 = #{'$' := module}) ->
   ImportIndex = index_of({Mod, Fun, Arity}, imports, Mod0),
   beam_asm:encode(?tag_u, ImportIndex);
 
-encode({lambda, Label, NumFree}, Mod0 = #{'$' := e4mod}) ->
+encode({lambda, Label, NumFree}, Mod0 = #{'$' := module}) ->
   LambdaIndex = index_of({Label, NumFree}, lambdas, Mod0),
   beam_asm:encode(?tag_u, LambdaIndex);
 
-encode({jumptab, JTab}, Mod0 = #{'$' := e4mod}) ->
+encode({jumptab, JTab}, Mod0 = #{'$' := module}) ->
   JTabIndex = index_of(JTab, jumptabs, Mod0),
   beam_asm:encode(?tag_u, JTabIndex);
 
-encode({literal, Lit}, Mod0 = #{'$' := e4mod}) ->
+encode({literal, Lit}, Mod0 = #{'$' := module}) ->
   LitIndex = index_of(Lit, literals, Mod0),
   beam_asm:encode(?tag_u, LitIndex);
 

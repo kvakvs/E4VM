@@ -52,28 +52,28 @@ encode(NIL, _Bits, _Mod) when NIL =:= nil orelse
   uasm_stats:count_value(nil_ignore),
   <<?BIT_TAG_NIL:?BIT_HEADER_SIZE>>;
 
-encode({atom, Atom}, _Bits, Mod = #{'$' := e4mod}) ->
+encode({atom, Atom}, _Bits, Mod = #{'$' := module}) ->
   %% Assume atom already exists, will crash if it doesn't
   uasm_stats:count_value(atom),
   AtomIndex = index_of(Atom, atoms, Mod) + 1,
   tagged_varlength_unsigned(?BIT_TAG_ATOM, AtomIndex);
 
-encode({extfunc, Mod, Fun, Arity}, _Bits, Mod0 = #{'$' := e4mod}) ->
+encode({extfunc, Mod, Fun, Arity}, _Bits, Mod0 = #{'$' := module}) ->
   uasm_stats:count_value(import),
   ImportIndex = index_of({Mod, Fun, Arity}, imports, Mod0),
   tagged_varlength_unsigned(?BIT_TAG_IMPORT, ImportIndex);
 
-encode({lambda, Label, NumFree}, _Bits, Mod0 = #{'$' := e4mod}) ->
+encode({lambda, Label, NumFree}, _Bits, Mod0 = #{'$' := module}) ->
   uasm_stats:count_value(lambda),
   LambdaIndex = index_of({Label, NumFree}, lambdas, Mod0),
   tagged_varlength_unsigned(?BIT_TAG_LAMBDA, LambdaIndex);
 
-encode({jumptab, JTab}, _Bits, Mod0 = #{'$' := e4mod}) ->
+encode({jumptab, JTab}, _Bits, Mod0 = #{'$' := module}) ->
   uasm_stats:count_value(jumptab),
   JTabIndex = index_of(JTab, jumptabs, Mod0),
   varlength_unsigned(JTabIndex);
 
-encode({literal, Lit}, _Bits, Mod0 = #{'$' := e4mod}) ->
+encode({literal, Lit}, _Bits, Mod0 = #{'$' := module}) ->
   uasm_stats:count_value(literal),
   LitIndex = index_of(Lit, literals, Mod0),
   tagged_varlength_unsigned(?BIT_TAG_LITERAL, LitIndex);

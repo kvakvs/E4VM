@@ -7,27 +7,22 @@
 -include_lib("uerlc/include/uerlc.hrl").
 -include_lib("uasm/include/uasm.hrl").
 
-process({Module, Exports, Attrs, Forms, _}) ->
+process({Module, _Exports, Attrs, Forms, _}) ->
   Mod0 = #{
-    '$' => e4mod,
+    '$' => module,
     mod => Module,
     funs => orddict:new(),
     exports => orddict:new(),
     attrs => Attrs
   },
 
-  Mod1 = process_forms(Forms, Mod0),
-
-  %e4c:debug_write_term("e4c_pass_S.txt", Funs),
-  %io:format("~s~n~p~n", [color:redb("E4C PASS S"), Funs]),
-
-  Mod1.
+  process_forms(Forms, Mod0).
 
 %%%-----------------------------------------------------------------------------
 
 process_forms([], Mod) -> Mod;
 process_forms([{function, Name, Arity, _, Code0} | Forms],
-              Mod0 = #{'$' := e4mod, funs := Funs0}) ->
+              Mod0 = #{'$' := module, funs := Funs0}) ->
   #{'$' := pfun, code := Code1, mod := Mod1} = process_fun(Code0, Mod0, []),
 
   Fun = #{
@@ -162,6 +157,6 @@ process_fun([Code | Tail], Mod0, Out) ->
 
 
 %%mark_function_start(Fun, Arity, Label,
-%%                    Mod0 = #{'$' := e4mod, exports := Exports}) ->
+%%                    Mod0 = #{'$' := module, exports := Exports}) ->
 %%  Exports1 = orddict:store({Fun, Arity}, Label, Exports),
 %%  Mod0#{exports => Exports1}.

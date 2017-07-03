@@ -86,7 +86,7 @@ label(F) ->
   {bc_op(?BYTECODE_LABEL), Args}.
 
 
-func_info(Mod = #{'$' := e4mod}, F, Arity) ->
+func_info(Mod = #{'$' := module}, F, Arity) ->
   uasm_stats:count_opcode(?BYTECODE_FUNC_INFO),
   ?ASSERT(Arity < ?LIMIT_MAXARITY, "Arity for func_info is too big"),
   Args = [uasm_encode_int:encode(F, auto_bits, Mod),
@@ -94,34 +94,34 @@ func_info(Mod = #{'$' := e4mod}, F, Arity) ->
   {bc_op(?BYTECODE_FUNC_INFO), Args}.
 
 
-test_heap(Mod = #{'$' := e4mod}, Need, Live) ->
+test_heap(Mod = #{'$' := module}, Need, Live) ->
   uasm_stats:count_opcode(?BYTECODE_TEST_HEAP),
   Args = [uasm_encode_int:encode(Need, auto_bits, Mod),
           uasm_encode_int:encode(Live, auto_bits, Mod)],
   {bc_op(?BYTECODE_TEST_HEAP), Args}.
 
 
-put_tuple(Mod = #{'$' := e4mod}, Size, Dst) ->
+put_tuple(Mod = #{'$' := module}, Size, Dst) ->
   uasm_stats:count_opcode(?BYTECODE_PUT_TUPLE),
   Args = [uasm_encode_int:encode(Size, auto_bits, Mod),
           uasm_encode_int:encode(Dst, auto_bits, Mod)],
   {bc_op(?BYTECODE_PUT_TUPLE), Args}.
 
 
-put(Mod = #{'$' := e4mod}, Val) ->
+put(Mod = #{'$' := module}, Val) ->
   uasm_stats:count_opcode(?BYTECODE_PUT),
   Args = [uasm_encode_int:encode(Val, auto_bits, Mod)],
   {bc_op(?BYTECODE_PUT), Args}.
 
 
-move(Mod = #{'$' := e4mod}, Src, Dst) ->
+move(Mod = #{'$' := module}, Src, Dst) ->
   uasm_stats:count_opcode(?BYTECODE_MOVE),
   Args = [uasm_encode_int:encode(Src, auto_bits, Mod),
           uasm_encode_int:encode(Dst, auto_bits, Mod)],
   {bc_op(?BYTECODE_MOVE), Args}.
 
 
-select_val(Src, Fail, Select, Mod = #{'$' := e4mod}) ->
+select_val(Src, Fail, Select, Mod = #{'$' := module}) ->
   uasm_stats:count_opcode(?BYTECODE_SELECT_VAL),
   Args = [uasm_encode_int:encode(Src, auto_bits, Mod),
           uasm_encode_int:encode(Fail, auto_bits, Mod),
@@ -129,19 +129,19 @@ select_val(Src, Fail, Select, Mod = #{'$' := e4mod}) ->
   {bc_op(?BYTECODE_SELECT_VAL), Args}.
 
 
-call_fun(Mod = #{'$' := e4mod}, Arity) ->
+call_fun(Mod = #{'$' := module}, Arity) ->
   uasm_stats:count_opcode(?BYTECODE_CALL_FUN),
   Args = [uasm_encode_int:encode(Arity, auto_bits, Mod)],
   {bc_op(?BYTECODE_CALL_FUN), Args}.
 
 
-set_nil(Mod = #{'$' := e4mod}, Dst) ->
+set_nil(Mod = #{'$' := module}, Dst) ->
   uasm_stats:count_opcode(?BYTECODE_SET_NIL),
   Args = [uasm_encode_int:encode(Dst, auto_bits, Mod)],
   {bc_op(?BYTECODE_SET_NIL), Args}.
 
 
-call(Mod = #{'$' := e4mod},
+call(Mod = #{'$' := module},
      Call = #{'$' := e4call, arity := _A, target := Target}) ->
   Tail = maps:get(tailcall, Call, false),
   Dealloc = maps:get(dealloc, Call, 0),
@@ -176,7 +176,7 @@ call(Mod = #{'$' := e4mod},
   end.
 
 
-bif(Mod = #{'$' := e4mod},
+bif(Mod = #{'$' := module},
     Bif = #{'$' := e4bif, args := _Args, name := Name}) ->
   %% TODO: Args
   %% TODO: Gc

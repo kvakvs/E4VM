@@ -12,7 +12,7 @@
 -include_lib("uasm/include/uasm.hrl").
 
 
-compile(#{'$' := e4mod, funs := Funs0, mod := ModName} = Mod0) ->
+compile(#{'$' := module, funs := Funs0, mod := ModName} = Mod0) ->
   %% For each fun, process it
   Mod1 = Mod0#{
     atoms => orddict:from_list([{ModName, 0}]),
@@ -33,7 +33,7 @@ compile(#{'$' := e4mod, funs := Funs0, mod := ModName} = Mod0) ->
 %% Folding over orddict will give us pairs {Key, Value}
 -spec compile_fold_helper(e4fun(), e4mod()) -> e4mod().
 compile_fold_helper({FunArity, F0 = #{'$' := e4fun}},
-                    Mod0 = #{'$' := e4mod}) ->
+                    Mod0 = #{'$' := module}) ->
   {F1, Mod1} = process_fun(F0, Mod0),
 
   NewFuns = orddict:store(FunArity, F1, maps:get(funs, Mod1, orddict:new())),
@@ -74,7 +74,7 @@ process_fun_fold_helper(Fun = #{'$' := e4fun},
 
 %% Takes offset as the size of all existing binary code in the module
 %% Merges NewLabels with Offset into the module
-merge_labels(Mod = #{'$' := e4mod,
+merge_labels(Mod = #{'$' := module,
                      funs := Funs,
                      labels := Labels0}, NewLabels) ->
   %% Count sizes for code in all existing functions
@@ -240,7 +240,7 @@ register_value({x, _}, Mod) -> Mod;
 
 register_value({y, _}, Mod) -> Mod;
 
-register_value(A, Mod0 = #{'$' := e4mod}) when is_atom(A) ->
+register_value(A, Mod0 = #{'$' := module}) when is_atom(A) ->
   register_value({atom, A}, Mod0);
 
 register_value({atom, A}, Mod0) ->
@@ -256,10 +256,10 @@ register_value(Other, _Mod) ->
   ?COMPILE_ERROR("don't know how to register_value ~p", [Other]).
 
 
-register_call_target({f, _}, Mod0 = #{'$' := e4mod}) ->
+register_call_target({f, _}, Mod0 = #{'$' := module}) ->
   Mod0;
 
-register_call_target({extfunc, M, F, Arity}, Mod0 = #{'$' := e4mod}) ->
+register_call_target({extfunc, M, F, Arity}, Mod0 = #{'$' := module}) ->
   Mod1 = register_value(M, Mod0),
   Mod2 = register_value(F, Mod1),
   register_value({extfunc, M, F, Arity}, Mod2).
@@ -271,7 +271,7 @@ register_valuelist(List, Mod0) ->
 
 
 %% @doc Adds a jump table to jumptab collection
-register_value_jumptab(Select, Mod0 = #{'$' := e4mod}) ->
+register_value_jumptab(Select, Mod0 = #{'$' := module}) ->
   if length(Select) rem 2 =/= 0 ->
     ?COMPILE_ERROR("jumptab must have even length: ~p", [Select]);
     true -> ok
@@ -285,7 +285,7 @@ register_value_lambda(Label, NumFree, Mod0) ->
 
 %% @doc Add value Val into orddict with key 'ValKey' in the module 'Mod',
 %% key IndexKey stores the counter used as index
-store_indexed_something(Val, ValKey, IndexKey, Mod0 = #{'$' := e4mod}) ->
+store_indexed_something(Val, ValKey, IndexKey, Mod0 = #{'$' := module}) ->
   Dict0 = maps:get(ValKey, Mod0),
   case orddict:find(Val, Dict0) of
     {ok, _} -> Mod0;

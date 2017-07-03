@@ -14,7 +14,7 @@
 %% @doc Given a module object creates its final binary representation
 %% which is then written by the caller (uasm_compile module).
 -spec to_iolist(Format :: text | binary, Program :: map()) -> iolist().
-to_iolist(Format, Prog = #{'$' := e4mod}) ->
+to_iolist(Format, Prog = #{'$' := module}) ->
   Content0 = [
     %% section("LABL", Compr, encode_labels(Compr, Prog)), % goes before code
     section(Format, "Co", encode_code(Format, Prog)),
@@ -57,20 +57,27 @@ make_filename(F, Extension) ->
 
 %% @doc Convert code from each function in the mod object to something writable
 %% to the final output file
--spec encode_code(text | binary, #{'$' => e4mod}) -> iolist().
-encode_code(Format, #{'$' := e4mod} = Mod) ->
+-spec encode_code(text | binary, #{'$' => module}) -> iolist().
+encode_code(Format, #{'$' := module} = Mod) ->
   %% Collect code output for every function in the module
   %% TODO: Store functions separately + optimize unused?
   % OutFuns = [maps:get(output, F) || {_FunArity, F} <- Funs],
   #{'$' := huffman,
-    tree := Tree,
+    tree := _Tree,
     output := Output} = uasm_huffman:encode_funs(Mod),
-  io:format("~p~n~p~n", [Tree, Output]),
-  Output.
+  %% TODO: Tree can be inferred once and hardcoded in the emulator
+
+  %% Take final code from each function and store them together with function
+  %% name, and arity, and size into a nice solid binary chunk
+  lists:map(
+    fun({FunArity, #{output := Bin}}) ->
+      {FunArity, byte_size(Bin), Bin}
+    end,
+    Output).
 
 
 %% @doc Convert atoms from mod object to atom section in the module file
-encode_atoms(#{'$' := e4mod, atoms := Atoms}) ->
+encode_atoms(#{'$' := module, atoms := Atoms}) ->
   Sorted = lists:keysort(2, Atoms), % assume orddict is a list of tuples
   Bin = [encode_atoms_one_atom(A) || {A, _} <- Sorted],
   erlang:iolist_to_binary([big32(length(Sorted)), Bin]).
@@ -82,7 +89,7 @@ encode_atoms_one_atom(A) when is_atom(A) ->
 
 
 %% @d oc Convert labels to label section in the module file
-%%encode_labels(#{'$' := e4mod, labels := Labels}) ->
+%%encode_labels(#{'$' := module, labels := Labels}) ->
 %%  io:format("labels ~p~n", [Labels]),
 %%  Sorted = lists:keysort(1, Labels), % assume orddict is a list of tuples
 %%  Bin = [encode_labels_one_label(L) || {_, L} <- Sorted],
@@ -94,7 +101,7 @@ encode_atoms_one_atom(A) when is_atom(A) ->
 
 
 %% @doc Convert atoms from mod object to atom section in the module file
-encode_exports(#{'$' := e4mod, exports := Exports, atoms := Atoms}) ->
+encode_exports(#{'$' := module, exports := Exports, atoms := Atoms}) ->
   Sorted = lists:keysort(1, Exports), % assume orddict is a list of tuples
   io:format("~p~n", [Sorted]),
   Bin = [encode_exports_one_export(FunArity, Label, Atoms)
@@ -109,7 +116,7 @@ encode_exports_one_export({Fun, Arity}, Label, Atoms) ->
     (uerlc:varint(Label))/binary>>.
 
 
-encode_imports(#{'$' := e4mod, imports := Imports, atoms := Atoms}) ->
+encode_imports(#{'$' := module, imports := Imports, atoms := Atoms}) ->
   Sorted = lists:keysort(2, Imports), % assume orddict is a list of tuples
   Bin = [encode_exports_one_import(M, F, Arity, Atoms)
          || {{M, F, Arity}, _} <- Sorted],
@@ -124,7 +131,7 @@ encode_exports_one_import(M, F, Arity, Atoms) ->
     (uerlc:varint(Arity))/binary>>.
 
 
-encode_literals(#{'$' := e4mod, literals := Lit}) ->
+encode_literals(#{'$' := module, literals := Lit}) ->
   Sorted = lists:keysort(2, Lit), % assume orddict is a list of tuples
   Bin = [encode_literals_one_literal(L) || {L, _} <- Sorted],
   erlang:iolist_to_binary([big32(length(Sorted)), Bin]).
@@ -134,7 +141,7 @@ encode_literals_one_literal(L) ->
   erlang:term_to_binary(L).
 
 
-encode_jumptabs(Mod = #{'$' := e4mod, jumptabs := JTabs}) ->
+encode_jumptabs(Mod = #{'$' := module, jumptabs := JTabs}) ->
   Sorted = lists:keysort(2, JTabs), % assume orddict is a list of tuples
   Bin = [encode_jumptabs_one_jtab(J, Mod) || {J, _} <- Sorted],
   erlang:iolist_to_binary([big32(length(Sorted)), Bin]).
@@ -146,7 +153,7 @@ encode_jumptabs_one_jtab(J, Mod) ->
   ].
 
 
-encode_lambdas(Mod = #{'$' := e4mod, lambdas := Lambdas}) ->
+encode_lambdas(Mod = #{'$' := module, lambdas := Lambdas}) ->
   Sorted = lists:keysort(2, Lambdas), % assume orddict is a list of tuples
   Bin = [encode_lambdas_one_lambda(L, Mod) || {L, _} <- Sorted],
   erlang:iolist_to_binary([big32(length(Sorted)), Bin]).

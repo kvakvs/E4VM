@@ -5,7 +5,7 @@
 -type xreg() :: {x, integer()}.
 
 -type e4mod() :: #{
-  '$' => e4mod,
+  '$' => module,
   funs => orddict:orddict()
 }.
 
