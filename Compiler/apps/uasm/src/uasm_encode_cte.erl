@@ -1,12 +1,12 @@
 %%% @doc BEAM Compact Term encoding, also used in Ericsson's BEAM files
 %%% @end
 
--module(e4asm_encode_cte).
+-module(uasm_encode_cte).
 
 %% API
 -export([encode/2]).
 
--include_lib("e4compiler/include/e4c.hrl").
+-include_lib("uerlc/include/uerlc.hrl").
 -include_lib("compiler/src/beam_opcodes.hrl").
 
 %% @doc See docs/compact-encoding.rst

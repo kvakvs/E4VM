@@ -1,15 +1,17 @@
 %%% @doc Given a list of integers (the program) figure out Huffman encoding
 %%% for this program and the decoding tree.
+%%% Opcodes in the code then can be encoded using opcode frequency tree
+%%% (either dynamically calculated by uasm_stats or hardcoded).
 %%% @end
 
--module(e4asm_huffman).
+-module(uasm_huffman).
 
 -export([encode_funs/1, decode/2, main/1]).
 
 %% @doc Given the module (for labels) and list of compiled funs with operators
 %% {Opcode, Arg} produce frequency tree and encode each fun separately.
 encode_funs(#{'$' := e4mod, funs := Funs}) ->
-  %% ETS table created by e4asm_stats during ASM compilation stage
+  %% ETS table created by uasm_stats during ASM compilation stage
   Tree = tree(ets:tab2list(instr_stat)),
   Dict = dict:from_list(codewords(Tree)),
 

@@ -1,7 +1,8 @@
 %%% @doc Statistics collection to give idea about value and opcode frequencies
 %%% in the processed code.
 %%% @end
--module(e4asm_stats).
+
+-module(uasm_stats).
 
 %% API
 -export([

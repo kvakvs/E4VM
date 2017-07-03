@@ -1,5 +1,5 @@
-{application, e4asm,
-    [{description, "E4 Assembly to binary compiler"},
+{application, uerlc,
+    [{description, "BEAM Assembly to MicroErlang bytecode compiler"},
      {vsn, "0.1.0"},
      {registered, []},
      {applications,

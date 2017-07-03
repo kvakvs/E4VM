@@ -1,9 +1,9 @@
 %%% @doc Print the nice indented colored intermediate code
 %%% @end
 
--module(e4c_print).
+-module(uerlc_print).
 
--include_lib("e4compiler/include/e4c.hrl").
+-include_lib("uerlc/include/uerlc.hrl").
 
 %% API
 -export([format_ic/2]).

@@ -2,7 +2,7 @@
 %%% bit width for the value. Returns an integer.
 %%% @end
 
--module(e4asm_encode_int).
+-module(uasm_encode_int).
 
 %% API
 -export([
@@ -11,7 +11,7 @@
   varlength_unsigned/1
 ]).
 
--include_lib("e4compiler/include/e4c.hrl").
+-include_lib("uerlc/include/uerlc.hrl").
 
 %% TODO: Maybe use huffman tree for tags based on their frequency.
 %% Use fixed width tag for now
@@ -31,17 +31,17 @@ encode(Val, Bits) when is_integer(Bits); Bits =:= auto_bits ->
 
 encode({x, X}, auto_bits, _Mod) ->
   ?ASSERT(X < ?LIMIT_MAXARITY, "regx value is too big"),
-  e4asm_stats:count_value(regx),
+  uasm_stats:count_value(regx),
   tagged_value(?BIT_TAG_X, X, 8);
 
 encode({y, Y}, auto_bits, Mod) ->
   ?ASSERT(Y < ?LIMIT_MAX_REGY, "regy value is too big"),
-  e4asm_stats:count_value(regy),
+  uasm_stats:count_value(regy),
   tagged_value(?BIT_TAG_Y, Y, 8);
 
 encode({f, F}, Bits, _Mod) ->
-  e4asm_util:assert_unsigned_fits("for a label", F, Bits),
-  e4asm_stats:count_value(label),
+  uasm_util:assert_unsigned_fits("for a label", F, Bits),
+  uasm_stats:count_value(label),
   %% labels cannot intermix with data, so just plain int
   varlength_unsigned(F);
 
@@ -49,32 +49,32 @@ encode({f, F}, Bits, _Mod) ->
 encode(NIL, _Bits, _Mod) when NIL =:= nil orelse
                               NIL =:= [] orelse
                               NIL =:= ignore ->
-  e4asm_stats:count_value(nil_ignore),
+  uasm_stats:count_value(nil_ignore),
   <<?BIT_TAG_NIL:?BIT_HEADER_SIZE>>;
 
 encode({atom, Atom}, _Bits, Mod = #{'$' := e4mod}) ->
   %% Assume atom already exists, will crash if it doesn't
-  e4asm_stats:count_value(atom),
+  uasm_stats:count_value(atom),
   AtomIndex = index_of(Atom, atoms, Mod) + 1,
   tagged_varlength_unsigned(?BIT_TAG_ATOM, AtomIndex);
 
 encode({extfunc, Mod, Fun, Arity}, _Bits, Mod0 = #{'$' := e4mod}) ->
-  e4asm_stats:count_value(import),
+  uasm_stats:count_value(import),
   ImportIndex = index_of({Mod, Fun, Arity}, imports, Mod0),
   tagged_varlength_unsigned(?BIT_TAG_IMPORT, ImportIndex);
 
 encode({lambda, Label, NumFree}, _Bits, Mod0 = #{'$' := e4mod}) ->
-  e4asm_stats:count_value(lambda),
+  uasm_stats:count_value(lambda),
   LambdaIndex = index_of({Label, NumFree}, lambdas, Mod0),
   tagged_varlength_unsigned(?BIT_TAG_LAMBDA, LambdaIndex);
 
 encode({jumptab, JTab}, _Bits, Mod0 = #{'$' := e4mod}) ->
-  e4asm_stats:count_value(jumptab),
+  uasm_stats:count_value(jumptab),
   JTabIndex = index_of(JTab, jumptabs, Mod0),
   varlength_unsigned(JTabIndex);
 
 encode({literal, Lit}, _Bits, Mod0 = #{'$' := e4mod}) ->
-  e4asm_stats:count_value(literal),
+  uasm_stats:count_value(literal),
   LitIndex = index_of(Lit, literals, Mod0),
   tagged_varlength_unsigned(?BIT_TAG_LITERAL, LitIndex);
 

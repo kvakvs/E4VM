@@ -1,9 +1,9 @@
 %%%-------------------------------------------------------------------
-%% @doc E4 Erlang-Forth public API
+%% @doc BEAM Assembly to MicroErlang compiler
 %% @end
 %%%-------------------------------------------------------------------
 
--module(e4c).
+-module(uerlc).
 
 -behaviour(application).
 
@@ -20,7 +20,7 @@
   varint/1
 ]).
 
--include_lib("e4compiler/include/e4c.hrl").
+-include_lib("uerlc/include/uerlc.hrl").
 
 %%====================================================================
 %% API
@@ -48,17 +48,19 @@ stop(_State) ->
 %%====================================================================
 
 arguments_loop([]) ->
-  io:format("~s~n", [color:greenb("E4: All arguments were processed")]),
+  io:format("~s~n", [color:greenb("uERLC: All arguments were processed")]),
   ok;
+
 arguments_loop([InputPath | Tail]) ->
-  io:format("E4: Processing: ~p...~n", [InputPath]),
+  io:format("uERLC: Processing: ~p...~n", [InputPath]),
   try
     compile(InputPath),
     arguments_loop(Tail)
   catch throw:compile_failed ->
-    io:format("~s - ~s~n", [color:yellow("E4: Compilation failed"),
+    io:format("~s - ~s~n", [color:yellow("uERLC: Compilation failed"),
                             InputPath])
   end.
+
 
 try_do(What, Fun) ->
   try Fun()
@@ -68,7 +70,7 @@ try_do(What, Fun) ->
     T:Err ->
       io:format("~n~s (~s): ~s~n"
                 "~s~n",
-                [color:white("E4: Failed"),
+                [color:white("uERLC: Failed"),
                  color:yellow(What),
                  ?COLOR_TERM(redb, {T, Err}),
                  ?COLOR_TERM(blackb, erlang:get_stacktrace())
@@ -76,40 +78,45 @@ try_do(What, Fun) ->
       erlang:throw(compile_failed)
   end.
 
+
 compile(InputPath) ->
-  %% Process Kernel to Assembler transformation
-  Module = try_do("top-level E4C invocation",
-    fun() -> e4c_compile:process(InputPath) end
+  %% Process Kernel to MicroErlang Assembler transformation
+  Module = try_do("top-level uERLC invocation",
+    fun() -> uerlc_compile:process(InputPath) end
   ),
-  try_do("top-level E4ASM invocation",
-    fun() -> e4asm_compile:process(InputPath, Module) end
+  try_do("top-level uASM invocation",
+    fun() -> uasm:process(InputPath, Module) end
   ).
 
-  %% Compile E4 Assembler to Forth bytecode transformation
-%%  try_do("top-level E4ASM invocation",
-%%         fun() -> e4asm_compile:process(InputPath, Mod, Tokens) end).
 
 %% @doc Variable length unsigned int encoding, highest bit is set to 1 for every
 %% encoded 7+1 bit sequence, and is set to 0 in the last 7+1 bits
 varint(N) when N < 0 -> erlang:error("varint: n<0");
+
 varint(N) when N =< 127 -> <<0:1, N:7>>; % last byte
+
 varint(N) ->
   Bytes = [<<0:1, (N rem 128):7>>, varint_with_bit(N bsr 7)],
   iolist_to_binary(lists:reverse(Bytes)).
 
+
 %% @doc Same as varint with high bit always set
 varint_with_bit(N) when N =< 127 -> <<1:1, N:7>>; % last byte
+
 varint_with_bit(N) ->
   Bytes = [<<1:1, (N rem 128):7>>, varint_with_bit(N bsr 7)],
   iolist_to_binary(lists:reverse(Bytes)).
+
 
 error(header) ->
   io:format("~n"
             "+--------------------------------------------------------~n"
             "| Error: ");
+
 error(footer) ->
   io:format("~n"
             "+--------------------------------------------------------").
+
 
 debug_write_term(Filename, Term) ->
   file:write_file(Filename,

@@ -1,5 +1,5 @@
-{application, e4c,
-    [{description, "E4C Erlang to Forth compiler"},
+{application, uasm,
+    [{description, "MicroErlang Assembly compiler"},
      {vsn, "0.1.0"},
      {registered, []},
      {applications,

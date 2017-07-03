@@ -1,11 +1,11 @@
 
--module(e4c_pass_S).
+-module(uerlc_pass_from_S).
 
 %% API
 -export([process/1]).
 
--include_lib("e4compiler/include/e4c.hrl").
--include_lib("e4assembler/include/e4asm.hrl").
+-include_lib("uerlc/include/uerlc.hrl").
+-include_lib("uasm/include/uasm.hrl").
 
 process({Module, Exports, Attrs, Forms, _}) ->
   Mod0 = #{

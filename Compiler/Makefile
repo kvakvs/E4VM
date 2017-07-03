@@ -5,13 +5,13 @@ TESTFILE4=mochijson2
 
 .PHONY: run1 run2 run3 run4
 run1:
-	rebar3 compile && ./e4c.sh priv/$(TESTFILE).erl
+	rebar3 compile && ./uerlc.sh priv/$(TESTFILE).erl
 run2:
-	rebar3 compile && ./e4c.sh priv/$(TESTFILE2).erl
+	rebar3 compile && ./uerlc.sh priv/$(TESTFILE2).erl
 run3:
-	rebar3 compile && ./e4c.sh priv/$(TESTFILE3).erl
+	rebar3 compile && ./uerlc.sh priv/$(TESTFILE3).erl
 run4:
-	rebar3 compile && ./e4c.sh priv/$(TESTFILE4).erl
+	rebar3 compile && ./uerlc.sh priv/$(TESTFILE4).erl
 
 .PHONY: dialyze
 dialyze:

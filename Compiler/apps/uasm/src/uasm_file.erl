@@ -1,6 +1,9 @@
 %%% @doc Binary module file writer.
+%%% Can handle text (for debugging) or binary output format.
+%%% Will compress parts of the output.
+%%% @end
 
--module(e4asm_file).
+-module(uasm_file).
 
 %% API
 -export([
@@ -8,8 +11,8 @@
   to_iolist/2
 ]).
 
-%% @doc Given a e4mod module object creates its final binary representation
-%% which is then written by the caller (e4asm_compile module).
+%% @doc Given a module object creates its final binary representation
+%% which is then written by the caller (uasm_compile module).
 -spec to_iolist(Format :: text | binary, Program :: map()) -> iolist().
 to_iolist(Format, Prog = #{'$' := e4mod}) ->
   Content0 = [
@@ -61,7 +64,7 @@ encode_code(Format, #{'$' := e4mod} = Mod) ->
   % OutFuns = [maps:get(output, F) || {_FunArity, F} <- Funs],
   #{'$' := huffman,
     tree := Tree,
-    output := Output} = e4asm_huffman:encode_funs(Mod),
+    output := Output} = uasm_huffman:encode_funs(Mod),
   io:format("~p~n~p~n", [Tree, Output]),
   Output.
 
@@ -101,9 +104,9 @@ encode_exports(#{'$' := e4mod, exports := Exports, atoms := Atoms}) ->
 
 encode_exports_one_export({Fun, Arity}, Label, Atoms) ->
   FIndex = orddict:fetch(Fun, Atoms),
-  <<(e4c:varint(FIndex))/binary,
-    (e4c:varint(Arity))/binary,
-    (e4c:varint(Label))/binary>>.
+  <<(uerlc:varint(FIndex))/binary,
+    (uerlc:varint(Arity))/binary,
+    (uerlc:varint(Label))/binary>>.
 
 
 encode_imports(#{'$' := e4mod, imports := Imports, atoms := Atoms}) ->
@@ -116,9 +119,9 @@ encode_imports(#{'$' := e4mod, imports := Imports, atoms := Atoms}) ->
 encode_exports_one_import(M, F, Arity, Atoms) ->
   MIndex = orddict:fetch(M, Atoms),
   FIndex = orddict:fetch(F, Atoms),
-  <<(e4c:varint(MIndex))/binary,
-    (e4c:varint(FIndex))/binary,
-    (e4c:varint(Arity))/binary>>.
+  <<(uerlc:varint(MIndex))/binary,
+    (uerlc:varint(FIndex))/binary,
+    (uerlc:varint(Arity))/binary>>.
 
 
 encode_literals(#{'$' := e4mod, literals := Lit}) ->
@@ -138,8 +141,8 @@ encode_jumptabs(Mod = #{'$' := e4mod, jumptabs := JTabs}) ->
 
 
 encode_jumptabs_one_jtab(J, Mod) ->
-  [e4c:varint(length(J/2)),
-   [e4asm_encode_cte:encode(X, Mod) || X <- J]
+  [uerlc:varint(length(J / 2)),
+   [uasm_encode_cte:encode(X, Mod) || X <- J]
   ].
 
 
@@ -150,8 +153,8 @@ encode_lambdas(Mod = #{'$' := e4mod, lambdas := Lambdas}) ->
 
 
 encode_lambdas_one_lambda({{f, Label}, NumFree}, _Mod) ->
-  [e4c:varint(Label), % this should somehow resolve to atom function name maybe
-   e4c:varint(NumFree)].
+  [uerlc:varint(Label), % this should somehow resolve to atom function name maybe
+   uerlc:varint(NumFree)].
 
 
 version(V32, _V64, 32) -> V32;

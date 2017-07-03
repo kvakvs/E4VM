@@ -1,25 +1,25 @@
--ifndef(E4C_HRL__).
--define(E4C_HRL__, 1).
+-ifndef(UERLC_HRL__).
+-define(UERLC_HRL__, 1).
 
 
 %% When modifying regy and regx (maxarity) limits, please also modify bits in
-%% e4asm_encode_int where these macros are used
+%% uasm_encode_int where these macros are used
 -define(LIMIT_MAX_REGY, 256).
 -define(LIMIT_MAXARITY, 256).
 
 -define(COMPILE_ERROR(Message),
   begin
-    e4c:error(header),
+    uerlc:error(header),
     io:format(?MODULE_STRING ++ ": ~s~n", [Message]),
-    e4c:error(footer),
+    uerlc:error(footer),
     erlang:error(compile_error)
   end).
 
 -define(COMPILE_ERROR(Format, Args),
   begin
-    e4c:error(header),
+    uerlc:error(header),
     io:format(?MODULE_STRING ++ ": " ++ Format, Args),
-    e4c:error(footer),
+    uerlc:error(footer),
     erlang:error(compile_error)
   end).
 
@@ -27,10 +27,10 @@
 
 -define(COMPILE_ERROR1(Message, Term1),
   begin
-    e4c:error(header),
+    uerlc:error(header),
     io:format(?MODULE_STRING ++ ": ~s: ~s",
               [color:whiteb(Message), ?COLOR_TERM(red, Term1)]),
-    e4c:error(footer),
+    uerlc:error(footer),
     erlang:error(compile_error)
   end).
 
@@ -39,4 +39,4 @@
                              _ -> ?COMPILE_ERROR(Msg)
                            end).
 
--endif. % E4C_HRL
+-endif. % UERLC_HRL
