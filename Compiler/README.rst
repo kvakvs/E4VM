@@ -1,13 +1,19 @@
-Erlang BEAM post-processor
-==========================
+MicroErlang Transpiler
+======================
 
-A simple post-compiler, which hooks after BEAM compiler has finished working and
-takes produced BEAM assembly. It converts then BEAM assembly into simplified
-bytecode for E4 virtual machine and writes it to disk.
+A simple transpiler, which picks up output from one late BEAM compiler stage
+(namely: the BEAM assembly output).
+It is then converted into simplified bytecode for the MicroErlang
+virtual machine.
+The code is compressed with a mix of Huffman codes and bit field magic
+and is designed to be executed without decompression.
 
 Trying it out
 -------------
 
-    $ make run1; make run2; make run3
+    $ make run1
+    $ make run2
+    $ make run3
 
-will run included example modules from priv/ dir through the compiler
+This will compile included example modules from the `priv/` dir producing
+`*.uerl` output files.

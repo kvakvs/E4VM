@@ -1,7 +1,6 @@
 cmake-build*/
 *.S
 *.beam
-*.3eam
 *.dump
 *.crashdump
 
@@ -9,8 +8,8 @@ cmake-build*/
 *.iml
 rebar.lock
 
-# compiled E4 Forth binaries
-*.e4b
+# compiled MicroErlang binaries
+*.uerl
 
 # PVS-studio analysis results
 PVS-report.tasks
