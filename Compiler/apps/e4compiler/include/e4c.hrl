@@ -1,6 +1,12 @@
 -ifndef(E4C_HRL__).
 -define(E4C_HRL__, 1).
 
+
+%% When modifying regy and regx (maxarity) limits, please also modify bits in
+%% e4asm_encode_int where these macros are used
+-define(LIMIT_MAX_REGY, 256).
+-define(LIMIT_MAXARITY, 256).
+
 -define(COMPILE_ERROR(Message),
   begin
     e4c:error(header),

@@ -11,8 +11,10 @@ process(InputPath, Input) ->
     "e4asm_pass_asm - Assembly to binary",
     fun() -> e4asm_pass_asm:compile(Input) end
   ),
-  OutputPath = e4asm_file:bin_filename(InputPath),
-  save_output(text, BC, OutputPath).
+  OutputPath = e4asm_file:make_filename(InputPath, "uerl"),
+  save_output(text, BC, OutputPath),
+  StatsOutputPath = e4asm_file:make_filename(InputPath, "stats.txt"),
+  e4asm_stats:dump(StatsOutputPath).
 
 
 %% @doc Format the resulting bytecode as text (for debug and simplicity) or

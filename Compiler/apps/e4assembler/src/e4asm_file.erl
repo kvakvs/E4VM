@@ -3,13 +3,16 @@
 -module(e4asm_file).
 
 %% API
--export([to_iolist/2, bin_filename/1]).
+-export([
+  make_filename/2,
+  to_iolist/2
+]).
 
 %% @doc Given a e4mod module object creates its final binary representation
 %% which is then written by the caller (e4asm_compile module).
 -spec to_iolist(Format :: text | binary, Program :: map()) -> iolist().
 to_iolist(Format, Prog = #{'$' := e4mod}) ->
-  Content = [
+  Content0 = [
     %% section("LABL", Compr, encode_labels(Compr, Prog)), % goes before code
     section(Format, "Co", encode_code(Format, Prog)),
     %section(Format, "Lb", encode_labels(Prog)), % must go before exports
@@ -22,12 +25,13 @@ to_iolist(Format, Prog = #{'$' := e4mod}) ->
     section(Format, "Fn", encode_lambdas(Prog)),
     []
   ],
-  [
-    module_header(Format, erlang:iolist_size(Content)),
-    Content
-  ].
+  Content1 = io_lib:format("~p", [Content0]),
+  [module_header(Format, erlang:iolist_size(Content1)),
+   Content1].
 
 
+module_header(text, ContentSize) ->
+  [];
 module_header(binary, ContentSize) ->
   version("E432", "E464", get(e4_machine_word_bits)),
   big32(ContentSize).
@@ -43,9 +47,9 @@ section(text, Tag, Data) ->
 
 
 %% @doc Replace file ext in the filename with e4b
-bin_filename(F) ->
+make_filename(F, Extension) ->
   RDot = string:rchr(F, $.),
-  string:sub_string(F, 1, RDot) ++ "e4b".
+  string:sub_string(F, 1, RDot) ++ Extension.
 
 
 %% @doc Convert code from each function in the mod object to something writable

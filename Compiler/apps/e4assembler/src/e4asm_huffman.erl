@@ -9,7 +9,34 @@
 %% @doc Given the module (for labels) and list of compiled funs with operators
 %% {Opcode, Arg} produce frequency tree and encode each fun separately.
 encode_funs(#{'$' := e4mod, funs := Funs}) ->
-  lists:map(fun encode_one_fun/1, Funs).
+  %% ETS table created by e4asm_stats during ASM compilation stage
+  Tree = tree(ets:tab2list(instr_stat)),
+  Dict = dict:from_list(codewords(Tree)),
+
+  Funs1 = lists:map(
+    fun({FunArity, FunObject = #{'$' := e4fun, output := Code}}) ->
+      {Out0, OutBinary} = encode_one_fun(Code, Tree, Dict),
+      FunObject2 = FunObject#{output => OutBinary},
+      {FunArity, FunObject2}
+    end,
+    Funs),
+  #{'$' => huffman,
+    tree => Tree,
+    output => Funs1}.
+
+
+encode_one_fun(FunCode, Tree, Dict) ->
+  Out1 = lists:map(
+    %% TODO special handling for Label!!!
+    fun({Op, Args}) ->
+      [dict:fetch(Op, Dict) | Args]
+    end,
+    FunCode
+  ),
+  io:format("~p~n", [Out1]),
+  OutBinary = <<<<Piece/bitstring>> || Piece <- lists:flatten(Out1)>>,
+  {Out1, OutBinary}.
+  %io_lib:format("~p", [Fun]).
 
 
 encode(Text) ->

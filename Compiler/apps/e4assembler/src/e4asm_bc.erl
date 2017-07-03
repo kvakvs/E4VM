@@ -66,69 +66,75 @@
 -define(E4BC_CLEAR_STACK,       16#2A). % use Set_nil instead?
 -define(E4BC_TEST_HEAP,         16#2B).
 
--define(LIMIT_MAXARITY,         256).
-
-encode_value(X) ->
-  encode_value(X, #{}).
-
-
-encode_value(X, _Mod) ->
-  <<X:32/big>>.
+%%encode_value(X, Bits) ->
+%%  e4asm_encode_int:encode(X, Bits, #{}).
+%%
+%%
+%%encode_value(X, Bits, Mod) ->
+%%  e4asm_encode_int:encode(X, Bits, Mod).
 
 
 bc_op(X) -> X.
 
 
 label(F) ->
-  e4asm_stats:count_opcode(label),
-  {bc_op(?E4BC_LABEL), encode_value(F)}.
+  e4asm_stats:count_opcode(?E4BC_LABEL),
+  Args = [e4asm_encode_int:encode(F, auto_bits)],
+  {bc_op(?E4BC_LABEL), Args}.
 
 
 func_info(Mod = #{'$' := e4mod}, F, Arity) ->
-  e4asm_stats:count_opcode(func_info),
-  assert(Arity < ?LIMIT_MAXARITY, "Arity for func_info is too big"),
-  Args = [encode_value(F, Mod),
-          <<Arity:8>>],
+  e4asm_stats:count_opcode(?E4BC_FUNC_INFO),
+  ?ASSERT(Arity < ?LIMIT_MAXARITY, "Arity for func_info is too big"),
+  Args = [e4asm_encode_int:encode(F, auto_bits, Mod),
+          e4asm_encode_int:varlength_unsigned(Arity)],
   {bc_op(?E4BC_FUNC_INFO), Args}.
 
 
 test_heap(Mod = #{'$' := e4mod}, Need, Live) ->
-  Args = [encode_value(Need, Mod),
-          encode_value(Live, Mod)],
+  e4asm_stats:count_opcode(?E4BC_TEST_HEAP),
+  Args = [e4asm_encode_int:encode(Need, auto_bits, Mod),
+          e4asm_encode_int:encode(Live, auto_bits, Mod)],
   {bc_op(?E4BC_TEST_HEAP), Args}.
 
 
 put_tuple(Mod = #{'$' := e4mod}, Size, Dst) ->
-  Args = [encode_value(Size, Mod),
-          encode_value(Dst, Mod)],
+  e4asm_stats:count_opcode(?E4BC_PUT_TUPLE),
+  Args = [e4asm_encode_int:encode(Size, auto_bits, Mod),
+          e4asm_encode_int:encode(Dst, auto_bits, Mod)],
   {bc_op(?E4BC_PUT_TUPLE), Args}.
 
 
 put(Mod = #{'$' := e4mod}, Val) ->
-  Args = [encode_value(Val, Mod)],
+  e4asm_stats:count_opcode(?E4BC_PUT),
+  Args = [e4asm_encode_int:encode(Val, auto_bits, Mod)],
   {bc_op(?E4BC_PUT), Args}.
 
 
 move(Mod = #{'$' := e4mod}, Src, Dst) ->
-  Args = [encode_value(Src, Mod),
-          encode_value(Dst, Mod)],
+  e4asm_stats:count_opcode(?E4BC_MOVE),
+  Args = [e4asm_encode_int:encode(Src, auto_bits, Mod),
+          e4asm_encode_int:encode(Dst, auto_bits, Mod)],
   {bc_op(?E4BC_MOVE), Args}.
 
 
 select_val(Src, Fail, Select, Mod = #{'$' := e4mod}) ->
-  Args = [encode_value(Src, Mod),
-          encode_value(Fail, Mod),
-          encode_value({jumptab, Select}, Mod)],
+  e4asm_stats:count_opcode(?E4BC_SELECT_VAL),
+  Args = [e4asm_encode_int:encode(Src, auto_bits, Mod),
+          e4asm_encode_int:encode(Fail, auto_bits, Mod),
+          e4asm_encode_int:encode({jumptab, Select}, auto_bits, Mod)],
   {bc_op(?E4BC_SELECT_VAL), Args}.
 
 
 call_fun(Mod = #{'$' := e4mod}, Arity) ->
-  Args = [encode_value(Arity, Mod)],
+  e4asm_stats:count_opcode(?E4BC_CALL_FUN),
+  Args = [e4asm_encode_int:encode(Arity, auto_bits, Mod)],
   {bc_op(?E4BC_CALL_FUN), Args}.
 
 
 set_nil(Mod = #{'$' := e4mod}, Dst) ->
-  Args = [encode_value(Dst, Mod)],
+  e4asm_stats:count_opcode(?E4BC_SET_NIL),
+  Args = [e4asm_encode_int:encode(Dst, auto_bits, Mod)],
   {bc_op(?E4BC_SET_NIL), Args}.
 
 
@@ -140,20 +146,30 @@ call(Mod = #{'$' := e4mod},
   %% TODO: Dealloc
   case Target of
     {f, TargetLabel} ->
-      [bc_op(case Tail of
-               true -> ?E4BC_CALL_LOCAL_TAIL;
-               false -> ?E4BC_CALL_LOCAL
-             end),
-       encode_value(TargetLabel, Mod),
-       encode_value(Dealloc, Mod)];
+      Opcode0 = bc_op(case Tail of
+                        true ->
+                          e4asm_stats:count_opcode(?E4BC_CALL_LOCAL_TAIL),
+                          ?E4BC_CALL_LOCAL_TAIL;
+                        false ->
+                          e4asm_stats:count_opcode(?E4BC_CALL_LOCAL),
+                          ?E4BC_CALL_LOCAL
+                      end),
+      {Opcode0,
+       [e4asm_encode_int:encode(TargetLabel, auto_bits, Mod),
+        e4asm_encode_int:encode(Dealloc, auto_bits, Mod)]};
 
     {extfunc, _, _, _} = MFA ->
-      [bc_op(case Tail of
-               true -> ?E4BC_CALL_EXT_TAIL;
-               false -> ?E4BC_CALL_EXT
-             end),
-       encode_value(MFA, Mod),
-       encode_value(Dealloc, Mod)]
+      Opcode1 = bc_op(case Tail of
+                     true ->
+                       e4asm_stats:count_opcode(?E4BC_CALL_EXT_TAIL),
+                       ?E4BC_CALL_EXT_TAIL;
+                     false ->
+                       e4asm_stats:count_opcode(?E4BC_CALL_EXT),
+                       ?E4BC_CALL_EXT
+                   end),
+      {Opcode1,
+       [e4asm_encode_int:encode(MFA, auto_bits, Mod),
+        e4asm_encode_int:encode(Dealloc, auto_bits, Mod)]}
   end.
 
 
@@ -166,86 +182,85 @@ bif(Mod = #{'$' := e4mod},
   Fail = maps:get(fail, Bif, ignore),
   %% TODO: Result
   Result = maps:get(result, Bif, ignore),
-  Opcode = case Gc of
-             ignore ->
-               bc_op(?E4BC_BIF);
-             N ->
-               [bc_op(?E4BC_BIF_GC), encode_value(N, Mod)]
-           end,
-  Args = [encode_value(Fail, Mod),
-          encode_value({atom, Name}, Mod),
-          encode_value(Result, Mod)],
-  {Opcode, Args}.
+  Args = [e4asm_encode_int:encode(Fail, auto_bits, Mod),
+          e4asm_encode_int:encode({atom, Name}, auto_bits, Mod),
+          e4asm_encode_int:encode(Result, auto_bits, Mod)],
+  case Gc of
+    ignore ->
+      e4asm_stats:count_opcode(?E4BC_BIF),
+      {bc_op(?E4BC_BIF), Args};
+    N ->
+      e4asm_stats:count_opcode(?E4BC_BIF_GC),
+      {bc_op(?E4BC_BIF_GC),
+       Args ++ [e4asm_encode_int:encode(N, auto_bits, Mod)]}
+  end.
 
 
 ret(_Dealloc = 0) ->
+  e4asm_stats:count_opcode(?E4BC_RET0),
   {bc_op(?E4BC_RET0), []};
 
 ret(Dealloc) ->
-  Args = [encode_value(Dealloc)],
+  e4asm_stats:count_opcode(?E4BC_RETN),
+  Args = [e4asm_encode_int:varlength_unsigned(Dealloc)],
   {bc_op(?E4BC_RETN), Args}.
 
 
 allocate(StackNeed, HeapNeed, Live) ->
-  assert_integer_fits("allocate.StackNeed", StackNeed, 10),
-  assert_integer_fits("allocate.HeapNeed", HeapNeed, 10),
-  assert_integer_fits("allocate.Live", Live, 10),
-  Args = [encode_value(StackNeed),
-          encode_value(HeapNeed),
-          encode_value(Live)],
+  e4asm_stats:count_opcode(?E4BC_ALLOC),
+  e4asm_util:assert_unsigned_fits("allocate.StackNeed", StackNeed, 10),
+  e4asm_util:assert_unsigned_fits("allocate.HeapNeed", HeapNeed, 10),
+  e4asm_util:assert_unsigned_fits("allocate.Live", Live, 10),
+  Args = [e4asm_encode_int:varlength_unsigned(StackNeed),
+          e4asm_encode_int:varlength_unsigned(HeapNeed),
+          e4asm_encode_int:varlength_unsigned(Live)],
   {bc_op(?E4BC_ALLOC), Args}.
 
 
 get_element(Tuple, Index, Result) ->
   %% TODO: Result
-  Args = [encode_value(Tuple),
-          encode_value(Index),
-          encode_value(Result)],
+  e4asm_stats:count_opcode(?E4BC_GET_ELEMENT),
+  Args = [e4asm_encode_int:encode(Tuple, auto_bits),
+          e4asm_encode_int:encode(Index, auto_bits),
+          e4asm_encode_int:encode(Result, auto_bits)],
   {bc_op(?E4BC_GET_ELEMENT), Args}.
 
 
 cons(H, T, Dst) ->
-  Args = [encode_value(H),
-          encode_value(T),
-          encode_value(Dst)],
+  e4asm_stats:count_opcode(?E4BC_CONS),
+  Args = [e4asm_encode_int:encode(H, auto_bits),
+          e4asm_encode_int:encode(T, auto_bits),
+          e4asm_encode_int:encode(Dst, auto_bits)],
   {bc_op(?E4BC_CONS), Args}.
 
 
 jump(Dst) ->
-  Args = [encode_value(Dst, #{})],
+  e4asm_stats:count_opcode(?E4BC_JUMP),
+  Args = [e4asm_encode_int:encode(Dst, auto_bits, #{})],
   {bc_op(?E4BC_JUMP), Args}.
 
 
 trim(N) ->
-  Args = [encode_value(N, #{})],
+  e4asm_stats:count_opcode(?E4BC_TRIM),
+  Args = [e4asm_encode_int:encode(N, auto_bits, #{})],
   {bc_op(?E4BC_TRIM), Args}.
 
 
 make_fun({f, _} = L, NumFree, Mod) ->
-  Args = [encode_value({lambda, L, NumFree}, Mod)],
+  e4asm_stats:count_opcode(?E4BC_MAKE_FUN),
+  Args = [e4asm_encode_int:encode({lambda, L, NumFree}, auto_bits, Mod)],
   {bc_op(?E4BC_MAKE_FUN), Args}.
 
 
 set_element(Value, Tuple, Pos, Mod) ->
-  Args = [encode_value(Value, Mod),
-          encode_value(Tuple, Mod),
-          encode_value(Pos, Mod)],
+  e4asm_stats:count_opcode(?E4BC_SET_ELEMENT),
+  Args = [e4asm_encode_int:encode(Value, auto_bits, Mod),
+          e4asm_encode_int:encode(Tuple, auto_bits, Mod),
+          e4asm_encode_int:encode(Pos, auto_bits, Mod)],
   {bc_op(?E4BC_SET_ELEMENT), Args}.
 
 
 clear_stack({y, _} = Y) ->
-  Args = [encode_value(Y)],
+  e4asm_stats:count_opcode(?E4BC_CLEAR_STACK),
+  Args = [e4asm_encode_int:encode(Y, auto_bits)],
   {bc_op(?E4BC_CLEAR_STACK), Args}.
-
-
-assert_integer_fits(Name, N, Bits) ->
-  Bin = <<N:Bits>>,
-  <<N1:Bits>> = Bin,
-  case N == N1 of
-    true -> ok;
-    false -> ?COMPILE_ERROR("Value ~s does not fit into ~B bits", [Name, Bits])
-  end.
-
-
-assert(true, _) -> ok;
-assert(false, Text) -> ?COMPILE_ERROR(Text).
