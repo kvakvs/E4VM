@@ -16,12 +16,12 @@
 -spec to_iolist(Format :: text | binary, Program :: map()) -> iolist().
 to_iolist(Format, Prog = #{'$' := module}) ->
   Content0 = [
+    % atoms must go before: imp/exports, jtabs, code
+    section(Format, "At", encode_atoms(Prog)),
     %% section("LABL", Compr, encode_labels(Compr, Prog)), % goes before code
     section(Format, "Co", encode_code(Format, Prog)),
     %section(Format, "Lb", encode_labels(Prog)), % must go before exports
     section(Format, "Lt", encode_literals(Prog)),
-    % atoms must go before: imp/exports, jtabs
-    section(Format, "At", encode_atoms(Prog)),
     section(Format, "Im", encode_imports(Prog)),
     section(Format, "Xp", encode_exports(Prog)),
     section(Format, "Jt", encode_jumptabs(Prog)),
@@ -79,8 +79,23 @@ encode_code(Format, #{'$' := module} = Mod) ->
 %% @doc Convert atoms from mod object to atom section in the module file
 encode_atoms(#{'$' := module, atoms := Atoms}) ->
   Sorted = lists:keysort(2, Atoms), % assume orddict is a list of tuples
-  Bin = [encode_atoms_one_atom(A) || {A, _} <- Sorted],
-  erlang:iolist_to_binary([big32(length(Sorted)), Bin]).
+  Bin0 = [encode_atoms_one_atom(A) || {A, _} <- Sorted],
+  %% TODO: Compress
+  erlang:iolist_to_binary([big32(length(Sorted)), Bin0]).
+  % zlib_compress("Atoms Section", Bin1).
+
+
+-ifdef(COMPRESS_ENABLE).
+%% @doc Runs zlib compress on the data and writes out section with size headers
+%% encoded as 7-bit multibyte varints
+zlib_compress(Name, OriginalData) ->
+  CompressedData = zlib:compress(OriginalData),
+  io:format("Compressed ~s: was ~B bytes, now ~B~n",
+            [Name, byte_size(OriginalData), byte_size(CompressedData)]),
+  <<(uerlc:varint(OriginalData))/binary,
+    (uerlc:varint(CompressedData)):32/big,
+    CompressedData/binary>>.
+-endif.
 
 
 encode_atoms_one_atom(A) when is_atom(A) ->
@@ -134,6 +149,7 @@ encode_exports_one_import(M, F, Arity, Atoms) ->
 encode_literals(#{'$' := module, literals := Lit}) ->
   Sorted = lists:keysort(2, Lit), % assume orddict is a list of tuples
   Bin = [encode_literals_one_literal(L) || {L, _} <- Sorted],
+  %% TODO: Compress
   erlang:iolist_to_binary([big32(length(Sorted)), Bin]).
 
 

@@ -38,10 +38,10 @@ encode_one_fun(FunCode, Tree, Dict) ->
     end,
     FunCode
   ),
-  io:format("~p~n", [Out1]),
+  % io:format("~p~n", [Out1]),
   OutBinary = <<<<Piece/bitstring>> || Piece <- lists:flatten(Out1)>>,
   {Out1, OutBinary}.
-  %io_lib:format("~p", [Fun]).
+  % io_lib:format("~p", [Fun]).
 
 
 encode(Text) ->
