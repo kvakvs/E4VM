@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>μErlang — MicroErlang &#8212; μErlang — Micro Erlang 0.1 documentation</title>
+    <title>Getting Started &#8212; μErlang — Micro Erlang 0.1 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -26,7 +26,8 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Getting Started" href="getting-started.html" />
+    <link rel="next" title="Contributing" href="contributing.html" />
+    <link rel="prev" title="μErlang — MicroErlang" href="index.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
@@ -42,26 +43,24 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="erlang-microerlang">
-<h1>μErlang — MicroErlang<a class="headerlink" href="#erlang-microerlang" title="Permalink to this headline">¶</a></h1>
-<p>This project contains the <code class="docutils literal"><span class="pre">Compiler</span></code>, an cross-compiler application which
-converts your Erlang source to compressed bytecode format which runs on the
-target hardware without decompression (<code class="docutils literal"><span class="pre">.uerl</span></code> files).</p>
-<p><code class="docutils literal"><span class="pre">Runtime</span></code> is a virtual machine written in C++ that loads the generated
-bytecode on the target hardware and executes it.</p>
-<p>Github Link: <a class="reference external" href="https://github.com/kvakvs/E4VM">https://github.com/kvakvs/E4VM</a>
-(will be renamed to <code class="docutils literal"><span class="pre">MicroErlang</span></code> later).</p>
-<div class="toctree-wrapper compound">
-<p class="caption"><span class="caption-text">Documentation Topics:</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="getting-started.html">Getting Started</a></li>
-<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
-</ul>
+  <div class="section" id="getting-started">
+<h1>Getting Started<a class="headerlink" href="#getting-started" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="compiler">
+<h2>Compiler<a class="headerlink" href="#compiler" title="Permalink to this headline">¶</a></h2>
+<p>The <strong>Compiler</strong> project has some test files that you can run to see what
+happens. Try <code class="docutils literal"><span class="pre">make</span> <span class="pre">run1</span></code>, <code class="docutils literal"><span class="pre">make</span> <span class="pre">run2</span></code>, and <code class="docutils literal"><span class="pre">make</span> <span class="pre">run3</span></code>. The output goes
+to the <code class="docutils literal"><span class="pre">priv/</span></code> directory.</p>
 </div>
-<div class="toctree-wrapper compound">
-<p class="caption"><span class="caption-text">Extra Topics:</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="compact-encoding.html">Compact Term Encoding in BEAM</a></li>
+<div class="section" id="runtime">
+<h2>Runtime<a class="headerlink" href="#runtime" title="Permalink to this headline">¶</a></h2>
+<p>The <strong>Runtime</strong> project uses CMake and out-of-source build (see steps below).
+Makefiles may have extra targets to run demo scenarios or debugger so have a
+look there too.</p>
+<ul class="simple">
+<li>Create a build directory with any name, for example <code class="docutils literal"><span class="pre">mkdir</span> <span class="pre">_build</span></code>.</li>
+<li><code class="docutils literal"><span class="pre">cd</span> <span class="pre">_build</span></code>.</li>
+<li>Run CMake to generate the Makefile <code class="docutils literal"><span class="pre">cmake</span> <span class="pre">..</span></code></li>
+<li><code class="docutils literal"><span class="pre">make</span></code></li>
 </ul>
 </div>
 </div>
@@ -71,18 +70,28 @@ bytecode on the target hardware and executes it.</p>
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper"><div class="relations">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Getting Started</a><ul>
+<li><a class="reference internal" href="#compiler">Compiler</a></li>
+<li><a class="reference internal" href="#runtime">Runtime</a></li>
+</ul>
+</li>
+</ul>
+<div class="relations">
 <h3>Related Topics</h3>
 <ul>
-  <li><a href="#">Documentation overview</a><ul>
-      <li>Next: <a href="getting-started.html" title="next chapter">Getting Started</a></li>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="index.html" title="previous chapter">μErlang — MicroErlang</a></li>
+      <li>Next: <a href="contributing.html" title="next chapter">Contributing</a></li>
   </ul></li>
 </ul>
 </div>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
-      <li><a href="_sources/index.rst.txt"
+      <li><a href="_sources/getting-started.rst.txt"
             rel="nofollow">Show Source</a></li>
     </ul>
    </div>
@@ -108,7 +117,7 @@ bytecode on the target hardware and executes it.</p>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
       
       |
-      <a href="_sources/index.rst.txt"
+      <a href="_sources/getting-started.rst.txt"
           rel="nofollow">Page source</a>
     </div>
 
