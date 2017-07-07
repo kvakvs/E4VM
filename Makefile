@@ -6,4 +6,5 @@ docs:
 	cd docs-src && \
 	$(MAKE) html && \
 	rm -rf ../docs/* && \
-	mv -f _build/html/* _build/html/.n* ../docs/
+	mv -f _build/html/* _build/html/.n* ../docs/ && \
+	echo "uerlang.org" > ../docs/CNAME
