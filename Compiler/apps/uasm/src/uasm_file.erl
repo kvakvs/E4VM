@@ -63,17 +63,20 @@ encode_code(Format, #{'$' := module} = Mod) ->
   %% TODO: Store functions separately + optimize unused?
   % OutFuns = [maps:get(output, F) || {_FunArity, F} <- Funs],
   #{'$' := huffman,
-    tree := _Tree,
+    tree := Tree,
     output := Output} = uasm_huffman:encode_funs(Mod),
   %% TODO: Tree can be inferred once and hardcoded in the emulator
 
   %% Take final code from each function and store them together with function
   %% name, and arity, and size into a nice solid binary chunk
-  lists:map(
-    fun({FunArity, #{output := Bin}}) ->
-      {FunArity, byte_size(Bin), Bin}
+  CodeChunks = lists:map(
+    fun({{Fun, Arity}, #{output := Bin}}) ->
+      {Fun, Arity, byte_size(Bin), Bin}
     end,
-    Output).
+    Output),
+  EncodedTree0 = uasm_huffman:encode_tree(Tree),
+  EncodedTree = uasm_huffman:merge_bits_into_binary(EncodedTree0),
+  [EncodedTree | CodeChunks].
 
 
 %% @doc Convert atoms from mod object to atom section in the module file

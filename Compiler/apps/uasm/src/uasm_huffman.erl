@@ -6,7 +6,23 @@
 
 -module(uasm_huffman).
 
--export([encode_funs/1, decode/2, main/1]).
+-export([
+  decode/2,
+  encode_funs/1,
+  encode_tree/1,
+  main/1,
+  merge_bits_into_binary/1
+]).
+
+
+-define(LEAF_BIT, 6).
+
+%% Given Huffman tree (a dict)
+encode_tree(Leaf) when is_integer(Leaf) ->
+  [<<1:1>>, <<Leaf:?LEAF_BIT>>];
+encode_tree({L, R}) ->
+  [<<0:1>>, encode_tree(L), encode_tree(R)].
+
 
 %% @doc Given the module (for labels) and list of compiled funs with operators
 %% {Opcode, Arg} produce frequency tree and encode each fun separately.
@@ -19,6 +35,7 @@ encode_funs(#{'$' := module, funs := Funs}) ->
     fun({FunArity, FunObject = #{'$' := e4fun, output := Code}}) ->
       {Out0, OutBinary} = encode_one_fun(Code, Tree, Dict),
       FunObject2 = FunObject#{
+        tree => Tree,
         output => OutBinary,
         output_intermediate => Out0
       },
@@ -39,9 +56,13 @@ encode_one_fun(FunCode, Tree, Dict) ->
     FunCode
   ),
   % io:format("~p~n", [Out1]),
-  OutBinary = <<<<Piece/bitstring>> || Piece <- lists:flatten(Out1)>>,
+  OutBinary = merge_bits_into_binary(Out1),
   {Out1, OutBinary}.
-  % io_lib:format("~p", [Fun]).
+
+
+%% @doc Given a possibly nested list of bit strings create a single binary
+merge_bits_into_binary(Out1) ->
+  <<<<Piece/bitstring>> || Piece <- lists:flatten(Out1)>>.
 
 
 encode(Text) ->
