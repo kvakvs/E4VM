@@ -9,6 +9,7 @@
 -export([
   decode/2,
   encode_funs/1,
+  encode_labels/1,
   encode_tree/1,
   main/1,
   merge_bits_into_binary/1
@@ -32,14 +33,12 @@ encode_funs(#{'$' := module, funs := Funs}) ->
   Dict = dict:from_list(codewords(Tree)),
 
   Funs1 = lists:map(
-    fun({FunArity, FunObject = #{'$' := e4fun, output := Code}}) ->
-      {Out0, OutBinary} = encode_one_fun(Code, Tree, Dict),
-      FunObject2 = FunObject#{
+    fun({FunArity, #{'$' := e4fun, output := Code}}) ->
+      FunObject1 = encode_one_fun(Code, Dict),
+      FunObject1#{
         tree => Tree,
-        output => OutBinary,
-        output_intermediate => Out0
-      },
-      {FunArity, FunObject2}
+        name => FunArity
+      }
     end,
     Funs),
   #{'$' => huffman,
@@ -47,22 +46,66 @@ encode_funs(#{'$' := module, funs := Funs}) ->
     output => Funs1}.
 
 
-encode_one_fun(FunCode, Tree, Dict) ->
-  Out1 = lists:map(
-    %% TODO special handling for Label!!!
-    fun({Op, Args}) ->
-      [dict:fetch(Op, Dict) | Args]
-    end,
-    FunCode
-  ),
-  % io:format("~p~n", [Out1]),
+%% @doc A helper which unwraps one opcode and its args, OR marks the bit
+%% position for a label into the 'labels' key of the state
+encode_one_op_fold({label, F},
+                   State = #{labels := L0,
+                             output_position := OutPos}) ->
+  L1 = orddict:store(F, OutPos, L0),
+  State#{labels => L1};
+
+encode_one_op_fold({Op, Args},
+                   State = #{output := O1,
+                             dict := Dict,
+                             output_position := OutPos}) ->
+  OpBits = dict:fetch(Op, Dict),
+  Output = [[OpBits | Args] | O1],
+  OutputBitSize = bit_size(OpBits) + bit_size_list(Args, 0),
+  State#{output => Output,
+         output_position => OutPos + OutputBitSize}.
+
+
+%% @doc Calculates bit size of [<<Bits1:X1>>, <<Bits2:X2>>, ...]
+bit_size_list([], A) -> A;
+bit_size_list([Bits | T], A) -> bit_size_list(T, A + bit_size(Bits)).
+
+
+%% @doc Given function code (list of {Op, [Args]}) encode it as compressed
+%% opcodes + compacted args.
+%% Returns: an one_fun map with labels [{F, BitPos}, ...],
+%%    intermediate output (for debug) and bytes output (binary)
+encode_one_fun(FunCode, Dict) ->
+  #{output := Out1,
+    labels := Labels} = lists:foldl(fun encode_one_op_fold/2,
+                                    #{dict => Dict,
+                                      output => [],
+                                      labels => orddict:new(),
+                                      output_position => 0},
+                                    FunCode),
+
+  io:format("~p~n", [Labels]),
   OutBinary = merge_bits_into_binary(Out1),
-  {Out1, OutBinary}.
+
+  #{'$' => one_fun,
+    output_intermediate => Out1,
+    labels => Labels,
+    output => OutBinary}.
+
+
+%% @doc Labels are pairs of {Label, Bit Offset} followed by an encoded NIL []
+encode_labels(Labels) ->
+  LabelsBin = [[uasm_encode_int:varlength_unsigned(F),
+                uasm_encode_int:varlength_unsigned(Offset)]
+               || {F, Offset} <- Labels],
+  [LabelsBin, uasm_encode_int:encode([], #{})].
 
 
 %% @doc Given a possibly nested list of bit strings create a single binary
 merge_bits_into_binary(Out1) ->
-  <<<<Piece/bitstring>> || Piece <- lists:flatten(Out1)>>.
+  %% Given
+  %% [<<Val1:Bits1>>, <<Val2:Bits2>>, {label, 1}, <<Val3:Bits3>>...]
+  %% Ignore special tuple parts, take only bit codes
+  << <<Piece/bitstring>> || Piece <- lists:flatten(Out1), is_bitstring(Piece)>>.
 
 
 encode(Text) ->

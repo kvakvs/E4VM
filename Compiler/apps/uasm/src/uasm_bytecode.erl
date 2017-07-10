@@ -82,8 +82,8 @@ bc_op(X) -> X.
 
 label(F) ->
   uasm_stats:count_opcode(?BYTECODE_LABEL),
-  Args = [uasm_encode_int:encode(F, auto_bits)],
-  {bc_op(?BYTECODE_LABEL), Args}.
+  %% not binary, this will be processed and removed during compression
+  {label, F}.
 
 
 func_info(Mod = #{'$' := module}, F, Arity) ->

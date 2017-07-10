@@ -58,7 +58,7 @@ make_filename(F, Extension) ->
 %% @doc Convert code from each function in the mod object to something writable
 %% to the final output file
 -spec encode_code(text | binary, #{'$' => module}) -> iolist().
-encode_code(Format, #{'$' := module} = Mod) ->
+encode_code(_Format, #{'$' := module} = Mod) ->
   %% Collect code output for every function in the module
   %% TODO: Store functions separately + optimize unused?
   % OutFuns = [maps:get(output, F) || {_FunArity, F} <- Funs],
@@ -70,8 +70,13 @@ encode_code(Format, #{'$' := module} = Mod) ->
   %% Take final code from each function and store them together with function
   %% name, and arity, and size into a nice solid binary chunk
   CodeChunks = lists:map(
-    fun({{Fun, Arity}, #{output := Bin}}) ->
-      {Fun, Arity, byte_size(Bin), Bin}
+    fun(#{'$' := one_fun,
+          name := {FName, FArity},
+          labels := FLabels,
+          output := FBin}) ->
+      {FName, FArity,
+       uasm_huffman:encode_labels(FLabels),
+       byte_size(FBin), FBin}
     end,
     Output),
   EncodedTree0 = uasm_huffman:encode_tree(Tree),
