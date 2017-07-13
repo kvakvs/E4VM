@@ -97,7 +97,7 @@ encode_labels(Labels) ->
   LabelsBin = [[uasm_encode_int:varlength_unsigned(F),
                 uasm_encode_int:varlength_unsigned(Offset)]
                || {F, Offset} <- Labels],
-  [LabelsBin, uasm_encode_int:encode([], #{})].
+  [LabelsBin, uasm_encode_int:encode([], auto_bits)].
 
 
 %% @doc Given a possibly nested list of bit strings create a single binary

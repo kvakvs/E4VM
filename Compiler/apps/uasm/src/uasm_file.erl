@@ -17,15 +17,13 @@
 to_iolist(Format, Prog = #{'$' := module}) ->
   Content0 = [
     % atoms must go before: imp/exports, jtabs, code
-    section(Format, "At", encode_atoms(Prog)),
-    %% section("LABL", Compr, encode_labels(Compr, Prog)), % goes before code
-    section(Format, "Co", encode_code(Format, Prog)),
-    %section(Format, "Lb", encode_labels(Prog)), % must go before exports
-    section(Format, "Lt", encode_literals(Prog)),
-    section(Format, "Im", encode_imports(Prog)),
-    section(Format, "Xp", encode_exports(Prog)),
-    section(Format, "Jt", encode_jumptabs(Prog)),
-    section(Format, "Fn", encode_lambdas(Prog)),
+    section(Format, atoms, encode_atoms(Format, Prog)),
+    section(Format, code, encode_code(Format, Prog)),
+    section(Format, literals, encode_literals(Format, Prog)),
+    section(Format, imports, encode_imports(Prog)),
+    section(Format, exports, encode_exports(Prog)),
+    section(Format, jumptabs, encode_jumptabs(Prog)),
+    section(Format, lambdas, encode_lambdas(Prog)),
     []
   ],
   Content1 = io_lib:format("~p", [Content0]),
@@ -46,7 +44,8 @@ section(binary, Tag, Data) ->
    Data]; % TODO: 4 alignment for ARM
 
 section(text, Tag, Data) ->
-  {Tag, Data}.
+  #{'$section' => Tag,
+    content => Data}.
 
 
 %% @doc Replace file ext in the filename with e4b
@@ -61,7 +60,6 @@ make_filename(F, Extension) ->
 encode_code(_Format, #{'$' := module} = Mod) ->
   %% Collect code output for every function in the module
   %% TODO: Store functions separately + optimize unused?
-  % OutFuns = [maps:get(output, F) || {_FunArity, F} <- Funs],
   #{'$' := huffman,
     tree := Tree,
     output := Output} = uasm_huffman:encode_funs(Mod),
@@ -69,28 +67,35 @@ encode_code(_Format, #{'$' := module} = Mod) ->
 
   %% Take final code from each function and store them together with function
   %% name, and arity, and size into a nice solid binary chunk
-  CodeChunks = lists:map(
+  FuncChunks = lists:map(
     fun(#{'$' := one_fun,
           name := {FName, FArity},
           labels := FLabels,
           output := FBin}) ->
-      {FName, FArity,
-       uasm_huffman:encode_labels(FLabels),
-       byte_size(FBin), FBin}
+      #{'$function' => {FName, FArity},
+        labels => uasm_huffman:encode_labels(FLabels),
+        labels_debug => maps:from_list(FLabels),
+        code_size => byte_size(FBin),
+        code => FBin}
     end,
     Output),
   EncodedTree0 = uasm_huffman:encode_tree(Tree),
   EncodedTree = uasm_huffman:merge_bits_into_binary(EncodedTree0),
-  [EncodedTree | CodeChunks].
+  #{tree => EncodedTree,
+    functions => FuncChunks}.
 
 
 %% @doc Convert atoms from mod object to atom section in the module file
-encode_atoms(#{'$' := module, atoms := Atoms}) ->
+encode_atoms(binary, Mod) ->
+  #{count := AtomCount,
+    atoms := Encoded} = encode_atoms(text, Mod),
+  erlang:iolist_to_binary([uerlc:varint(AtomCount), Encoded]);
+
+encode_atoms(text, #{'$' := module, atoms := Atoms}) ->
   Sorted = lists:keysort(2, Atoms), % assume orddict is a list of tuples
-  Bin0 = [encode_atoms_one_atom(A) || {A, _} <- Sorted],
-  %% TODO: Compress
-  erlang:iolist_to_binary([big32(length(Sorted)), Bin0]).
-  % zlib_compress("Atoms Section", Bin1).
+  EncodedList = [encode_atoms_one_atom(A) || {A, _Index} <- Sorted],
+  #{atoms => EncodedList,
+    count => length(Sorted)}.
 
 
 -ifdef(COMPRESS_ENABLE).
@@ -154,11 +159,18 @@ encode_exports_one_import(M, F, Arity, Atoms) ->
     (uerlc:varint(Arity))/binary>>.
 
 
-encode_literals(#{'$' := module, literals := Lit}) ->
+encode_literals(binary, Mod) ->
+  #{count := Count,
+    literals := Literals} = encode_literals(text, Mod),
+  erlang:iolist_to_binary([uerlc:varint(Count), Literals]);
+
+encode_literals(text, #{'$' := module, literals := Lit}) ->
   Sorted = lists:keysort(2, Lit), % assume orddict is a list of tuples
-  Bin = [encode_literals_one_literal(L) || {L, _} <- Sorted],
-  %% TODO: Compress
-  erlang:iolist_to_binary([big32(length(Sorted)), Bin]).
+  EncodedDebug = [{L, encode_literals_one_literal(L)} || {L, _} <- Sorted],
+  Encoded = [encode_literals_one_literal(L) || {L, _} <- Sorted],
+  #{debug => maps:from_list(EncodedDebug),
+    literals => Encoded,
+    count => length(Sorted)}.
 
 
 encode_literals_one_literal(L) ->
