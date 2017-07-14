@@ -79,7 +79,7 @@ encode_code(_Format, #{'$' := module} = Mod) ->
         code => FBin}
     end,
     Output),
-  EncodedTree0 = uasm_huffman:encode_tree(Tree),
+  EncodedTree0 = uasm_huffman:encode_tree(Tree, 6), % 6 = 2^round(log2(maxOp))
   EncodedTree = uasm_huffman:merge_bits_into_binary(EncodedTree0),
   #{tree => EncodedTree,
     functions => FuncChunks}.
@@ -94,8 +94,11 @@ encode_atoms(binary, Mod) ->
 encode_atoms(text, #{'$' := module, atoms := Atoms}) ->
   Sorted = lists:keysort(2, Atoms), % assume orddict is a list of tuples
   EncodedList = [encode_atoms_one_atom(A) || {A, _Index} <- Sorted],
+  EncodedFlat = binary_to_list(iolist_to_binary(EncodedList)),
+  Compressed = uasm_huffman:encode(EncodedFlat),
   #{atoms => EncodedList,
-    count => length(Sorted)}.
+    count => length(Sorted),
+    compressed => Compressed}.
 
 
 -ifdef(COMPRESS_ENABLE).

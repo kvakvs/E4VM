@@ -8,21 +8,21 @@
 
 -export([
   decode/2,
+  encode/1,
   encode_funs/1,
   encode_labels/1,
-  encode_tree/1,
-  main/1,
+  encode_tree/2,
   merge_bits_into_binary/1
 ]).
 
 
--define(LEAF_BIT, 6).
+%% @doc Given Huffman tree (a dict), encode it as a chain of bit 0/1 prefixed
+%% node values of fixed length (LeafBits)
+encode_tree(Leaf, LeafBits) when is_integer(Leaf) ->
+  [<<1:1>>, <<Leaf:LeafBits>>];
 
-%% Given Huffman tree (a dict)
-encode_tree(Leaf) when is_integer(Leaf) ->
-  [<<1:1>>, <<Leaf:?LEAF_BIT>>];
-encode_tree({L, R}) ->
-  [<<0:1>>, encode_tree(L), encode_tree(R)].
+encode_tree({L, R}, LeafBits) ->
+  [<<0:1>>, encode_tree(L, LeafBits), encode_tree(R, LeafBits)].
 
 
 %% @doc Given the module (for labels) and list of compiled funs with operators
@@ -108,13 +108,18 @@ merge_bits_into_binary(Out1) ->
   << <<Piece/bitstring>> || Piece <- lists:flatten(Out1), is_bitstring(Piece)>>.
 
 
-encode(Text) ->
+encode(Text) when is_list(Text) ->
   Tree = tree(freq_table(Text)),
   Dict = dict:from_list(codewords(Tree)),
   Code = << <<(dict:fetch(Char, Dict))/bitstring>> || Char <- Text>>,
+
+  EncodedTree0 = encode_tree(Tree, 8),
+  EncodedTree = merge_bits_into_binary(EncodedTree0),
+
   #{'$' => huffman,
     code => Code,
     tree => Tree,
+    tree_encoded => EncodedTree,
     dict => Dict}.
 
 
@@ -122,16 +127,16 @@ decode(Code, Tree) ->
   decode(Code, Tree, Tree, []).
 
 
-main(Input) ->
-  {Code, Tree, Dict} = encode(Input),
-  [begin
-     io:format("~s: ", [[Key]]),
-     print_bits(Value)
-   end || {Key, Value} <- lists:sort(dict:to_list(Dict))],
-  io:format("encoded: "),
-  print_bits(Code),
-  io:format("decoded: "),
-  io:format("~s\n", [decode(Code, Tree)]).
+%%main(Input) ->
+%%  {Code, Tree, Dict} = encode(Input),
+%%  [begin
+%%     io:format("~s: ", [[Key]]),
+%%     print_bits(Value)
+%%   end || {Key, Value} <- lists:sort(dict:to_list(Dict))],
+%%  io:format("encoded: "),
+%%  print_bits(Code),
+%%  io:format("decoded: "),
+%%  io:format("~s\n", [decode(Code, Tree)]).
 
 
 decode(<<>>, _, _, Result) ->
@@ -181,9 +186,9 @@ freq_table([S | Rest], Acc) ->
   freq_table(MoreBlocks, [{S, 1 + length(Block)} | Acc]).
 
 
-print_bits(<<>>) ->
-  io:format("\n");
-
-print_bits(<<Bit:1, Rest/bitstring>>) ->
-  io:format("~w", [Bit]),
-  print_bits(Rest).
+%%print_bits(<<>>) ->
+%%  io:format("\n");
+%%
+%%print_bits(<<Bit:1, Rest/bitstring>>) ->
+%%  io:format("~w", [Bit]),
+%%  print_bits(Rest).
