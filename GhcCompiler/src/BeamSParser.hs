@@ -1,4 +1,4 @@
-module Tokenizer where
+module BeamSParser where
 
 import System.IO
 import Control.Monad
@@ -30,7 +30,7 @@ instance Show Expr where
     let str_items = map (\i -> show i) items
     in "{" ++ (intercalate "," str_items) ++ "}"
 
-  show (ErlComment c) = ""
+  show (ErlComment c) = "(% " ++ c ++ " %)"
 
   show (ErlInt i) = show i
 
@@ -63,7 +63,6 @@ sequenceOfExprs = do
 erlComment = do
   string "%"
   c <- manyTill anyChar newline
-  whiteSpace
   return $ ErlComment c
 
 erlTerm = do
@@ -132,3 +131,6 @@ whiteSpace = Token.whiteSpace lexer
 dot = Token.dot lexer
 stringLiteral = Token.stringLiteral lexer
 charLiteral = Token.charLiteral lexer
+
+parseS contents =
+  parse BeamSParser.beamSParser "" contents
