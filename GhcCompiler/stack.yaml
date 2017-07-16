@@ -37,9 +37,16 @@ resolver: lts-8.22
 # will not be run. This is useful for tweaking upstream packages.
 packages:
 - '.'
+
+#- location:
+#    git: https://github.com/wdanilo/haskell-logger.git
+#    commit: aba5ef8f07d172466dd45e0dd078b25ec5353cda
+
 # Dependency packages to be pulled from upstream that are not in the resolver
 # (e.g., acme-missiles-0.3)
-extra-deps: []
+extra-deps: [
+  hslogger-1.2.10
+]
 
 # Override default flag values for local packages and extra-deps
 flags: {}
