@@ -8,16 +8,14 @@ import Text.ParserCombinators.Parsec.Language
 import qualified Text.ParserCombinators.Parsec.Token as Token
 import Data.List
 
---newtype ErlAtom = MakeAtom String
---newtype ErlList = MakeErlList [Expr]
---newtype ErlTuple = MakeErlTuple [Expr]
---newtype ErlInt = MakeErlInt Integer
+
 data Expr = ErlAtom String
-  | ErlList [Expr]
-  | ErlTuple [Expr]
-  | ErlInt Integer
-  | ErlString String
-  | ErlComment String
+          | ErlList [Expr]
+          | ErlTuple [Expr]
+          | ErlInt Integer
+          | ErlString String
+          | ErlComment String
+
 
 instance Show Expr where
   show (ErlAtom s) = s
@@ -49,21 +47,25 @@ languageDef =
 
 lexer = Token.makeTokenParser languageDef
 
+
 beamSParser :: Parser Expr
 beamSParser = whiteSpace >> sequenceOfExprs
 
 --expr :: Parser Expr
 --expr = expr' <|> sequenceOfExprs
 
+
 sequenceOfExprs :: Parser Expr
 sequenceOfExprs = do
   forms <- many erlTerm
   return $ ErlList forms
 
+
 erlComment = do
   string "%"
   c <- manyTill anyChar newline
   return $ ErlComment c
+
 
 erlTerm = do
   expr <- erlExpr
@@ -72,6 +74,7 @@ erlTerm = do
   optional erlComment
   return expr
 
+
 erlExpr :: Parser Expr
 erlExpr = erlTuple
   <|> erlList
@@ -79,35 +82,44 @@ erlExpr = erlTuple
   <|> erlInteger
   <|> erlString
 
+
 erlTuple :: Parser Expr
 erlTuple =
   braces erlTupleContent
+
 
 erlTupleContent :: Parser Expr
 erlTupleContent = do
   items <- commaSep erlExpr
   return $ ErlTuple items
 
+
 erlList :: Parser Expr
 erlList =
   brackets erlListContent
+
 
 erlListContent :: Parser Expr
 erlListContent = do
   items <- commaSep erlExpr
   return $ ErlList items
 
+
 erlInteger :: Parser Expr
 erlInteger = do
   val <- integer
   return $ ErlInt val
 
-erlAtom = erlAtomStr <|> erlAtomQuoted
+
+erlAtom =
+  erlAtomStr <|> erlAtomQuoted
+
 
 erlAtomStr :: Parser Expr
 erlAtomStr = do
   s <- identifier
   return $ ErlAtom s
+
 
 erlAtomQuoted :: Parser Expr
 erlAtomQuoted = do
@@ -117,10 +129,12 @@ erlAtomQuoted = do
   char '\''
   return $ ErlAtom s
 
+
 erlString :: Parser Expr
 erlString = do
   s <- stringLiteral
   return $ ErlString s
+
 
 identifier = Token.identifier lexer
 braces = Token.braces lexer
@@ -132,5 +146,9 @@ dot = Token.dot lexer
 stringLiteral = Token.stringLiteral lexer
 charLiteral = Token.charLiteral lexer
 
+
+parseS :: String -> Either String Expr
 parseS contents =
-  parse BeamSParser.beamSParser "" contents
+  case parse BeamSParser.beamSParser "" contents of
+    Left parsecError -> Left $ show parsecError
+    Right expr -> Right expr

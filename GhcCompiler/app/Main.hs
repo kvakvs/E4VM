@@ -10,21 +10,20 @@ import System.Log.Handler (setFormatter)
 import System.Log.Formatter
 
 
-transpile :: String -> String -> IO ()
+transpile :: String -> String -> Expr
 transpile fileName contents =
-  let out1 = stageParseBeamS contents
-  in putStrLn "done"
+  runStage "parse beam assembly" (stageParseBeamS contents)
 
 
-stageParseBeamS :: String -> Expr
-stageParseBeamS contents =
-  case BeamSParser.parseS contents of
-    Left e ->
-      let io2 = errorM "uerlc" $ show e
-      in ErlList [];
-    Right result ->
-      let io1 = infoM "uerlc" (show result)
-      in result
+runStage :: String -> Either String out -> out
+runStage descr result =
+  case result of
+    Left e -> error $ descr ++ e;
+    Right outV -> outV
+
+
+stageParseBeamS :: String -> Either String Expr
+stageParseBeamS contents = BeamSParser.parseS contents
 
 
 initLogging = do
@@ -38,4 +37,4 @@ main = do
   [fileName]  <- getArgs
   fh <- openFile fileName ReadMode
   contents <- hGetContents fh
-  transpile fileName contents
+  print $ transpile fileName contents
