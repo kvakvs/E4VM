@@ -1,6 +1,10 @@
 module Main where
 
 import BeamSParser
+import BeamSTypes
+import MicroAsm
+import UModule
+
 import System.IO
 import System.Environment
 import System.Log.Logger
@@ -10,28 +14,37 @@ import System.Log.Handler (setFormatter)
 import System.Log.Formatter
 
 
-transpile :: String -> String -> Expr
+transpile :: String -> String -> Module
 transpile fileName contents =
-  runStage "parse beam assembly" (stageParseBeamS contents)
+  let stage1 = runStage fileName "parse BEAM assembly" (stageParseBeamS contents)
+  in runStage fileName "convert to microAssembly" (stageGenMicroAsm stage1)
 
 
-runStage :: String -> Either String out -> out
-runStage descr result =
+-- Given BeamSExpr tree produce microassembly data structure
+stageGenMicroAsm = MicroAsm.transform
+
+
+-- Given beam .S file contents (string) produce a BeamSExpr tree structure with
+-- parsed erlang values
+stageParseBeamS :: String -> Either String BeamSExpr
+stageParseBeamS = BeamSParser.parseS
+
+
+runStage :: String -> String -> Either String out -> out
+runStage fileName descr result =
   case result of
-    Left e -> error $ descr ++ e;
+    Left e -> error $ fileName ++ " -> " ++ descr ++ " stage ERROR: " ++ e;
     Right outV -> outV
 
 
-stageParseBeamS :: String -> Either String Expr
-stageParseBeamS contents = BeamSParser.parseS contents
-
-
+initLogging :: IO ()
 initLogging = do
   s <- openlog "SyslogStuff" [PID] USER DEBUG
   updateGlobalLogger rootLoggerName (addHandler s)
   updateGlobalLogger "uerlc" (setLevel DEBUG)
 
 
+main :: IO ()
 main = do
   initLogging
   [fileName]  <- getArgs

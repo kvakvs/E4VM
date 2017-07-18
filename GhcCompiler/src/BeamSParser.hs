@@ -1,38 +1,14 @@
 module BeamSParser where
 
+import BeamSTypes
+
 import System.IO
 import Control.Monad
 import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.Parsec.Expr
 import Text.ParserCombinators.Parsec.Language
 import qualified Text.ParserCombinators.Parsec.Token as Token
-import Data.List
 
-
-data Expr = ErlAtom String
-          | ErlList [Expr]
-          | ErlTuple [Expr]
-          | ErlInt Integer
-          | ErlString String
-          | ErlComment String
-
-
-instance Show Expr where
-  show (ErlAtom s) = s
-
-  show (ErlList items) =
-    let str_items = map (\i -> show i) items
-    in "[" ++ (intercalate "," str_items) ++ "]"
-
-  show (ErlTuple items) =
-    let str_items = map (\i -> show i) items
-    in "{" ++ (intercalate "," str_items) ++ "}"
-
-  show (ErlComment c) = "(% " ++ c ++ " %)"
-
-  show (ErlInt i) = show i
-
-  show (ErlString s) = show s
 
 languageDef =
   emptyDef { Token.commentLine     = "%"
@@ -48,34 +24,33 @@ languageDef =
 lexer = Token.makeTokenParser languageDef
 
 
-beamSParser :: Parser Expr
+beamSParser :: Parser BeamSExpr
 beamSParser = whiteSpace >> sequenceOfExprs
 
---expr :: Parser Expr
---expr = expr' <|> sequenceOfExprs
 
-
-sequenceOfExprs :: Parser Expr
+sequenceOfExprs :: Parser BeamSExpr
 sequenceOfExprs = do
   forms <- many erlTerm
-  return $ ErlList forms
+  return $ BeamSList forms
 
 
+erlComment :: Parser BeamSExpr
 erlComment = do
-  string "%"
+  _ <- string "%"
   c <- manyTill anyChar newline
-  return $ ErlComment c
+  return $ BeamSComment c
 
 
+erlTerm :: Parser BeamSExpr
 erlTerm = do
   expr <- erlExpr
-  char '.'
+  _ <- char '.'
   whiteSpace
   optional erlComment
   return expr
 
 
-erlExpr :: Parser Expr
+erlExpr :: Parser BeamSExpr
 erlExpr = erlTuple
   <|> erlList
   <|> erlAtom
@@ -83,57 +58,58 @@ erlExpr = erlTuple
   <|> erlString
 
 
-erlTuple :: Parser Expr
+erlTuple :: Parser BeamSExpr
 erlTuple =
   braces erlTupleContent
 
 
-erlTupleContent :: Parser Expr
+erlTupleContent :: Parser BeamSExpr
 erlTupleContent = do
   items <- commaSep erlExpr
-  return $ ErlTuple items
+  return $ BeamSTuple items
 
 
-erlList :: Parser Expr
+erlList :: Parser BeamSExpr
 erlList =
   brackets erlListContent
 
 
-erlListContent :: Parser Expr
+erlListContent :: Parser BeamSExpr
 erlListContent = do
   items <- commaSep erlExpr
-  return $ ErlList items
+  return $ BeamSList items
 
 
-erlInteger :: Parser Expr
+erlInteger :: Parser BeamSExpr
 erlInteger = do
   val <- integer
-  return $ ErlInt val
+  return $ BeamSInt val
 
 
+erlAtom :: Parser BeamSExpr
 erlAtom =
   erlAtomStr <|> erlAtomQuoted
 
 
-erlAtomStr :: Parser Expr
+erlAtomStr :: Parser BeamSExpr
 erlAtomStr = do
   s <- identifier
-  return $ ErlAtom s
+  return $ BeamSAtom s
 
 
-erlAtomQuoted :: Parser Expr
+erlAtomQuoted :: Parser BeamSExpr
 erlAtomQuoted = do
   whiteSpace
-  char '\''
+  _ <- char '\''
   s <- many (noneOf "'")
-  char '\''
-  return $ ErlAtom s
+  _ <- char '\''
+  return $ BeamSAtom s
 
 
-erlString :: Parser Expr
+erlString :: Parser BeamSExpr
 erlString = do
   s <- stringLiteral
-  return $ ErlString s
+  return $ BeamSString s
 
 
 identifier = Token.identifier lexer
@@ -147,7 +123,7 @@ stringLiteral = Token.stringLiteral lexer
 charLiteral = Token.charLiteral lexer
 
 
-parseS :: String -> Either String Expr
+parseS :: String -> Either String BeamSExpr
 parseS contents =
   case parse BeamSParser.beamSParser "" contents of
     Left parsecError -> Left $ show parsecError

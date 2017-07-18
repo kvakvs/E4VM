@@ -15,7 +15,7 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     BeamSParser
+  exposed-modules:     BeamSParser, BeamSTypes, MicroAsm, UModule, UFunction
   build-depends:       base >= 4.7 && < 5
                      , parsec
   default-language:    Haskell2010
