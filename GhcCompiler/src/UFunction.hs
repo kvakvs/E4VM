@@ -1,9 +1,10 @@
+{-# LANGUAGE UnicodeSyntax #-}
 module UFunction where
 
-data Function = Function{
-    ufunName :: String,
-    ufunArity :: Integer,
-    ufunBody :: String
+data Function = Function
+  { ufunName  :: String
+  , ufunArity :: Integer
+  , ufunBody  :: String
   }
 
 instance Show Function where

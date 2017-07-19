@@ -1,59 +1,58 @@
+{-# LANGUAGE UnicodeSyntax #-}
+
+-- Handles input from BeamSParser and creates an Module which has separate
+-- functions, and each opcode is converted to some Uassembly
 module PassFromS where
 
-import UModule
-import UFunction
-import BeamSTypes
+import           BeamSTypes
+import           UFunction
+import           UModule
 
-transform :: SExpr -> Either String Module
+import qualified Data.Map   as Map
+
+transform ∷ SExpr → Either String Module
 transform (SList l) =
-  let mod0 = Module {umodName = "", umodFuns = [], umodExports = []}
+  let mod0 = Module {umodName = "", umodFuns = Map.empty, umodExports = []}
   in let mod1 = transform' l mod0
-  in Right mod1
+     in Right mod1
+transform other = Left $ show other
 
-transform other =
-  Left $ show other
-
-
-isBeamSFunction :: SExpr -> Bool
+-- Returns True if a tuple is a {function, ...} otherwise False
+isBeamSFunction ∷ SExpr → Bool
 isBeamSFunction (STuple (SAtom "function":_)) = True
+isBeamSFunction _                             = False
 
-isBeamSFunction _ = False
-
-
-transform' :: [SExpr] -> Module -> Module
+-- Given list of tuples from BEAM S file handles header elements and then
+-- takes functions one by one
+transform' ∷ [SExpr] → Module → Module
 transform' [] mod0 = mod0
-
 transform' (STuple [SAtom "function", fname, farity, flabel]:tl) mod0 =
   let funs0 = UModule.umodFuns mod0
       tl1 = dropWhile (not . isBeamSFunction) tl
       fbody = takeWhile (not . isBeamSFunction) tl
-      outFn = parseFn fname farity flabel fbody
-  in transform' tl1 mod0 {umodFuns = outFn : funs0}
-
+      outFn = fnCreate fname farity flabel fbody
+      funArity = sexprFunarity fname farity
+      funs1 = Map.insert funArity outFn funs0
+  in transform' tl1 mod0 {umodFuns = funs1}
 transform' (STuple [SAtom "module", SAtom mname]:tl) mod0 =
   let mod1 = mod0 {umodName = mname}
   in transform' tl mod1
-
 transform' (STuple [SAtom "exports", SList exps]:tl) mod0 =
   let exps1 = map (\(STuple [SAtom fn, SInt ar]) -> (fn, ar)) exps
       mod1 = mod0 {umodExports = exps1}
   in transform' tl mod1
-
+-- ignored at the moment
 transform' (STuple [SAtom "attributes", SList _mattr]:tl) mod0 =
-  -- ignored at the moment
   transform' tl mod0
-
-transform' (STuple [SAtom "labels", _]:tl) mod0 =
-  transform' tl mod0
-
+transform' (STuple [SAtom "labels", _]:tl) mod0 = transform' tl mod0
 transform' (form:_tl) _mod0 =
   error ("unexpected form in the input S file: " ++ show form)
 
+-- Given F/Arity and code body return a Function object
+fnCreate ∷ SExpr → SExpr → SExpr → [SExpr] → Function
+fnCreate (SAtom fname) (SInt farity) (SInt _flabel) fbody =
+  let asmBody = codeToAsm fbody
+  in Function {ufunName = fname, ufunArity = farity, ufunBody = asmBody}
+fnCreate _f _a _label _body = error "parseFn expects a function"
 
-parseFn :: SExpr -> SExpr -> SExpr -> [SExpr] -> Function
-parseFn (SAtom fname) (SInt farity) (SInt _flabel) fbody =
-  Function {ufunName = fname,
-            ufunArity = farity,
-            ufunBody = show fbody}
-
-parseFn _f _a _label _body = error "parseFn expects a function"
+codeToAsm fbody = []
