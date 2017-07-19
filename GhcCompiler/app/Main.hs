@@ -2,26 +2,24 @@ module Main where
 
 import BeamSParser
 import BeamSTypes
-import MicroAsm
+import PassFromS
 import UModule
 
 import System.IO
 import System.Environment
 import System.Log.Logger
 import System.Log.Handler.Syslog
-import System.Log.Handler.Simple
-import System.Log.Handler (setFormatter)
-import System.Log.Formatter
 
 
 transpile :: String -> String -> Module
 transpile fileName contents =
   let stage1 = runStage fileName "parse BEAM assembly" (stageParseBeamS contents)
-  in runStage fileName "convert to microAssembly" (stageGenMicroAsm stage1)
+  in runStage fileName "convert to microAssembly" (stageBeamSToUasm stage1)
 
 
 -- Given SExpr tree produce microassembly data structure
-stageGenMicroAsm = MicroAsm.transform
+stageBeamSToUasm :: SExpr -> Either String Module
+stageBeamSToUasm = PassFromS.transform
 
 
 -- Given beam .S file contents (string) produce a SExpr tree structure with

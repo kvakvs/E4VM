@@ -1,4 +1,4 @@
-module MicroAsm where
+module PassFromS where
 
 import UModule
 import UFunction
@@ -9,12 +9,14 @@ transform (SList l) =
   let mod0 = Module {umodName = "", umodFuns = [], umodExports = []}
   in let mod1 = transform' l mod0
   in Right mod1
+
 transform other =
   Left $ show other
 
 
 isBeamSFunction :: SExpr -> Bool
 isBeamSFunction (STuple (SAtom "function":_)) = True
+
 isBeamSFunction _ = False
 
 
@@ -49,5 +51,9 @@ transform' (form:_tl) _mod0 =
 
 
 parseFn :: SExpr -> SExpr -> SExpr -> [SExpr] -> Function
-parseFn (SAtom fname) (SInt farity) (SInt flabel) fbody =
-  Function {ufunName = fname, ufunArity = farity, ufunBody = show fbody}
+parseFn (SAtom fname) (SInt farity) (SInt _flabel) fbody =
+  Function {ufunName = fname,
+            ufunArity = farity,
+            ufunBody = show fbody}
+
+parseFn _f _a _label _body = error "parseFn expects a function"
