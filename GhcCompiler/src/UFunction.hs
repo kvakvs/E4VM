@@ -1,12 +1,14 @@
 {-# LANGUAGE UnicodeSyntax #-}
 module UFunction where
 
+import UAssembly
+
 data Function = Function
   { ufunName  :: String
   , ufunArity :: Integer
-  , ufunBody  :: String
+  , ufunBody  :: [UAsmOp]
   }
 
 instance Show Function where
   show (Function name' arity' body') =
-    "Fun{ " ++ name' ++ "/" ++ show arity' ++ ", " ++ body' ++ " }\n"
+    "\nFun{ " ++ name' ++ "/" ++ show arity' ++ ", " ++ show body' ++ " }\n"

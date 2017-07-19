@@ -5,6 +5,7 @@
 module PassFromS where
 
 import           BeamSTypes
+import           UAssembly
 import           UFunction
 import           UModule
 
@@ -51,8 +52,15 @@ transform' (form:_tl) _mod0 =
 -- Given F/Arity and code body return a Function object
 fnCreate ∷ SExpr → SExpr → SExpr → [SExpr] → Function
 fnCreate (SAtom fname) (SInt farity) (SInt _flabel) fbody =
-  let asmBody = codeToAsm fbody
+  let asmBody = codeToAsm fbody []
   in Function {ufunName = fname, ufunArity = farity, ufunBody = asmBody}
 fnCreate _f _a _label _body = error "parseFn expects a function"
 
-codeToAsm fbody = []
+codeToAsm ∷ [SExpr] → [UAsmOp] → [UAsmOp]
+codeToAsm [] acc = reverse acc
+codeToAsm (STuple [SAtom "label", label]:tl) acc =
+  let Just nlabel = sexprInt label
+      op = ULabel nlabel
+  in codeToAsm tl (op : acc)
+codeToAsm (STuple [SAtom "line", _]:tl) acc = codeToAsm tl acc
+codeToAsm (_:tl) acc = codeToAsm tl acc

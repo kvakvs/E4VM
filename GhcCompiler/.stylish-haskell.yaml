@@ -21,7 +21,7 @@ steps:
   - simple_align:
       cases: true
       top_level_patterns: true
-      records: true
+      records: false
 
   # Import cleanup
   - imports:
