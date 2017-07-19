@@ -24,24 +24,24 @@ languageDef =
 lexer = Token.makeTokenParser languageDef
 
 
-beamSParser :: Parser BeamSExpr
+beamSParser :: Parser SExpr
 beamSParser = whiteSpace >> sequenceOfExprs
 
 
-sequenceOfExprs :: Parser BeamSExpr
+sequenceOfExprs :: Parser SExpr
 sequenceOfExprs = do
   forms <- many erlTerm
-  return $ BeamSList forms
+  return $ SList forms
 
 
-erlComment :: Parser BeamSExpr
+erlComment :: Parser SExpr
 erlComment = do
   _ <- string "%"
   c <- manyTill anyChar newline
-  return $ BeamSComment c
+  return $ SComment c
 
 
-erlTerm :: Parser BeamSExpr
+erlTerm :: Parser SExpr
 erlTerm = do
   expr <- erlExpr
   _ <- char '.'
@@ -50,7 +50,7 @@ erlTerm = do
   return expr
 
 
-erlExpr :: Parser BeamSExpr
+erlExpr :: Parser SExpr
 erlExpr = erlTuple
   <|> erlList
   <|> erlAtom
@@ -58,58 +58,58 @@ erlExpr = erlTuple
   <|> erlString
 
 
-erlTuple :: Parser BeamSExpr
+erlTuple :: Parser SExpr
 erlTuple =
   braces erlTupleContent
 
 
-erlTupleContent :: Parser BeamSExpr
+erlTupleContent :: Parser SExpr
 erlTupleContent = do
   items <- commaSep erlExpr
-  return $ BeamSTuple items
+  return $ STuple items
 
 
-erlList :: Parser BeamSExpr
+erlList :: Parser SExpr
 erlList =
   brackets erlListContent
 
 
-erlListContent :: Parser BeamSExpr
+erlListContent :: Parser SExpr
 erlListContent = do
   items <- commaSep erlExpr
-  return $ BeamSList items
+  return $ SList items
 
 
-erlInteger :: Parser BeamSExpr
+erlInteger :: Parser SExpr
 erlInteger = do
   val <- integer
-  return $ BeamSInt val
+  return $ SInt val
 
 
-erlAtom :: Parser BeamSExpr
+erlAtom :: Parser SExpr
 erlAtom =
   erlAtomStr <|> erlAtomQuoted
 
 
-erlAtomStr :: Parser BeamSExpr
+erlAtomStr :: Parser SExpr
 erlAtomStr = do
   s <- identifier
-  return $ BeamSAtom s
+  return $ SAtom s
 
 
-erlAtomQuoted :: Parser BeamSExpr
+erlAtomQuoted :: Parser SExpr
 erlAtomQuoted = do
   whiteSpace
   _ <- char '\''
   s <- many (noneOf "'")
   _ <- char '\''
-  return $ BeamSAtom s
+  return $ SAtom s
 
 
-erlString :: Parser BeamSExpr
+erlString :: Parser SExpr
 erlString = do
   s <- stringLiteral
-  return $ BeamSString s
+  return $ SStr s
 
 
 identifier = Token.identifier lexer
@@ -123,7 +123,7 @@ stringLiteral = Token.stringLiteral lexer
 charLiteral = Token.charLiteral lexer
 
 
-parseS :: String -> Either String BeamSExpr
+parseS :: String -> Either String SExpr
 parseS contents =
   case parse BeamSParser.beamSParser "" contents of
     Left parsecError -> Left $ show parsecError

@@ -2,8 +2,12 @@ module UModule where
 
 import UFunction
 
-newtype Module = Module{funs :: [Function]}
+data Module = Module{
+    umodName :: String,
+    umodFuns :: [Function],
+    umodExports :: [(String, Integer)]
+  }
 
 instance Show Module where
-  show (Module funs) =
-    "Module{ " ++ show funs ++ " }"
+  show (Module name' funs' _exports) =
+    "Module<" ++ name' ++ ">{" ++ show funs' ++ "}"

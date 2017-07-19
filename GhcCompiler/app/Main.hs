@@ -20,13 +20,13 @@ transpile fileName contents =
   in runStage fileName "convert to microAssembly" (stageGenMicroAsm stage1)
 
 
--- Given BeamSExpr tree produce microassembly data structure
+-- Given SExpr tree produce microassembly data structure
 stageGenMicroAsm = MicroAsm.transform
 
 
--- Given beam .S file contents (string) produce a BeamSExpr tree structure with
+-- Given beam .S file contents (string) produce a SExpr tree structure with
 -- parsed erlang values
-stageParseBeamS :: String -> Either String BeamSExpr
+stageParseBeamS :: String -> Either String SExpr
 stageParseBeamS = BeamSParser.parseS
 
 

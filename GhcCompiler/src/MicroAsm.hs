@@ -1,26 +1,53 @@
 module MicroAsm where
 
-import BeamSTypes
 import UModule
 import UFunction
+import BeamSTypes
 
-
-transform :: BeamSExpr -> Either String Module
-transform (BeamSList l) =
-  let mod0 = Module {funs = []}
+transform :: SExpr -> Either String Module
+transform (SList l) =
+  let mod0 = Module {umodName = "", umodFuns = [], umodExports = []}
   in let mod1 = transform' l mod0
   in Right mod1
 transform other =
   Left $ show other
 
-transform' :: [BeamSExpr] -> Module -> Module
+
+isBeamSFunction :: SExpr -> Bool
+isBeamSFunction (STuple (SAtom "function":_)) = True
+isBeamSFunction _ = False
+
+
+transform' :: [SExpr] -> Module -> Module
 transform' [] mod0 = mod0
-transform' (h:tl) mod0 =
-  let outFn = transformFn h
-      funs0 = UModule.funs mod0
-  in transform' tl mod0 {funs = outFn:funs0}
+
+transform' (STuple [SAtom "function", fname, farity, flabel]:tl) mod0 =
+  let funs0 = UModule.umodFuns mod0
+      tl1 = dropWhile (not . isBeamSFunction) tl
+      fbody = takeWhile (not . isBeamSFunction) tl
+      outFn = parseFn fname farity flabel fbody
+  in transform' tl1 mod0 {umodFuns = outFn : funs0}
+
+transform' (STuple [SAtom "module", SAtom mname]:tl) mod0 =
+  let mod1 = mod0 {umodName = mname}
+  in transform' tl mod1
+
+transform' (STuple [SAtom "exports", SList exps]:tl) mod0 =
+  let exps1 = map (\(STuple [SAtom fn, SInt ar]) -> (fn, ar)) exps
+      mod1 = mod0 {umodExports = exps1}
+  in transform' tl mod1
+
+transform' (STuple [SAtom "attributes", SList _mattr]:tl) mod0 =
+  -- ignored at the moment
+  transform' tl mod0
+
+transform' (STuple [SAtom "labels", _]:tl) mod0 =
+  transform' tl mod0
+
+transform' (form:_tl) _mod0 =
+  error ("unexpected form in the input S file: " ++ show form)
 
 
-transformFn :: BeamSExpr -> Function
-transformFn _ =
-  Function {name = "test", arity = 0}
+parseFn :: SExpr -> SExpr -> SExpr -> [SExpr] -> Function
+parseFn (SAtom fname) (SInt farity) (SInt flabel) fbody =
+  Function {ufunName = fname, ufunArity = farity, ufunBody = show fbody}

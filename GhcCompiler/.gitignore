@@ -1,3 +1,6 @@
 *.hi
 *.o
 .stack*
+cabal.config
+.idea/
+.ideaHaskellLib/

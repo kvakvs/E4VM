@@ -1,28 +1,28 @@
-module BeamSTypes where
+module BeamSTypes (SExpr(..)) where
 
 import Data.List
 
-data BeamSExpr = BeamSAtom String
-               | BeamSList [BeamSExpr]
-               | BeamSTuple [BeamSExpr]
-               | BeamSInt Integer
-               | BeamSString String
-               | BeamSComment String
+data SExpr = SAtom String
+           | SList [SExpr]
+           | STuple [SExpr]
+           | SInt Integer
+           | SStr String
+           | SComment String
 
 
-instance Show BeamSExpr where
-  show (BeamSAtom s) = s
+instance Show SExpr where
+  show (SAtom s) = s
 
-  show (BeamSList items) =
+  show (SList items) =
     let str_items = map show items
     in "[" ++ intercalate "," str_items ++ "]"
 
-  show (BeamSTuple items) =
+  show (STuple items) =
     let str_items = map show items
     in "{" ++ intercalate "," str_items ++ "}"
 
-  show (BeamSComment c) = "(% " ++ c ++ " %)"
+  show (SComment c) = "(% " ++ c ++ " %)"
 
-  show (BeamSInt i) = show i
+  show (SInt i) = show i
 
-  show (BeamSString s) = show s
+  show (SStr s) = show s
