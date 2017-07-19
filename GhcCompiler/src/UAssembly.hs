@@ -4,6 +4,10 @@ module UAssembly where
 
 import           BeamSTypes
 
+newtype Label =
+  Label Int
+  deriving (Show)
+
 data ReadLoc
   = RRegX Integer
   | RRegY Integer
@@ -26,9 +30,9 @@ data BuiltinError
   deriving (Show)
 
 data UAsmOp
-  = ALabel Integer
+  = ALabel Label
   | ALine Integer
-  | ARet Integer
+  | ARet Int
   | AMove ReadLoc
           WriteLoc
   | AError BuiltinError
@@ -38,14 +42,26 @@ data UAsmOp
   | ATupleGetEl ReadLoc
                 ReadLoc
                 WriteLoc
+  | AAlloc Int
+           Int
+  | ADealloc Int
+  | ATest String
+          Label
+          [ReadLoc]
   | AComment String
   deriving (Show)
+
+label :: Integral a => a -> UAsmOp
+label i = ALabel (Label (fromIntegral i))
 
 comment ∷ Show a ⇒ a → UAsmOp
 comment x = AComment $ show x
 
-ret ∷ Integer → UAsmOp
-ret = ARet
+ret0 :: UAsmOp
+ret0 = ARet 0
+
+ret :: Integral a => a -> UAsmOp
+ret n = ARet (fromIntegral n)
 
 move ∷ ReadLoc → WriteLoc → UAsmOp
 move = AMove
@@ -64,3 +80,12 @@ tuplePut = ATuplePut
 
 tupleGetEl ∷ ReadLoc → ReadLoc → WriteLoc → UAsmOp
 tupleGetEl = ATupleGetEl
+
+allocate :: (Integral a, Integral a1) => a1 -> a -> UAsmOp
+allocate stkneed live = AAlloc (fromIntegral stkneed) (fromIntegral live)
+
+deallocate :: Integral a => a -> UAsmOp
+deallocate n = ADealloc (fromIntegral n)
+
+test ∷ String → Label → [ReadLoc] → UAsmOp
+test = ATest
