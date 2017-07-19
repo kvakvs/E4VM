@@ -52,15 +52,50 @@ transform' (form:_tl) _mod0 =
 -- Given F/Arity and code body return a Function object
 fnCreate ∷ SExpr → SExpr → SExpr → [SExpr] → Function
 fnCreate (SAtom fname) (SInt farity) (SInt _flabel) fbody =
-  let asmBody = codeToAsm fbody []
+  let asmBody = transformCode fbody []
   in Function {ufunName = fname, ufunArity = farity, ufunBody = asmBody}
 fnCreate _f _a _label _body = error "parseFn expects a function"
 
-codeToAsm ∷ [SExpr] → [UAsmOp] → [UAsmOp]
-codeToAsm [] acc = reverse acc
-codeToAsm (STuple [SAtom "label", label]:tl) acc =
-  let Just nlabel = sexprInt label
-      op = ULabel nlabel
-  in codeToAsm tl (op : acc)
-codeToAsm (STuple [SAtom "line", _]:tl) acc = codeToAsm tl acc
-codeToAsm (_:tl) acc = codeToAsm tl acc
+readLoc ∷ SExpr → Maybe ReadLoc
+readLoc (STuple [SAtom "x", SInt x]) = Just $ RRegX x
+readLoc (STuple [SAtom "y", SInt y]) = Just $ RRegY y
+readLoc (STuple [SAtom "literal", lit]) = Just $ RLit lit
+readLoc (STuple [SAtom "atom", a]) = Just $ RAtom a
+readLoc (SAtom "nil") = Just RNil
+readLoc (SInt i) = Just $ RInt i
+readLoc other = Just $ ReadLocError $ show other
+
+writeLoc ∷ SExpr → Maybe WriteLoc
+writeLoc (STuple [SAtom "x", SInt x]) = Just $ WRegX x
+writeLoc (STuple [SAtom "y", SInt y]) = Just $ WRegY y
+writeLoc other = Just $ WriteLocError $ show other
+
+transformCode ∷ [SExpr] → [UAsmOp] → [UAsmOp]
+transformCode [] acc = reverse acc
+transformCode (STuple [SAtom "label", label]:tl) acc =
+  transformCode tl (op : acc)
+  where
+    Just nlabel = sexprInt label
+    op = ALabel nlabel
+transformCode (STuple [SAtom "line", _]:tl) acc = transformCode tl acc
+transformCode (SAtom "return":tl) acc = transformCode tl (UAssembly.ret 0 : acc)
+transformCode (STuple [SAtom "move", src, dst]:tl) acc =
+  transformCode tl (UAssembly.move usrc udst : acc)
+  where
+    Just usrc = readLoc src
+    Just udst = writeLoc dst
+transformCode (STuple [SAtom "func_info", _mod, _fun, _arity]:tl) acc =
+  transformCode tl (UAssembly.funcClause : acc)
+transformCode (STuple [SAtom "put_tuple", sz, dst]:tl) acc =
+  transformCode tl (UAssembly.tupleNew usz udst : acc)
+  where Just udst = writeLoc dst
+        Just usz = sexprInt sz
+transformCode (STuple [SAtom "put", val]:tl) acc =
+  transformCode tl (UAssembly.tuplePut uval : acc)
+  where Just uval = readLoc val
+transformCode (STuple [SAtom "get_tuple_element", src, indx, dst]:tl) acc =
+  transformCode tl (UAssembly.tupleGetEl usrc uindx udst : acc)
+  where Just usrc = readLoc src
+        Just uindx = readLoc indx
+        Just udst = writeLoc dst
+transformCode (other:tl) acc = transformCode tl (UAssembly.comment other : acc)
