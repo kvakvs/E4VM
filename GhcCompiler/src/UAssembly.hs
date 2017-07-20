@@ -8,7 +8,7 @@ data LabelLoc
 
 instance Show LabelLoc where
   show (LabelLoc i) = "@" ++ show i
-  show UNoLabel = "@?"
+  show UNoLabel     = "@?"
 
 data CodeLoc
   = CLabel LabelLoc
@@ -85,7 +85,9 @@ data UAsmOp
           UCallType
   | ACallFun Int
   | AComment String
-  | ACons ReadLoc ReadLoc WriteLoc
+  | ACons ReadLoc
+          ReadLoc
+          WriteLoc
   | ADealloc Int
   | ADecons ReadLoc
             WriteLoc
@@ -106,6 +108,7 @@ data UAsmOp
           [ReadLoc]
   | ATestHeap Int
               Int
+  | ATrim Int
   | ATupleGetEl ReadLoc
                 ReadLoc
                 WriteLoc
@@ -188,3 +191,6 @@ callFun = ACallFun
 
 setNil :: WriteLoc -> UAsmOp
 setNil = ASetNil
+
+trim :: Int -> UAsmOp
+trim = ATrim

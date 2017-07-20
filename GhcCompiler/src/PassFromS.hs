@@ -198,7 +198,8 @@ transformCode (STuple [SAtom "call_fun", arity]:tl) acc =
   where
     Just uarity = sexprInt arity
     op = UAssembly.callFun uarity
-transformCode (STuple [SAtom "kill", dst]:tl) acc = transformCode tl (op : acc)
+transformCode (STuple [SAtom killOp, dst]:tl) acc
+  | killOp == "kill" || killOp == "init" = transformCode tl (op : acc)
   where
     Just udst = writeLoc dst
     op = UAssembly.setNil udst
@@ -215,6 +216,11 @@ transformCode (STuple [SAtom "test_heap", need, live]:tl) acc =
     Just uneed = sexprInt need
     Just ulive = sexprInt live
     op = UAssembly.testHeap uneed ulive
+transformCode (STuple [SAtom "trim", n, _remaining]:tl) acc =
+  transformCode tl (op : acc)
+  where
+    Just un = sexprInt n
+    op = UAssembly.trim un
 transformCode (STuple [SAtom "select_val", src, onfail, STuple [SAtom "list", SList choices]]:tl) acc =
   transformCode tl (op : acc)
   where
