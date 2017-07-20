@@ -1,16 +1,14 @@
-{-# LANGUAGE UnicodeSyntax #-}
-
 module UAssembly where
 
 import           BeamSTypes
 
 newtype Label =
-  Label Int
+  MakeLabel Int
   deriving (Show)
 
 data ReadLoc
-  = RRegX Integer
-  | RRegY Integer
+  = RRegX Int
+  | RRegY Int
   | RAtom SExpr
   | RInt Integer
   | RLit SExpr
@@ -19,8 +17,8 @@ data ReadLoc
   deriving (Show)
 
 data WriteLoc
-  = WRegX Integer
-  | WRegY Integer
+  = WRegX Int
+  | WRegY Int
   | WriteLocError String
   deriving (Show)
 
@@ -31,12 +29,12 @@ data BuiltinError
 
 data UAsmOp
   = ALabel Label
-  | ALine Integer
+  | ALine Int
   | ARet Int
   | AMove ReadLoc
           WriteLoc
   | AError BuiltinError
-  | ATupleNew Integer
+  | ATupleNew Int
               WriteLoc
   | ATuplePut ReadLoc
   | ATupleGetEl ReadLoc
@@ -52,9 +50,9 @@ data UAsmOp
   deriving (Show)
 
 label :: Integral a => a -> UAsmOp
-label i = ALabel (Label (fromIntegral i))
+label i = ALabel (MakeLabel (fromIntegral i))
 
-comment ∷ Show a ⇒ a → UAsmOp
+comment :: Show a => a -> UAsmOp
 comment x = AComment $ show x
 
 ret0 :: UAsmOp
@@ -63,29 +61,29 @@ ret0 = ARet 0
 ret :: Integral a => a -> UAsmOp
 ret n = ARet (fromIntegral n)
 
-move ∷ ReadLoc → WriteLoc → UAsmOp
+move :: ReadLoc -> WriteLoc -> UAsmOp
 move = AMove
 
-funcClause ∷ UAsmOp
+funcClause :: UAsmOp
 funcClause = AError EFunClause
 
-badarg ∷ UAsmOp
+badarg :: UAsmOp
 badarg = AError EBadArg
 
-tupleNew ∷ Integer → WriteLoc → UAsmOp
-tupleNew = ATupleNew
+tupleNew :: Integral a => a -> WriteLoc -> UAsmOp
+tupleNew sz = ATupleNew (fromIntegral sz)
 
-tuplePut ∷ ReadLoc → UAsmOp
+tuplePut :: ReadLoc -> UAsmOp
 tuplePut = ATuplePut
 
-tupleGetEl ∷ ReadLoc → ReadLoc → WriteLoc → UAsmOp
+tupleGetEl :: ReadLoc -> ReadLoc -> WriteLoc -> UAsmOp
 tupleGetEl = ATupleGetEl
 
-allocate :: (Integral a, Integral a1) => a1 -> a -> UAsmOp
+allocate :: (Integral ts, Integral tl) => ts -> tl -> UAsmOp
 allocate stkneed live = AAlloc (fromIntegral stkneed) (fromIntegral live)
 
 deallocate :: Integral a => a -> UAsmOp
 deallocate n = ADealloc (fromIntegral n)
 
-test ∷ String → Label → [ReadLoc] → UAsmOp
+test :: String -> Label -> [ReadLoc] -> UAsmOp
 test = ATest

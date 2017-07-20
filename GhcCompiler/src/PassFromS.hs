@@ -1,5 +1,3 @@
-{-# LANGUAGE UnicodeSyntax #-}
-
 -- Handles input from BeamSParser and creates an Module which has separate
 -- functions, and each opcode is converted to some Uassembly
 module PassFromS where
@@ -10,9 +8,9 @@ import           UFunction
 import           UModule
 
 import qualified Data.Map   as Map
-import Data.Maybe (fromJust)
+import           Data.Maybe (fromJust)
 
-transform ∷ SExpr → Either String Module
+transform :: SExpr -> Either String Module
 transform (SList l) =
   let mod0 = Module {umodName = "", umodFuns = Map.empty, umodExports = []}
   in let mod1 = transform' l mod0
@@ -20,13 +18,13 @@ transform (SList l) =
 transform other = Left $ show other
 
 -- Returns True if a tuple is a {function, ...} otherwise False
-isBeamSFunction ∷ SExpr → Bool
+isBeamSFunction :: SExpr -> Bool
 isBeamSFunction (STuple (SAtom "function":_)) = True
 isBeamSFunction _                             = False
 
 -- Given list of tuples from BEAM S file handles header elements and then
 -- takes functions one by one
-transform' ∷ [SExpr] → Module → Module
+transform' :: [SExpr] -> Module -> Module
 transform' [] mod0 = mod0
 transform' (STuple [SAtom "function", fname, farity, flabel]:tl) mod0 =
   let funs0 = UModule.umodFuns mod0
@@ -51,33 +49,32 @@ transform' (form:_tl) _mod0 =
   error ("unexpected form in the input S file: " ++ show form)
 
 -- Given F/Arity and code body return a Function object
-fnCreate ∷ SExpr → SExpr → SExpr → [SExpr] → Function
+fnCreate :: SExpr -> SExpr -> SExpr -> [SExpr] -> Function
 fnCreate (SAtom fname) (SInt farity) (SInt _flabel) fbody =
   let asmBody = transformCode fbody []
   in Function {ufunName = fname, ufunArity = farity, ufunBody = asmBody}
 fnCreate _f _a _label _body = error "parseFn expects a function"
 
-readLoc ∷ SExpr → Maybe ReadLoc
-readLoc (STuple [SAtom "x", SInt x])    = Just $ RRegX x
-readLoc (STuple [SAtom "y", SInt y])    = Just $ RRegY y
+readLoc :: SExpr -> Maybe ReadLoc
+readLoc (STuple [SAtom "x", SInt x])    = Just $ RRegX (fromIntegral x)
+readLoc (STuple [SAtom "y", SInt y])    = Just $ RRegY (fromIntegral y)
 readLoc (STuple [SAtom "literal", lit]) = Just $ RLit lit
 readLoc (STuple [SAtom "atom", a])      = Just $ RAtom a
 readLoc (SAtom "nil")                   = Just RNil
 readLoc (SInt i)                        = Just $ RInt i
 readLoc other                           = Just $ ReadLocError $ show other
 
-writeLoc ∷ SExpr → Maybe WriteLoc
-writeLoc (STuple [SAtom "x", SInt x]) = Just $ WRegX x
-writeLoc (STuple [SAtom "y", SInt y]) = Just $ WRegY y
+writeLoc :: SExpr -> Maybe WriteLoc
+writeLoc (STuple [SAtom "x", SInt x]) = Just $ WRegX (fromIntegral x)
+writeLoc (STuple [SAtom "y", SInt y]) = Just $ WRegY (fromIntegral y)
 writeLoc other                        = Just $ WriteLocError $ show other
 
 parseLabel :: SExpr -> Label
-parseLabel (STuple [SAtom "f", SInt i]) = Label $ fromIntegral i
+parseLabel (STuple [SAtom "f", SInt i]) = UAssembly.MakeLabel $ fromIntegral i
 
-transformCode ∷ [SExpr] → [UAsmOp] → [UAsmOp]
+transformCode :: [SExpr] -> [UAsmOp] -> [UAsmOp]
 transformCode [] acc = reverse acc
-transformCode (STuple [SAtom "label", f]:tl) acc =
-  transformCode tl (op : acc)
+transformCode (STuple [SAtom "label", f]:tl) acc = transformCode tl (op : acc)
   where
     Just nlabel = sexprInt f
     op = UAssembly.label nlabel
@@ -111,7 +108,8 @@ transformCode (STuple [SAtom "allocate", stkneed, live]:tl) acc =
     Just ulive = sexprInt live
 transformCode (STuple [SAtom "deallocate", n]:SAtom "return":tl) acc =
   transformCode tl (UAssembly.ret un : acc)
-  where Just un = sexprInt n
+  where
+    Just un = sexprInt n
 transformCode (STuple [SAtom "deallocate", n]:tl) acc =
   transformCode tl (UAssembly.deallocate un : acc)
   where

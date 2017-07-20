@@ -1,4 +1,3 @@
-{-# LANGUAGE UnicodeSyntax #-}
 module UModule where
 
 import           UFunction
@@ -6,8 +5,8 @@ import           UFunction
 import qualified Data.Map  as Map
 
 data Module = Module
-  { umodName    :: String
-  , umodFuns    :: Map.Map (String, Integer) Function
+  { umodName :: String
+  , umodFuns :: Map.Map (String, Integer) Function
   , umodExports :: [(String, Integer)]
   }
 

@@ -1,4 +1,3 @@
-{-# LANGUAGE UnicodeSyntax #-}
 module BeamSTypes
   ( SExpr(..)
   , sexprStr
@@ -29,18 +28,18 @@ instance Show SExpr where
   show (SStr s) = show s
 
 -- unwrap a string from an SExpr SAtom or SStr
-sexprStr ∷ SExpr → Maybe String
+sexprStr :: SExpr -> Maybe String
 sexprStr (SAtom s) = Just s
 sexprStr (SStr s)  = Just s
 sexprStr _sxpr     = Nothing
 
 -- Unwrap an integer from an SExpression
-sexprInt ∷ SExpr → Maybe Integer
+sexprInt :: SExpr -> Maybe Integer
 sexprInt (SInt i) = Just i
 sexprInt _sxpr    = Nothing
 
 -- Given two SExpr values from BEAM S parse produce a Funarity pair
-sexprFunarity ∷ SExpr → SExpr → (String, Integer)
+sexprFunarity :: SExpr -> SExpr -> (String, Integer)
 sexprFunarity fname farity =
   let Just fname' = sexprStr fname
       Just farity' = sexprInt farity

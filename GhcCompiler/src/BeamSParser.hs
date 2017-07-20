@@ -1,4 +1,3 @@
-{-# LANGUAGE UnicodeSyntax #-}
 module BeamSParser where
 
 import           BeamSTypes
@@ -24,21 +23,21 @@ languageDef =
 
 lexer = Token.makeTokenParser languageDef
 
-beamSParser ∷ Parser SExpr
+beamSParser :: Parser SExpr
 beamSParser = whiteSpace >> sequenceOfExprs
 
-sequenceOfExprs ∷ Parser SExpr
+sequenceOfExprs :: Parser SExpr
 sequenceOfExprs = do
   forms <- many erlTerm
   return $ SList forms
 
-erlComment ∷ Parser SExpr
+erlComment :: Parser SExpr
 erlComment = do
   _ <- string "%"
   c <- manyTill anyChar newline
   return $ SComment c
 
-erlTerm ∷ Parser SExpr
+erlTerm :: Parser SExpr
 erlTerm = do
   expr <- erlExpr
   _ <- char '.'
@@ -46,39 +45,39 @@ erlTerm = do
   optional erlComment
   return expr
 
-erlExpr ∷ Parser SExpr
+erlExpr :: Parser SExpr
 erlExpr = erlTuple <|> erlList <|> erlAtom <|> erlInteger <|> erlString
 
-erlTuple ∷ Parser SExpr
+erlTuple :: Parser SExpr
 erlTuple = braces erlTupleContent
 
-erlTupleContent ∷ Parser SExpr
+erlTupleContent :: Parser SExpr
 erlTupleContent = do
   items <- commaSep erlExpr
   return $ STuple items
 
-erlList ∷ Parser SExpr
+erlList :: Parser SExpr
 erlList = brackets erlListContent
 
-erlListContent ∷ Parser SExpr
+erlListContent :: Parser SExpr
 erlListContent = do
   items <- commaSep erlExpr
   return $ SList items
 
-erlInteger ∷ Parser SExpr
+erlInteger :: Parser SExpr
 erlInteger = do
   val <- integer
   return $ SInt val
 
-erlAtom ∷ Parser SExpr
+erlAtom :: Parser SExpr
 erlAtom = erlAtomStr <|> erlAtomQuoted
 
-erlAtomStr ∷ Parser SExpr
+erlAtomStr :: Parser SExpr
 erlAtomStr = do
   s <- identifier
   return $ SAtom s
 
-erlAtomQuoted ∷ Parser SExpr
+erlAtomQuoted :: Parser SExpr
 erlAtomQuoted = do
   whiteSpace
   _ <- char '\''
@@ -86,7 +85,7 @@ erlAtomQuoted = do
   _ <- char '\''
   return $ SAtom s
 
-erlString ∷ Parser SExpr
+erlString :: Parser SExpr
 erlString = do
   s <- stringLiteral
   return $ SStr s
@@ -109,7 +108,7 @@ stringLiteral = Token.stringLiteral lexer
 
 charLiteral = Token.charLiteral lexer
 
-parseS ∷ String → Either String SExpr
+parseS :: String -> Either String SExpr
 parseS contents =
   case parse BeamSParser.beamSParser "" contents of
     Left parsecError -> Left $ show parsecError

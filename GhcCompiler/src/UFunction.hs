@@ -1,12 +1,11 @@
-{-# LANGUAGE UnicodeSyntax #-}
 module UFunction where
 
-import UAssembly
+import           UAssembly
 
 data Function = Function
-  { ufunName  :: String
+  { ufunName :: String
   , ufunArity :: Integer
-  , ufunBody  :: [UAsmOp]
+  , ufunBody :: [UAsmOp]
   }
 
 instance Show Function where
