@@ -10,11 +10,12 @@ import           Data.List
 
 data SExpr
   = SAtom String
-  | SList [SExpr]
-  | STuple [SExpr]
-  | SInt Integer
-  | SStr String
+  | SBinStr String
   | SComment String
+  | SInt Integer
+  | SList [SExpr]
+  | SStr String
+  | STuple [SExpr]
 
 instance Show SExpr where
   show (SAtom s) = "'" ++ s ++ "'"
@@ -27,6 +28,7 @@ instance Show SExpr where
   show (SComment c) = "(% " ++ c ++ " %)"
   show (SInt i) = show i
   show (SStr s) = show s
+  show (SBinStr s) = "<<\"" ++ show s ++ "\">>"
 
 -- unwrap a string from an SExpr SAtom or SStr
 sexprStr :: SExpr -> Maybe String

@@ -46,7 +46,15 @@ erlTerm = do
   return expr
 
 erlExpr :: Parser SExpr
-erlExpr = erlTuple <|> erlList <|> erlAtom <|> erlInteger <|> erlString
+erlExpr =
+  erlTuple <|> erlList <|> erlAtom <|> erlInteger <|> erlString <|> erlBinary
+
+erlBinary :: Parser SExpr
+erlBinary = do
+  _ <- string "<<"
+  s <- stringLiteral
+  _ <- string ">>"
+  return $ SBinStr s
 
 erlTuple :: Parser SExpr
 erlTuple = braces erlTupleContent
