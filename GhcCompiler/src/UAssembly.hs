@@ -44,19 +44,21 @@ instance Show ReadLoc where
   show (RRegY i)        = "Y" ++ show i ++ "➔"
   show (RAtom a)        = show a
   show (RInt i)         = show i
-  show (RLit lit)       = show lit
+  show (RLit lit)       = "lit:" ++ show lit
   show RNil             = "[]"
-  show (ReadLocError s) = "error: " ++ s
+  show (ReadLocError s) = "ReadLocError(" ++ s ++ ")"
 
 data WriteLoc
   = WRegX Int
   | WRegY Int
+  | WIgnore
   | WriteLocError String
 
 instance Show WriteLoc where
   show (WRegX i)         = "➔X" ++ show i
   show (WRegY i)         = "➔Y" ++ show i
-  show (WriteLocError s) = "error: " ++ s
+  show WIgnore           = "➔ignore"
+  show (WriteLocError s) = "WriteLocError(" ++ s ++ ")"
 
 data BuiltinError
   = EBadArg
@@ -96,6 +98,8 @@ data UAsmOp
   | AJump LabelLoc
   | ALabel LabelLoc
   | ALine Int
+  | AMakeFun LabelLoc
+             Int
   | AMove ReadLoc
           WriteLoc
   | ARet Int
@@ -106,6 +110,8 @@ data UAsmOp
   | ATest String
           LabelLoc
           [ReadLoc]
+          (Maybe Int)
+          WriteLoc
   | ATestHeap Int
               Int
   | ATrim Int
@@ -165,7 +171,7 @@ allocate = AAlloc
 deallocate :: Int -> UAsmOp
 deallocate = ADealloc
 
-test :: String -> LabelLoc -> [ReadLoc] -> UAsmOp
+test :: String -> LabelLoc -> [ReadLoc] -> Maybe Int -> WriteLoc -> UAsmOp
 test = ATest
 
 callLabel :: Int -> LabelLoc -> UCallType -> UAsmOp
@@ -194,3 +200,6 @@ setNil = ASetNil
 
 trim :: Int -> UAsmOp
 trim = ATrim
+
+makeFun :: LabelLoc -> Int -> UAsmOp
+makeFun = AMakeFun

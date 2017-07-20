@@ -58,13 +58,14 @@ fnCreate (SAtom fname) (SInt farity) (SInt _flabel) fbody =
 fnCreate _f _a _label _body = Uerlc.err "parseFn expects a function"
 
 readLoc :: SExpr -> Maybe ReadLoc
-readLoc (STuple [SAtom "x", SInt x])    = Just $ RRegX (fromIntegral x)
-readLoc (STuple [SAtom "y", SInt y])    = Just $ RRegY (fromIntegral y)
-readLoc (STuple [SAtom "literal", lit]) = Just $ RLit lit
-readLoc (STuple [SAtom "atom", a])      = Just $ RAtom a
-readLoc (SAtom "nil")                   = Just RNil
-readLoc (SInt i)                        = Just $ RInt i
-readLoc other                           = Just $ ReadLocError $ show other
+readLoc (STuple [SAtom "x", SInt x])       = Just $ RRegX (fromIntegral x)
+readLoc (STuple [SAtom "y", SInt y])       = Just $ RRegY (fromIntegral y)
+readLoc (STuple [SAtom "literal", lit])    = Just $ RLit lit
+readLoc (STuple [SAtom "atom", a])         = Just $ RAtom a
+readLoc (SAtom "nil")                      = Just RNil
+readLoc (SInt i)                           = Just $ RInt i
+readLoc (STuple [SAtom "integer", SInt i]) = Just $ RInt i
+readLoc other                              = Just $ ReadLocError $ show other
 
 writeLoc :: SExpr -> Maybe WriteLoc
 writeLoc (STuple [SAtom "x", SInt x]) = Just $ WRegX (fromIntegral x)
@@ -158,12 +159,24 @@ transformCode (STuple [SAtom "deallocate", n]:tl) acc =
 transformCode (SAtom "return":tl) acc = transformCode tl (op : acc)
   where
     op = UAssembly.ret 0
+-- {test,Cond,Fail,Ops}
 transformCode (STuple [SAtom "test", SAtom testName, fail1, SList args]:tl) acc =
   transformCode tl (op : acc)
   where
     ufail = parseLabel fail1
     uargs = map (fromJust . readLoc) args
-    op = UAssembly.test testName ufail uargs
+    op = UAssembly.test testName ufail uargs Nothing WIgnore
+-- {test,Cond,Fail,Live,Ops,Dst}
+transformCode (STuple [SAtom "test", SAtom testName, fail1, live, SList args, dst]:tl) acc =
+  transformCode tl (op : acc)
+  where
+    ufail = parseLabel fail1
+    uargs = map (fromJust . readLoc) args
+    Just udst = writeLoc dst
+    Just ulive = sexprInt live
+    op = UAssembly.test testName ufail uargs (Just ulive) udst
+-- {test,Cond,Fail,Src,Ops}
+-- TODO
 transformCode (STuple [SAtom callOp, _arity, STuple [SAtom "extfunc", SAtom m, SAtom f, arity]]:tl) acc
   | callOp == "call_ext" || callOp == "call_ext_only" =
     transformCode tl (op : acc)
@@ -228,5 +241,12 @@ transformCode (STuple [SAtom "select_val", src, onfail, STuple [SAtom "list", SL
     ufail = parseLabel onfail
     uchoices = parseChoices choices []
     op = UAssembly.select usrc ufail uchoices
+transformCode (STuple [SAtom "make_fun2", lbl, _indx, _olduniq, numfree]:tl) acc =
+  transformCode tl (op : acc)
+  where
+    ulbl = parseLabel lbl
+    Just unumfree = sexprInt numfree
+    op = UAssembly.makeFun ulbl unumfree
+transformCode (STuple (SAtom "%":_):tl) acc = transformCode tl acc
 transformCode (other:_tl) _acc =
   Uerlc.err ("don't know how to transform " ++ show other)
