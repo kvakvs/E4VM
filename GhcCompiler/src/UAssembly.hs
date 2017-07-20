@@ -3,7 +3,7 @@ module UAssembly where
 import           BeamSTypes
 
 newtype Label =
-  MakeLabel Int
+  ULbl Int
   deriving (Show)
 
 data ReadLoc
@@ -50,7 +50,7 @@ data UAsmOp
   deriving (Show)
 
 label :: Integral a => a -> UAsmOp
-label i = ALabel (MakeLabel (fromIntegral i))
+label i = ALabel (ULbl (fromIntegral i))
 
 comment :: Show a => a -> UAsmOp
 comment x = AComment $ show x

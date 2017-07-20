@@ -7,8 +7,16 @@ import           UAssembly
 import           UFunction
 import           UModule
 
-import qualified Data.Map   as Map
-import           Data.Maybe (fromJust)
+import           Control.Exception
+import qualified Data.Map          as Map
+import           Data.Maybe        (fromJust)
+import           Data.Typeable
+
+newtype ParseFromSException =
+  MakeParseFromSException String
+  deriving (Show, Typeable)
+
+instance Exception ParseFromSException
 
 transform :: SExpr -> Either String Module
 transform (SList l) =
@@ -70,7 +78,10 @@ writeLoc (STuple [SAtom "y", SInt y]) = Just $ WRegY (fromIntegral y)
 writeLoc other                        = Just $ WriteLocError $ show other
 
 parseLabel :: SExpr -> Label
-parseLabel (STuple [SAtom "f", SInt i]) = UAssembly.MakeLabel $ fromIntegral i
+parseLabel (STuple [SAtom "f", SInt i]) = UAssembly.ULbl $ fromIntegral i
+parseLabel other = throw ex
+  where
+    ex = MakeParseFromSException ("not a label" ++ show other)
 
 transformCode :: [SExpr] -> [UAsmOp] -> [UAsmOp]
 transformCode [] acc = reverse acc
