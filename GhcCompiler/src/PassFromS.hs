@@ -4,19 +4,13 @@ module PassFromS where
 
 import           BeamSTypes
 import           UAssembly
+import           Uerlc
 import           UFunction
 import           UModule
 
 import           Control.Exception
 import qualified Data.Map          as Map
 import           Data.Maybe        (fromJust)
-import           Data.Typeable
-
-newtype CompileException =
-  CompileException String
-  deriving (Show, Typeable)
-
-instance Exception CompileException
 
 transform :: SExpr -> Either String Module
 transform (SList l) =
@@ -54,14 +48,14 @@ transform' (STuple [SAtom "attributes", SList _mattr]:tl) mod0 =
   transform' tl mod0
 transform' (STuple [SAtom "labels", _]:tl) mod0 = transform' tl mod0
 transform' (form:_tl) _mod0 =
-  error ("unexpected form in the input S file: " ++ show form)
+  Uerlc.err ("unexpected form in the input S file: " ++ show form)
 
 -- Given F/Arity and code body return a Function object
 fnCreate :: SExpr -> SExpr -> SExpr -> [SExpr] -> Function
 fnCreate (SAtom fname) (SInt farity) (SInt _flabel) fbody =
   let asmBody = transformCode fbody []
   in Function {ufunName = fname, ufunArity = farity, ufunBody = asmBody}
-fnCreate _f _a _label _body = error "parseFn expects a function"
+fnCreate _f _a _label _body = Uerlc.err "parseFn expects a function"
 
 readLoc :: SExpr -> Maybe ReadLoc
 readLoc (STuple [SAtom "x", SInt x])    = Just $ RRegX (fromIntegral x)
@@ -77,21 +71,18 @@ writeLoc (STuple [SAtom "x", SInt x]) = Just $ WRegX (fromIntegral x)
 writeLoc (STuple [SAtom "y", SInt y]) = Just $ WRegY (fromIntegral y)
 writeLoc other                        = Just $ WriteLocError $ show other
 
-parseLabel :: SExpr -> ULbl
+parseLabel :: SExpr -> LabelLoc
 parseLabel (STuple [SAtom "f", SInt 0]) = UNoLabel
-parseLabel (STuple [SAtom "f", SInt i]) = ULbl $ fromIntegral i
-parseLabel other = throw ex
-  where
-    ex = CompileException ("not a label" ++ show other)
+parseLabel (STuple [SAtom "f", SInt i]) = LabelLoc $ fromIntegral i
+parseLabel other = Uerlc.err ("not a label" ++ show other)
 
-parseChoices :: [SExpr] -> [(SExpr, ULbl)] -> [(SExpr, ULbl)]
+parseChoices :: [SExpr] -> [(SExpr, LabelLoc)] -> [(SExpr, LabelLoc)]
 parseChoices [] acc = reverse acc
-parseChoices [_] _acc = throw ex
-  where ex = CompileException "parseChoices given a list of odd length"
-parseChoices (val : lbl : tl) acc =
-  parseChoices tl acc1
-  where ulbl = parseLabel lbl
-        acc1 = (val, ulbl) : acc
+parseChoices [_] _acc = Uerlc.err "parseChoices given a list of odd length"
+parseChoices (val:lbl:tl) acc = parseChoices tl acc1
+  where
+    ulbl = parseLabel lbl
+    acc1 = (val, ulbl) : acc
 
 transformCode :: [SExpr] -> [UAsmOp] -> [UAsmOp]
 transformCode [] acc = reverse acc
@@ -112,8 +103,19 @@ transformCode (STuple [SAtom "get_list", src, hddst, tldst]:tl) acc =
     Just uhd = writeLoc hddst
     Just utl = writeLoc tldst
     op = UAssembly.decons usrc uhd utl
+transformCode (STuple [SAtom "put_list", h, t, dst]:tl) acc =
+  transformCode tl (op : acc)
+  where
+    Just uhead = readLoc h
+    Just utail = readLoc t
+    Just udst = writeLoc dst
+    op = UAssembly.cons uhead utail udst
 transformCode (STuple [SAtom "func_info", _mod, _fun, _arity]:tl) acc =
   transformCode tl (UAssembly.funcClause : acc)
+transformCode (STuple [SAtom "case_end", _dst]:tl) acc =
+  transformCode tl (UAssembly.caseClause : acc)
+transformCode (STuple [SAtom "if_end", _dst]:tl) acc =
+  transformCode tl (UAssembly.ifClause : acc)
 transformCode (STuple [SAtom "badmatch", val]:tl) acc =
   transformCode tl (op : acc)
   where
@@ -134,6 +136,10 @@ transformCode (STuple [SAtom "get_tuple_element", src, indx, dst]:tl) acc =
     Just usrc = readLoc src
     Just uindx = readLoc indx
     Just udst = writeLoc dst
+transformCode (STuple [SAtom "jump", dst]:tl) acc = transformCode tl (op : acc)
+  where
+    udst = parseLabel dst
+    op = UAssembly.jump udst
 transformCode (STuple [SAtom opname, stkneed, live]:tl) acc
   | opname == "allocate" || opname == "allocate_zero" =
     transformCode tl (op : acc)
@@ -158,18 +164,28 @@ transformCode (STuple [SAtom "test", SAtom testName, fail1, SList args]:tl) acc 
     ufail = parseLabel fail1
     uargs = map (fromJust . readLoc) args
     op = UAssembly.test testName ufail uargs
-transformCode (STuple [SAtom "call_ext", _arity,
-                       STuple [SAtom "extfunc", SAtom m, SAtom f, arity]]:tl) acc =
-  transformCode tl (op : acc)
+transformCode (STuple [SAtom callOp, _arity, STuple [SAtom "extfunc", SAtom m, SAtom f, arity]]:tl) acc
+  | callOp == "call_ext" || callOp == "call_ext_only" =
+    transformCode tl (op : acc)
   where
     Just uarity = sexprInt arity
-    op = UAssembly.callExt (m, f, uarity) NormalCall
-transformCode (STuple [SAtom "call", arity, dst]:tl) acc =
-  transformCode tl (op : acc)
+    callType =
+      case callOp of
+        "call_ext_only" -> NormalCall
+        "call_ext"      -> TailCall
+        _               -> Uerlc.err "Bad call op type"
+    op = UAssembly.callExt (m, f, uarity) callType
+transformCode (STuple [SAtom callOp, arity, dst]:tl) acc
+  | callOp == "call" || callOp == "call_only" = transformCode tl (op : acc)
   where
     udst = parseLabel dst
     Just uarity = sexprInt arity
-    op = UAssembly.callLabel uarity udst NormalCall
+    callType =
+      case callOp of
+        "call_only" -> NormalCall
+        "call"      -> TailCall
+        _           -> Uerlc.err "Bad call op type"
+    op = UAssembly.callLabel uarity udst callType
 transformCode (STuple [SAtom "call_last", arity, dst, deallc]:tl) acc =
   transformCode tl (op : acc)
   where
@@ -177,8 +193,16 @@ transformCode (STuple [SAtom "call_last", arity, dst, deallc]:tl) acc =
     Just uarity = sexprInt arity
     Just udeallc = sexprInt deallc
     op = UAssembly.callLabel uarity udst (TailCallDealloc udeallc)
-transformCode (STuple [SAtom "gc_bif",
-                       SAtom bifName, onfail, _arity, SList args, dst]:tl) acc =
+transformCode (STuple [SAtom "call_fun", arity]:tl) acc =
+  transformCode tl (op : acc)
+  where
+    Just uarity = sexprInt arity
+    op = UAssembly.callFun uarity
+transformCode (STuple [SAtom "kill", dst]:tl) acc = transformCode tl (op : acc)
+  where
+    Just udst = writeLoc dst
+    op = UAssembly.setNil udst
+transformCode (STuple [SAtom "gc_bif", SAtom bifName, onfail, _arity, SList args, dst]:tl) acc =
   transformCode tl (op : acc)
   where
     ufail = parseLabel onfail
@@ -198,6 +222,5 @@ transformCode (STuple [SAtom "select_val", src, onfail, STuple [SAtom "list", SL
     ufail = parseLabel onfail
     uchoices = parseChoices choices []
     op = UAssembly.select usrc ufail uchoices
-transformCode (other:_tl) _acc = throw ex
-  where
-    ex = CompileException ("don't know how to transform " ++ show other)
+transformCode (other:_tl) _acc =
+  Uerlc.err ("don't know how to transform " ++ show other)

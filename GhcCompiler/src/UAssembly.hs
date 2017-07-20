@@ -2,16 +2,16 @@ module UAssembly where
 
 import           BeamSTypes
 
-data ULbl
-  = ULbl Int
+data LabelLoc
+  = LabelLoc Int
   | UNoLabel
 
-instance Show ULbl where
-  show (ULbl i) = "@" ++ show i
+instance Show LabelLoc where
+  show (LabelLoc i) = "@" ++ show i
   show UNoLabel = "@?"
 
 data CodeLoc
-  = CLabel ULbl
+  = CLabel LabelLoc
   | CExtFunc String
              String
              Int
@@ -22,11 +22,13 @@ instance Show CodeLoc where
 
 data UCallType
   = NormalCall
+  | TailCall
   | TailCallDealloc Int
 
 instance Show UCallType where
   show NormalCall          = "-normal"
-  show (TailCallDealloc n) = "-tail " ++ show n ++ ")"
+  show TailCall            = "-tail"
+  show (TailCallDealloc n) = "-tail:" ++ show n ++ ")"
 
 data ReadLoc
   = RRegX Int
@@ -38,8 +40,8 @@ data ReadLoc
   | ReadLocError String
 
 instance Show ReadLoc where
-  show (RRegX i)        = "←X" ++ show i
-  show (RRegY i)        = "←Y" ++ show i
+  show (RRegX i)        = "X" ++ show i ++ "➔"
+  show (RRegY i)        = "Y" ++ show i ++ "➔"
   show (RAtom a)        = show a
   show (RInt i)         = show i
   show (RLit lit)       = show lit
@@ -52,17 +54,21 @@ data WriteLoc
   | WriteLocError String
 
 instance Show WriteLoc where
-  show (WRegX i)         = "→X" ++ show i
-  show (WRegY i)         = "→Y" ++ show i
+  show (WRegX i)         = "➔X" ++ show i
+  show (WRegY i)         = "➔Y" ++ show i
   show (WriteLocError s) = "error: " ++ s
 
 data BuiltinError
-  = EFunClause
-  | EBadArg
+  = EBadArg
   | EBadMatch ReadLoc
+  | ECaseClause
+  | EFunClause
+  | EIfClause
 
 instance Show BuiltinError where
   show EFunClause    = "function_clause"
+  show EIfClause     = "if_clause"
+  show ECaseClause   = "case_clause"
   show EBadArg       = "badarg"
   show (EBadMatch s) = "badmatch " ++ show s
 
@@ -70,29 +76,33 @@ data UAsmOp
   = AAlloc Int
            Int
   | ACallBif String
-             ULbl
+             LabelLoc
              [ReadLoc]
              UCallType
              WriteLoc
   | ACall Int
           CodeLoc
           UCallType
+  | ACallFun Int
   | AComment String
+  | ACons ReadLoc ReadLoc WriteLoc
   | ADealloc Int
   | ADecons ReadLoc
             WriteLoc
             WriteLoc
   | AError BuiltinError
-  | ALabel ULbl
+  | AJump LabelLoc
+  | ALabel LabelLoc
   | ALine Int
   | AMove ReadLoc
           WriteLoc
   | ARet Int
   | ASelect ReadLoc
-            ULbl
-            [(SExpr, ULbl)]
+            LabelLoc
+            [(SExpr, LabelLoc)]
+  | ASetNil WriteLoc
   | ATest String
-          ULbl
+          LabelLoc
           [ReadLoc]
   | ATestHeap Int
               Int
@@ -104,8 +114,11 @@ data UAsmOp
   | ATuplePut ReadLoc
   deriving (Show)
 
+jump :: LabelLoc -> UAsmOp
+jump = AJump
+
 label :: Int -> UAsmOp
-label i = ALabel (ULbl i)
+label i = ALabel (LabelLoc i)
 
 comment :: Show a => a -> UAsmOp
 comment x = AComment $ show x
@@ -118,6 +131,12 @@ move = AMove
 
 funcClause :: UAsmOp
 funcClause = AError EFunClause
+
+caseClause :: UAsmOp
+caseClause = AError ECaseClause
+
+ifClause :: UAsmOp
+ifClause = AError EIfClause
 
 badarg :: UAsmOp
 badarg = AError EBadArg
@@ -143,20 +162,29 @@ allocate = AAlloc
 deallocate :: Int -> UAsmOp
 deallocate = ADealloc
 
-test :: String -> ULbl -> [ReadLoc] -> UAsmOp
+test :: String -> LabelLoc -> [ReadLoc] -> UAsmOp
 test = ATest
 
-callLabel :: Int -> ULbl -> UCallType -> UAsmOp
+callLabel :: Int -> LabelLoc -> UCallType -> UAsmOp
 callLabel arity lbl = ACall arity (CLabel lbl)
 
 callExt :: (String, String, Int) -> UCallType -> UAsmOp
 callExt (m, f, arity) = ACall arity (CExtFunc m f arity)
 
-callBif :: String -> ULbl -> [ReadLoc] -> UCallType -> WriteLoc -> UAsmOp
+callBif :: String -> LabelLoc -> [ReadLoc] -> UCallType -> WriteLoc -> UAsmOp
 callBif = ACallBif
 
 decons :: ReadLoc -> WriteLoc -> WriteLoc -> UAsmOp
 decons = ADecons
 
-select :: ReadLoc -> ULbl -> [(SExpr, ULbl)] -> UAsmOp
+select :: ReadLoc -> LabelLoc -> [(SExpr, LabelLoc)] -> UAsmOp
 select = ASelect
+
+cons :: ReadLoc -> ReadLoc -> WriteLoc -> UAsmOp
+cons = ACons
+
+callFun :: Int -> UAsmOp
+callFun = ACallFun
+
+setNil :: WriteLoc -> UAsmOp
+setNil = ASetNil
