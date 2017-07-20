@@ -4,3 +4,4 @@
 cabal.config
 .idea/
 .ideaHaskellLib/
+out/

@@ -1,6 +1,7 @@
 module BeamSTypes
   ( SExpr(..)
   , sexprStr
+  , sexprInteger
   , sexprInt
   , sexprFunarity
   ) where
@@ -16,7 +17,7 @@ data SExpr
   | SComment String
 
 instance Show SExpr where
-  show (SAtom s) = s
+  show (SAtom s) = "'" ++ s ++ "'"
   show (SList items) =
     let str_items = map show items
     in "[" ++ intercalate "," str_items ++ "]"
@@ -33,14 +34,19 @@ sexprStr (SAtom s) = Just s
 sexprStr (SStr s)  = Just s
 sexprStr _sxpr     = Nothing
 
--- Unwrap an integer from an SExpression
-sexprInt :: SExpr -> Maybe Integer
-sexprInt (SInt i) = Just i
+-- Unwrap a long integer from an SExpression
+sexprInteger :: SExpr -> Maybe Integer
+sexprInteger (SInt i) = Just i
+sexprInteger _sxpr    = Nothing
+
+-- Unwrap a short machine integer from an SExpression
+sexprInt :: SExpr -> Maybe Int
+sexprInt (SInt i) = Just (fromIntegral i)
 sexprInt _sxpr    = Nothing
 
 -- Given two SExpr values from BEAM S parse produce a Funarity pair
 sexprFunarity :: SExpr -> SExpr -> (String, Integer)
 sexprFunarity fname farity =
   let Just fname' = sexprStr fname
-      Just farity' = sexprInt farity
+      Just farity' = sexprInteger farity
   in (fname', farity')
