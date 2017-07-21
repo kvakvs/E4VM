@@ -177,15 +177,19 @@ transformCode (STuple [SAtom "test", SAtom testName, fail1, live, SList args, ds
     op = UAssembly.test testName ufail uargs (Just ulive) udst
 -- {test,Cond,Fail,Src,Ops}
 -- TODO
-transformCode (STuple [SAtom callOp, _arity, STuple [SAtom "extfunc", SAtom m, SAtom f, arity]]:tl) acc
-  | callOp == "call_ext" || callOp == "call_ext_only" =
+transformCode (STuple (SAtom callOp : _arity : mfa : deallc) : tl) acc
+  | callOp == "call_ext" ||
+      callOp == "call_ext_only" || callOp == "call_ext_last" =
     transformCode tl (op : acc)
   where
+    STuple [SAtom "extfunc", SAtom m, SAtom f, arity] = mfa
     Just uarity = sexprInt arity
+    Just udeallc = sexprInt $ head deallc
     callType =
       case callOp of
         "call_ext_only" -> NormalCall
         "call_ext"      -> TailCall
+        "call_ext_last" -> TailCallDealloc udeallc
         _               -> Uerlc.err "Bad call op type"
     op = UAssembly.callExt (m, f, uarity) callType
 transformCode (STuple [SAtom callOp, arity, dst]:tl) acc
@@ -216,7 +220,15 @@ transformCode (STuple [SAtom killOp, dst]:tl) acc
   where
     Just udst = writeLoc dst
     op = UAssembly.setNil udst
-transformCode (STuple [SAtom "gc_bif", SAtom bifName, onfail, _arity, SList args, dst]:tl) acc =
+transformCode (STuple [SAtom "gc_bif", SAtom bifName, onfail, live, SList args, dst]:tl) acc =
+  transformCode tl (op : acc)
+  where
+    ufail = parseLabel onfail
+    Just udst = writeLoc dst
+    uargs = map (fromJust . readLoc) args
+    Just ulive = sexprInt live
+    op = UAssembly.callBif bifName ufail uargs (GcEnabledCall ulive) udst
+transformCode (STuple [SAtom "bif", SAtom bifName, onfail, SList args, dst]:tl) acc =
   transformCode tl (op : acc)
   where
     ufail = parseLabel onfail
@@ -234,19 +246,29 @@ transformCode (STuple [SAtom "trim", n, _remaining]:tl) acc =
   where
     Just un = sexprInt n
     op = UAssembly.trim un
-transformCode (STuple [SAtom "select_val", src, onfail, STuple [SAtom "list", SList choices]]:tl) acc =
-  transformCode tl (op : acc)
+transformCode (STuple [SAtom selOp, src, onfail, STuple [SAtom "list", SList choices]]:tl) acc
+  | selOp == "select_val" || selOp == "select_tuple_arity" =
+    transformCode tl (op : acc)
   where
     Just usrc = readLoc src
     ufail = parseLabel onfail
     uchoices = parseChoices choices []
-    op = UAssembly.select usrc ufail uchoices
+    op =
+      case selOp of
+        "select_val" -> UAssembly.select SelectVal usrc ufail uchoices
+        "select_tuple_arity" ->
+          UAssembly.select SelectTupleArity usrc ufail uchoices
 transformCode (STuple [SAtom "make_fun2", lbl, _indx, _olduniq, numfree]:tl) acc =
   transformCode tl (op : acc)
   where
     ulbl = parseLabel lbl
     Just unumfree = sexprInt numfree
     op = UAssembly.makeFun ulbl unumfree
+transformCode (STuple [SAtom "bs_context_to_binary", src]:tl) acc =
+  transformCode tl (op : acc)
+  where
+    Just usrc = readLoc src
+    op = UAssembly.bsContextToBin usrc
 transformCode (STuple (SAtom "%":_):tl) acc = transformCode tl acc
 transformCode (other:_tl) _acc =
   Uerlc.err ("don't know how to transform " ++ show other)

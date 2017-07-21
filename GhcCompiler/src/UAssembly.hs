@@ -2,6 +2,11 @@ module UAssembly where
 
 import           BeamSTypes
 
+data USelectSubject
+  = SelectVal
+  | SelectTupleArity
+  deriving (Show)
+
 data LabelLoc
   = LabelLoc Int
   | UNoLabel
@@ -22,13 +27,15 @@ instance Show CodeLoc where
 
 data UCallType
   = NormalCall
+  | GcEnabledCall Int
   | TailCall
   | TailCallDealloc Int
 
 instance Show UCallType where
   show NormalCall          = "-normal"
   show TailCall            = "-tail"
-  show (TailCallDealloc n) = "-tail:" ++ show n ++ ")"
+  show (GcEnabledCall n)   = "-gc:" ++ show n
+  show (TailCallDealloc n) = "-tail -dealloc:" ++ show n
 
 data ReadLoc
   = RRegX Int
@@ -77,6 +84,7 @@ instance Show BuiltinError where
 data UAsmOp
   = AAlloc Int
            Int
+  | ABsContextToBin ReadLoc -- convert matchstate in rxy to a (sub)binary
   | ACallBif String
              LabelLoc
              [ReadLoc]
@@ -103,7 +111,8 @@ data UAsmOp
   | AMove ReadLoc
           WriteLoc
   | ARet Int
-  | ASelect ReadLoc
+  | ASelect USelectSubject
+            ReadLoc
             LabelLoc
             [(SExpr, LabelLoc)]
   | ASetNil WriteLoc
@@ -186,7 +195,7 @@ callBif = ACallBif
 decons :: ReadLoc -> WriteLoc -> WriteLoc -> UAsmOp
 decons = ADecons
 
-select :: ReadLoc -> LabelLoc -> [(SExpr, LabelLoc)] -> UAsmOp
+select :: USelectSubject -> ReadLoc -> LabelLoc -> [(SExpr, LabelLoc)] -> UAsmOp
 select = ASelect
 
 cons :: ReadLoc -> ReadLoc -> WriteLoc -> UAsmOp
@@ -203,3 +212,6 @@ trim = ATrim
 
 makeFun :: LabelLoc -> Int -> UAsmOp
 makeFun = AMakeFun
+
+bsContextToBin :: ReadLoc -> UAsmOp
+bsContextToBin = ABsContextToBin
