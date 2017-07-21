@@ -137,6 +137,13 @@ transformCode (STuple [SAtom "get_tuple_element", src, indx, dst]:tl) acc =
     Just usrc = readLoc src
     Just uindx = readLoc indx
     Just udst = writeLoc dst
+transformCode (STuple [SAtom "set_tuple_element", dst, tup, indx]:tl) acc =
+  transformCode tl (op : acc)
+  where
+    Just utup = readLoc tup
+    Just udst = writeLoc dst
+    Just uindx = readLoc indx
+    op = UAssembly.tupleSetEl utup uindx udst
 transformCode (STuple [SAtom "jump", dst]:tl) acc = transformCode tl (op : acc)
   where
     udst = parseLabel dst
@@ -177,7 +184,7 @@ transformCode (STuple [SAtom "test", SAtom testName, fail1, live, SList args, ds
     op = UAssembly.test testName ufail uargs (Just ulive) udst
 -- {test,Cond,Fail,Src,Ops}
 -- TODO
-transformCode (STuple (SAtom callOp : _arity : mfa : deallc) : tl) acc
+transformCode (STuple (SAtom callOp:_arity:mfa:deallc):tl) acc
   | callOp == "call_ext" ||
       callOp == "call_ext_only" || callOp == "call_ext_last" =
     transformCode tl (op : acc)
@@ -269,6 +276,38 @@ transformCode (STuple [SAtom "bs_context_to_binary", src]:tl) acc =
   where
     Just usrc = readLoc src
     op = UAssembly.bsContextToBin usrc
+transformCode (STuple [SAtom "bs_init2", onfail, sz, _extra, live, _flags, dst]:tl) acc =
+  transformCode tl (op : acc)
+  where
+    Just usz = sexprInt sz
+    Just ulive = sexprInt live
+    Just udst = writeLoc dst
+    uonfail = parseLabel onfail
+    op = UAssembly.bsInit usz ulive udst uonfail
+transformCode (STuple [SAtom bsOp, src, indx]:tl) acc
+  | bsOp == "bs_save2" || bsOp == "bs_restore2" = transformCode tl (op : acc)
+  where
+    Just usrc = readLoc src
+    Just uindx = sexprInt indx
+    op =
+      case bsOp of
+        "bs_save2"    -> UAssembly.bsSave usrc uindx
+        "bs_restore2" -> UAssembly.bsRestore usrc uindx
+transformCode (STuple [SAtom "bs_put_integer", _onfail, src, _n, flags, dst]:tl) acc =
+  transformCode tl (op : acc)
+  where
+    Just usrc = readLoc src
+    Just udst = writeLoc dst
+    uflags = parseBinaryFlags flags
+    op = UAssembly.bsPutInteger usrc uflags udst
 transformCode (STuple (SAtom "%":_):tl) acc = transformCode tl acc
 transformCode (other:_tl) _acc =
   Uerlc.err ("don't know how to transform " ++ show other)
+
+parseBinaryFlags :: SExpr -> BinaryFlags
+parseBinaryFlags (STuple [SAtom "field_flags", SList flgs]) =
+  BinaryFlags unit sig big
+  where
+    unit = 8
+    sig = SAtom "signed" `elem` flgs
+    big = SAtom "big" `elem` flgs

@@ -16,6 +16,7 @@ data SExpr
   | SList [SExpr]
   | SStr String
   | STuple [SExpr]
+  deriving(Eq)
 
 instance Show SExpr where
   show (SAtom s) = "'" ++ s ++ "'"

@@ -25,6 +25,7 @@ instance Show CodeLoc where
   show (CLabel ulbl)    = show ulbl
   show (CExtFunc m f a) = "@" ++ m ++ ":" ++ f ++ "/" ++ show a
 
+-- flags and options for a call
 data UCallType
   = NormalCall
   | GcEnabledCall Int
@@ -37,6 +38,7 @@ instance Show UCallType where
   show (GcEnabledCall n)   = "-gc:" ++ show n
   show (TailCallDealloc n) = "-tail -dealloc:" ++ show n
 
+-- sources of the data (registers, literals, immediates...)
 data ReadLoc
   = RRegX Int
   | RRegY Int
@@ -55,6 +57,7 @@ instance Show ReadLoc where
   show RNil             = "[]"
   show (ReadLocError s) = "ReadLocError(" ++ s ++ ")"
 
+-- where you can possibly store the value
 data WriteLoc
   = WRegX Int
   | WRegY Int
@@ -67,6 +70,7 @@ instance Show WriteLoc where
   show WIgnore           = "➔ignore"
   show (WriteLocError s) = "WriteLocError(" ++ s ++ ")"
 
+-- bad stuff (shorthand opcodes which cause exceptions)
 data BuiltinError
   = EBadArg
   | EBadMatch ReadLoc
@@ -81,10 +85,48 @@ instance Show BuiltinError where
   show EBadArg       = "badarg"
   show (EBadMatch s) = "badmatch " ++ show s
 
+data BinUnitWidth =
+  BinUnitWidth Int
+               Int
+
+-- options for binary value: (unitsize, signed, bigendian)
+data BinaryFlags =
+  BinaryFlags Int
+              Bool
+              Bool
+
+instance Show BinaryFlags where
+  show (BinaryFlags u sig big) =
+    "unit:" ++ show u ++ "/" ++ sigStr ++ "/" ++ bigStr
+    where
+      sigStr =
+        if sig
+          then "signed"
+          else "unsigned"
+      bigStr =
+        if big
+          then "big"
+          else "little"
+
 data UAsmOp
   = AAlloc Int
            Int
-  | ABsContextToBin ReadLoc -- convert matchstate in rxy to a (sub)binary
+  -- convert matchstate in rxy to a (sub)binary
+  | ABsContextToBin ReadLoc
+  -- alloc arg0 words, arg1 live for gc, store result into writelocs
+  | ABsInit Int
+            Int
+            WriteLoc
+            LabelLoc
+  -- store integer with unit/width/flags into writeloc
+  | ABsPutInteger ReadLoc
+                  BinaryFlags
+                  WriteLoc
+  | ABsRestore ReadLoc
+               Int
+  -- save match offset into save array[i]
+  | ABsSave ReadLoc
+            Int
   | ACallBif String
              LabelLoc
              [ReadLoc]
@@ -125,6 +167,9 @@ data UAsmOp
               Int
   | ATrim Int
   | ATupleGetEl ReadLoc
+                ReadLoc
+                WriteLoc
+  | ATupleSetEl ReadLoc
                 ReadLoc
                 WriteLoc
   | ATupleNew Int
@@ -171,6 +216,9 @@ tuplePut = ATuplePut
 tupleGetEl :: ReadLoc -> ReadLoc -> WriteLoc -> UAsmOp
 tupleGetEl = ATupleGetEl
 
+tupleSetEl :: ReadLoc -> ReadLoc -> WriteLoc -> UAsmOp
+tupleSetEl = ATupleSetEl
+
 testHeap :: Int -> Int -> UAsmOp
 testHeap = ATestHeap
 
@@ -215,3 +263,15 @@ makeFun = AMakeFun
 
 bsContextToBin :: ReadLoc -> UAsmOp
 bsContextToBin = ABsContextToBin
+
+bsSave :: ReadLoc -> Int -> UAsmOp
+bsSave = ABsSave
+
+bsRestore :: ReadLoc -> Int -> UAsmOp
+bsRestore = ABsRestore
+
+bsInit :: Int -> Int -> WriteLoc -> LabelLoc -> UAsmOp
+bsInit = ABsInit
+
+bsPutInteger :: ReadLoc -> BinaryFlags -> WriteLoc -> UAsmOp
+bsPutInteger = ABsPutInteger
