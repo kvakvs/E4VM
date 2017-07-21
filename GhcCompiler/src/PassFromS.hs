@@ -206,8 +206,8 @@ transformCode (STuple [SAtom callOp, arity, dst]:tl) acc
     Just uarity = sexprInt arity
     callType =
       case callOp of
-        "call_only" -> NormalCall
-        "call"      -> TailCall
+        "call_only" -> TailCall
+        "call"      -> NormalCall
         _           -> Uerlc.err "Bad call op type"
     op = UAssembly.callLabel uarity udst callType
 transformCode (STuple [SAtom "call_last", arity, dst, deallc]:tl) acc =
