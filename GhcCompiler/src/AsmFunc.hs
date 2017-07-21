@@ -5,9 +5,9 @@ import           Asm
 import           Data.List
 
 data Function = Function
-  { ufunName :: String
-  , ufunArity :: Integer
-  , ufunBody :: [UAsmOp]
+  { afName :: String
+  , afArity :: Integer
+  , afCode :: [UAsmOp]
   }
 
 instance Show Function where

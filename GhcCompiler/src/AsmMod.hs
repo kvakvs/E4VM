@@ -6,9 +6,9 @@ import qualified Data.Map  as Map
 import Data.List
 
 data Module = Module
-  { umodName :: String
-  , umodFuns :: Map.Map (String, Integer) Function
-  , umodExports :: [(String, Integer)]
+  { amName :: String
+  , amFuns :: Map.Map (String, Integer) Function
+  , amExports :: [(String, Integer)]
   }
 
 instance Show Module where

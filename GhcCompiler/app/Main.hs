@@ -31,11 +31,6 @@ stageBeamSToUasm = TransformS.transform
 stageCompileAsm :: AsmMod.Module -> BytecodeMod.Module
 stageCompileAsm = TransformAsm.transform
 
---runStage :: String -> String -> Either String out -> out
---runStage fileName descr result =
---  catch result of
---    Left e -> Uerlc.err $ fileName ++ " -> " ++ descr ++ " stage ERROR: " ++ e
---    Right outV -> outV
 initLogging :: IO ()
 initLogging = do
   s <- openlog "SyslogStuff" [PID] USER DEBUG

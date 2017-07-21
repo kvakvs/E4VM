@@ -8,14 +8,13 @@ import           AsmMod
 import           Term
 import           Uerlc
 
-import           Control.Exception
-import qualified Data.Map          as Map
-import           Data.Maybe        (fromJust)
+import qualified Data.Map   as Map
+import           Data.Maybe (fromJust)
 
 transform :: Term -> Module
 transform (ErlList l) = mod1
   where
-    mod0 = Module {umodName = "", umodFuns = Map.empty, umodExports = []}
+    mod0 = Module {amName = "", amFuns = Map.empty, amExports = []}
     mod1 = transform' l mod0
 transform other = Uerlc.err $ show other
 
@@ -29,20 +28,22 @@ isBeamSFunction _                              = False
 transform' :: [Term] -> Module -> Module
 transform' [] mod0 = mod0
 transform' (ErlTuple [Atom "function", fname, farity, flabel]:tl) mod0 =
-  let funs0 = AsmMod.umodFuns mod0
-      tl1 = dropWhile (not . isBeamSFunction) tl
-      fbody = takeWhile (not . isBeamSFunction) tl
-      outFn = fnCreate fname farity flabel fbody
-      funArity = funarityFromErl fname farity
-      funs1 = Map.insert funArity outFn funs0
-  in transform' tl1 mod0 {umodFuns = funs1}
-transform' (ErlTuple [Atom "module", Atom mname]:tl) mod0 =
-  let mod1 = mod0 {umodName = mname}
-  in transform' tl mod1
+  transform' tl1 mod0 {amFuns = funs1}
+  where
+    funs0 = AsmMod.amFuns mod0
+    tl1 = dropWhile (not . isBeamSFunction) tl
+    fbody = takeWhile (not . isBeamSFunction) tl
+    outFn = fnCreate fname farity flabel fbody
+    funArity = funarityFromErl fname farity
+    funs1 = Map.insert funArity outFn funs0
+transform' (ErlTuple [Atom "module", Atom mname]:tl) mod0 = transform' tl mod1
+  where
+    mod1 = mod0 {amName = mname}
 transform' (ErlTuple [Atom "exports", ErlList exps]:tl) mod0 =
-  let exps1 = map (\(ErlTuple [Atom fn, ErlInt ar]) -> (fn, ar)) exps
-      mod1 = mod0 {umodExports = exps1}
-  in transform' tl mod1
+  transform' tl mod1
+  where
+    exps1 = map (\(ErlTuple [Atom fn, ErlInt ar]) -> (fn, ar)) exps
+    mod1 = mod0 {amExports = exps1}
 -- ignored at the moment
 transform' (ErlTuple [Atom "attributes", ErlList _mattr]:tl) mod0 =
   transform' tl mod0
@@ -53,8 +54,9 @@ transform' (form:_tl) _mod0 =
 -- Given F/Arity and code body return a Function object
 fnCreate :: Term -> Term -> Term -> [Term] -> Function
 fnCreate (Atom fname) (ErlInt farity) (ErlInt _flabel) fbody =
-  let asmBody = transformCode fbody []
-  in Function {ufunName = fname, ufunArity = farity, ufunBody = asmBody}
+  AsmFunc.Function {afName = fname, afArity = farity, afCode = asmBody}
+  where
+    asmBody = transformCode fbody []
 fnCreate _f _a _label _body = Uerlc.err "parseFn expects a function"
 
 -- Given a beamS expression, parse an Asm data source
