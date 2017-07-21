@@ -48,9 +48,14 @@ data ReadLoc
   | RNil
   | ReadLocError String
 
+rarrow :: [Char]
+rarrow = "➚"
+warrow :: [Char]
+warrow = "➘"
+
 instance Show ReadLoc where
-  show (RRegX i)        = "X" ++ show i ++ "➔"
-  show (RRegY i)        = "Y" ++ show i ++ "➔"
+  show (RRegX i)        = "x" ++ show i ++ rarrow
+  show (RRegY i)        = "y" ++ show i ++ rarrow
   show (RAtom a)        = show a
   show (RInt i)         = show i
   show (RLit lit)       = "lit:" ++ show lit
@@ -65,9 +70,9 @@ data WriteLoc
   | WriteLocError String
 
 instance Show WriteLoc where
-  show (WRegX i)         = "➔X" ++ show i
-  show (WRegY i)         = "➔Y" ++ show i
-  show WIgnore           = "➔ignore"
+  show (WRegX i)         = warrow ++ "X" ++ show i
+  show (WRegY i)         = warrow ++ "Y" ++ show i
+  show WIgnore           = warrow ++ "drop"
   show (WriteLocError s) = "WriteLocError(" ++ s ++ ")"
 
 -- bad stuff (shorthand opcodes which cause exceptions)
@@ -175,7 +180,39 @@ data UAsmOp
   | ATupleNew Int
               WriteLoc
   | ATuplePut ReadLoc
-  deriving (Show)
+
+show1 s args = s ++ " " ++ unwords args
+
+instance Show UAsmOp where
+  show (AAlloc a b) = show1 "alloc" [show a, show b]
+  show (ABsContextToBin a) = show1 "bsctx2bin" [show a]
+  show (ABsInit a b c d) = show1 "bsinit" [show a, show b, show c, show d]
+  show (ABsPutInteger a b c) = show1 "bsputi" [show a, show b, show c]
+  show (ABsRestore a b) = show1 "bsrest" [show a, show b]
+  show (ABsSave a b) = show1 "bssave" [show a, show b]
+  show (ACallBif a b c d e) = show1 "callbif" [show a, show b, show c, show d, show e]
+  show (ACall a b c) = show1 "call" [show a, show b, show c]
+  show (ACallFun a) = show1 "callf" [show a]
+  show (AComment a) = show1 ";" [show a]
+  show (ACons a b c) = show1 "cons" [show a, show b, show c]
+  show (ADealloc a) = show1 "dealloc" [show a]
+  show (ADecons a b c) = show1 "decons" [show a, show b, show c]
+  show (AError a) = show1 "err" [show a]
+  show (AJump a) = show1 "jmp" [show a]
+  show (ALabel a) = show1 "; label" [show a]
+  show (ALine a) = show1 "; line" [show a]
+  show (AMakeFun a b) = show1 "mkfun" [show a, show b]
+  show (AMove a b) = show1 "move" [show a, show b]
+  show (ARet a) = show1 "ret" [show a]
+  show (ASelect a b c d) = show1 "select" [show a, show b, show c, show d]
+  show (ASetNil a) = show1 "nil" [show a]
+  show (ATest a b c d e) = show1 "test" [show a, show b, show c, show d, show e]
+  show (ATestHeap a b) = show1 "testheap" [show a, show b]
+  show (ATrim a) = show1 "trim" [show a]
+  show (ATupleGetEl a b c) = show1 "getel" [show a, show b, show c]
+  show (ATupleSetEl a b c) = show1 "setel" [show a, show b, show c]
+  show (ATupleNew a b) = show1 "mktuple" [show a, show b]
+  show (ATuplePut a) = show1 "put" [show a]
 
 jump :: LabelLoc -> UAsmOp
 jump = AJump

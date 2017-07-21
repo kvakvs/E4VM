@@ -14,7 +14,7 @@ data Module = Module
 instance Show Module where
   show (Module name' funs' _exports) =
     intercalate "\n" [header, funs, footer]
-    where header = "%% module " ++ name' ++ "======"
-          footer = "%% ====== end module " ++ name'
+    where header = ";; module " ++ name' ++ "======"
+          footer = ";; ====== end module " ++ name'
           funs = intercalate "\n" strFuns
           strFuns = map show (Map.elems funs')
