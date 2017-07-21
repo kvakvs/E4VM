@@ -57,6 +57,7 @@ fnCreate (SAtom fname) (SInt farity) (SInt _flabel) fbody =
   in Function {ufunName = fname, ufunArity = farity, ufunBody = asmBody}
 fnCreate _f _a _label _body = Uerlc.err "parseFn expects a function"
 
+-- Given a beamS expression, parse an UAssembly data source
 readLoc :: SExpr -> Maybe ReadLoc
 readLoc (STuple [SAtom "x", SInt x])       = Just $ RRegX (fromIntegral x)
 readLoc (STuple [SAtom "y", SInt y])       = Just $ RRegY (fromIntegral y)
@@ -67,6 +68,7 @@ readLoc (SInt i)                           = Just $ RInt i
 readLoc (STuple [SAtom "integer", SInt i]) = Just $ RInt i
 readLoc other                              = Just $ ReadLocError $ show other
 
+-- Given a beamS expression parse an UAssembly data destination
 writeLoc :: SExpr -> Maybe WriteLoc
 writeLoc (STuple [SAtom "x", SInt x]) = Just $ WRegX (fromIntegral x)
 writeLoc (STuple [SAtom "y", SInt y]) = Just $ WRegY (fromIntegral y)
@@ -194,29 +196,26 @@ transformCode (STuple (SAtom callOp:_arity:mfa:deallc):tl) acc
     Just udeallc = sexprInt $ head deallc
     callType =
       case callOp of
-        "call_ext_only" -> NormalCall
-        "call_ext"      -> TailCall
+        "call_ext"      -> NormalCall
+        "call_ext_only" -> TailCall
         "call_ext_last" -> TailCallDealloc udeallc
         _               -> Uerlc.err "Bad call op type"
     op = UAssembly.callExt (m, f, uarity) callType
-transformCode (STuple [SAtom callOp, arity, dst]:tl) acc
-  | callOp == "call" || callOp == "call_only" = transformCode tl (op : acc)
+transformCode (STuple (SAtom callOp:arity:dst:deallc):tl) acc
+  | callOp == "call" || callOp == "call_only" || callOp == "call_last" =
+    transformCode tl (op : acc)
   where
     udst = parseLabel dst
     Just uarity = sexprInt arity
+    [deallc0] = deallc
+    Just udeallc = sexprInt deallc0
     callType =
       case callOp of
-        "call_only" -> TailCall
         "call"      -> NormalCall
+        "call_only" -> TailCall
+        "call_last" -> TailCallDealloc udeallc
         _           -> Uerlc.err "Bad call op type"
     op = UAssembly.callLabel uarity udst callType
-transformCode (STuple [SAtom "call_last", arity, dst, deallc]:tl) acc =
-  transformCode tl (op : acc)
-  where
-    udst = parseLabel dst
-    Just uarity = sexprInt arity
-    Just udeallc = sexprInt deallc
-    op = UAssembly.callLabel uarity udst (TailCallDealloc udeallc)
 transformCode (STuple [SAtom "call_fun", arity]:tl) acc =
   transformCode tl (op : acc)
   where
@@ -293,6 +292,8 @@ transformCode (STuple [SAtom bsOp, src, indx]:tl) acc
       case bsOp of
         "bs_save2"    -> UAssembly.bsSave usrc uindx
         "bs_restore2" -> UAssembly.bsRestore usrc uindx
+        other ->
+          Uerlc.err $ "can't create bs_ command for " ++ show other
 transformCode (STuple [SAtom "bs_put_integer", _onfail, src, _n, flags, dst]:tl) acc =
   transformCode tl (op : acc)
   where
@@ -311,3 +312,5 @@ parseBinaryFlags (STuple [SAtom "field_flags", SList flgs]) =
     unit = 8
     sig = SAtom "signed" `elem` flgs
     big = SAtom "big" `elem` flgs
+parseBinaryFlags other =
+  Uerlc.err $ "can't parse binary flags from " ++ show other

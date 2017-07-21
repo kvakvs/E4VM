@@ -70,8 +70,8 @@ data WriteLoc
   | WriteLocError String
 
 instance Show WriteLoc where
-  show (WRegX i)         = warrow ++ "X" ++ show i
-  show (WRegY i)         = warrow ++ "Y" ++ show i
+  show (WRegX i)         = warrow ++ "x" ++ show i
+  show (WRegY i)         = warrow ++ "y" ++ show i
   show WIgnore           = warrow ++ "drop"
   show (WriteLocError s) = "WriteLocError(" ++ s ++ ")"
 
@@ -181,6 +181,7 @@ data UAsmOp
               WriteLoc
   | ATuplePut ReadLoc
 
+show1 :: [Char] -> [String] -> [Char]
 show1 s args = s ++ " " ++ unwords args
 
 instance Show UAsmOp where
