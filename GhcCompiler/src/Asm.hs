@@ -1,6 +1,6 @@
 module Asm where
 
-import           BeamSTypes
+import           Term
 
 data USelectSubject
   = SelectVal
@@ -42,9 +42,9 @@ instance Show UCallType where
 data ReadLoc
   = RRegX Int
   | RRegY Int
-  | RAtom SExpr
+  | RAtom Term
   | RInt Integer
-  | RLit SExpr
+  | RLit Term
   | RNil
   | ReadLocError String
 
@@ -161,7 +161,7 @@ data UAsmOp
   | ASelect USelectSubject
             ReadLoc
             LabelLoc
-            [(SExpr, LabelLoc)]
+            [(Term, LabelLoc)]
   | ASetNil WriteLoc
   | ATest String
           LabelLoc
@@ -281,7 +281,7 @@ callBif = ACallBif
 decons :: ReadLoc -> WriteLoc -> WriteLoc -> UAsmOp
 decons = ADecons
 
-select :: USelectSubject -> ReadLoc -> LabelLoc -> [(SExpr, LabelLoc)] -> UAsmOp
+select :: USelectSubject -> ReadLoc -> LabelLoc -> [(Term, LabelLoc)] -> UAsmOp
 select = ASelect
 
 cons :: ReadLoc -> ReadLoc -> WriteLoc -> UAsmOp

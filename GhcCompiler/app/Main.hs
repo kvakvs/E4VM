@@ -1,36 +1,41 @@
 module Main where
 
-import           BeamSParser
-import           BeamSTypes
-import           PassFromS
 import           AsmMod
+import           BeamSParser
+import           BytecodeMod
+import           Term
+import           TransformAsm
+import           TransformS
 
 import           System.Environment
 import           System.IO
 import           System.Log.Handler.Syslog
 import           System.Log.Logger
 
-transpile :: String -> String -> Module
-transpile fileName contents =
-  let stage1 =
-        runStage fileName "parse BEAM assembly" (stageParseBeamS contents)
-  in runStage fileName "convert to microAssembly" (stageBeamSToUasm stage1)
+transpile :: String -> String -> BytecodeMod.Module
+transpile fn input = result
+  where
+    s1 = stageParseBeamS input
+    s2 = stageBeamSToUasm s1
+    result = stageCompileAsm s2
 
--- Given SExpr tree produce microassembly data structure
-stageBeamSToUasm :: SExpr -> Either String Module
-stageBeamSToUasm = PassFromS.transform
-
--- Given beam .S file contents (string) produce a SExpr tree structure with
+-- Given beam .S file contents (string) produce a Term tree structure with
 -- parsed erlang values
-stageParseBeamS :: String -> Either String SExpr
+stageParseBeamS :: String -> Term
 stageParseBeamS = BeamSParser.parseS
 
-runStage :: String -> String -> Either String out -> out
-runStage fileName descr result =
-  case result of
-    Left e -> error $ fileName ++ " -> " ++ descr ++ " stage ERROR: " ++ e
-    Right outV -> outV
+-- Given Term tree produce microassembly data structure
+stageBeamSToUasm :: Term -> AsmMod.Module
+stageBeamSToUasm = TransformS.transform
 
+stageCompileAsm :: AsmMod.Module -> BytecodeMod.Module
+stageCompileAsm = TransformAsm.transform
+
+--runStage :: String -> String -> Either String out -> out
+--runStage fileName descr result =
+--  catch result of
+--    Left e -> Uerlc.err $ fileName ++ " -> " ++ descr ++ " stage ERROR: " ++ e
+--    Right outV -> outV
 initLogging :: IO ()
 initLogging = do
   s <- openlog "SyslogStuff" [PID] USER DEBUG

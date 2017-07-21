@@ -1,6 +1,7 @@
 module BeamSParser where
 
-import           BeamSTypes
+import           Term
+import           Uerlc
 
 import           Control.Monad
 import           System.IO
@@ -23,21 +24,21 @@ languageDef =
 
 lexer = Token.makeTokenParser languageDef
 
-beamSParser :: Parser SExpr
+beamSParser :: Parser Term
 beamSParser = whiteSpace >> sequenceOfExprs
 
-sequenceOfExprs :: Parser SExpr
+sequenceOfExprs :: Parser Term
 sequenceOfExprs = do
   forms <- many erlTerm
-  return $ SList forms
+  return $ ErlList forms
 
-erlComment :: Parser SExpr
+erlComment :: Parser Term
 erlComment = do
   _ <- string "%"
   c <- manyTill anyChar newline
-  return $ SComment c
+  return $ ErlComment c
 
-erlTerm :: Parser SExpr
+erlTerm :: Parser Term
 erlTerm = do
   expr <- erlExpr
   _ <- char '.'
@@ -45,58 +46,58 @@ erlTerm = do
   optional erlComment
   return expr
 
-erlExpr :: Parser SExpr
+erlExpr :: Parser Term
 erlExpr =
   erlTuple <|> erlList <|> erlAtom <|> erlInteger <|> erlString <|> erlBinary
 
-erlBinary :: Parser SExpr
+erlBinary :: Parser Term
 erlBinary = do
   _ <- string "<<"
   s <- stringLiteral
   _ <- string ">>"
-  return $ SBinStr s
+  return $ BinaryStr s
 
-erlTuple :: Parser SExpr
+erlTuple :: Parser Term
 erlTuple = braces erlTupleContent
 
-erlTupleContent :: Parser SExpr
+erlTupleContent :: Parser Term
 erlTupleContent = do
   items <- commaSep erlExpr
-  return $ STuple items
+  return $ ErlTuple items
 
-erlList :: Parser SExpr
+erlList :: Parser Term
 erlList = brackets erlListContent
 
-erlListContent :: Parser SExpr
+erlListContent :: Parser Term
 erlListContent = do
   items <- commaSep erlExpr
-  return $ SList items
+  return $ ErlList items
 
-erlInteger :: Parser SExpr
+erlInteger :: Parser Term
 erlInteger = do
   val <- integer
-  return $ SInt val
+  return $ ErlInt val
 
-erlAtom :: Parser SExpr
+erlAtom :: Parser Term
 erlAtom = erlAtomStr <|> erlAtomQuoted
 
-erlAtomStr :: Parser SExpr
+erlAtomStr :: Parser Term
 erlAtomStr = do
   s <- identifier
-  return $ SAtom s
+  return $ Atom s
 
-erlAtomQuoted :: Parser SExpr
+erlAtomQuoted :: Parser Term
 erlAtomQuoted = do
   whiteSpace
   _ <- char '\''
   s <- many (noneOf "'")
   _ <- char '\''
-  return $ SAtom s
+  return $ Atom s
 
-erlString :: Parser SExpr
+erlString :: Parser Term
 erlString = do
   s <- stringLiteral
-  return $ SStr s
+  return $ ErlStr s
 
 identifier = Token.identifier lexer
 
@@ -116,8 +117,8 @@ stringLiteral = Token.stringLiteral lexer
 
 charLiteral = Token.charLiteral lexer
 
-parseS :: String -> Either String SExpr
+parseS :: String -> Term
 parseS contents =
   case parse BeamSParser.beamSParser "" contents of
-    Left parsecError -> Left $ show parsecError
-    Right expr       -> Right expr
+    Left parsecError -> Uerlc.err $ show parsecError
+    Right expr       -> expr

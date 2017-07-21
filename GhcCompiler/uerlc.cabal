@@ -15,8 +15,8 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     BeamSParser, BeamSTypes, AsmMod, AsmFunc, Asm
-                     , PassFromS, Uerlc
+  exposed-modules:     BeamSParser, Term, BytecodeMod, AsmMod, AsmFunc, Asm
+                     , TransformS, TransformAsm, Uerlc
   build-depends:       base >= 4.7 && < 5
                      , parsec, containers
   default-language:    Haskell2010
