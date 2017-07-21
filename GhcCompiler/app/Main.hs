@@ -3,7 +3,7 @@ module Main where
 import           BeamSParser
 import           BeamSTypes
 import           PassFromS
-import           UModule
+import           AsmMod
 
 import           System.Environment
 import           System.IO

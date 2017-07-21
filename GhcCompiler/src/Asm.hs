@@ -1,4 +1,4 @@
-module UAssembly where
+module Asm where
 
 import           BeamSTypes
 
@@ -48,9 +48,9 @@ data ReadLoc
   | RNil
   | ReadLocError String
 
-rarrow :: [Char]
+rarrow :: String
 rarrow = "➚"
-warrow :: [Char]
+warrow :: String
 warrow = "➘"
 
 instance Show ReadLoc where

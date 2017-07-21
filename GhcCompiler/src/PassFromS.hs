@@ -1,12 +1,12 @@
 -- Handles input from BeamSParser and creates an Module which has separate
--- functions, and each opcode is converted to some Uassembly
+-- functions, and each opcode is converted to some Asm
 module PassFromS where
 
 import           BeamSTypes
-import           UAssembly
+import           Asm
 import           Uerlc
-import           UFunction
-import           UModule
+import           AsmFunc
+import           AsmMod
 
 import           Control.Exception
 import qualified Data.Map          as Map
@@ -29,7 +29,7 @@ isBeamSFunction _                             = False
 transform' :: [SExpr] -> Module -> Module
 transform' [] mod0 = mod0
 transform' (STuple [SAtom "function", fname, farity, flabel]:tl) mod0 =
-  let funs0 = UModule.umodFuns mod0
+  let funs0 = AsmMod.umodFuns mod0
       tl1 = dropWhile (not . isBeamSFunction) tl
       fbody = takeWhile (not . isBeamSFunction) tl
       outFn = fnCreate fname farity flabel fbody
@@ -57,7 +57,7 @@ fnCreate (SAtom fname) (SInt farity) (SInt _flabel) fbody =
   in Function {ufunName = fname, ufunArity = farity, ufunBody = asmBody}
 fnCreate _f _a _label _body = Uerlc.err "parseFn expects a function"
 
--- Given a beamS expression, parse an UAssembly data source
+-- Given a beamS expression, parse an Asm data source
 readLoc :: SExpr -> Maybe ReadLoc
 readLoc (STuple [SAtom "x", SInt x])       = Just $ RRegX (fromIntegral x)
 readLoc (STuple [SAtom "y", SInt y])       = Just $ RRegY (fromIntegral y)
@@ -68,7 +68,7 @@ readLoc (SInt i)                           = Just $ RInt i
 readLoc (STuple [SAtom "integer", SInt i]) = Just $ RInt i
 readLoc other                              = Just $ ReadLocError $ show other
 
--- Given a beamS expression parse an UAssembly data destination
+-- Given a beamS expression parse an Asm data destination
 writeLoc :: SExpr -> Maybe WriteLoc
 writeLoc (STuple [SAtom "x", SInt x]) = Just $ WRegX (fromIntegral x)
 writeLoc (STuple [SAtom "y", SInt y]) = Just $ WRegY (fromIntegral y)
@@ -92,10 +92,10 @@ transformCode [] acc = reverse acc
 transformCode (STuple [SAtom "label", f]:tl) acc = transformCode tl (op : acc)
   where
     Just nlabel = sexprInt f
-    op = UAssembly.label nlabel
+    op = Asm.label nlabel
 transformCode (STuple [SAtom "line", _]:tl) acc = transformCode tl acc
 transformCode (STuple [SAtom "move", src, dst]:tl) acc =
-  transformCode tl (UAssembly.move usrc udst : acc)
+  transformCode tl (Asm.move usrc udst : acc)
   where
     Just usrc = readLoc src
     Just udst = writeLoc dst
@@ -105,36 +105,36 @@ transformCode (STuple [SAtom "get_list", src, hddst, tldst]:tl) acc =
     Just usrc = readLoc src
     Just uhd = writeLoc hddst
     Just utl = writeLoc tldst
-    op = UAssembly.decons usrc uhd utl
+    op = Asm.decons usrc uhd utl
 transformCode (STuple [SAtom "put_list", h, t, dst]:tl) acc =
   transformCode tl (op : acc)
   where
     Just uhead = readLoc h
     Just utail = readLoc t
     Just udst = writeLoc dst
-    op = UAssembly.cons uhead utail udst
+    op = Asm.cons uhead utail udst
 transformCode (STuple [SAtom "func_info", _mod, _fun, _arity]:tl) acc =
-  transformCode tl (UAssembly.funcClause : acc)
+  transformCode tl (Asm.funcClause : acc)
 transformCode (STuple [SAtom "case_end", _dst]:tl) acc =
-  transformCode tl (UAssembly.caseClause : acc)
+  transformCode tl (Asm.caseClause : acc)
 transformCode (STuple [SAtom "if_end", _dst]:tl) acc =
-  transformCode tl (UAssembly.ifClause : acc)
+  transformCode tl (Asm.ifClause : acc)
 transformCode (STuple [SAtom "badmatch", val]:tl) acc =
   transformCode tl (op : acc)
   where
     Just uval = readLoc val
-    op = UAssembly.badmatch uval
+    op = Asm.badmatch uval
 transformCode (STuple [SAtom "put_tuple", sz, dst]:tl) acc =
-  transformCode tl (UAssembly.tupleNew usz udst : acc)
+  transformCode tl (Asm.tupleNew usz udst : acc)
   where
     Just udst = writeLoc dst
     Just usz = sexprInt sz
 transformCode (STuple [SAtom "put", val]:tl) acc =
-  transformCode tl (UAssembly.tuplePut uval : acc)
+  transformCode tl (Asm.tuplePut uval : acc)
   where
     Just uval = readLoc val
 transformCode (STuple [SAtom "get_tuple_element", src, indx, dst]:tl) acc =
-  transformCode tl (UAssembly.tupleGetEl usrc uindx udst : acc)
+  transformCode tl (Asm.tupleGetEl usrc uindx udst : acc)
   where
     Just usrc = readLoc src
     Just uindx = readLoc indx
@@ -145,36 +145,36 @@ transformCode (STuple [SAtom "set_tuple_element", dst, tup, indx]:tl) acc =
     Just utup = readLoc tup
     Just udst = writeLoc dst
     Just uindx = readLoc indx
-    op = UAssembly.tupleSetEl utup uindx udst
+    op = Asm.tupleSetEl utup uindx udst
 transformCode (STuple [SAtom "jump", dst]:tl) acc = transformCode tl (op : acc)
   where
     udst = parseLabel dst
-    op = UAssembly.jump udst
+    op = Asm.jump udst
 transformCode (STuple [SAtom opname, stkneed, live]:tl) acc
   | opname == "allocate" || opname == "allocate_zero" =
     transformCode tl (op : acc)
   where
     Just ustkneed = sexprInt stkneed
     Just ulive = sexprInt live
-    op = UAssembly.allocate ustkneed ulive
+    op = Asm.allocate ustkneed ulive
 transformCode (STuple [SAtom "deallocate", n]:SAtom "return":tl) acc =
-  transformCode tl (UAssembly.ret un : acc)
+  transformCode tl (Asm.ret un : acc)
   where
     Just un = sexprInt n
 transformCode (STuple [SAtom "deallocate", n]:tl) acc =
-  transformCode tl (UAssembly.deallocate un : acc)
+  transformCode tl (Asm.deallocate un : acc)
   where
     Just un = sexprInt n
 transformCode (SAtom "return":tl) acc = transformCode tl (op : acc)
   where
-    op = UAssembly.ret 0
+    op = Asm.ret 0
 -- {test,Cond,Fail,Ops}
 transformCode (STuple [SAtom "test", SAtom testName, fail1, SList args]:tl) acc =
   transformCode tl (op : acc)
   where
     ufail = parseLabel fail1
     uargs = map (fromJust . readLoc) args
-    op = UAssembly.test testName ufail uargs Nothing WIgnore
+    op = Asm.test testName ufail uargs Nothing WIgnore
 -- {test,Cond,Fail,Live,Ops,Dst}
 transformCode (STuple [SAtom "test", SAtom testName, fail1, live, SList args, dst]:tl) acc =
   transformCode tl (op : acc)
@@ -183,7 +183,7 @@ transformCode (STuple [SAtom "test", SAtom testName, fail1, live, SList args, ds
     uargs = map (fromJust . readLoc) args
     Just udst = writeLoc dst
     Just ulive = sexprInt live
-    op = UAssembly.test testName ufail uargs (Just ulive) udst
+    op = Asm.test testName ufail uargs (Just ulive) udst
 -- {test,Cond,Fail,Src,Ops}
 -- TODO
 transformCode (STuple (SAtom callOp:_arity:mfa:deallc):tl) acc
@@ -200,7 +200,7 @@ transformCode (STuple (SAtom callOp:_arity:mfa:deallc):tl) acc
         "call_ext_only" -> TailCall
         "call_ext_last" -> TailCallDealloc udeallc
         _               -> Uerlc.err "Bad call op type"
-    op = UAssembly.callExt (m, f, uarity) callType
+    op = Asm.callExt (m, f, uarity) callType
 transformCode (STuple (SAtom callOp:arity:dst:deallc):tl) acc
   | callOp == "call" || callOp == "call_only" || callOp == "call_last" =
     transformCode tl (op : acc)
@@ -215,17 +215,17 @@ transformCode (STuple (SAtom callOp:arity:dst:deallc):tl) acc
         "call_only" -> TailCall
         "call_last" -> TailCallDealloc udeallc
         _           -> Uerlc.err "Bad call op type"
-    op = UAssembly.callLabel uarity udst callType
+    op = Asm.callLabel uarity udst callType
 transformCode (STuple [SAtom "call_fun", arity]:tl) acc =
   transformCode tl (op : acc)
   where
     Just uarity = sexprInt arity
-    op = UAssembly.callFun uarity
+    op = Asm.callFun uarity
 transformCode (STuple [SAtom killOp, dst]:tl) acc
   | killOp == "kill" || killOp == "init" = transformCode tl (op : acc)
   where
     Just udst = writeLoc dst
-    op = UAssembly.setNil udst
+    op = Asm.setNil udst
 transformCode (STuple [SAtom "gc_bif", SAtom bifName, onfail, live, SList args, dst]:tl) acc =
   transformCode tl (op : acc)
   where
@@ -233,25 +233,25 @@ transformCode (STuple [SAtom "gc_bif", SAtom bifName, onfail, live, SList args, 
     Just udst = writeLoc dst
     uargs = map (fromJust . readLoc) args
     Just ulive = sexprInt live
-    op = UAssembly.callBif bifName ufail uargs (GcEnabledCall ulive) udst
+    op = Asm.callBif bifName ufail uargs (GcEnabledCall ulive) udst
 transformCode (STuple [SAtom "bif", SAtom bifName, onfail, SList args, dst]:tl) acc =
   transformCode tl (op : acc)
   where
     ufail = parseLabel onfail
     Just udst = writeLoc dst
     uargs = map (fromJust . readLoc) args
-    op = UAssembly.callBif bifName ufail uargs NormalCall udst
+    op = Asm.callBif bifName ufail uargs NormalCall udst
 transformCode (STuple [SAtom "test_heap", need, live]:tl) acc =
   transformCode tl (op : acc)
   where
     Just uneed = sexprInt need
     Just ulive = sexprInt live
-    op = UAssembly.testHeap uneed ulive
+    op = Asm.testHeap uneed ulive
 transformCode (STuple [SAtom "trim", n, _remaining]:tl) acc =
   transformCode tl (op : acc)
   where
     Just un = sexprInt n
-    op = UAssembly.trim un
+    op = Asm.trim un
 transformCode (STuple [SAtom selOp, src, onfail, STuple [SAtom "list", SList choices]]:tl) acc
   | selOp == "select_val" || selOp == "select_tuple_arity" =
     transformCode tl (op : acc)
@@ -261,20 +261,20 @@ transformCode (STuple [SAtom selOp, src, onfail, STuple [SAtom "list", SList cho
     uchoices = parseChoices choices []
     op =
       case selOp of
-        "select_val" -> UAssembly.select SelectVal usrc ufail uchoices
+        "select_val" -> Asm.select SelectVal usrc ufail uchoices
         "select_tuple_arity" ->
-          UAssembly.select SelectTupleArity usrc ufail uchoices
+          Asm.select SelectTupleArity usrc ufail uchoices
 transformCode (STuple [SAtom "make_fun2", lbl, _indx, _olduniq, numfree]:tl) acc =
   transformCode tl (op : acc)
   where
     ulbl = parseLabel lbl
     Just unumfree = sexprInt numfree
-    op = UAssembly.makeFun ulbl unumfree
+    op = Asm.makeFun ulbl unumfree
 transformCode (STuple [SAtom "bs_context_to_binary", src]:tl) acc =
   transformCode tl (op : acc)
   where
     Just usrc = readLoc src
-    op = UAssembly.bsContextToBin usrc
+    op = Asm.bsContextToBin usrc
 transformCode (STuple [SAtom "bs_init2", onfail, sz, _extra, live, _flags, dst]:tl) acc =
   transformCode tl (op : acc)
   where
@@ -282,7 +282,7 @@ transformCode (STuple [SAtom "bs_init2", onfail, sz, _extra, live, _flags, dst]:
     Just ulive = sexprInt live
     Just udst = writeLoc dst
     uonfail = parseLabel onfail
-    op = UAssembly.bsInit usz ulive udst uonfail
+    op = Asm.bsInit usz ulive udst uonfail
 transformCode (STuple [SAtom bsOp, src, indx]:tl) acc
   | bsOp == "bs_save2" || bsOp == "bs_restore2" = transformCode tl (op : acc)
   where
@@ -290,8 +290,8 @@ transformCode (STuple [SAtom bsOp, src, indx]:tl) acc
     Just uindx = sexprInt indx
     op =
       case bsOp of
-        "bs_save2"    -> UAssembly.bsSave usrc uindx
-        "bs_restore2" -> UAssembly.bsRestore usrc uindx
+        "bs_save2"    -> Asm.bsSave usrc uindx
+        "bs_restore2" -> Asm.bsRestore usrc uindx
         other ->
           Uerlc.err $ "can't create bs_ command for " ++ show other
 transformCode (STuple [SAtom "bs_put_integer", _onfail, src, _n, flags, dst]:tl) acc =
@@ -300,7 +300,7 @@ transformCode (STuple [SAtom "bs_put_integer", _onfail, src, _n, flags, dst]:tl)
     Just usrc = readLoc src
     Just udst = writeLoc dst
     uflags = parseBinaryFlags flags
-    op = UAssembly.bsPutInteger usrc uflags udst
+    op = Asm.bsPutInteger usrc uflags udst
 transformCode (STuple (SAtom "%":_):tl) acc = transformCode tl acc
 transformCode (other:_tl) _acc =
   Uerlc.err ("don't know how to transform " ++ show other)

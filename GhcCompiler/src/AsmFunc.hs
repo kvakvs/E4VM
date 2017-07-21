@@ -1,6 +1,6 @@
-module UFunction where
+module AsmFunc where
 
-import           UAssembly
+import           Asm
 
 import           Data.List
 

@@ -1,6 +1,6 @@
-module UModule where
+module AsmMod where
 
-import           UFunction
+import           AsmFunc
 
 import qualified Data.Map  as Map
 import Data.List
