@@ -15,7 +15,8 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     BeamSParser, Term, BytecodeMod, AsmMod, AsmFunc, Asm
+  exposed-modules:     BeamSParser, Term, BytecodeMod, BytecodeFunc
+                     , AsmMod, AsmFunc, Asm
                      , TransformS, TransformAsm, Uerlc
   build-depends:       base >= 4.7 && < 5
                      , parsec, containers
