@@ -1,11 +1,8 @@
 module BytecodeFunc where
 
+import           Bytecode
 import           Data.List
 import           Term
-
-import qualified Data.ByteString as B
-
-data BcOp = BcOp Int [B.ByteString] deriving Show
 
 data BcFunc = BcFunc
   { bcfName :: FunArity
