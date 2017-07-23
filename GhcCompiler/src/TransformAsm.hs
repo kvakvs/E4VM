@@ -8,23 +8,31 @@ import           Bytecode
 import           BytecodeFunc
 import           BytecodeMod
 import           Term
+import           Uerlc
 
-import qualified Control.Monad.State as S
-import qualified Data.Map            as Map
+import qualified Control.Monad.Except as MEx
+import qualified Control.Monad.State  as S
+import qualified Data.Map             as Map
 
 transformAsmMod :: AModule -> BcModule
 transformAsmMod amod = bcmod
   where
     bcmod0 = BytecodeMod.new
     funs = Map.elems $ AsmMod.amFuns amod
-    bcmod = transform' funs bcmod0
+    bcmod =
+      case transform' funs bcmod0 `MEx.catchError` Left of
+        Right bcmod' -> bcmod'
+        Left e       -> Uerlc.err $ show e
 
-transform' [] bcMod = bcMod
+transform' :: [AFunc] -> BcModule -> CompileErrorOr BcModule
+transform' [] bcMod = Right bcMod
 transform' (fun:fTail) bcMod0 = transform' fTail bcMod1
   where
-    bcFun = S.evalState (transformFn fun) bcMod0
     nameArity = afName fun
     bcMod1 = updateFun nameArity bcFun bcMod0
+    bcFun = case S.evalState (transformFn fun) bcMod0 of
+      Right bcFun' -> bcFun'
+      Left e -> Uerlc.err $ show e
 
 updateFun :: FunArity -> BcFunc -> BcModule -> BcModule
 updateFun nameArity f bcMod0 = bcMod1
@@ -33,33 +41,27 @@ updateFun nameArity f bcMod0 = bcMod1
     funs1 = Map.insert nameArity f funs0
     bcMod1 = bcMod0 {bcmFuns = funs1}
 
---foldM _foldFn accum [] = return $ reverse accum
---foldM foldFn accum (x:xs) = do
---  accum1 <- foldFn accum x
---  foldM foldFn accum1 xs
---
---foldOpHelper :: [BcOp] -> UAsmOp  -> S.State BcModule [BcOp]
---foldOpHelper acc aop = do
---  bcop <- compileOp aop
---  return $ bcop ++ acc
-
--- Monadic transform carrying bytecodeModule as state, and applying transform
-transformFn :: AFunc -> S.State BcModule BcFunc
+transformFn :: AFunc -> S.State BcModule (CompileErrorOr BcFunc)
 transformFn fn = do
-  st0 <- S.get
   let asmCode = afCode fn
   -- bytecode <- foldM foldOpHelper [] asmCode
-  bytecode <- transformAsmOps [] asmCode
-  return $ BcFunc (afName fn) bytecode
+  trResult <- transformAsmOps [] asmCode
+  case trResult of
+    Right bytecode ->
+      let outFn = BcFunc {bcfName = afName fn, bcfCode = bytecode}
+      in return (Right outFn)
+    Left e -> return $ Left e
 
---compileOp aop = do
---  return [BcOp 0 []]
-
-transformAsmOps :: [BcOp] -> [UAsmOp] -> S.State BcModule [BcOp]
-transformAsmOps acc (aop:aops) = do
-  bcop <- transformOneOp aop
-  return $ bcop ++ acc
+transformAsmOps ::
+     [BcOp] -> [UAsmOp] -> S.State BcModule (CompileErrorOr [BcOp])
+transformAsmOps acc [] = return $ Right (reverse acc)
+transformAsmOps acc (aop:remainingAops) = do
+  trResult <- transformOneOp aop
+  case trResult of
+    Right bcop -> transformAsmOps (bcop ++ acc) remainingAops
+    Left e     -> return $ Left e
 
 -- For those cases when 1:1 simple mapping between asm and bytecode exists
-transformOneOp :: UAsmOp -> S.State BcModule [BcOp]
-transformOneOp op = return []
+transformOneOp :: UAsmOp -> S.State BcModule (CompileErrorOr [BcOp])
+transformOneOp op =
+  return $ Uerlc.errM $ "Don't know how to compile " ++ show op
