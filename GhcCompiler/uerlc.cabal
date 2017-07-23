@@ -27,6 +27,7 @@ library
                     , TransformS
                     , Uerlc
   build-depends:      base >= 4.7 && < 5
+                    , ansi-terminal
                     , bytestring
                     , containers
                     , exceptions
@@ -39,6 +40,7 @@ executable uerlc-exe
   main-is:             Main.hs
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   build-depends:      base
+                    , ansi-terminal
                     , bytestring
                     , exceptions
                     , hslogger

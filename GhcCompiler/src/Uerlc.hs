@@ -7,13 +7,14 @@ module Uerlc
 
 import           Control.Exception
 import           Data.Typeable
+import           System.Console.ANSI
 
 newtype CompileException =
   CompileException String
   deriving (Typeable)
 
 instance Show CompileException where
-  show (CompileException s) = s
+  show (CompileException s) = ansiRed ++ s ++ ansiColorOff
 
 instance Exception CompileException
 
@@ -25,3 +26,7 @@ err s = throw $ CompileException s
 
 errM :: String -> Either CompileException b
 errM s = Left $ CompileException s
+
+ansiRed = setSGRCode [SetColor Foreground Vivid Red]
+
+ansiColorOff = setSGRCode [Reset]
