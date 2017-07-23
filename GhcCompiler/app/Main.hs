@@ -12,7 +12,7 @@ import           System.IO
 import           System.Log.Handler.Syslog
 import           System.Log.Logger
 
-transpile :: String -> String -> BytecodeMod.Module
+transpile :: String -> String -> BcModule
 transpile fn input = result
   where
     s1 = stageParseBeamS input
@@ -25,11 +25,11 @@ stageParseBeamS :: String -> Term
 stageParseBeamS = BeamSParser.parseS
 
 -- Given Term tree produce microassembly data structure
-stageBeamSToUasm :: Term -> AsmMod.Module
+stageBeamSToUasm :: Term -> AModule
 stageBeamSToUasm = TransformS.transform
 
-stageCompileAsm :: AsmMod.Module -> BytecodeMod.Module
-stageCompileAsm = TransformAsm.transform
+stageCompileAsm :: AModule -> BcModule
+stageCompileAsm = TransformAsm.transformAsmMod
 
 initLogging :: IO ()
 initLogging = do

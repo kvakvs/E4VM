@@ -1,19 +1,19 @@
 module BytecodeFunc where
 
 import           Data.List
+import           Term
 
-data Function = Function
-  { bcfName :: String
-  , bcffArity :: Integer
+data BcFunc = BcFunc
+  { bcfName :: FunArity
   , bcfCode :: [Int]
   }
 
-instance Show Function where
-  show (Function name' arity' body') =
+instance Show BcFunc where
+  show (BcFunc (FunArity name arity) body) =
     intercalate "\n" ["", header, ops, footer, ""]
     where
       header = ";; bytecode fun " ++ funarity ++ " ------"
       footer = ";; ------ end bytecode " ++ funarity
-      funarity = name' ++ "/" ++ show arity'
+      funarity = name ++ "/" ++ show arity
       indent2 t = "  " ++ t
-      ops = intercalate "\n" $ map (indent2 . show) body'
+      ops = intercalate "\n" $ map (indent2 . show) body

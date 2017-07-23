@@ -6,16 +6,17 @@ import BytecodeFunc
 import qualified Data.Map  as Map
 import Data.List
 
-data Module = Module
+data BcModule = BcModule
   { bcmName :: String,
     bcmAtoms :: Map.Map Int String,
     bcmLiterals :: Map.Map Int Term,
-    bcmFuns :: Map.Map (String, Integer) BytecodeFunc.Function
+    bcmFuns :: Map.Map FunArity BcFunc
   }
 
-new = Module "" Map.empty Map.empty Map.empty
+new :: BcModule
+new = BcModule "" Map.empty Map.empty Map.empty
 
-instance Show Module where
+instance Show BcModule where
   show m =
     intercalate "\n" [header, funsText, footer]
     where

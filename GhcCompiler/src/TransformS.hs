@@ -11,10 +11,10 @@ import           Uerlc
 import qualified Data.Map   as Map
 import           Data.Maybe (fromJust)
 
-transform :: Term -> Module
+transform :: Term -> AModule
 transform (ErlList l) = mod1
   where
-    mod0 = Module {amName = "", amFuns = Map.empty, amExports = []}
+    mod0 = AModule {amName = "", amFuns = Map.empty, amExports = []}
     mod1 = transform' l mod0
 transform other = Uerlc.err $ show other
 
@@ -25,7 +25,7 @@ isBeamSFunction _                              = False
 
 -- Given list of tuples from BEAM S file handles header elements and then
 -- takes functions one by one
-transform' :: [Term] -> Module -> Module
+transform' :: [Term] -> AModule -> AModule
 transform' [] mod0 = mod0
 transform' (ErlTuple [Atom "function", fname, farity, flabel]:tl) mod0 =
   transform' tl1 mod0 {amFuns = funs1}
@@ -42,7 +42,7 @@ transform' (ErlTuple [Atom "module", Atom mname]:tl) mod0 = transform' tl mod1
 transform' (ErlTuple [Atom "exports", ErlList exps]:tl) mod0 =
   transform' tl mod1
   where
-    exps1 = map (\(ErlTuple [Atom fn, ErlInt ar]) -> (fn, ar)) exps
+    exps1 = map (\(ErlTuple [fn, ar]) -> funarityFromErl fn ar) exps
     mod1 = mod0 {amExports = exps1}
 -- ignored at the moment
 transform' (ErlTuple [Atom "attributes", ErlList _mattr]:tl) mod0 =
@@ -52,10 +52,11 @@ transform' (form:_tl) _mod0 =
   Uerlc.err ("unexpected form in the input S file: " ++ show form)
 
 -- Given F/Arity and code body return a Function object
-fnCreate :: Term -> Term -> Term -> [Term] -> Function
-fnCreate (Atom fname) (ErlInt farity) (ErlInt _flabel) fbody =
-  AsmFunc.Function {afName = fname, afArity = farity, afCode = asmBody}
+fnCreate :: Term -> Term -> Term -> [Term] -> AFunc
+fnCreate (Atom fname) farity0 (ErlInt _flabel) fbody =
+  AFunc {afName = FunArity fname farity, afCode = asmBody}
   where
+    Just farity = intFromErl farity0
     asmBody = transformCode fbody []
 fnCreate _f _a _label _body = Uerlc.err "parseFn expects a function"
 
