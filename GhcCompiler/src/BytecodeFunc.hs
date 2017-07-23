@@ -3,9 +3,13 @@ module BytecodeFunc where
 import           Data.List
 import           Term
 
+import qualified Data.ByteString as B
+
+data BcOp = BcOp Int [B.ByteString] deriving Show
+
 data BcFunc = BcFunc
   { bcfName :: FunArity
-  , bcfCode :: [Int]
+  , bcfCode :: [BcOp]
   }
 
 instance Show BcFunc where

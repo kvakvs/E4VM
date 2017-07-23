@@ -1,3 +1,5 @@
+--{-# LANGUAGE InstanceSigs #-}
+
 module TransformAsm where
 
 import           AsmFunc
@@ -6,7 +8,8 @@ import           BytecodeFunc
 import           BytecodeMod
 import           Term
 
-import qualified Data.Map     as Map
+import qualified Control.Monad.State as S
+import qualified Data.Map            as Map
 
 transformAsmMod :: AModule -> BcModule
 transformAsmMod amod = bcmod
@@ -18,7 +21,7 @@ transformAsmMod amod = bcmod
 transform' [] bcMod = bcMod
 transform' (fun:fTail) bcMod0 = transform' fTail bcMod1
   where
-    bcFun = transformFn fun bcMod0
+    bcFun = S.evalState (transformFn fun) bcMod0
     nameArity = afName fun
     bcMod1 = updateFun nameArity bcFun bcMod0
 
@@ -29,7 +32,8 @@ updateFun nameArity f bcMod0 = bcMod1
     funs1 = Map.insert nameArity f funs0
     bcMod1 = bcMod0 {bcmFuns = funs1}
 
-transformFn :: AFunc -> BcModule -> BcFunc
-transformFn fn bcMod0 = bcFun
-  where
-    bcFun = BcFunc (afName fn) []
+transformFn :: AFunc -> S.State BcModule BcFunc
+transformFn fn = do
+  st0 <- S.get
+  let bytecode = foldl (\bc op -> BcOp 0 [] : bc) [] (afCode fn)
+  return $ BcFunc (afName fn) bytecode
