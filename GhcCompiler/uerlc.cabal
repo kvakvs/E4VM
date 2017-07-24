@@ -20,8 +20,10 @@ library
                     , Asm.Mod
                     , BeamSParser
                     , Bytecode
+                    , Bytecode.Bits
                     , Bytecode.Func
                     , Bytecode.Mod
+                    , Bytecode.Op
                     , Term
                     , TransformAsm
                     , TransformS

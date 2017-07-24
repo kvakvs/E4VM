@@ -1,17 +1,18 @@
 module Bytecode where
 
 import           Asm
+import Bytecode.Bits
 import           Bytecode.Mod
 import           Bytecode.Op
 
 import qualified Control.Monad.State as S
 
-encodeError :: Num t => BuiltinError -> [t]
-encodeError EBadArg           = [0]
-encodeError (EBadMatch _rloc) = [1]
-encodeError ECaseClause       = [2]
-encodeError EFunClause        = [3]
-encodeError EIfClause         = [4]
+encodeError :: BuiltinError -> BitStringList
+encodeError EBadArg           = toCompactUint 0
+encodeError (EBadMatch _rloc) = toCompactUint 1
+encodeError ECaseClause       = toCompactUint 2
+encodeError EFunClause        = toCompactUint 3
+encodeError EIfClause         = toCompactUint 4
 
 -- [monadic] Returns int index of an atom in the module atoms table, optionally
 -- updates the atoms table if the string did not exist
@@ -31,4 +32,4 @@ err e = BcOp BcOpError (encodeError e)
 -- [monadic] Updates atom table if needed, and returns atom index for a string
 test tname = do
   tnIndex <- encodeAtom tname
-  return $ BcOp BcOpTest [toCompactInt tnIndex]
+  return $ BcOp BcOpTest (toCompactUint tnIndex)

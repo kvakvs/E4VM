@@ -2,11 +2,12 @@
 module TransformAsm where
 
 import           Asm
-import           Func
-import           Mod
+import           Asm.Func
+import           Asm.Mod
 import           Bytecode
-import           Func
-import           Mod
+import           Bytecode.Func
+import           Bytecode.Mod
+import           Bytecode.Op
 import           Term
 import           Uerlc
 
@@ -18,8 +19,8 @@ import qualified Data.Map             as Map
 transformAsmMod :: AModule -> BcModule
 transformAsmMod amod = bcmod
   where
-    bcmod0 = Mod.new
-    funs = Map.elems $ Mod.amFuns amod
+    bcmod0 = Bytecode.Mod.new
+    funs = Map.elems $ Asm.Mod.amFuns amod
     bcmod =
       case transform' funs bcmod0 `MEx.catchError` Left of
         Right bcmod' -> bcmod'
@@ -76,5 +77,7 @@ transform1Op (Asm.AComment _s) = return $ Right []
 transform1Op (Asm.ALabel _lb) = return $ Right []
 transform1Op (Asm.ALine _ln) = return $ Right []
 transform1Op (Asm.AError e) = return $ Right [Bytecode.err e]
-transform1Op (Asm.ATest tname onfail args maybeLive dst) = return $ Right [Bytecode.test tname]
+transform1Op (Asm.ATest tname onfail args maybeLive dst) = do
+  testOp <- Bytecode.test tname
+  return $ Right [testOp]
 transform1Op op = return $ Uerlc.errM $ "Don't know how to compile: " ++ show op

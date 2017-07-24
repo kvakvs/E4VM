@@ -21,5 +21,5 @@ instance Enum BcOpcode where
 
 data BcOp =
   BcOp BcOpcode
-       BitSequence
+       BitStringList
   deriving (Show)
