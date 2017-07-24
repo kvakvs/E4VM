@@ -1,6 +1,6 @@
 module BytecodeFunc where
 
-import           Bytecode
+import           BytecodeOp
 import           Data.List
 import           Term
 

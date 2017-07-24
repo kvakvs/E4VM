@@ -73,4 +73,8 @@ transformAsmOps acc (aop:remainingAops) = do
 -- For those cases when 1:1 simple mapping between asm and bytecode is enough
 transform1Op :: UAsmOp -> S.State BcModule (CompileErrorOr [BcOp])
 transform1Op (Asm.AComment _s) = return $ Right []
-transform1Op op = return $ Uerlc.errM $ "Don't know how to compile " ++ show op
+transform1Op (Asm.ALabel _lb) = return $ Right []
+transform1Op (Asm.ALine _ln) = return $ Right []
+transform1Op (Asm.AError e) = return $ Right [Bytecode.err e]
+transform1Op (Asm.ATest tname onfail args maybeLive dst) = return $ Right [Bytecode.test tname]
+transform1Op op = return $ Uerlc.errM $ "Don't know how to compile: " ++ show op

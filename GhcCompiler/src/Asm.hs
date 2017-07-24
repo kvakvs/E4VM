@@ -181,7 +181,7 @@ data UAsmOp
               WriteLoc
   | ATuplePut ReadLoc
 
-show1 :: [Char] -> [String] -> [Char]
+show1 :: String -> [String] -> String
 show1 s args = s ++ " " ++ unwords args
 
 instance Show UAsmOp where
