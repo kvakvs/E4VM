@@ -1,4 +1,6 @@
-module BytecodeOp where
+module Bytecode.Op where
+
+import Bytecode.Bits
 
 import qualified Data.List  as L
 import           Data.Maybe (fromJust)
@@ -19,5 +21,5 @@ instance Enum BcOpcode where
 
 data BcOp =
   BcOp BcOpcode
-       [Word8]
+       BitSequence
   deriving (Show)

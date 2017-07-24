@@ -1,8 +1,8 @@
 module Main where
 
-import           AsmMod
+import           Mod
 import           BeamSParser
-import           BytecodeMod
+import           Mod
 import           Term
 import           TransformAsm
 import           TransformS

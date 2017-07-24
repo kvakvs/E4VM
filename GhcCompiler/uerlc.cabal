@@ -16,12 +16,12 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:    Asm
-                    , AsmFunc
-                    , AsmMod
+                    , Asm.Func
+                    , Asm.Mod
                     , BeamSParser
                     , Bytecode
-                    , BytecodeFunc
-                    , BytecodeMod
+                    , Bytecode.Func
+                    , Bytecode.Mod
                     , Term
                     , TransformAsm
                     , TransformS

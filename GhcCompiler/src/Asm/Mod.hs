@@ -1,6 +1,6 @@
-module AsmMod where
+module Asm.Mod where
 
-import           AsmFunc
+import           Asm.Func
 import           Term
 
 import           Data.List

@@ -3,8 +3,8 @@
 module TransformS where
 
 import           Asm
-import           AsmFunc
-import           AsmMod
+import           Func
+import           Mod
 import           Term
 import           Uerlc
 
@@ -30,7 +30,7 @@ transform' [] mod0 = mod0
 transform' (ErlTuple [Atom "function", fname, farity, flabel]:tl) mod0 =
   transform' tl1 mod0 {amFuns = funs1}
   where
-    funs0 = AsmMod.amFuns mod0
+    funs0 = Mod.amFuns mod0
     tl1 = dropWhile (not . isBeamSFunction) tl
     fbody = takeWhile (not . isBeamSFunction) tl
     outFn = fnCreate fname farity flabel fbody

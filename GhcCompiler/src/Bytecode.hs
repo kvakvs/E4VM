@@ -1,8 +1,8 @@
 module Bytecode where
 
 import           Asm
-import           BytecodeMod
-import           BytecodeOp
+import           Bytecode.Mod
+import           Bytecode.Op
 
 import qualified Control.Monad.State as S
 
@@ -31,4 +31,4 @@ err e = BcOp BcOpError (encodeError e)
 -- [monadic] Updates atom table if needed, and returns atom index for a string
 test tname = do
   tnIndex <- encodeAtom tname
-  return $ BcOp BcOpTest [tnIndex]
+  return $ BcOp BcOpTest [toCompactInt tnIndex]

@@ -1,6 +1,6 @@
-module BytecodeMod where
+module Bytecode.Mod where
 
-import           BytecodeFunc
+import           Bytecode.Func
 import           Term
 
 import           Data.List

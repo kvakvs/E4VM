@@ -2,11 +2,11 @@
 module TransformAsm where
 
 import           Asm
-import           AsmFunc
-import           AsmMod
+import           Func
+import           Mod
 import           Bytecode
-import           BytecodeFunc
-import           BytecodeMod
+import           Func
+import           Mod
 import           Term
 import           Uerlc
 
@@ -18,8 +18,8 @@ import qualified Data.Map             as Map
 transformAsmMod :: AModule -> BcModule
 transformAsmMod amod = bcmod
   where
-    bcmod0 = BytecodeMod.new
-    funs = Map.elems $ AsmMod.amFuns amod
+    bcmod0 = Mod.new
+    funs = Map.elems $ Mod.amFuns amod
     bcmod =
       case transform' funs bcmod0 `MEx.catchError` Left of
         Right bcmod' -> bcmod'
