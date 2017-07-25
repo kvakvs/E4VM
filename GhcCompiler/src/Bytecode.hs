@@ -1,7 +1,8 @@
 module Bytecode where
 
 import           Asm
-import Bytecode.Bits
+import           Bytecode.Bits
+import           Bytecode.Encode
 import           Bytecode.Mod
 import           Bytecode.Op
 
@@ -30,6 +31,13 @@ err :: BuiltinError -> BcOp
 err e = BcOp BcOpError (encodeError e)
 
 -- [monadic] Updates atom table if needed, and returns atom index for a string
+test :: String -> S.State BcModule BcOp
 test tname = do
-  tnIndex <- encodeAtom tname
-  return $ BcOp BcOpTest (toCompactUint tnIndex)
+  testNameAtom <- encodeAtom tname
+  return $ BcOp BcOpTest (toCompactUint testNameAtom)
+
+alloc :: Int -> Int -> BcOp
+alloc need live = BcOp BcOpAlloc (bitsNeed ++ bitsLive)
+  where
+    bitsNeed = toCompactUint need
+    bitsLive = toCompactUint live

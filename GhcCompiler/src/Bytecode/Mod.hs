@@ -4,17 +4,19 @@ import           Bytecode.Func
 import           Term
 
 import           Data.List
-import qualified Data.Map     as Map
+import qualified Data.Map      as Map
 
 data BcModule = BcModule
   { bcmName :: String
-  , bcmAtoms :: Map.Map Int String
-  , bcmLiterals :: Map.Map Int Term
+  , bcmAtoms :: Map.Map String Int
+  , bcmAtomCounter :: Int
+  , bcmLiterals :: Map.Map Term Int
+  , bcmLiteralCounter :: Int
   , bcmFuns :: Map.Map FunArity BcFunc
   }
 
 new :: BcModule
-new = BcModule "" Map.empty Map.empty Map.empty
+new = BcModule "" Map.empty 0 Map.empty 0 Map.empty
 
 instance Show BcModule where
   show m = intercalate "\n" [header, funsText, footer]
@@ -27,7 +29,11 @@ instance Show BcModule where
       strFuns = map show (Map.elems funs)
 
 bcmFindAtom :: BcModule -> String -> Maybe Int
-bcmFindAtom m a = Just 0
+bcmFindAtom m a = Map.lookup a (bcmAtoms m)
 
 bcmAddAtom :: BcModule -> String -> (BcModule, Int)
-bcmAddAtom m a = (m, 0)
+bcmAddAtom m a = (m1, counter)
+  where
+    counter = bcmAtomCounter m + 1
+    newAtoms = Map.insert a counter (bcmAtoms m)
+    m1 = m {bcmAtoms = newAtoms, bcmAtomCounter = counter}

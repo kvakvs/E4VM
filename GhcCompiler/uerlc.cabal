@@ -21,6 +21,7 @@ library
                     , BeamSParser
                     , Bytecode
                     , Bytecode.Bits
+                    , Bytecode.Encode
                     , Bytecode.Func
                     , Bytecode.Mod
                     , Bytecode.Op
