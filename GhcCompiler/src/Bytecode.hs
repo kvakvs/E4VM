@@ -41,3 +41,11 @@ alloc need live = BcOp BcOpAlloc (bitsNeed ++ bitsLive)
   where
     bitsNeed = toCompactUint need
     bitsLive = toCompactUint live
+
+tupleGetEl :: ReadLoc -> Int -> WriteLoc -> m BcOp
+tupleGetEl src i dst =
+  BcOp BcOpTGetEl (bitsSrc ++ bitsI ++ bitsDst)
+  where
+      bitsSrc = toCompactTerm src
+      bitsDst = toCompactTerm dst
+      bitsI = toCompactUint i

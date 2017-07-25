@@ -1,6 +1,7 @@
 module Bytecode.Op where
 
 import           Bytecode.Bits
+import           Uerlc
 
 import qualified Data.List     as L
 import           Data.Maybe    (fromJust)
@@ -11,7 +12,14 @@ data BcOpcode
   = BcOpError
   | BcOpTest
   | BcOpAlloc
-  deriving (Show, Eq)
+  | BcOpTGetEl
+  deriving (Eq)
+
+instance Show BcOpcode where
+  show BcOpError = "+err"
+  show BcOpTest = "+test"
+  show BcOpAlloc = "+alloc"
+  show BcOpTGetEl = "+tgetel"
 
 bcOpEnumTable :: [(BcOpcode, Int)]
 bcOpEnumTable = [(BcOpError, 0), (BcOpTest, 1), (BcOpAlloc, 2)]
@@ -23,4 +31,9 @@ instance Enum BcOpcode where
 data BcOp =
   BcOp BcOpcode
        BitStringList
-  deriving (Show)
+
+instance Show BcOp where
+  show (BcOp opcode bits) =
+    show (fromEnum opcode) ++ " " ++ show bits ++ comment
+    where
+      comment = ansiCyan ++ " ; " ++ show opcode ++ ansiReset

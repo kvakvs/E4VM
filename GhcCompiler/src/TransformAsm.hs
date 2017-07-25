@@ -82,4 +82,8 @@ transform1Op (Asm.ATest tname onfail args maybeLive dst) = do
   testOp <- Bytecode.test tname
   return $ Right [testOp]
 transform1Op (Asm.AAlloc need live) = return $ Right [Bytecode.alloc need live]
-transform1Op op = return $ Uerlc.errM $ "Don't know how to compile: " ++ show op
+transform1Op (Asm.ATupleGetEl src i dst) =
+  return $ Right [Bytecode.tupleGetEl src i dst]
+transform1Op op =
+  return $ Uerlc.errM $ "Don't know how to compile: " ++ show op
+  -- return $ Right []

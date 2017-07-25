@@ -3,6 +3,9 @@ module Uerlc
   , errM
   , CompileErrorOr
   , CompileException(..)
+  , ansiCyan
+  , ansiRed
+  , ansiReset
   ) where
 
 import           Control.Exception
@@ -14,7 +17,7 @@ newtype CompileException =
   deriving (Typeable)
 
 instance Show CompileException where
-  show (CompileException s) = ansiRed ++ s ++ ansiColorOff
+  show (CompileException s) = ansiRed ++ s ++ ansiReset
 
 instance Exception CompileException
 
@@ -29,7 +32,12 @@ errM :: String -> Either CompileException b
 errM s = Left $ CompileException s
 
 -- Helper to paint the text red
+ansiRed :: String
 ansiRed = setSGRCode [SetColor Foreground Vivid Red]
 
+ansiCyan :: String
+ansiCyan = setSGRCode [SetColor Foreground Dull Cyan]
+
 -- Helper to uncolor the text
-ansiColorOff = setSGRCode [Reset]
+ansiReset :: String
+ansiReset = setSGRCode [Reset]

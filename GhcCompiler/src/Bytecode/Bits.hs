@@ -10,8 +10,8 @@ data BitString =
   BitsUnsignedBig Int Int
 
 instance Show BitString where
-  show (BitsSignedBig v bits) = show v ++ ":" ++ show bits ++ "/signed-big"
-  show (BitsUnsignedBig v bits) = show v ++ ":" ++ show bits ++ "/unsigned-big"
+  show (BitsSignedBig v bits) = show v ++ ":" ++ show bits ++ "/signed"
+  show (BitsUnsignedBig v bits) = show v ++ ":" ++ show bits
 
 -- A sequence of non-byte-aligned bits which will be joined together.
 -- Assuming the reader is aware what bits mean and can decode this sequence.

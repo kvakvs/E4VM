@@ -1,9 +1,9 @@
 module Bytecode.Encode where
 
+import           Asm           (ReadLoc, WriteLoc)
 import           Bytecode.Bits
 
 import           Data.Bits
---import           Data.Word
 
 varlength0 :: Int
 varlength0 = 4
@@ -40,3 +40,9 @@ toCompactUint u
     [BitsUnsignedBig 2 2, BitsUnsignedBig u varlength2]
   | u >= 0 && u < varlengthLimit3 =
     [BitsUnsignedBig 3 2, BitsUnsignedBig u varlength3]
+
+toCompactReadLoc :: ReadLoc -> BitStringList
+toCompactReadLoc (RRegX x) = []
+
+toCompactWriteLoc :: WriteLoc -> BitStringList
+toCompactWriteLoc s = []
