@@ -4,8 +4,8 @@ import           Asm.Mod
 import           BeamSParser
 import           Bytecode.Mod
 import           Term
-import           TransformAsm
-import           TransformS
+import           Pass.PAsm
+import           Pass.PBeamS
 
 import           System.Environment
 import           System.IO
@@ -26,10 +26,10 @@ stageParseBeamS = BeamSParser.parseS
 
 -- Given Term tree produce microassembly data structure
 stageBeamSToUasm :: Term -> AModule
-stageBeamSToUasm = TransformS.transform
+stageBeamSToUasm = Pass.PBeamS.transform
 
 stageCompileAsm :: AModule -> BcModule
-stageCompileAsm = TransformAsm.transformAsmMod
+stageCompileAsm = Pass.PAsm.transformAsmMod
 
 initLogging :: IO ()
 initLogging = do

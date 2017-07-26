@@ -22,12 +22,13 @@ library
                     , Bytecode
                     , Bytecode.Bits
                     , Bytecode.Encode
+                    , Bytecode.Encode.Const
                     , Bytecode.Func
                     , Bytecode.Mod
                     , Bytecode.Op
                     , Term
-                    , TransformAsm
-                    , TransformS
+                    , Pass.PAsm
+                    , Pass.PBeamS
                     , Uerlc
   build-depends:      base >= 4.7 && < 5
                     , ansi-terminal

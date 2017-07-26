@@ -1,6 +1,6 @@
 -- Handles input from BeamSParser and creates an Module which has separate
 -- functions, and each opcode is converted to some Asm
-module TransformS where
+module Pass.PBeamS where
 
 import           Asm
 import           Asm.Func

@@ -1,5 +1,5 @@
 --{-# LANGUAGE InstanceSigs #-}
-module TransformAsm where
+module Pass.PAsm where
 
 import           Asm
 import           Asm.Func
