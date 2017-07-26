@@ -65,11 +65,12 @@ readLoc :: Term -> Maybe ReadLoc
 readLoc (ErlTuple [Atom "x", ErlInt x]) = Just $ RRegX (fromIntegral x)
 readLoc (ErlTuple [Atom "y", ErlInt y]) = Just $ RRegY (fromIntegral y)
 readLoc (ErlTuple [Atom "literal", lit]) = Just $ RLit lit
-readLoc (ErlTuple [Atom "atom", ErlStr a]) = Just $ RAtom a
+readLoc (ErlTuple [Atom "atom", Atom a]) = Just $ RAtom a
 readLoc (Atom "nil") = Just RNil
 readLoc (ErlInt i) = Just $ RInt i
 readLoc (ErlTuple [Atom "integer", ErlInt i]) = Just $ RInt i
-readLoc other = Just $ ReadLocError $ show other
+readLoc other = --Just $ ReadLocError $ show other
+  Just $ Uerlc.err $ "can't parse read loc " ++ show other
 
 -- Given a beamS expression parse an Asm data destination
 writeLoc :: Term -> Maybe WriteLoc

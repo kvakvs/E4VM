@@ -32,12 +32,10 @@ toCompactReadLoc (RInt i) = do
   let limI = fromIntegral i -- todo bigint support?
   return $ termTag termTagInteger : toCompactSint limI
 toCompactReadLoc (RAtom a) = do
-  mod0 <- S.get
-  let Just aIndex = bcmFindAtom mod0 a
+  aIndex <- bcmFindAddAtom a
   return $ termTag termTagAtom : toCompactUint aIndex
 toCompactReadLoc (RLit lit) = do
-  mod0 <- S.get
-  let Just litIndex = bcmFindLiteral mod0 lit
+  litIndex <- bcmFindAddLiteral lit
   return $ termTag termTagLiteral : toCompactUint litIndex
 
 toCompactWriteLoc :: WriteLoc -> BitStringList
