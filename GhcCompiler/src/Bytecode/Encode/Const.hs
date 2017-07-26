@@ -1,5 +1,6 @@
 module Bytecode.Encode.Const where
 
+import           Bytecode.Bits (bitsUB)
 import           Data.Bits
 
 varlength0 = 4 :: Int
@@ -39,3 +40,5 @@ termTagLambda = 5 :: Int
 termTagLiteral = 6 :: Int
 
 termTagInteger = 7 :: Int
+
+termTag t = bitsUB t termTag'BitSize

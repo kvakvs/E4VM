@@ -77,13 +77,16 @@ transform1Op (Asm.AComment _s) = return $ Right []
 transform1Op (Asm.ALabel _lb) = return $ Right []
 transform1Op (Asm.ALine _ln) = return $ Right []
 transform1Op (Asm.AError e) = return $ Right [Bytecode.err e]
+-- TODO: test - other args encode
 transform1Op (Asm.ATest tname onfail args maybeLive dst) = do
-  -- TODO: other args encode
-  testOp <- Bytecode.test tname
+  testOp <- Bytecode.test tname onfail args maybeLive dst
   return $ Right [testOp]
 transform1Op (Asm.AAlloc need live) = return $ Right [Bytecode.alloc need live]
-transform1Op (Asm.ATupleGetEl src i dst) =
-  return $ Right [Bytecode.tupleGetEl src i dst]
-transform1Op op =
-  return $ Uerlc.errM $ "Don't know how to compile: " ++ show op
-  -- return $ Right []
+transform1Op (Asm.ATupleGetEl src i dst) = do
+  byteCode <- Bytecode.tupleGetEl src i dst
+  return $ Right [byteCode]
+transform1Op (Asm.AMove src dst) = do
+  byteCode <- Bytecode.move src dst
+  return $ Right [byteCode]
+transform1Op op = -- return $ Uerlc.errM $ "Don't know how to compile: " ++ show op
+   return $ Right []

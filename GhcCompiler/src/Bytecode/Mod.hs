@@ -1,4 +1,11 @@
-module Bytecode.Mod where
+module Bytecode.Mod
+  ( BcModule(..)
+  , new
+  , bcmFindAtom
+  , bcmAddAtom
+  , bcmFindLiteral
+  , bcmAddLiteral
+  ) where
 
 import           Bytecode.Func
 import           Term
@@ -37,3 +44,13 @@ bcmAddAtom m a = (m1, counter)
     counter = bcmAtomCounter m + 1
     newAtoms = Map.insert a counter (bcmAtoms m)
     m1 = m {bcmAtoms = newAtoms, bcmAtomCounter = counter}
+
+bcmFindLiteral :: BcModule -> Term -> Maybe Int
+bcmFindLiteral m lit = Map.lookup lit (bcmLiterals m)
+
+bcmAddLiteral :: BcModule -> Term -> (BcModule, Int)
+bcmAddLiteral m lit = (m1, counter)
+  where
+    counter = bcmLiteralCounter m + 1
+    newLiterals = Map.insert lit counter (bcmLiterals m)
+    m1 = m {bcmLiterals = newLiterals, bcmLiteralCounter = counter}

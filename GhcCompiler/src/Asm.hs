@@ -13,7 +13,7 @@ data LabelLoc
 
 instance Show LabelLoc where
   show (LabelLoc i) = "@" ++ show i
-  show UNoLabel     = "@?"
+  show UNoLabel     = "@none"
 
 data CodeLoc
   = CLabel LabelLoc
@@ -42,7 +42,7 @@ instance Show UCallType where
 data ReadLoc
   = RRegX Int
   | RRegY Int
-  | RAtom Term
+  | RAtom String
   | RInt Integer
   | RLit Term
   | RNil

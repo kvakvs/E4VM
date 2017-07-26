@@ -17,7 +17,7 @@ data Term
   | ErlList [Term]
   | ErlStr String
   | ErlTuple [Term]
-  deriving (Eq)
+  deriving (Eq, Ord)
 
 instance Show Term where
   show (Atom s) = "'" ++ s ++ "'"

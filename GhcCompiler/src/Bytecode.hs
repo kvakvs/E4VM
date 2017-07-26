@@ -31,10 +31,29 @@ err :: BuiltinError -> BcOp
 err e = BcOp BcOpError (encodeError e)
 
 -- [monadic] Updates atom table if needed, and returns atom index for a string
-test :: String -> S.State BcModule BcOp
-test tname = do
+test ::
+     String
+  -> LabelLoc
+  -> [ReadLoc]
+  -> Maybe Int
+  -> WriteLoc
+  -> S.State BcModule BcOp
+test tname onfail args maybeLive dst = do
   testNameAtom <- encodeAtom tname
-  return $ BcOp BcOpTest (toCompactUint testNameAtom)
+  argBits <- mapM toCompactReadLoc args
+  let onfailBits =
+        case onfail of
+          LabelLoc onfailL -> toCompactBool True : toCompactUint onfailL
+          UNoLabel         -> [toCompactBool False]
+      dstBits = toCompactWriteLoc dst
+      liveBits =
+        case maybeLive of
+          Just l  -> toCompactBool True : toCompactUint l
+          Nothing -> [toCompactBool False]
+      opArgs =
+        toCompactUint testNameAtom ++
+        onfailBits ++ liveBits ++ dstBits ++ concat argBits
+  return $ BcOp BcOpTest opArgs
 
 alloc :: Int -> Int -> BcOp
 alloc need live = BcOp BcOpAlloc (bitsNeed ++ bitsLive)
@@ -42,10 +61,15 @@ alloc need live = BcOp BcOpAlloc (bitsNeed ++ bitsLive)
     bitsNeed = toCompactUint need
     bitsLive = toCompactUint live
 
-tupleGetEl :: ReadLoc -> ReadLoc -> WriteLoc -> BcOp
-tupleGetEl src i dst =
-  BcOp BcOpTGetEl (bitsSrc ++ bitsI ++ bitsDst)
-  where
-      bitsSrc = toCompactReadLoc src
-      bitsDst = toCompactWriteLoc dst
-      bitsI = toCompactReadLoc i
+tupleGetEl :: ReadLoc -> ReadLoc -> WriteLoc -> S.State BcModule BcOp
+tupleGetEl src i dst = do
+  bitsSrc <- toCompactReadLoc src
+  bitsI <- toCompactReadLoc i
+  let bitsDst = toCompactWriteLoc dst
+  return $ BcOp BcOpTGetEl (bitsSrc ++ bitsI ++ bitsDst)
+
+move :: ReadLoc -> WriteLoc -> S.State BcModule BcOp
+move src dst = do
+  bitsSrc <- toCompactReadLoc src
+  let bitsDst = toCompactWriteLoc dst
+  return $ BcOp BcOpMove (bitsSrc ++ bitsDst)
