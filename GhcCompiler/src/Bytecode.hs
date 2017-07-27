@@ -68,8 +68,17 @@ tupleGetEl src i dst = do
   let bitsDst = toCompactWriteLoc dst
   return $ BcOp BcOpTGetEl (bitsSrc ++ bitsI ++ bitsDst)
 
+-- [monadic] Compile a move instruction. BcModule state is updated if
+-- readloc src contains an atom or literal index not yet in the module tables
 move :: ReadLoc -> WriteLoc -> S.State BcModule BcOp
 move src dst = do
   bitsSrc <- toCompactReadLoc src
   let bitsDst = toCompactWriteLoc dst
   return $ BcOp BcOpMove (bitsSrc ++ bitsDst)
+
+call :: Int -> CodeLoc -> UCallType -> S.State BcModule BcOp
+call arity codeLoc callType = do
+  let arityBits = toCompactUint arity
+  locBits <- toCompactCodeLoc codeLoc
+  let ctypeBits = toCompactCallType callType
+  return $ BcOp BcOpCall (arityBits ++ locBits ++ ctypeBits)

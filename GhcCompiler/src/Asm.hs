@@ -12,8 +12,8 @@ data LabelLoc
   | UNoLabel
 
 instance Show LabelLoc where
-  show (LabelLoc i) = "@" ++ show i
-  show UNoLabel     = "@none"
+  show (LabelLoc i) = "-label:" ++ show i
+  show UNoLabel     = "-no-label"
 
 data CodeLoc
   = CLabel LabelLoc
