@@ -1,4 +1,6 @@
-module BeamSParser where
+module BeamSParser
+  ( parseS
+  ) where
 
 import           Term
 import           Uerlc

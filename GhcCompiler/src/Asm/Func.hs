@@ -1,4 +1,6 @@
-module Asm.Func where
+module Asm.Func
+  ( AFunc(..)
+  ) where
 
 import           Asm
 import           Term

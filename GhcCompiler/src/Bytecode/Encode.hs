@@ -1,4 +1,13 @@
-module Bytecode.Encode where
+module Bytecode.Encode
+  ( toCompactUint
+  , toCompactSint
+  , toCompactReadLocM
+  , toCompactLiteralM
+  , toCompactLabelLocM
+  , toCompactCodeLocM
+  , toCompactWriteLoc
+  , toCompactBool
+  ) where
 
 import           Asm
 import           Bytecode.Bits
@@ -7,7 +16,6 @@ import           Bytecode.Mod
 import           Term
 
 import qualified Control.Monad.State   as S
-import           Data.Bits
 
 -- Produce untagged unsigned integer with 2 bits size prefix (4-8-16-32 bits)
 toCompactUint :: Int -> BitStringList

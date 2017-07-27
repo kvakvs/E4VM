@@ -1,6 +1,15 @@
-module Bytecode where
+module Bytecode
+  ( encodeAtomM
+  , testM
+  , err
+  , tupleGetElM
+  , alloc
+  , bcTestHeap
+  , moveM
+  , callM
+  ) where
 
-import           Asm
+import qualified Asm
 import           Bytecode.Bits
 import           Bytecode.Encode
 import           Bytecode.Mod
@@ -8,12 +17,12 @@ import           Bytecode.Op
 
 import qualified Control.Monad.State as S
 
-encodeError :: BuiltinError -> BitStringList
-encodeError EBadArg           = toCompactUint 0
-encodeError (EBadMatch _rloc) = toCompactUint 1
-encodeError ECaseClause       = toCompactUint 2
-encodeError EFunClause        = toCompactUint 3
-encodeError EIfClause         = toCompactUint 4
+encodeError :: Asm.BuiltinError -> BitStringList
+encodeError Asm.EBadArg           = toCompactUint 0
+encodeError (Asm.EBadMatch _rloc) = toCompactUint 1
+encodeError Asm.ECaseClause       = toCompactUint 2
+encodeError Asm.EFunClause        = toCompactUint 3
+encodeError Asm.EIfClause         = toCompactUint 4
 
 -- [monadic] Returns int index of an atom in the module atoms table, optionally
 -- updates the atoms table if the string did not exist
@@ -27,24 +36,24 @@ encodeAtomM a = do
   S.put mod1
   return index
 
-err :: BuiltinError -> BcOp
+err :: Asm.BuiltinError -> BcOp
 err e = BcOp BcOpError (encodeError e)
 
 -- [monadic] Updates atom table if needed, and returns atom index for a string
 testM ::
      String
-  -> LabelLoc
-  -> [ReadLoc]
+  -> Asm.LabelLoc
+  -> [Asm.ReadLoc]
   -> Maybe Int
-  -> WriteLoc
+  -> Asm.WriteLoc
   -> S.State BcModule BcOp
 testM tname onfail args maybeLive dst = do
   testNameAtom <- encodeAtomM tname
   argBits <- mapM toCompactReadLocM args
   let onfailBits =
         case onfail of
-          LabelLoc onfailL -> toCompactBool True : toCompactUint onfailL
-          UNoLabel         -> [toCompactBool False]
+          Asm.LabelLoc onfailL -> toCompactBool True : toCompactUint onfailL
+          Asm.UNoLabel         -> [toCompactBool False]
       dstBits = toCompactWriteLoc dst
       liveBits =
         case maybeLive of
@@ -61,7 +70,14 @@ alloc need live = BcOp BcOpAlloc (bitsNeed ++ bitsLive)
     bitsNeed = toCompactUint need
     bitsLive = toCompactUint live
 
-tupleGetElM :: ReadLoc -> ReadLoc -> WriteLoc -> S.State BcModule BcOp
+bcTestHeap :: Int -> Int -> BcOp
+bcTestHeap need live = BcOp BcOpTestHeap (bitsNeed ++ bitsLive)
+  where
+    bitsNeed = toCompactUint need
+    bitsLive = toCompactUint live
+
+tupleGetElM ::
+     Asm.ReadLoc -> Asm.ReadLoc -> Asm.WriteLoc -> S.State BcModule BcOp
 tupleGetElM src i dst = do
   bitsSrc <- toCompactReadLocM src
   bitsI <- toCompactReadLocM i
@@ -70,21 +86,21 @@ tupleGetElM src i dst = do
 
 -- [monadic] Compile a move instruction. BcModule state is updated if
 -- readloc src contains an atom or literal index not yet in the module tables
-moveM :: ReadLoc -> WriteLoc -> S.State BcModule BcOp
+moveM :: Asm.ReadLoc -> Asm.WriteLoc -> S.State BcModule BcOp
 moveM src dst = do
   bitsSrc <- toCompactReadLocM src
   let bitsDst = toCompactWriteLoc dst
   return $ BcOp BcOpMove (bitsSrc ++ bitsDst)
 
-callM :: Int -> CodeLoc -> UCallType -> S.State BcModule BcOp
+callM :: Int -> Asm.CodeLoc -> Asm.UCallType -> S.State BcModule BcOp
 callM arity codeLoc callType = do
   let arityBits = toCompactUint arity
   locBits <- toCompactCodeLocM codeLoc
   let (opCode, ctypeBits) =
         case callType of
-          NormalCall -> (BcOpCallNormal, [])
-          TailCall -> (BcOpCallTail, [])
-          GcEnabledCall live -> (BcOpCallGc, toCompactUint live)
-          TailCallDealloc dealloc ->
+          Asm.NormalCall -> (BcOpCallNormal, [])
+          Asm.TailCall -> (BcOpCallTail, [])
+          Asm.GcEnabledCall live -> (BcOpCallGc, toCompactUint live)
+          Asm.TailCallDealloc dealloc ->
             (BcOpCallTailDealloc, toCompactUint dealloc)
   return $ BcOp opCode (arityBits ++ locBits ++ ctypeBits)

@@ -1,4 +1,6 @@
-module Bytecode.Func where
+module Bytecode.Func
+  ( BcFunc(..)
+  ) where
 
 import           Bytecode.Op
 import           Data.List

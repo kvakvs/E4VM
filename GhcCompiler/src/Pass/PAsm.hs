@@ -1,10 +1,12 @@
 --{-# LANGUAGE InstanceSigs #-}
-module Pass.PAsm where
+module Pass.PAsm
+  ( transformAsmMod
+  ) where
 
-import           Asm
+import qualified Asm
 import           Asm.Func
 import           Asm.Mod
-import           Bytecode
+import qualified Bytecode
 import           Bytecode.Func
 import           Bytecode.Mod
 import           Bytecode.Op
@@ -63,7 +65,7 @@ transformFnM fn = do
 -- [monadic] Given an accumulator (bytecode ops) and input (a list of asm
 -- opcodes) returns a list of bytecodes
 transformAsmOpsM ::
-     [BcOp] -> [UAsmOp] -> S.State BcModule (CompileErrorOr [BcOp])
+     [BcOp] -> [Asm.UAsmOp] -> S.State BcModule (CompileErrorOr [BcOp])
 transformAsmOpsM acc [] = return $ Right (reverse acc)
 transformAsmOpsM acc (aop:remainingAops) = do
   trResult <- transform1M aop
@@ -73,7 +75,7 @@ transformAsmOpsM acc (aop:remainingAops) = do
 
 -- [monadic] For those cases when 1:1 simple mapping between asm and bytecode
 -- is enough. For complex cases add a clause in transformAsmOpsM
-transform1M :: UAsmOp -> S.State BcModule (CompileErrorOr [BcOp])
+transform1M :: Asm.UAsmOp -> S.State BcModule (CompileErrorOr [BcOp])
 transform1M (Asm.AComment _s) = return $ Right []
 transform1M (Asm.ALabel _lb) = return $ Right []
 transform1M (Asm.ALine _ln) = return $ Right []
@@ -90,6 +92,9 @@ transform1M (Asm.AMove src dst) = do
   return $ Right [byteCode]
 transform1M (Asm.ACall arity codeLoc callType) = do
   byteCode <- Bytecode.callM arity codeLoc callType
+  return $ Right [byteCode]
+transform1M (Asm.ATestHeap needH live) = do
+  let byteCode = Bytecode.bcTestHeap needH live
   return $ Right [byteCode]
 transform1M op = return $ Uerlc.errM $ "Don't know how to compile: " ++ show op
    -- return $ Right []

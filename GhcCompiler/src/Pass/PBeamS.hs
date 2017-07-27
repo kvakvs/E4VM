@@ -1,6 +1,8 @@
 -- Handles input from BeamSParser and creates an Module which has separate
 -- functions, and each opcode is converted to some Asm
-module Pass.PBeamS where
+module Pass.PBeamS
+  ( transform
+  ) where
 
 import           Asm
 import           Asm.Func
@@ -69,8 +71,8 @@ readLoc (ErlTuple [Atom "atom", Atom a]) = Just $ RAtom a
 readLoc (Atom "nil") = Just RNil
 readLoc (ErlInt i) = Just $ RInt i
 readLoc (ErlTuple [Atom "integer", ErlInt i]) = Just $ RInt i
-readLoc other = --Just $ ReadLocError $ show other
-  Just $ Uerlc.err $ "can't parse read loc " ++ show other
+readLoc other --Just $ ReadLocError $ show other
+ = Just $ Uerlc.err $ "can't parse read loc " ++ show other
 
 -- Given a beamS expression parse an Asm data destination
 writeLoc :: Term -> Maybe WriteLoc

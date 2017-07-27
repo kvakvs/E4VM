@@ -1,15 +1,17 @@
-module Bytecode.Op where
+module Bytecode.Op
+  ( BcOpcode(..)
+  , BcOp(..)
+  ) where
 
 import           Bytecode.Bits
 import           Uerlc
 
-import           Data.Ix
-
+--import           Data.Ix
 import qualified Data.List     as L
 import           Data.Maybe    (fromJust)
 import           Data.Tuple
-import           Data.Word
 
+--import           Data.Word
 data BcOpcode
   = BcOpError
   | BcOpTest
@@ -20,18 +22,20 @@ data BcOpcode
   | BcOpCallGc
   | BcOpCallTail
   | BcOpCallTailDealloc
+  | BcOpTestHeap
   deriving (Eq, Ord)
 
 instance Show BcOpcode where
-  show BcOpError  = "+err"
-  show BcOpTest   = "+test"
-  show BcOpAlloc  = "+alloc"
-  show BcOpTGetEl = "+tgetel"
-  show BcOpMove   = "+move"
-  show BcOpCallNormal = "+call"
-  show BcOpCallGc= "+callgc"
-  show BcOpCallTail = "+calltail"
-  show BcOpCallTailDealloc  = "+calltaild"
+  show BcOpError           = "+err"
+  show BcOpTest            = "+test"
+  show BcOpAlloc           = "+alloc"
+  show BcOpTGetEl          = "+tgetel"
+  show BcOpMove            = "+move"
+  show BcOpCallNormal      = "+call"
+  show BcOpCallGc          = "+call+gc"
+  show BcOpCallTail        = "+call+t"
+  show BcOpCallTailDealloc = "+call+td"
+  show BcOpTestHeap        = "+testheap"
 
 bcOpEnumTable :: [(BcOpcode, Int)]
 bcOpEnumTable =
