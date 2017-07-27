@@ -1,5 +1,6 @@
 module Term
   ( Term(..)
+  , MFArity(..)
   , FunArity(..)
   , strFromErl
   , bigintFromErl
@@ -39,6 +40,15 @@ data FunArity =
 
 instance Show FunArity where
   show (FunArity f a) = f ++ "/" ++ show a
+
+data MFArity =
+  MFArity String
+          String
+          Int
+  deriving (Eq, Ord)
+
+instance Show MFArity where
+  show (MFArity m f a) = m ++ ":" ++ f ++ "/" ++ show a
 
 -- unwrap a string from an Term Atom or ErlStr
 strFromErl :: Term -> Maybe String

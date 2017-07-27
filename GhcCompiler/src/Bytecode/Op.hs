@@ -16,7 +16,11 @@ data BcOpcode
   | BcOpAlloc
   | BcOpTGetEl
   | BcOpMove
-  deriving (Eq, Ix, Ord)
+  | BcOpCallNormal
+  | BcOpCallGc
+  | BcOpCallTail
+  | BcOpCallTailDealloc
+  deriving (Eq, Ord)
 
 instance Show BcOpcode where
   show BcOpError  = "+err"
@@ -24,6 +28,10 @@ instance Show BcOpcode where
   show BcOpAlloc  = "+alloc"
   show BcOpTGetEl = "+tgetel"
   show BcOpMove   = "+move"
+  show BcOpCallNormal = "+call"
+  show BcOpCallGc= "+callgc"
+  show BcOpCallTail = "+calltail"
+  show BcOpCallTailDealloc  = "+calltaild"
 
 bcOpEnumTable :: [(BcOpcode, Int)]
 bcOpEnumTable =
@@ -32,6 +40,10 @@ bcOpEnumTable =
   , (BcOpAlloc, 2)
   , (BcOpTGetEl, 3)
   , (BcOpMove, 4)
+  , (BcOpCallNormal, 5)
+  , (BcOpCallGc, 6)
+  , (BcOpCallTail, 7)
+  , (BcOpCallTailDealloc, 8)
   ]
 
 instance Enum BcOpcode where

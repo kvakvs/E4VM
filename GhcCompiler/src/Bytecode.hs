@@ -40,7 +40,7 @@ test ::
   -> S.State BcModule BcOp
 test tname onfail args maybeLive dst = do
   testNameAtom <- encodeAtom tname
-  argBits <- mapM toCompactReadLoc args
+  argBits <- mapM toCompactReadLocM args
   let onfailBits =
         case onfail of
           LabelLoc onfailL -> toCompactBool True : toCompactUint onfailL
@@ -63,8 +63,8 @@ alloc need live = BcOp BcOpAlloc (bitsNeed ++ bitsLive)
 
 tupleGetEl :: ReadLoc -> ReadLoc -> WriteLoc -> S.State BcModule BcOp
 tupleGetEl src i dst = do
-  bitsSrc <- toCompactReadLoc src
-  bitsI <- toCompactReadLoc i
+  bitsSrc <- toCompactReadLocM src
+  bitsI <- toCompactReadLocM i
   let bitsDst = toCompactWriteLoc dst
   return $ BcOp BcOpTGetEl (bitsSrc ++ bitsI ++ bitsDst)
 
@@ -72,13 +72,19 @@ tupleGetEl src i dst = do
 -- readloc src contains an atom or literal index not yet in the module tables
 move :: ReadLoc -> WriteLoc -> S.State BcModule BcOp
 move src dst = do
-  bitsSrc <- toCompactReadLoc src
+  bitsSrc <- toCompactReadLocM src
   let bitsDst = toCompactWriteLoc dst
   return $ BcOp BcOpMove (bitsSrc ++ bitsDst)
 
 call :: Int -> CodeLoc -> UCallType -> S.State BcModule BcOp
 call arity codeLoc callType = do
   let arityBits = toCompactUint arity
-  locBits <- toCompactCodeLoc codeLoc
-  let ctypeBits = toCompactCallType callType
-  return $ BcOp BcOpCall (arityBits ++ locBits ++ ctypeBits)
+  locBits <- toCompactCodeLocM codeLoc
+  let (opCode, ctypeBits) =
+        case callType of
+          NormalCall -> (BcOpCallNormal, [])
+          TailCall -> (BcOpCallTail, [])
+          GcEnabledCall live -> (BcOpCallGc, toCompactUint live)
+          TailCallDealloc dealloc ->
+            (BcOpCallTailDealloc, toCompactUint dealloc)
+  return $ BcOp opCode (arityBits ++ locBits ++ ctypeBits)

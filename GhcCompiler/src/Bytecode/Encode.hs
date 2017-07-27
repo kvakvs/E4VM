@@ -4,6 +4,7 @@ import           Asm
 import           Bytecode.Bits
 import           Bytecode.Encode.Const
 import           Bytecode.Mod
+import           Term
 
 import qualified Control.Monad.State   as S
 import           Data.Bits
@@ -24,24 +25,40 @@ toCompactSint s
   | signedFitsIn s varlength2 = [bitsUB 2 2, bitsSB s varlength2]
   | signedFitsIn s varlength3 = [bitsUB 3 2, bitsSB s varlength3]
 
-toCompactReadLoc :: ReadLoc -> S.State BcModule BitStringList
-toCompactReadLoc (RRegX x) = return $ termTag termTagRegX : toCompactUint x
-toCompactReadLoc (RRegY y) = return $ termTag termTagRegY : toCompactUint y
-toCompactReadLoc RNil = return [termTag termTagNil]
-toCompactReadLoc (RInt i) = do
+toCompactReadLocM :: ReadLoc -> S.State BcModule BitStringList
+toCompactReadLocM (RRegX x) = return $ termTag termTagRegX : toCompactUint x
+toCompactReadLocM (RRegY y) = return $ termTag termTagRegY : toCompactUint y
+toCompactReadLocM RNil = return [termTag termTagNil]
+toCompactReadLocM (RInt i) = do
   let limI = fromIntegral i -- todo bigint support?
   return $ termTag termTagInteger : toCompactSint limI
-toCompactReadLoc (RAtom a) = do
-  aIndex <- bcmFindAddAtom a
+toCompactReadLocM (RAtom a) = do
+  aIndex <- bcmFindAddAtomM a
   return $ termTag termTagAtom : toCompactUint aIndex
-toCompactReadLoc (RLit lit) = do
-  litIndex <- bcmFindAddLiteral lit
+toCompactReadLocM (RLit lit) = toCompactLiteralM lit
+
+-- [monadic] Update literal table if needed. Return index in the literal table
+toCompactLiteralM :: Term -> S.State BcModule [BitString]
+toCompactLiteralM lit = do
+  litIndex <- bcmFindAddLiteralM lit
   return $ termTag termTagLiteral : toCompactUint litIndex
 
 toCompactWriteLoc :: WriteLoc -> BitStringList
 toCompactWriteLoc (WRegX x) = termTag termTagRegX : toCompactUint x
 toCompactWriteLoc (WRegY y) = termTag termTagRegY : toCompactUint y
 toCompactWriteLoc WIgnore   = [termTag termTagNil]
+
+-- [monadic] Encode code location as label, no label or an import (updates
+-- import table in the module if needed)
+toCompactCodeLocM :: CodeLoc -> S.State BcModule BitStringList
+toCompactCodeLocM (CLabel lloc) = toCompactLabelLocM lloc
+toCompactCodeLocM (CExtFunc m f a) = toCompactLiteralM lit -- do as import?
+  where
+    lit = ErlTuple [Atom m, Atom f, ErlInt (toInteger a)]
+
+toCompactLabelLocM :: LabelLoc -> S.State BcModule BitStringList
+toCompactLabelLocM (LabelLoc i) = return $ toCompactUint i
+toCompactLabelLocM UNoLabel     = return [termTag termTagNil]
 
 toCompactBool :: Bool -> BitString
 toCompactBool True  = bitsUB 1 1
