@@ -4,9 +4,10 @@ module Bytecode
   , err
   , tupleGetElM
   , alloc
-  , bcTestHeap
+  , testHeap
   , moveM
   , callM
+  , tupleNew, tuplePut, tupleGetEl, tupleSetEl
   ) where
 
 import qualified Asm
@@ -70,8 +71,8 @@ alloc need live = BcOp BcOpAlloc (bitsNeed ++ bitsLive)
     bitsNeed = toCompactUint need
     bitsLive = toCompactUint live
 
-bcTestHeap :: Int -> Int -> BcOp
-bcTestHeap need live = BcOp BcOpTestHeap (bitsNeed ++ bitsLive)
+testHeap :: Int -> Int -> BcOp
+testHeap need live = BcOp BcOpTestHeap (bitsNeed ++ bitsLive)
   where
     bitsNeed = toCompactUint need
     bitsLive = toCompactUint live
@@ -104,3 +105,11 @@ callM arity codeLoc callType = do
           Asm.TailCallDealloc dealloc ->
             (BcOpCallTailDealloc, toCompactUint dealloc)
   return $ BcOp opCode (arityBits ++ locBits ++ ctypeBits)
+
+tupleNew sz dst = []
+
+tuplePut val = []
+
+tupleGetEl tuple index dst = []
+
+tupleSetEl val index dst = []

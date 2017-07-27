@@ -94,7 +94,10 @@ transform1M (Asm.ACall arity codeLoc callType) = do
   byteCode <- Bytecode.callM arity codeLoc callType
   return $ Right [byteCode]
 transform1M (Asm.ATestHeap needH live) = do
-  let byteCode = Bytecode.bcTestHeap needH live
+  let byteCode = Bytecode.testHeap needH live
+  return $ Right [byteCode]
+transform1M (Asm.ATupleNew sz dst) = do
+  let byteCode = Bytecode.tupleNew sz dst
   return $ Right [byteCode]
 transform1M op = return $ Uerlc.errM $ "Don't know how to compile: " ++ show op
    -- return $ Right []
