@@ -17,8 +17,8 @@ encodeError EIfClause         = toCompactUint 4
 
 -- [monadic] Returns int index of an atom in the module atoms table, optionally
 -- updates the atoms table if the string did not exist
-encodeAtom :: String -> S.State BcModule Int
-encodeAtom a = do
+encodeAtomM :: String -> S.State BcModule Int
+encodeAtomM a = do
   mod0 <- S.get
   let (mod1, index) =
         case bcmFindAtom mod0 a of
@@ -31,15 +31,15 @@ err :: BuiltinError -> BcOp
 err e = BcOp BcOpError (encodeError e)
 
 -- [monadic] Updates atom table if needed, and returns atom index for a string
-test ::
+testM ::
      String
   -> LabelLoc
   -> [ReadLoc]
   -> Maybe Int
   -> WriteLoc
   -> S.State BcModule BcOp
-test tname onfail args maybeLive dst = do
-  testNameAtom <- encodeAtom tname
+testM tname onfail args maybeLive dst = do
+  testNameAtom <- encodeAtomM tname
   argBits <- mapM toCompactReadLocM args
   let onfailBits =
         case onfail of
@@ -61,8 +61,8 @@ alloc need live = BcOp BcOpAlloc (bitsNeed ++ bitsLive)
     bitsNeed = toCompactUint need
     bitsLive = toCompactUint live
 
-tupleGetEl :: ReadLoc -> ReadLoc -> WriteLoc -> S.State BcModule BcOp
-tupleGetEl src i dst = do
+tupleGetElM :: ReadLoc -> ReadLoc -> WriteLoc -> S.State BcModule BcOp
+tupleGetElM src i dst = do
   bitsSrc <- toCompactReadLocM src
   bitsI <- toCompactReadLocM i
   let bitsDst = toCompactWriteLoc dst
@@ -70,14 +70,14 @@ tupleGetEl src i dst = do
 
 -- [monadic] Compile a move instruction. BcModule state is updated if
 -- readloc src contains an atom or literal index not yet in the module tables
-move :: ReadLoc -> WriteLoc -> S.State BcModule BcOp
-move src dst = do
+moveM :: ReadLoc -> WriteLoc -> S.State BcModule BcOp
+moveM src dst = do
   bitsSrc <- toCompactReadLocM src
   let bitsDst = toCompactWriteLoc dst
   return $ BcOp BcOpMove (bitsSrc ++ bitsDst)
 
-call :: Int -> CodeLoc -> UCallType -> S.State BcModule BcOp
-call arity codeLoc callType = do
+callM :: Int -> CodeLoc -> UCallType -> S.State BcModule BcOp
+callM arity codeLoc callType = do
   let arityBits = toCompactUint arity
   locBits <- toCompactCodeLocM codeLoc
   let (opCode, ctypeBits) =

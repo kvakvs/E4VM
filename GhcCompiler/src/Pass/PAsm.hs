@@ -22,20 +22,20 @@ transformAsmMod amod = bcmod
     bcmod0 = Bytecode.Mod.new
     funs = Map.elems $ Asm.Mod.amFuns amod
     bcmod =
-      case transform' funs bcmod0 `MEx.catchError` Left of
+      case transformM funs bcmod0 `MEx.catchError` Left of
         Right bcmod' -> bcmod'
         Left e       -> Uerlc.err $ show e
 
 -- [monadic] given list of Asm funs and a Bytecode module, update module with
 -- funs that are transformed to Bytecode funs
-transform' :: [AFunc] -> BcModule -> CompileErrorOr BcModule
-transform' [] bcMod = Right bcMod
-transform' (fun:fTail) bcMod0 = transform' fTail bcMod1
+transformM :: [AFunc] -> BcModule -> CompileErrorOr BcModule
+transformM [] bcMod = Right bcMod
+transformM (fun:fTail) bcMod0 = transformM fTail bcMod1
   where
     nameArity = afName fun
     bcMod1 = updateFun nameArity bcFun bcMod0
     bcFun =
-      case S.evalState (transformFn fun) bcMod0 of
+      case S.evalState (transformFnM fun) bcMod0 of
         Right bcFun' -> bcFun'
         Left e       -> Uerlc.err $ show e
 
@@ -49,11 +49,11 @@ updateFun nameArity f bcMod0 = bcMod1
 
 -- [monadic] Given an Asm func converts it to a Bytecode func, also updates
 -- the module with whatever is found on the way (atoms, literals etc)
-transformFn :: AFunc -> S.State BcModule (CompileErrorOr BcFunc)
-transformFn fn = do
+transformFnM :: AFunc -> S.State BcModule (CompileErrorOr BcFunc)
+transformFnM fn = do
   let asmCode = afCode fn
   -- bytecode <- foldM foldOpHelper [] asmCode
-  trResult <- transformAsmOps [] asmCode
+  trResult <- transformAsmOpsM [] asmCode
   case trResult of
     Right bytecode ->
       let outFn = BcFunc {bcfName = afName fn, bcfCode = bytecode}
@@ -62,33 +62,34 @@ transformFn fn = do
 
 -- [monadic] Given an accumulator (bytecode ops) and input (a list of asm
 -- opcodes) returns a list of bytecodes
-transformAsmOps ::
+transformAsmOpsM ::
      [BcOp] -> [UAsmOp] -> S.State BcModule (CompileErrorOr [BcOp])
-transformAsmOps acc [] = return $ Right (reverse acc)
-transformAsmOps acc (aop:remainingAops) = do
-  trResult <- transform1Op aop
+transformAsmOpsM acc [] = return $ Right (reverse acc)
+transformAsmOpsM acc (aop:remainingAops) = do
+  trResult <- transform1M aop
   case trResult of
-    Right bcop -> transformAsmOps (bcop ++ acc) remainingAops
+    Right bcop -> transformAsmOpsM (bcop ++ acc) remainingAops
     Left e     -> return $ Left e
 
--- For those cases when 1:1 simple mapping between asm and bytecode is enough
-transform1Op :: UAsmOp -> S.State BcModule (CompileErrorOr [BcOp])
-transform1Op (Asm.AComment _s) = return $ Right []
-transform1Op (Asm.ALabel _lb) = return $ Right []
-transform1Op (Asm.ALine _ln) = return $ Right []
-transform1Op (Asm.AError e) = return $ Right [Bytecode.err e]
-transform1Op (Asm.ATest tname onfail args maybeLive dst) = do
-  testOp <- Bytecode.test tname onfail args maybeLive dst
+-- [monadic] For those cases when 1:1 simple mapping between asm and bytecode
+-- is enough. For complex cases add a clause in transformAsmOpsM
+transform1M :: UAsmOp -> S.State BcModule (CompileErrorOr [BcOp])
+transform1M (Asm.AComment _s) = return $ Right []
+transform1M (Asm.ALabel _lb) = return $ Right []
+transform1M (Asm.ALine _ln) = return $ Right []
+transform1M (Asm.AError e) = return $ Right [Bytecode.err e]
+transform1M (Asm.ATest tname onfail args maybeLive dst) = do
+  testOp <- Bytecode.testM tname onfail args maybeLive dst
   return $ Right [testOp]
-transform1Op (Asm.AAlloc need live) = return $ Right [Bytecode.alloc need live]
-transform1Op (Asm.ATupleGetEl src i dst) = do
-  byteCode <- Bytecode.tupleGetEl src i dst
+transform1M (Asm.AAlloc need live) = return $ Right [Bytecode.alloc need live]
+transform1M (Asm.ATupleGetEl src i dst) = do
+  byteCode <- Bytecode.tupleGetElM src i dst
   return $ Right [byteCode]
-transform1Op (Asm.AMove src dst) = do
-  byteCode <- Bytecode.move src dst
+transform1M (Asm.AMove src dst) = do
+  byteCode <- Bytecode.moveM src dst
   return $ Right [byteCode]
-transform1Op (Asm.ACall arity codeLoc callType) = do
-  byteCode <- Bytecode.call arity codeLoc callType
+transform1M (Asm.ACall arity codeLoc callType) = do
+  byteCode <- Bytecode.callM arity codeLoc callType
   return $ Right [byteCode]
-transform1Op op = return $ Uerlc.errM $ "Don't know how to compile: " ++ show op
+transform1M op = return $ Uerlc.errM $ "Don't know how to compile: " ++ show op
    -- return $ Right []
