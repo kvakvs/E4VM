@@ -148,10 +148,10 @@ transformCode (ErlTuple [Atom "get_tuple_element", src, indx, dst]:tl) acc =
 transformCode (ErlTuple [Atom "set_tuple_element", dst, tup, indx]:tl) acc =
   transformCode tl (op : acc)
   where
-    Just utup = readLoc tup
+    Just uval = readLoc tup
     Just udst = writeLoc dst
     Just uindx = readLoc indx
-    op = Asm.tupleSetEl utup uindx udst
+    op = Asm.tupleSetEl uval uindx udst
 transformCode (ErlTuple [Atom "jump", dst]:tl) acc = transformCode tl (op : acc)
   where
     udst = parseLabel dst

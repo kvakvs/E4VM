@@ -1,13 +1,16 @@
 module Bytecode
-  ( encodeAtomM
-  , testM
-  , err
-  , tupleGetElM
-  , alloc
-  , testHeap
-  , moveM
+  ( alloc
   , callM
-  , tupleNew, tuplePut, tupleGetEl, tupleSetEl
+  , encodeAtomM
+  , err
+  , moveM
+  , ret
+  , testHeap
+  , testM
+  , tupleGetElM
+  , tupleNewM
+  , tuplePutM
+  , tupleSetElM
   ) where
 
 import qualified Asm
@@ -77,14 +80,6 @@ testHeap need live = BcOp BcOpTestHeap (bitsNeed ++ bitsLive)
     bitsNeed = toCompactUint need
     bitsLive = toCompactUint live
 
-tupleGetElM ::
-     Asm.ReadLoc -> Asm.ReadLoc -> Asm.WriteLoc -> S.State BcModule BcOp
-tupleGetElM src i dst = do
-  bitsSrc <- toCompactReadLocM src
-  bitsI <- toCompactReadLocM i
-  let bitsDst = toCompactWriteLoc dst
-  return $ BcOp BcOpTGetEl (bitsSrc ++ bitsI ++ bitsDst)
-
 -- [monadic] Compile a move instruction. BcModule state is updated if
 -- readloc src contains an atom or literal index not yet in the module tables
 moveM :: Asm.ReadLoc -> Asm.WriteLoc -> S.State BcModule BcOp
@@ -106,10 +101,35 @@ callM arity codeLoc callType = do
             (BcOpCallTailDealloc, toCompactUint dealloc)
   return $ BcOp opCode (arityBits ++ locBits ++ ctypeBits)
 
-tupleNew sz dst = []
+tupleNewM :: Int -> Asm.WriteLoc -> S.State BcModule BcOp
+tupleNewM sz dst = do
+  let dstBits = toCompactWriteLoc dst
+      szBits = toCompactUint sz
+  return $ BcOp BcOpTupleNew (szBits ++ dstBits)
 
-tuplePut val = []
+tuplePutM :: Asm.ReadLoc -> S.State BcModule BcOp
+tuplePutM val = do
+  valBits <- toCompactReadLocM val
+  return $ BcOp BcOpTuplePut valBits
 
-tupleGetEl tuple index dst = []
+tupleGetElM ::
+     Asm.ReadLoc -> Asm.ReadLoc -> Asm.WriteLoc -> S.State BcModule BcOp
+tupleGetElM src i dst = do
+  bitsSrc <- toCompactReadLocM src
+  bitsI <- toCompactReadLocM i
+  let bitsDst = toCompactWriteLoc dst
+  return $ BcOp BcOpTupleGetEl (bitsSrc ++ bitsI ++ bitsDst)
 
-tupleSetEl val index dst = []
+tupleSetElM ::
+     Asm.ReadLoc -> Asm.ReadLoc -> Asm.WriteLoc -> S.State BcModule BcOp
+tupleSetElM val index dst = do
+  bitsVal <- toCompactReadLocM val
+  bitsI <- toCompactReadLocM index
+  let bitsDst = toCompactWriteLoc dst
+  return $ BcOp BcOpTupleSetEl (bitsVal ++ bitsI ++ bitsDst)
+
+ret :: Int -> BcOp
+ret 0 = BcOp BcOpRet0 []
+ret dealloc =
+  let bitsD = toCompactUint dealloc
+  in BcOp BcOpRetN bitsD

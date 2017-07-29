@@ -84,9 +84,6 @@ transform1M (Asm.ATest tname onfail args maybeLive dst) = do
   testOp <- Bytecode.testM tname onfail args maybeLive dst
   return $ Right [testOp]
 transform1M (Asm.AAlloc need live) = return $ Right [Bytecode.alloc need live]
-transform1M (Asm.ATupleGetEl src i dst) = do
-  byteCode <- Bytecode.tupleGetElM src i dst
-  return $ Right [byteCode]
 transform1M (Asm.AMove src dst) = do
   byteCode <- Bytecode.moveM src dst
   return $ Right [byteCode]
@@ -97,7 +94,19 @@ transform1M (Asm.ATestHeap needH live) = do
   let byteCode = Bytecode.testHeap needH live
   return $ Right [byteCode]
 transform1M (Asm.ATupleNew sz dst) = do
-  let byteCode = Bytecode.tupleNew sz dst
+  byteCode <- Bytecode.tupleNewM sz dst
+  return $ Right [byteCode]
+transform1M (Asm.ATuplePut val) = do
+  byteCode <- Bytecode.tuplePutM val
+  return $ Right [byteCode]
+transform1M (Asm.ATupleGetEl src i dst) = do
+  byteCode <- Bytecode.tupleGetElM src i dst
+  return $ Right [byteCode]
+transform1M (Asm.ATupleSetEl val index dst) = do
+  byteCode <- Bytecode.tupleSetElM val index dst
+  return $ Right [byteCode]
+transform1M (Asm.ARet dealloc) = do
+  let byteCode = Bytecode.ret dealloc
   return $ Right [byteCode]
 transform1M op = return $ Uerlc.errM $ "Don't know how to compile: " ++ show op
    -- return $ Right []

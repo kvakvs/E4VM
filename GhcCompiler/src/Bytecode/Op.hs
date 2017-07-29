@@ -13,41 +13,57 @@ import           Data.Tuple
 
 --import           Data.Word
 data BcOpcode
-  = BcOpError
-  | BcOpTest
-  | BcOpAlloc
-  | BcOpTGetEl
-  | BcOpMove
-  | BcOpCallNormal
+  = BcOpAlloc
   | BcOpCallGc
+  | BcOpCallNormal
   | BcOpCallTail
   | BcOpCallTailDealloc
+  | BcOpError
+  | BcOpMove
+  | BcOpRet0
+  | BcOpRetN
+  | BcOpTest
   | BcOpTestHeap
+  | BcOpTupleGetEl
+  | BcOpTupleNew
+  | BcOpTuplePut
+  | BcOpTupleSetEl
   deriving (Eq, Ord)
 
 instance Show BcOpcode where
-  show BcOpError           = "+err"
-  show BcOpTest            = "+test"
   show BcOpAlloc           = "+alloc"
-  show BcOpTGetEl          = "+tgetel"
-  show BcOpMove            = "+move"
-  show BcOpCallNormal      = "+call"
   show BcOpCallGc          = "+call+gc"
+  show BcOpCallNormal      = "+call"
   show BcOpCallTail        = "+call+t"
   show BcOpCallTailDealloc = "+call+td"
+  show BcOpError           = "+err"
+  show BcOpMove            = "+move"
+  show BcOpTest            = "+test"
   show BcOpTestHeap        = "+testheap"
+  show BcOpTupleGetEl      = "+t_get"
+  show BcOpTupleNew        = "+t_new"
+  show BcOpTuplePut        = "+t_put"
+  show BcOpTupleSetEl      = "+t_set"
+  show BcOpRet0            = "+ret0"
+  show BcOpRetN            = "+retn"
 
 bcOpEnumTable :: [(BcOpcode, Int)]
 bcOpEnumTable =
   [ (BcOpError, 0)
   , (BcOpTest, 1)
   , (BcOpAlloc, 2)
-  , (BcOpTGetEl, 3)
-  , (BcOpMove, 4)
-  , (BcOpCallNormal, 5)
-  , (BcOpCallGc, 6)
-  , (BcOpCallTail, 7)
-  , (BcOpCallTailDealloc, 8)
+  , (BcOpMove, 3)
+  , (BcOpCallNormal, 4)
+  , (BcOpCallGc, 5)
+  , (BcOpCallTail, 6)
+  , (BcOpCallTailDealloc, 7)
+  , (BcOpRet0, 8)
+  , (BcOpRetN, 9)
+  , (BcOpTupleNew, 10)
+  , (BcOpTuplePut, 11)
+  , (BcOpTupleGetEl, 12)
+  , (BcOpTupleSetEl, 13)
+  , (BcOpTestHeap, 14)
   ]
 
 instance Enum BcOpcode where

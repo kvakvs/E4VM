@@ -5,3 +5,5 @@ cabal.config
 .idea/
 .ideaHaskellLib/
 out/
+
+*.prof
