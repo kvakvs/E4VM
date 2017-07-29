@@ -20,6 +20,7 @@ data BcOpcode
   | BcOpCallNormal
   | BcOpCallTail
   | BcOpCallTailDealloc
+  | BcOpDecons
   | BcOpError
   | BcOpMove
   | BcOpRet0
@@ -34,10 +35,10 @@ data BcOpcode
 
 instance Show BcOpcode where
   show BcOpAlloc           = "+alloc"
-  show BcOpCallGc          = "+call+gc"
+  show BcOpCallGc          = "+call/gc"
   show BcOpCallNormal      = "+call"
-  show BcOpCallTail        = "+call+t"
-  show BcOpCallTailDealloc = "+call+td"
+  show BcOpCallTail        = "+call/tail"
+  show BcOpCallTailDealloc = "+call/tail/dealloc"
   show BcOpError           = "+err"
   show BcOpMove            = "+move"
   show BcOpTest            = "+test"
@@ -49,7 +50,8 @@ instance Show BcOpcode where
   show BcOpRet0            = "+ret0"
   show BcOpRetN            = "+retn"
   show BcOpCallBif         = "+bif"
-  show BcOpCallBifGc       = "+bif+gc"
+  show BcOpCallBifGc       = "+bif/gc"
+  show BcOpDecons          = "+decons"
 
 bcOpEnumTable :: [(BcOpcode, Int)]
 bcOpEnumTable =
@@ -70,6 +72,7 @@ bcOpEnumTable =
   , (BcOpTestHeap, 14)
   , (BcOpCallBif, 15)
   , (BcOpCallBifGc, 16)
+  , (BcOpDecons, 17)
   ]
 
 instance Enum BcOpcode where

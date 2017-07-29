@@ -2,6 +2,7 @@ module Bytecode
   ( alloc
   , callM
   , callBifM
+  , deconsM
   , encodeAtomM
   , err
   , moveM
@@ -147,3 +148,9 @@ callBifM name onfail args callType dst = do
           Asm.NormalCall -> BcOpCallBif
           Asm.GcEnabledCall live -> BcOpCallBifGc
   return $ BcOp op (bitsName ++ bitsFail ++ concat bitsArgs ++ bitsDst)
+
+deconsM src dstH dstT = do
+  bitsSrc <- toCompactReadLocM src
+  let bitsH = toCompactWriteLoc dstH
+      bitsT = toCompactWriteLoc dstT
+  return $ BcOp BcOpDecons (bitsSrc ++ bitsH ++ bitsT)

@@ -111,5 +111,8 @@ transform1M (Asm.ARet dealloc) = do
 transform1M (Asm.ACallBif name onfail args callType dst) = do
   byteCode <- Bytecode.callBifM name onfail args callType dst
   return $ Right [byteCode]
+transform1M (Asm.ADecons src dstH dstT) = do
+  byteCode <- Bytecode.deconsM src dstH dstT
+  return $ Right [byteCode]
 transform1M op = return $ Uerlc.errM $ "Don't know how to compile: " ++ show op
    -- return $ Right []
