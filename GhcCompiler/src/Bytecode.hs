@@ -1,6 +1,7 @@
 module Bytecode
   ( alloc
   , callM
+  , callBifM
   , encodeAtomM
   , err
   , moveM
@@ -18,6 +19,7 @@ import           Bytecode.Bits
 import           Bytecode.Encode
 import           Bytecode.Mod
 import           Bytecode.Op
+import qualified Uerlc
 
 import qualified Control.Monad.State as S
 
@@ -133,3 +135,15 @@ ret 0 = BcOp BcOpRet0 []
 ret dealloc =
   let bitsD = toCompactUint dealloc
   in BcOp BcOpRetN bitsD
+
+callBifM name onfail args callType dst = do
+  nameAIndex <- bcmFindAddAtomM name
+  let bitsName = toCompactUint nameAIndex
+  bitsFail <- toCompactLabelLocM onfail
+  bitsArgs <- mapM toCompactReadLocM args
+  let bitsDst = toCompactWriteLoc dst
+  let op =
+        case callType of
+          Asm.NormalCall -> BcOpCallBif
+          Asm.GcEnabledCall live -> BcOpCallBifGc
+  return $ BcOp op (bitsName ++ bitsFail ++ concat bitsArgs ++ bitsDst)

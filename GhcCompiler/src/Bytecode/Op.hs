@@ -14,6 +14,8 @@ import           Data.Tuple
 --import           Data.Word
 data BcOpcode
   = BcOpAlloc
+  | BcOpCallBif
+  | BcOpCallBifGc
   | BcOpCallGc
   | BcOpCallNormal
   | BcOpCallTail
@@ -46,6 +48,8 @@ instance Show BcOpcode where
   show BcOpTupleSetEl      = "+t_set"
   show BcOpRet0            = "+ret0"
   show BcOpRetN            = "+retn"
+  show BcOpCallBif         = "+bif"
+  show BcOpCallBifGc       = "+bif+gc"
 
 bcOpEnumTable :: [(BcOpcode, Int)]
 bcOpEnumTable =
@@ -64,6 +68,8 @@ bcOpEnumTable =
   , (BcOpTupleGetEl, 12)
   , (BcOpTupleSetEl, 13)
   , (BcOpTestHeap, 14)
+  , (BcOpCallBif, 15)
+  , (BcOpCallBifGc, 16)
   ]
 
 instance Enum BcOpcode where

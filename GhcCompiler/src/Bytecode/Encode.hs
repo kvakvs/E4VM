@@ -1,12 +1,12 @@
 module Bytecode.Encode
-  ( toCompactUint
-  , toCompactSint
-  , toCompactReadLocM
-  , toCompactLiteralM
-  , toCompactLabelLocM
+  ( toCompactBool
   , toCompactCodeLocM
+  , toCompactLabelLocM
+  , toCompactLiteralM
+  , toCompactReadLocM
+  , toCompactSint
+  , toCompactUint
   , toCompactWriteLoc
-  , toCompactBool
   ) where
 
 import           Asm

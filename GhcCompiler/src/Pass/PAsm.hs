@@ -108,5 +108,8 @@ transform1M (Asm.ATupleSetEl val index dst) = do
 transform1M (Asm.ARet dealloc) = do
   let byteCode = Bytecode.ret dealloc
   return $ Right [byteCode]
+transform1M (Asm.ACallBif name onfail args callType dst) = do
+  byteCode <- Bytecode.callBifM name onfail args callType dst
+  return $ Right [byteCode]
 transform1M op = return $ Uerlc.errM $ "Don't know how to compile: " ++ show op
    -- return $ Right []
