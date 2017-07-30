@@ -3,10 +3,10 @@ module Pass.PAsm
   ( transformAsmMod
   ) where
 
-import qualified Asm
+import qualified Asm as A
 import           Asm.Func
 import           Asm.Mod
-import qualified Bytecode
+import qualified Bytecode as Bc
 import           Bytecode.Func
 import           Bytecode.Mod
 import           Bytecode.Op
@@ -65,7 +65,7 @@ transformFnM fn = do
 -- [monadic] Given an accumulator (bytecode ops) and input (a list of asm
 -- opcodes) returns a list of bytecodes
 transformAsmOpsM ::
-     [BcOp] -> [Asm.UAsmOp] -> S.State BcModule (CompileErrorOr [BcOp])
+     [BcOp] -> [A.UAsmOp] -> S.State BcModule (CompileErrorOr [BcOp])
 transformAsmOpsM acc [] = return $ Right (reverse acc)
 transformAsmOpsM acc (aop:remainingAops) = do
   trResult <- transform1M aop
@@ -75,44 +75,47 @@ transformAsmOpsM acc (aop:remainingAops) = do
 
 -- [monadic] For those cases when 1:1 simple mapping between asm and bytecode
 -- is enough. For complex cases add a clause in transformAsmOpsM
-transform1M :: Asm.UAsmOp -> S.State BcModule (CompileErrorOr [BcOp])
-transform1M (Asm.AComment _s) = return $ Right []
-transform1M (Asm.ALabel _lb) = return $ Right []
-transform1M (Asm.ALine _ln) = return $ Right []
-transform1M (Asm.AError e) = return $ Right [Bytecode.err e]
-transform1M (Asm.ATest tname onfail args maybeLive dst) = do
-  testOp <- Bytecode.testM tname onfail args maybeLive dst
+transform1M :: A.UAsmOp -> S.State BcModule (CompileErrorOr [BcOp])
+transform1M (A.AComment _s) = return $ Right []
+transform1M (A.ALabel _lb) = return $ Right []
+transform1M (A.ALine _ln) = return $ Right []
+transform1M (A.AError e) = return $ Right [Bc.err e]
+transform1M (A.ATest tname onfail args maybeLive dst) = do
+  testOp <- Bc.testM tname onfail args maybeLive dst
   return $ Right [testOp]
-transform1M (Asm.AAlloc need live) = return $ Right [Bytecode.alloc need live]
-transform1M (Asm.AMove src dst) = do
-  byteCode <- Bytecode.moveM src dst
+transform1M (A.AAlloc need live) = return $ Right [Bc.alloc need live]
+transform1M (A.AMove src dst) = do
+  byteCode <- Bc.moveM src dst
   return $ Right [byteCode]
-transform1M (Asm.ACall arity codeLoc callType) = do
-  byteCode <- Bytecode.callM arity codeLoc callType
+transform1M (A.ACall arity codeLoc callType) = do
+  byteCode <- Bc.callM arity codeLoc callType
   return $ Right [byteCode]
-transform1M (Asm.ATestHeap needH live) = do
-  let byteCode = Bytecode.testHeap needH live
+transform1M (A.ATestHeap needH live) = do
+  let byteCode = Bc.testHeap needH live
   return $ Right [byteCode]
-transform1M (Asm.ATupleNew sz dst) = do
-  byteCode <- Bytecode.tupleNewM sz dst
+transform1M (A.ATupleNew sz dst) = do
+  byteCode <- Bc.tupleNewM sz dst
   return $ Right [byteCode]
-transform1M (Asm.ATuplePut val) = do
-  byteCode <- Bytecode.tuplePutM val
+transform1M (A.ATuplePut val) = do
+  byteCode <- Bc.tuplePutM val
   return $ Right [byteCode]
-transform1M (Asm.ATupleGetEl src i dst) = do
-  byteCode <- Bytecode.tupleGetElM src i dst
+transform1M (A.ATupleGetEl src i dst) = do
+  byteCode <- Bc.tupleGetElM src i dst
   return $ Right [byteCode]
-transform1M (Asm.ATupleSetEl val index dst) = do
-  byteCode <- Bytecode.tupleSetElM val index dst
+transform1M (A.ATupleSetEl val index dst) = do
+  byteCode <- Bc.tupleSetElM val index dst
   return $ Right [byteCode]
-transform1M (Asm.ARet dealloc) = do
-  let byteCode = Bytecode.ret dealloc
+transform1M (A.ARet dealloc) = do
+  let byteCode = Bc.ret dealloc
   return $ Right [byteCode]
-transform1M (Asm.ACallBif name onfail args callType dst) = do
-  byteCode <- Bytecode.callBifM name onfail args callType dst
+transform1M (A.ACallBif name onfail args callType dst) = do
+  byteCode <- Bc.callBifM name onfail args callType dst
   return $ Right [byteCode]
-transform1M (Asm.ADecons src dstH dstT) = do
-  byteCode <- Bytecode.deconsM src dstH dstT
+transform1M (A.ADecons src dstH dstT) = do
+  byteCode <- Bc.deconsM src dstH dstT
+  return $ Right [byteCode]
+transform1M (A.ASelect selType val onfail jtab) = do
+  byteCode <- Bc.selectM selType val onfail jtab
   return $ Right [byteCode]
 transform1M op = return $ Uerlc.errM $ "Don't know how to compile: " ++ show op
    -- return $ Right []

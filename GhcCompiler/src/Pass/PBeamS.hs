@@ -267,8 +267,8 @@ transformCode (ErlTuple [Atom selOp, src, onfail, ErlTuple [Atom "list", ErlList
     uchoices = parseChoices choices []
     op =
       case selOp of
-        "select_val" -> Asm.select SelectVal usrc ufail uchoices
-        "select_tuple_arity" -> Asm.select SelectTupleArity usrc ufail uchoices
+        "select_val" -> Asm.select SValue usrc ufail uchoices
+        "select_tuple_arity" -> Asm.select STupleArity usrc ufail uchoices
 transformCode (ErlTuple [Atom "make_fun2", lbl, _indx, _olduniq, numfree]:tl) acc =
   transformCode tl (op : acc)
   where

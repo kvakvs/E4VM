@@ -1,11 +1,14 @@
 module Asm where
 
-import           Term
+import qualified Term as T
 
-data USelectSubject
-  = SelectVal
-  | SelectTupleArity
-  deriving (Show)
+data SelectSubj
+  = SValue
+  | STupleArity
+
+instance Show SelectSubj where
+  show SValue      = "-value"
+  show STupleArity = "-tuple-arity"
 
 data LabelLoc
   = LabelLoc Int
@@ -44,12 +47,13 @@ data ReadLoc
   | RRegY Int
   | RAtom String
   | RInt Integer
-  | RLit Term
+  | RLit T.Term
   | RNil
   | ReadLocError String
 
 rarrow :: String
 rarrow = "➚"
+
 warrow :: String
 warrow = "➘"
 
@@ -113,6 +117,8 @@ instance Show BinaryFlags where
           then "big"
           else "little"
 
+type JumpTab = [(T.Term, LabelLoc)]
+
 data UAsmOp
   = AAlloc Int
            Int
@@ -158,10 +164,12 @@ data UAsmOp
   | AMove ReadLoc
           WriteLoc
   | ARet Int
-  | ASelect USelectSubject
+  -- From a jumptable select a pair {value,label} and jump there, else jump to
+  -- the onfail location
+  | ASelect SelectSubj
             ReadLoc
             LabelLoc
-            [(Term, LabelLoc)]
+            JumpTab
   | ASetNil WriteLoc
   | ATest String
           LabelLoc
@@ -191,7 +199,8 @@ instance Show UAsmOp where
   show (ABsPutInteger a b c) = show1 "bsputi" [show a, show b, show c]
   show (ABsRestore a b) = show1 "bsrest" [show a, show b]
   show (ABsSave a b) = show1 "bssave" [show a, show b]
-  show (ACallBif a b c d e) = show1 "callbif" [show a, show b, show c, show d, show e]
+  show (ACallBif a b c d e) =
+    show1 "callbif" [show a, show b, show c, show d, show e]
   show (ACall a b c) = show1 "call" [show a, show b, show c]
   show (ACallFun a) = show1 "callf" [show a]
   show (AComment a) = show1 ";" [show a]
@@ -281,7 +290,7 @@ callBif = ACallBif
 decons :: ReadLoc -> WriteLoc -> WriteLoc -> UAsmOp
 decons = ADecons
 
-select :: USelectSubject -> ReadLoc -> LabelLoc -> [(Term, LabelLoc)] -> UAsmOp
+select :: SelectSubj -> ReadLoc -> LabelLoc -> JumpTab -> UAsmOp
 select = ASelect
 
 cons :: ReadLoc -> ReadLoc -> WriteLoc -> UAsmOp

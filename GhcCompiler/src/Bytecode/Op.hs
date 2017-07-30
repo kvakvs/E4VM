@@ -25,6 +25,8 @@ data BcOpcode
   | BcOpMove
   | BcOpRet0
   | BcOpRetN
+  | BcOpSelectVal
+  | BcOpSelectTupleArity
   | BcOpTest
   | BcOpTestHeap
   | BcOpTupleGetEl
@@ -34,24 +36,26 @@ data BcOpcode
   deriving (Eq, Ord)
 
 instance Show BcOpcode where
-  show BcOpAlloc           = "+alloc"
-  show BcOpCallGc          = "+call/gc"
-  show BcOpCallNormal      = "+call"
-  show BcOpCallTail        = "+call/tail"
-  show BcOpCallTailDealloc = "+call/tail/dealloc"
-  show BcOpError           = "+err"
-  show BcOpMove            = "+move"
-  show BcOpTest            = "+test"
-  show BcOpTestHeap        = "+testheap"
-  show BcOpTupleGetEl      = "+t_get"
-  show BcOpTupleNew        = "+t_new"
-  show BcOpTuplePut        = "+t_put"
-  show BcOpTupleSetEl      = "+t_set"
-  show BcOpRet0            = "+ret0"
-  show BcOpRetN            = "+retn"
-  show BcOpCallBif         = "+bif"
-  show BcOpCallBifGc       = "+bif/gc"
-  show BcOpDecons          = "+decons"
+  show BcOpAlloc            = "+alloc"
+  show BcOpCallBif          = "+bif"
+  show BcOpCallBifGc        = "+bif/gc"
+  show BcOpCallGc           = "+call/gc"
+  show BcOpCallNormal       = "+call"
+  show BcOpCallTail         = "+call/tail"
+  show BcOpCallTailDealloc  = "+call/tail/dealloc"
+  show BcOpDecons           = "+decons"
+  show BcOpError            = "+err"
+  show BcOpMove             = "+move"
+  show BcOpRet0             = "+ret0"
+  show BcOpRetN             = "+retn"
+  show BcOpSelectTupleArity = "+selectarity"
+  show BcOpSelectVal        = "+selectval"
+  show BcOpTest             = "+test"
+  show BcOpTestHeap         = "+testheap"
+  show BcOpTupleGetEl       = "+t_get"
+  show BcOpTupleNew         = "+t_new"
+  show BcOpTuplePut         = "+t_put"
+  show BcOpTupleSetEl       = "+t_set"
 
 bcOpEnumTable :: [(BcOpcode, Int)]
 bcOpEnumTable =
@@ -73,6 +77,8 @@ bcOpEnumTable =
   , (BcOpCallBif, 15)
   , (BcOpCallBifGc, 16)
   , (BcOpDecons, 17)
+  , (BcOpSelectVal, 18)
+  , (BcOpSelectTupleArity, 19)
   ]
 
 instance Enum BcOpcode where
