@@ -22,14 +22,14 @@ transpile fn input = result
 -- Given beam .S file contents (string) produce a Term tree structure with
 -- parsed erlang values
 stageParseBeamS :: String -> T.Term
-stageParseBeamS = P0.parseS
+stageParseBeamS = P0.transform
 
 -- Given Term tree produce microassembly data structure
 stageBeamSToUasm :: T.Term -> AM.Module
 stageBeamSToUasm = P1.transform
 
 stageCompileAsm :: AM.Module -> BM.Module
-stageCompileAsm = P2.transformAsmMod
+stageCompileAsm = P2.transform
 
 initLogging :: IO ()
 initLogging = do

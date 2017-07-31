@@ -1,5 +1,5 @@
 module BeamSParser
-  ( parseS
+  ( transform
   ) where
 
 import           Term
@@ -119,8 +119,8 @@ stringLiteral = Token.stringLiteral lexer
 
 charLiteral = Token.charLiteral lexer
 
-parseS :: String -> Term
-parseS contents =
+transform :: String -> Term
+transform contents =
   case parse BeamSParser.beamSParser "" contents of
     Left parsecError -> Uerlc.err $ show parsecError
     Right expr       -> expr

@@ -1,6 +1,6 @@
 --{-# LANGUAGE InstanceSigs #-}
 module Pass.PassAsm
-  ( transformAsmMod
+  ( transform
   ) where
 
 import qualified Asm                  as A
@@ -18,8 +18,8 @@ import qualified Control.Monad.State  as S
 import qualified Data.Map             as Map
 
 -- Given Asm module produce Bytecode module or throw an error
-transformAsmMod :: AM.Module -> BM.Module
-transformAsmMod amod = bcmod
+transform :: AM.Module -> BM.Module
+transform amod = bcmod
   where
     bcmod0 = BM.new
     funs = Map.elems $ AM.funs amod
