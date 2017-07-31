@@ -1,5 +1,5 @@
 module Bytecode.Mod
-  ( BcModule(..)
+  ( Module(..)
   , new
   , bcmFindAtom
   , bcmAddAtom
@@ -14,58 +14,58 @@ module Bytecode.Mod
   ) where
 
 import qualified Asm                 as A
-import           Bytecode.Func
+import qualified Bytecode.Func       as BF
 import qualified Term                as T
 
 import qualified Control.Monad.State as S
 import           Data.List
 import qualified Data.Map            as Map
 
-data BcModule = BcModule
-  { bcmName :: String
-  , bcmAtoms :: Map.Map String Int
-  , bcmAtomCounter :: Int
-  , bcmLiterals :: Map.Map T.Term Int
-  , bcmLiteralCounter :: Int
-  , bcmImports :: Map.Map T.MFArity Int
-  , bcmImportCounter :: Int
-  , bcmFuns :: Map.Map T.FunArity BcFunc
-  , bcmJtabs :: [A.JumpTab]
+data Module = Module
+  { name :: String
+  , atoms :: Map.Map String Int
+  , literals :: Map.Map T.Term Int
+  , imports :: Map.Map T.MFArity Int
+  , funs :: Map.Map T.FunArity BF.Func
+  , jTabs :: [A.JumpTab]
   }
 
-new :: BcModule
+--  , bcmAtomCounter :: Int
+--  , bcmLiteralCounter :: Int
+--  , bcmImportCounter :: Int
+new :: Module
 new =
-  BcModule
-  { bcmName = ""
-  , bcmAtoms = Map.empty
-  , bcmAtomCounter = 0
-  , bcmLiterals = Map.empty
-  , bcmLiteralCounter = 0
-  , bcmImports = Map.empty
-  , bcmImportCounter = 0
-  , bcmFuns = Map.empty
-  , bcmJtabs = []
+  Module
+  { name = ""
+  , atoms = Map.empty
+  , literals = Map.empty
+  , imports = Map.empty
+  , funs = Map.empty
+  , jTabs = []
   }
 
-instance Show BcModule where
+--  , bcmAtomCounter = 0
+--  , bcmLiteralCounter = 0
+--  , bcmImportCounter = 0
+instance Show Module where
   show m = intercalate "\n" [header, funsText, footer]
     where
-      name = bcmName m
-      funs = bcmFuns m
-      header = ";; bytecode module " ++ name ++ "======"
-      footer = ";; ====== end bytecode module " ++ name
+      name' = name m
+      funs' = funs m
+      header = ";; bytecode module " ++ name' ++ "======"
+      footer = ";; ====== end bytecode module " ++ name'
       funsText = intercalate "\n" strFuns
-      strFuns = map show (Map.elems funs)
+      strFuns = map show (Map.elems funs')
 
 -- Pure find atom function
-bcmFindAtom :: BcModule -> String -> Maybe Int
-bcmFindAtom m a = Map.lookup a (bcmAtoms m)
+bcmFindAtom :: Module -> String -> Maybe Int
+bcmFindAtom m a = Map.lookup a (atoms m)
 
 -- [monadic] Find atom and possibly add it
-bcmFindAddAtomM :: String -> S.State BcModule Int
+bcmFindAddAtomM :: String -> S.State Module Int
 bcmFindAddAtomM a = do
   m <- S.get
-  let lookupResult = Map.lookup a (bcmAtoms m)
+  let lookupResult = Map.lookup a (atoms m)
   case lookupResult of
     Just i -> return i
     Nothing -> do
@@ -74,30 +74,32 @@ bcmFindAddAtomM a = do
       return newI
 
 -- Pure add atom function
-bcmAddAtom :: BcModule -> String -> (BcModule, Int)
+bcmAddAtom :: Module -> String -> (Module, Int)
 bcmAddAtom m a = (m1, counter)
   where
-    counter = bcmAtomCounter m + 1
-    newAtoms = Map.insert a counter (bcmAtoms m)
-    m1 = m {bcmAtoms = newAtoms, bcmAtomCounter = counter}
+    oldAtoms = atoms m
+    counter = Map.size oldAtoms
+    newAtoms = Map.insert a counter oldAtoms
+    m1 = m {atoms = newAtoms}
 
 -- Pure lookup function
-bcmFindLiteral :: BcModule -> T.Term -> Maybe Int
-bcmFindLiteral m lit = Map.lookup lit (bcmLiterals m)
+bcmFindLiteral :: Module -> T.Term -> Maybe Int
+bcmFindLiteral m lit = Map.lookup lit (literals m)
 
 -- Pure add literal function
-bcmAddLiteral :: BcModule -> T.Term -> (BcModule, Int)
+bcmAddLiteral :: Module -> T.Term -> (Module, Int)
 bcmAddLiteral m lit = (m1, counter)
   where
-    counter = bcmLiteralCounter m + 1
-    newLiterals = Map.insert lit counter (bcmLiterals m)
-    m1 = m {bcmLiterals = newLiterals, bcmLiteralCounter = counter}
+    oldLiterals = literals m
+    counter = Map.size oldLiterals
+    newLiterals = Map.insert lit counter oldLiterals
+    m1 = m {literals = newLiterals}
 
 -- [monadic] Find and possibly add literal
-bcmFindAddLiteralM :: T.Term -> S.State BcModule Int
+bcmFindAddLiteralM :: T.Term -> S.State Module Int
 bcmFindAddLiteralM lit = do
   m <- S.get
-  let lookupResult = Map.lookup lit (bcmLiterals m)
+  let lookupResult = Map.lookup lit (literals m)
   case lookupResult of
     Just i -> return i
     Nothing -> do
@@ -106,22 +108,23 @@ bcmFindAddLiteralM lit = do
       return newI
 
 -- Pure add Import function
-bcmAddImport :: BcModule -> T.MFArity -> (BcModule, Int)
+bcmAddImport :: Module -> T.MFArity -> (Module, Int)
 bcmAddImport m imp = (m1, counter)
   where
-    counter = bcmImportCounter m + 1
-    newImports = Map.insert imp counter (bcmImports m)
-    m1 = m {bcmImports = newImports, bcmImportCounter = counter}
+    oldImports = imports m
+    counter = Map.size oldImports
+    newImports = Map.insert imp counter oldImports
+    m1 = m {imports = newImports}
 
 -- Pure find import function
-bcmFindImport :: BcModule -> T.MFArity -> Maybe Int
-bcmFindImport m imp = Map.lookup imp (bcmImports m)
+bcmFindImport :: Module -> T.MFArity -> Maybe Int
+bcmFindImport m imp = Map.lookup imp (imports m)
 
 -- [monadic] Find and possibly add import
-bcmFindAddImportM :: T.MFArity -> S.State BcModule Int
+bcmFindAddImportM :: T.MFArity -> S.State Module Int
 bcmFindAddImportM imp = do
   m <- S.get
-  let lookupResult = Map.lookup imp (bcmImports m)
+  let lookupResult = Map.lookup imp (imports m)
   case lookupResult of
     Just i -> return i
     Nothing -> do
@@ -129,11 +132,11 @@ bcmFindAddImportM imp = do
       S.put m1
       return newI
 
-bcmAddJumptableM :: A.JumpTab -> S.State BcModule Int
+bcmAddJumptableM :: A.JumpTab -> S.State Module Int
 bcmAddJumptableM jtab = do
   m <- S.get
-  let oldJtabs = bcmJtabs m
+  let oldJtabs = jTabs m
       index = length oldJtabs
-      m1 = m {bcmJtabs = oldJtabs ++ [jtab]}
+      m1 = m {jTabs = oldJtabs ++ [jtab]}
   S.put m1
   return index

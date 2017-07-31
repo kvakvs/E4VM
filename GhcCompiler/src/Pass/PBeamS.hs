@@ -16,7 +16,7 @@ import           Data.Maybe (fromJust)
 transform :: T.Term -> AM.Module
 transform (T.ErlList l) = mod1
   where
-    mod0 = AM.Module {AM.amName = "", AM.amFuns = Map.empty, AM.amExports = []}
+    mod0 = AM.Module {AM.name = "", AM.funs = Map.empty, AM.exports = []}
     mod1 = transform' l mod0
 transform other = Uerlc.err $ show other
 
@@ -30,9 +30,9 @@ isBeamSFunction _                                  = False
 transform' :: [T.Term] -> AM.Module -> AM.Module
 transform' [] mod0 = mod0
 transform' (T.ErlTuple [T.Atom "function", fname, farity, flabel]:tl) mod0 =
-  transform' tl1 mod0 {AM.amFuns = funs1}
+  transform' tl1 mod0 {AM.funs = funs1}
   where
-    funs0 = AM.amFuns mod0
+    funs0 = AM.funs mod0
     tl1 = dropWhile (not . isBeamSFunction) tl
     fbody = takeWhile (not . isBeamSFunction) tl
     outFn = fnCreate fname farity flabel fbody
@@ -41,12 +41,12 @@ transform' (T.ErlTuple [T.Atom "function", fname, farity, flabel]:tl) mod0 =
 transform' (T.ErlTuple [T.Atom "module", T.Atom mname]:tl) mod0 =
   transform' tl mod1
   where
-    mod1 = mod0 {AM.amName = mname}
+    mod1 = mod0 {AM.name = mname}
 transform' (T.ErlTuple [T.Atom "exports", T.ErlList exps]:tl) mod0 =
   transform' tl mod1
   where
     exps1 = map (\(T.ErlTuple [fn, ar]) -> T.funarityFromErl fn ar) exps
-    mod1 = mod0 {AM.amExports = exps1}
+    mod1 = mod0 {AM.exports = exps1}
 -- ignored at the moment
 transform' (T.ErlTuple [T.Atom "attributes", T.ErlList _mattr]:tl) mod0 =
   transform' tl mod0
@@ -57,7 +57,7 @@ transform' (form:_tl) _mod0 =
 -- Given F/Arity and code body return a Function object
 fnCreate :: T.Term -> T.Term -> T.Term -> [T.Term] -> AF.Func
 fnCreate (T.Atom fname) farity0 (T.ErlInt _flabel) fbody =
-  AF.Func {AF.afName = T.FunArity fname farity, AF.afCode = asmBody}
+  AF.Func {AF.name = T.FunArity fname farity, AF.code = asmBody}
   where
     Just farity = T.intFromErl farity0
     asmBody = transformCode fbody []

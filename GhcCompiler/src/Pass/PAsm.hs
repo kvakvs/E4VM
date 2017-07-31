@@ -7,10 +7,10 @@ import qualified Asm                  as A
 import qualified Asm.Func             as AF
 import qualified Asm.Mod              as AM
 import qualified Bytecode             as Bc
-import           Bytecode.Func
-import           Bytecode.Mod
-import           Bytecode.Op
-import           Term
+import qualified Bytecode.Func        as BF
+import qualified Bytecode.Mod         as BM
+import qualified Bytecode.Op          as BO
+import qualified Term                 as T
 import           Uerlc
 
 import qualified Control.Monad.Except as MEx
@@ -18,11 +18,11 @@ import qualified Control.Monad.State  as S
 import qualified Data.Map             as Map
 
 -- Given Asm module produce Bytecode module or throw an error
-transformAsmMod :: AM.Module -> BcModule
+transformAsmMod :: AM.Module -> BM.Module
 transformAsmMod amod = bcmod
   where
-    bcmod0 = Bytecode.Mod.new
-    funs = Map.elems $ AM.amFuns amod
+    bcmod0 = BM.new
+    funs = Map.elems $ AM.funs amod
     bcmod =
       case transformM funs bcmod0 `MEx.catchError` Left of
         Right bcmod' -> bcmod'
@@ -30,11 +30,11 @@ transformAsmMod amod = bcmod
 
 -- [monadic] given list of Asm funs and a Bytecode module, update module with
 -- funs that are transformed to Bytecode funs
-transformM :: [AF.Func] -> BcModule -> CompileErrorOr BcModule
+transformM :: [AF.Func] -> BM.Module -> CompileErrorOr BM.Module
 transformM [] bcMod = Right bcMod
 transformM (fun:fTail) bcMod0 = transformM fTail bcMod1
   where
-    nameArity = AF.afName fun
+    nameArity = AF.name fun
     bcMod1 = updateFun nameArity bcFun bcMod0
     bcFun =
       case S.evalState (transformFnM fun) bcMod0 of
@@ -42,30 +42,30 @@ transformM (fun:fTail) bcMod0 = transformM fTail bcMod1
         Left e       -> Uerlc.err $ show e
 
 -- Updates/writes a func in a bytecode module, returns an updated module
-updateFun :: FunArity -> BcFunc -> BcModule -> BcModule
+updateFun :: T.FunArity -> BF.Func -> BM.Module -> BM.Module
 updateFun nameArity f bcMod0 = bcMod1
   where
-    funs0 = bcmFuns bcMod0
+    funs0 = BM.funs bcMod0
     funs1 = Map.insert nameArity f funs0
-    bcMod1 = bcMod0 {bcmFuns = funs1}
+    bcMod1 = bcMod0 {BM.funs = funs1}
 
 -- [monadic] Given an Asm func converts it to a Bytecode func, also updates
 -- the module with whatever is found on the way (atoms, literals etc)
-transformFnM :: AF.Func -> S.State BcModule (CompileErrorOr BcFunc)
+transformFnM :: AF.Func -> S.State BM.Module (CompileErrorOr BF.Func)
 transformFnM fn = do
-  let asmCode = AF.afCode fn
+  let asmCode = AF.code fn
   -- bytecode <- foldM foldOpHelper [] asmCode
   trResult <- transformAsmOpsM [] asmCode
   case trResult of
     Right bytecode ->
-      let outFn = BcFunc {bcfName = AF.afName fn, bcfCode = bytecode}
+      let outFn = BF.Func {BF.bcfName = AF.name fn, BF.bcfCode = bytecode}
       in return (Right outFn)
     Left e -> return $ Left e
 
 -- [monadic] Given an accumulator (bytecode ops) and input (a list of asm
 -- opcodes) returns a list of bytecodes
 transformAsmOpsM ::
-     [BcOp] -> [A.UAsmOp] -> S.State BcModule (CompileErrorOr [BcOp])
+     [BO.BcOp] -> [A.UAsmOp] -> S.State BM.Module (CompileErrorOr [BO.BcOp])
 transformAsmOpsM acc [] = return $ Right (reverse acc)
 transformAsmOpsM acc (aop:remainingAops) = do
   trResult <- transform1M aop
@@ -75,7 +75,7 @@ transformAsmOpsM acc (aop:remainingAops) = do
 
 -- [monadic] For those cases when 1:1 simple mapping between asm and bytecode
 -- is enough. For complex cases add a clause in transformAsmOpsM
-transform1M :: A.UAsmOp -> S.State BcModule (CompileErrorOr [BcOp])
+transform1M :: A.UAsmOp -> S.State BM.Module (CompileErrorOr [BO.BcOp])
 transform1M (A.AComment _s) = return $ Right []
 transform1M (A.ALabel _lb) = return $ Right []
 transform1M (A.ALine _ln) = return $ Right []

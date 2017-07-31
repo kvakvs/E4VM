@@ -8,8 +8,8 @@ import qualified Term      as T
 import           Data.List
 
 data Func = Func
-  { afName :: T.FunArity
-  , afCode :: [A.UAsmOp]
+  { name :: T.FunArity
+  , code :: [A.UAsmOp]
   }
 
 instance Show Func where

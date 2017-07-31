@@ -9,9 +9,9 @@ import           Data.List
 import qualified Data.Map  as Map
 
 data Module = Module
-  { amName :: String
-  , amFuns :: Map.Map T.FunArity AF.Func
-  , amExports :: [T.FunArity]
+  { name :: String
+  , funs :: Map.Map T.FunArity AF.Func
+  , exports :: [T.FunArity]
   }
 
 instance Show Module where

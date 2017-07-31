@@ -1,18 +1,18 @@
 module Bytecode.Func
-  ( BcFunc(..)
+  ( Func(..)
   ) where
 
-import           Bytecode.Op
+import qualified Bytecode.Op as BO
 import           Data.List
-import           Term
+import qualified Term        as T
 
-data BcFunc = BcFunc
-  { bcfName :: FunArity
-  , bcfCode :: [BcOp]
+data Func = Func
+  { bcfName :: T.FunArity
+  , bcfCode :: [BO.BcOp]
   }
 
-instance Show BcFunc where
-  show (BcFunc (FunArity name arity) body) =
+instance Show Func where
+  show (Func (T.FunArity name arity) body) =
     intercalate "\n" ["", header, ops, footer, ""]
     where
       header = ";; bytecode fun " ++ funarity ++ " ------"
