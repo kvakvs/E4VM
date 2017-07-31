@@ -94,7 +94,7 @@ parseChoices (val:lbl:tl) acc = parseChoices tl acc1
     ulbl = parseLabel lbl
     acc1 = (val, ulbl) : acc
 
-transformCode :: [T.Term] -> [A.UAsmOp] -> [A.UAsmOp]
+transformCode :: [T.Term] -> [A.Instruction] -> [A.Instruction]
 transformCode [] acc = reverse acc
 transformCode (T.ErlTuple [T.Atom "label", f]:tl) acc =
   transformCode tl (op : acc)

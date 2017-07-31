@@ -9,7 +9,7 @@ import           Data.List
 
 data Func = Func
   { name :: T.FunArity
-  , code :: [A.UAsmOp]
+  , code :: [A.Instruction]
   }
 
 instance Show Func where

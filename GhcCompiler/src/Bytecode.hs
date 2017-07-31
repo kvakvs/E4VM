@@ -44,6 +44,7 @@ encodeAtomM a = do
   S.put mod1
   return index
 
+-- Create an instruction to generate exception
 err :: A.BuiltinError -> BO.Instruction
 err e = BO.Instruction BO.Error (encodeError e)
 
@@ -92,7 +93,7 @@ moveM src dst = do
   let bitsDst = BE.toCompactWriteLoc dst
   return $ BO.Instruction BO.Move (bitsSrc ++ bitsDst)
 
-callM :: Int -> A.CodeLoc -> A.UCallType -> S.State BM.Module BO.Instruction
+callM :: Int -> A.CodeLoc -> A.CallType -> S.State BM.Module BO.Instruction
 callM arity codeLoc callType = do
   let arityBits = BE.toCompactUint arity
   locBits <- BE.toCompactCodeLocM codeLoc
@@ -142,7 +143,7 @@ callBifM ::
      String
   -> A.LabelLoc
   -> [A.ReadLoc]
-  -> A.UCallType
+  -> A.CallType
   -> A.WriteLoc
   -> S.State BM.Module BO.Instruction
 callBifM name onfail args callType dst = do

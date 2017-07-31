@@ -29,13 +29,13 @@ instance Show CodeLoc where
   show (CExtFunc m f a) = "@" ++ m ++ ":" ++ f ++ "/" ++ show a
 
 -- flags and options for a call
-data UCallType
+data CallType
   = NormalCall
   | GcEnabledCall Int
   | TailCall
   | TailCallDealloc Int
 
-instance Show UCallType where
+instance Show CallType where
   show NormalCall          = "-normal"
   show TailCall            = "-tail"
   show (GcEnabledCall n)   = "-gc:" ++ show n
@@ -119,7 +119,7 @@ instance Show BinaryFlags where
 
 type JumpTab = [(T.Term, LabelLoc)]
 
-data UAsmOp
+data Instruction
   = AAlloc Int
            Int
   -- convert matchstate in rxy to a (sub)binary
@@ -141,11 +141,11 @@ data UAsmOp
   | ACallBif String
              LabelLoc
              [ReadLoc]
-             UCallType
+             CallType
              WriteLoc
   | ACall Int
           CodeLoc
-          UCallType
+          CallType
   | ACallFun Int
   | AComment String
   | ACons ReadLoc
@@ -192,7 +192,7 @@ data UAsmOp
 show1 :: String -> [String] -> String
 show1 s args = s ++ " " ++ unwords args
 
-instance Show UAsmOp where
+instance Show Instruction where
   show (AAlloc a b) = show1 "alloc" [show a, show b]
   show (ABsContextToBin a) = show1 "bsctx2bin" [show a]
   show (ABsInit a b c d) = show1 "bsinit" [show a, show b, show c, show d]
@@ -224,101 +224,102 @@ instance Show UAsmOp where
   show (ATupleNew a b) = show1 "mktuple" [show a, show b]
   show (ATuplePut a) = show1 "put" [show a]
 
-jump :: LabelLoc -> UAsmOp
+jump :: LabelLoc -> Instruction
 jump = AJump
 
-label :: Int -> UAsmOp
+label :: Int -> Instruction
 label i = ALabel (LabelLoc i)
 
-comment :: Show a => a -> UAsmOp
+comment :: Show a => a -> Instruction
 comment x = AComment $ show x
 
-ret :: Int -> UAsmOp
+ret :: Int -> Instruction
 ret = ARet
 
-move :: ReadLoc -> WriteLoc -> UAsmOp
+move :: ReadLoc -> WriteLoc -> Instruction
 move = AMove
 
-funcClause :: UAsmOp
+funcClause :: Instruction
 funcClause = AError EFunClause
 
-caseClause :: UAsmOp
+caseClause :: Instruction
 caseClause = AError ECaseClause
 
-ifClause :: UAsmOp
+ifClause :: Instruction
 ifClause = AError EIfClause
 
-badarg :: UAsmOp
+badarg :: Instruction
 badarg = AError EBadArg
 
-badmatch :: ReadLoc -> UAsmOp
+badmatch :: ReadLoc -> Instruction
 badmatch r = AError (EBadMatch r)
 
-tupleNew :: Int -> WriteLoc -> UAsmOp
+tupleNew :: Int -> WriteLoc -> Instruction
 tupleNew = ATupleNew
 
-tuplePut :: ReadLoc -> UAsmOp
+tuplePut :: ReadLoc -> Instruction
 tuplePut = ATuplePut
 
-tupleGetEl :: ReadLoc -> ReadLoc -> WriteLoc -> UAsmOp
+tupleGetEl :: ReadLoc -> ReadLoc -> WriteLoc -> Instruction
 tupleGetEl = ATupleGetEl
 
-tupleSetEl :: ReadLoc -> ReadLoc -> WriteLoc -> UAsmOp
+tupleSetEl :: ReadLoc -> ReadLoc -> WriteLoc -> Instruction
 tupleSetEl = ATupleSetEl
 
-testHeap :: Int -> Int -> UAsmOp
+testHeap :: Int -> Int -> Instruction
 testHeap = ATestHeap
 
-allocate :: Int -> Int -> UAsmOp
+allocate :: Int -> Int -> Instruction
 allocate = AAlloc
 
-deallocate :: Int -> UAsmOp
+deallocate :: Int -> Instruction
 deallocate = ADealloc
 
-test :: String -> LabelLoc -> [ReadLoc] -> Maybe Int -> WriteLoc -> UAsmOp
+test :: String -> LabelLoc -> [ReadLoc] -> Maybe Int -> WriteLoc -> Instruction
 test = ATest
 
-callLabel :: Int -> LabelLoc -> UCallType -> UAsmOp
+callLabel :: Int -> LabelLoc -> CallType -> Instruction
 callLabel arity lbl = ACall arity (CLabel lbl)
 
-callExt :: (String, String, Int) -> UCallType -> UAsmOp
+callExt :: (String, String, Int) -> CallType -> Instruction
 callExt (m, f, arity) = ACall arity (CExtFunc m f arity)
 
-callBif :: String -> LabelLoc -> [ReadLoc] -> UCallType -> WriteLoc -> UAsmOp
+callBif ::
+     String -> LabelLoc -> [ReadLoc] -> CallType -> WriteLoc -> Instruction
 callBif = ACallBif
 
-decons :: ReadLoc -> WriteLoc -> WriteLoc -> UAsmOp
+decons :: ReadLoc -> WriteLoc -> WriteLoc -> Instruction
 decons = ADecons
 
-select :: SelectSubj -> ReadLoc -> LabelLoc -> JumpTab -> UAsmOp
+select :: SelectSubj -> ReadLoc -> LabelLoc -> JumpTab -> Instruction
 select = ASelect
 
-cons :: ReadLoc -> ReadLoc -> WriteLoc -> UAsmOp
+cons :: ReadLoc -> ReadLoc -> WriteLoc -> Instruction
 cons = ACons
 
-callFun :: Int -> UAsmOp
+callFun :: Int -> Instruction
 callFun = ACallFun
 
-setNil :: WriteLoc -> UAsmOp
+setNil :: WriteLoc -> Instruction
 setNil = ASetNil
 
-trim :: Int -> UAsmOp
+trim :: Int -> Instruction
 trim = ATrim
 
-makeFun :: LabelLoc -> Int -> UAsmOp
+makeFun :: LabelLoc -> Int -> Instruction
 makeFun = AMakeFun
 
-bsContextToBin :: ReadLoc -> UAsmOp
+bsContextToBin :: ReadLoc -> Instruction
 bsContextToBin = ABsContextToBin
 
-bsSave :: ReadLoc -> Int -> UAsmOp
+bsSave :: ReadLoc -> Int -> Instruction
 bsSave = ABsSave
 
-bsRestore :: ReadLoc -> Int -> UAsmOp
+bsRestore :: ReadLoc -> Int -> Instruction
 bsRestore = ABsRestore
 
-bsInit :: Int -> Int -> WriteLoc -> LabelLoc -> UAsmOp
+bsInit :: Int -> Int -> WriteLoc -> LabelLoc -> Instruction
 bsInit = ABsInit
 
-bsPutInteger :: ReadLoc -> BinaryFlags -> WriteLoc -> UAsmOp
+bsPutInteger :: ReadLoc -> BinaryFlags -> WriteLoc -> Instruction
 bsPutInteger = ABsPutInteger
