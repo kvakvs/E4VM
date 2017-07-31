@@ -120,5 +120,8 @@ transform1M (A.ADecons src dstH dstT) = do
 transform1M (A.ASelect selType val onfail jtab) = do
   byteCode <- Bc.selectM selType val onfail jtab
   return $ Right [byteCode]
+transform1M (A.AJump lbl) = do
+  let byteCode = Bc.jump lbl
+  return $ Right [byteCode]
 transform1M op = return $ Uerlc.errM $ "Don't know how to compile: " ++ show op
    -- return $ Right []

@@ -2,7 +2,7 @@ module Bytecode.Encode
   ( encBool
   , encCodeLocM
   , encJtabM
-  , encLabelLocM
+  , encLabelLoc
   , encLitM
   , encReadLocM
   , encSint
@@ -60,14 +60,14 @@ encWriteLoc A.WIgnore   = [termTag termTagNil]
 -- [monadic] Encode code location as label, no label or an import (updates
 -- import table in the module if needed)
 encCodeLocM :: A.CodeLoc -> BM.ModuleState BB.BitsList
-encCodeLocM (A.CLabel lloc) = encLabelLocM lloc
+encCodeLocM (A.CLabel lloc) = return $ encLabelLoc lloc
 encCodeLocM (A.CExtFunc m f a) = encLitM lit -- do as import?
   where
     lit = T.ErlTuple [T.Atom m, T.Atom f, T.ErlInt (toInteger a)]
 
-encLabelLocM :: A.LabelLoc -> BM.ModuleState BB.BitsList
-encLabelLocM (A.LabelLoc i) = return $ encUint i
-encLabelLocM A.NoLabel      = return [termTag termTagNil]
+encLabelLoc :: A.LabelLoc -> BB.BitsList
+encLabelLoc (A.LabelLoc i) = encUint i
+encLabelLoc A.NoLabel      = [termTag termTagNil]
 
 encBool :: Bool -> BB.Bits
 encBool True  = BB.bitsUB 1 1

@@ -22,6 +22,7 @@ data Opcode
   | CallTailDealloc
   | Decons
   | Error
+  | Jump
   | Move
   | Ret0
   | RetN
@@ -45,6 +46,7 @@ instance Show Opcode where
   show CallTailDealloc  = "+call/tail/dealloc"
   show Decons           = "+decons"
   show Error            = "+err"
+  show Jump             = "+jmp"
   show Move             = "+move"
   show Ret0             = "+ret0"
   show RetN             = "+retn"
@@ -79,6 +81,7 @@ bcOpEnumTable =
   , (Decons, 17)
   , (SelectVal, 18)
   , (SelectTupleArity, 19)
+  , (Jump, 20)
   ]
 
 instance Enum Opcode where

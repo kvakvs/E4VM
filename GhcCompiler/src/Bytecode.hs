@@ -5,6 +5,7 @@ module Bytecode
   , deconsM
   , encodeAtomM
   , err
+  , jump
   , moveM
   , ret
   , selectM
@@ -148,7 +149,7 @@ callBifM ::
 callBifM name onfail args callType dst = do
   nameAIndex <- BM.findAddAtomM name
   let bitsName = BE.encUint nameAIndex
-  bitsFail <- BE.encLabelLocM onfail
+      bitsFail = BE.encLabelLoc onfail
   bitsArgs <- mapM BE.encReadLocM args
   let bitsDst = BE.encWriteLoc dst
   let op =
@@ -178,6 +179,11 @@ selectM selType val onfail jtab = do
           A.SValue      -> BO.SelectVal
           A.STupleArity -> BO.SelectTupleArity
   bitsVal <- BE.encReadLocM val
-  bitsFail <- BE.encLabelLocM onfail
+  let bitsFail = BE.encLabelLoc onfail
   bitsJt <- BE.encJtabM jtab
   return $ BO.Instruction op (bitsVal ++ bitsFail ++ bitsJt)
+
+jump :: A.LabelLoc -> BO.Instruction
+jump lbl =
+  let bitsLbl = BE.encLabelLoc lbl
+  in BO.Instruction BO.Jump bitsLbl
