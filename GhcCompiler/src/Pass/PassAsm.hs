@@ -1,5 +1,5 @@
 --{-# LANGUAGE InstanceSigs #-}
-module Pass.PAsm
+module Pass.PassAsm
   ( transformAsmMod
   ) where
 

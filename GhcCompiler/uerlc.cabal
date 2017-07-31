@@ -27,8 +27,8 @@ library
                     , Bytecode.Mod
                     , Bytecode.Op
                     , Term
-                    , Pass.PAsm
-                    , Pass.PBeamS
+                    , Pass.PassAsm
+                    , Pass.PassBeamS
                     , Uerlc
   build-depends:      base >= 4.7 && < 5
                     , ansi-terminal
