@@ -8,7 +8,7 @@ import qualified Term        as T
 
 data Func = Func
   { bcfName :: T.FunArity
-  , bcfCode :: [BO.BcOp]
+  , bcfCode :: [BO.Instruction]
   }
 
 instance Show Func where

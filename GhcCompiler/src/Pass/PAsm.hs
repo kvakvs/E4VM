@@ -65,7 +65,7 @@ transformFnM fn = do
 -- [monadic] Given an accumulator (bytecode ops) and input (a list of asm
 -- opcodes) returns a list of bytecodes
 transformAsmOpsM ::
-     [BO.BcOp] -> [A.UAsmOp] -> S.State BM.Module (CompileErrorOr [BO.BcOp])
+     [BO.Instruction] -> [A.UAsmOp] -> S.State BM.Module (CompileErrorOr [BO.Instruction])
 transformAsmOpsM acc [] = return $ Right (reverse acc)
 transformAsmOpsM acc (aop:remainingAops) = do
   trResult <- transform1M aop
@@ -75,7 +75,7 @@ transformAsmOpsM acc (aop:remainingAops) = do
 
 -- [monadic] For those cases when 1:1 simple mapping between asm and bytecode
 -- is enough. For complex cases add a clause in transformAsmOpsM
-transform1M :: A.UAsmOp -> S.State BM.Module (CompileErrorOr [BO.BcOp])
+transform1M :: A.UAsmOp -> S.State BM.Module (CompileErrorOr [BO.Instruction])
 transform1M (A.AComment _s) = return $ Right []
 transform1M (A.ALabel _lb) = return $ Right []
 transform1M (A.ALine _ln) = return $ Right []

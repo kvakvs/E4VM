@@ -1,6 +1,6 @@
 module Bytecode.Op
-  ( BcOpcode(..)
-  , BcOp(..)
+  ( Opcode(..)
+  , Instruction(..)
   ) where
 
 import           Bytecode.Bits
@@ -12,84 +12,85 @@ import           Data.Maybe    (fromJust)
 import           Data.Tuple
 
 --import           Data.Word
-data BcOpcode
-  = BcOpAlloc
-  | BcOpCallBif
-  | BcOpCallBifGc
-  | BcOpCallGc
-  | BcOpCallNormal
-  | BcOpCallTail
-  | BcOpCallTailDealloc
-  | BcOpDecons
-  | BcOpError
-  | BcOpMove
-  | BcOpRet0
-  | BcOpRetN
-  | BcOpSelectVal
-  | BcOpSelectTupleArity
-  | BcOpTest
-  | BcOpTestHeap
-  | BcOpTupleGetEl
-  | BcOpTupleNew
-  | BcOpTuplePut
-  | BcOpTupleSetEl
+data Opcode
+  = Alloc
+  | CallBif
+  | CallBifGc
+  | CallGc
+  | Call
+  | CallTail
+  | CallTailDealloc
+  | Decons
+  | Error
+  | Move
+  | Ret0
+  | RetN
+  | SelectVal
+  | SelectTupleArity
+  | Test
+  | TestHeap
+  | TupleGetEl
+  | TupleNew
+  | TuplePut
+  | TupleSetEl
   deriving (Eq, Ord)
 
-instance Show BcOpcode where
-  show BcOpAlloc            = "+alloc"
-  show BcOpCallBif          = "+bif"
-  show BcOpCallBifGc        = "+bif/gc"
-  show BcOpCallGc           = "+call/gc"
-  show BcOpCallNormal       = "+call"
-  show BcOpCallTail         = "+call/tail"
-  show BcOpCallTailDealloc  = "+call/tail/dealloc"
-  show BcOpDecons           = "+decons"
-  show BcOpError            = "+err"
-  show BcOpMove             = "+move"
-  show BcOpRet0             = "+ret0"
-  show BcOpRetN             = "+retn"
-  show BcOpSelectTupleArity = "+selectarity"
-  show BcOpSelectVal        = "+selectval"
-  show BcOpTest             = "+test"
-  show BcOpTestHeap         = "+testheap"
-  show BcOpTupleGetEl       = "+t_get"
-  show BcOpTupleNew         = "+t_new"
-  show BcOpTuplePut         = "+t_put"
-  show BcOpTupleSetEl       = "+t_set"
+instance Show Opcode where
+  show Alloc            = "+alloc"
+  show CallBif          = "+bif"
+  show CallBifGc        = "+bif/gc"
+  show CallGc           = "+call/gc"
+  show Call       = "+call"
+  show CallTail         = "+call/tail"
+  show CallTailDealloc  = "+call/tail/dealloc"
+  show Decons           = "+decons"
+  show Error            = "+err"
+  show Move             = "+move"
+  show Ret0             = "+ret0"
+  show RetN             = "+retn"
+  show SelectTupleArity = "+selectarity"
+  show SelectVal        = "+selectval"
+  show Test             = "+test"
+  show TestHeap         = "+testheap"
+  show TupleGetEl       = "+t_get"
+  show TupleNew         = "+t_new"
+  show TuplePut         = "+t_put"
+  show TupleSetEl       = "+t_set"
 
-bcOpEnumTable :: [(BcOpcode, Int)]
+bcOpEnumTable :: [(Opcode, Int)]
 bcOpEnumTable =
-  [ (BcOpError, 0)
-  , (BcOpTest, 1)
-  , (BcOpAlloc, 2)
-  , (BcOpMove, 3)
-  , (BcOpCallNormal, 4)
-  , (BcOpCallGc, 5)
-  , (BcOpCallTail, 6)
-  , (BcOpCallTailDealloc, 7)
-  , (BcOpRet0, 8)
-  , (BcOpRetN, 9)
-  , (BcOpTupleNew, 10)
-  , (BcOpTuplePut, 11)
-  , (BcOpTupleGetEl, 12)
-  , (BcOpTupleSetEl, 13)
-  , (BcOpTestHeap, 14)
-  , (BcOpCallBif, 15)
-  , (BcOpCallBifGc, 16)
-  , (BcOpDecons, 17)
-  , (BcOpSelectVal, 18)
-  , (BcOpSelectTupleArity, 19)
+  [ (Error, 0)
+  , (Test, 1)
+  , (Alloc, 2)
+  , (Move, 3)
+  , (Call, 4)
+  , (CallGc, 5)
+  , (CallTail, 6)
+  , (CallTailDealloc, 7)
+  , (Ret0, 8)
+  , (RetN, 9)
+  , (TupleNew, 10)
+  , (TuplePut, 11)
+  , (TupleGetEl, 12)
+  , (TupleSetEl, 13)
+  , (TestHeap, 14)
+  , (CallBif, 15)
+  , (CallBifGc, 16)
+  , (Decons, 17)
+  , (SelectVal, 18)
+  , (SelectTupleArity, 19)
   ]
 
-instance Enum BcOpcode where
+instance Enum Opcode where
   fromEnum = fromJust . flip L.lookup bcOpEnumTable
   toEnum = fromJust . flip lookup (map swap bcOpEnumTable)
 
-data BcOp =
-  BcOp BcOpcode
-       BitStringList
+-- A combination of {Opcode and [Bit Encoded Args]}
+data Instruction =
+  Instruction Opcode
+              BitStringList
 
-instance Show BcOp where
-  show (BcOp op bits) = show (fromEnum op) ++ " " ++ show bits ++ comment
+instance Show Instruction where
+  show (Instruction op bits) = show (fromEnum op) ++ " " ++ show bits ++ comment
     where
       comment = ansiCyan ++ " ; " ++ show op ++ ansiReset
