@@ -3,10 +3,10 @@ module Pass.PAsm
   ( transformAsmMod
   ) where
 
-import qualified Asm as A
-import           Asm.Func
-import           Asm.Mod
-import qualified Bytecode as Bc
+import qualified Asm                  as A
+import qualified Asm.Func             as AF
+import qualified Asm.Mod              as AM
+import qualified Bytecode             as Bc
 import           Bytecode.Func
 import           Bytecode.Mod
 import           Bytecode.Op
@@ -18,11 +18,11 @@ import qualified Control.Monad.State  as S
 import qualified Data.Map             as Map
 
 -- Given Asm module produce Bytecode module or throw an error
-transformAsmMod :: AModule -> BcModule
+transformAsmMod :: AM.Module -> BcModule
 transformAsmMod amod = bcmod
   where
     bcmod0 = Bytecode.Mod.new
-    funs = Map.elems $ Asm.Mod.amFuns amod
+    funs = Map.elems $ AM.amFuns amod
     bcmod =
       case transformM funs bcmod0 `MEx.catchError` Left of
         Right bcmod' -> bcmod'
@@ -30,11 +30,11 @@ transformAsmMod amod = bcmod
 
 -- [monadic] given list of Asm funs and a Bytecode module, update module with
 -- funs that are transformed to Bytecode funs
-transformM :: [AFunc] -> BcModule -> CompileErrorOr BcModule
+transformM :: [AF.Func] -> BcModule -> CompileErrorOr BcModule
 transformM [] bcMod = Right bcMod
 transformM (fun:fTail) bcMod0 = transformM fTail bcMod1
   where
-    nameArity = afName fun
+    nameArity = AF.afName fun
     bcMod1 = updateFun nameArity bcFun bcMod0
     bcFun =
       case S.evalState (transformFnM fun) bcMod0 of
@@ -51,14 +51,14 @@ updateFun nameArity f bcMod0 = bcMod1
 
 -- [monadic] Given an Asm func converts it to a Bytecode func, also updates
 -- the module with whatever is found on the way (atoms, literals etc)
-transformFnM :: AFunc -> S.State BcModule (CompileErrorOr BcFunc)
+transformFnM :: AF.Func -> S.State BcModule (CompileErrorOr BcFunc)
 transformFnM fn = do
-  let asmCode = afCode fn
+  let asmCode = AF.afCode fn
   -- bytecode <- foldM foldOpHelper [] asmCode
   trResult <- transformAsmOpsM [] asmCode
   case trResult of
     Right bytecode ->
-      let outFn = BcFunc {bcfName = afName fn, bcfCode = bytecode}
+      let outFn = BcFunc {bcfName = AF.afName fn, bcfCode = bytecode}
       in return (Right outFn)
     Left e -> return $ Left e
 

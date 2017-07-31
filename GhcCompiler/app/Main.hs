@@ -1,11 +1,11 @@
 module Main where
 
-import           Asm.Mod
+import qualified Asm.Mod                   as AM
 import           BeamSParser
 import           Bytecode.Mod
-import           Term
 import           Pass.PAsm
 import           Pass.PBeamS
+import qualified Term                      as T
 
 import           System.Environment
 import           System.IO
@@ -21,14 +21,14 @@ transpile fn input = result
 
 -- Given beam .S file contents (string) produce a Term tree structure with
 -- parsed erlang values
-stageParseBeamS :: String -> Term
+stageParseBeamS :: String -> T.Term
 stageParseBeamS = BeamSParser.parseS
 
 -- Given Term tree produce microassembly data structure
-stageBeamSToUasm :: Term -> AModule
+stageBeamSToUasm :: T.Term -> AM.Module
 stageBeamSToUasm = Pass.PBeamS.transform
 
-stageCompileAsm :: AModule -> BcModule
+stageCompileAsm :: AM.Module -> BcModule
 stageCompileAsm = Pass.PAsm.transformAsmMod
 
 initLogging :: IO ()

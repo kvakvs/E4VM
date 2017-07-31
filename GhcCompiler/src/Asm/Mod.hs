@@ -1,21 +1,21 @@
 module Asm.Mod
-  ( AModule(..)
+  ( Module(..)
   ) where
 
-import           Asm.Func
-import           Term
+import qualified Asm.Func  as AF
+import qualified Term      as T
 
 import           Data.List
 import qualified Data.Map  as Map
 
-data AModule = AModule
+data Module = Module
   { amName :: String
-  , amFuns :: Map.Map FunArity AFunc
-  , amExports :: [FunArity]
+  , amFuns :: Map.Map T.FunArity AF.Func
+  , amExports :: [T.FunArity]
   }
 
-instance Show AModule where
-  show (AModule name' funs' _exports) = intercalate "\n" [header, funs, footer]
+instance Show Module where
+  show (Module name' funs' _exports) = intercalate "\n" [header, funs, footer]
     where
       header = ";; uAsm module " ++ name' ++ "======"
       footer = ";; ====== end uAsm module " ++ name'

@@ -1,19 +1,19 @@
 module Asm.Func
-  ( AFunc(..)
+  ( Func(..)
   ) where
 
-import           Asm
-import           Term
+import qualified Asm       as A
+import qualified Term      as T
 
 import           Data.List
 
-data AFunc = AFunc
-  { afName :: FunArity
-  , afCode :: [UAsmOp]
+data Func = Func
+  { afName :: T.FunArity
+  , afCode :: [A.UAsmOp]
   }
 
-instance Show AFunc where
-  show (AFunc (FunArity name arity) body) =
+instance Show Func where
+  show (Func (T.FunArity name arity) body) =
     intercalate "\n" ["", header, ops, footer, ""]
     where
       header = ";; fun " ++ funarity ++ " ------"
