@@ -82,7 +82,7 @@ writeLoc (T.ErlTuple [T.Atom "y", T.ErlInt y]) = Just $ A.WRegY (fromIntegral y)
 writeLoc other = Just $ A.WriteLocError $ show other
 
 parseLabel :: T.Term -> A.LabelLoc
-parseLabel (T.ErlTuple [T.Atom "f", T.ErlInt 0]) = A.UNoLabel
+parseLabel (T.ErlTuple [T.Atom "f", T.ErlInt 0]) = A.NoLabel
 parseLabel (T.ErlTuple [T.Atom "f", T.ErlInt i]) = A.LabelLoc $ fromIntegral i
 parseLabel other = Uerlc.err ("not a label" ++ show other)
 

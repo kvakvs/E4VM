@@ -51,7 +51,7 @@ updateFun nameArity f bcMod0 = bcMod1
 
 -- [monadic] Given an Asm func converts it to a Bytecode func, also updates
 -- the module with whatever is found on the way (atoms, literals etc)
-transformFnM :: AF.Func -> S.State BM.Module (CompileErrorOr BF.Func)
+transformFnM :: AF.Func -> BM.ModuleState (CompileErrorOr BF.Func)
 transformFnM fn = do
   let asmCode = AF.code fn
   -- bytecode <- foldM foldOpHelper [] asmCode
@@ -67,7 +67,7 @@ transformFnM fn = do
 transformAsmOpsM ::
      [BO.Instruction]
   -> [A.Instruction]
-  -> S.State BM.Module (CompileErrorOr [BO.Instruction])
+  -> BM.ModuleState (CompileErrorOr [BO.Instruction])
 transformAsmOpsM acc [] = return $ Right (reverse acc)
 transformAsmOpsM acc (aop:remainingAops) = do
   trResult <- transform1M aop
@@ -78,7 +78,7 @@ transformAsmOpsM acc (aop:remainingAops) = do
 -- [monadic] For those cases when 1:1 simple mapping between asm and bytecode
 -- is enough. For complex cases add a clause in transformAsmOpsM
 transform1M ::
-     A.Instruction -> S.State BM.Module (CompileErrorOr [BO.Instruction])
+     A.Instruction -> BM.ModuleState (CompileErrorOr [BO.Instruction])
 transform1M (A.AComment _s) = return $ Right []
 transform1M (A.ALabel _lb) = return $ Right []
 transform1M (A.ALine _ln) = return $ Right []

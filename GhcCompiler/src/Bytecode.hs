@@ -34,13 +34,13 @@ encodeError A.EIfClause         = BE.toCompactUint 4
 
 -- [monadic] Returns int index of an atom in the module atoms table, optionally
 -- updates the atoms table if the string did not exist
-encodeAtomM :: String -> S.State BM.Module Int
+encodeAtomM :: String -> BM.ModuleState Int
 encodeAtomM a = do
   mod0 <- S.get
   let (mod1, index) =
-        case BM.bcmFindAtom mod0 a of
+        case BM.findAtom mod0 a of
           Just i  -> (mod0, i)
-          Nothing -> BM.bcmAddAtom mod0 a
+          Nothing -> BM.addAtom mod0 a
   S.put mod1
   return index
 
@@ -55,14 +55,14 @@ testM ::
   -> [A.ReadLoc]
   -> Maybe Int
   -> A.WriteLoc
-  -> S.State BM.Module BO.Instruction
+  -> BM.ModuleState BO.Instruction
 testM tname onfail args maybeLive dst = do
   testNameAtom <- encodeAtomM tname
   argBits <- mapM BE.toCompactReadLocM args
   let onfailBits =
         case onfail of
           A.LabelLoc onfailL -> BE.toCompactBool True : BE.toCompactUint onfailL
-          A.UNoLabel -> [BE.toCompactBool False]
+          A.NoLabel -> [BE.toCompactBool False]
       dstBits = BE.toCompactWriteLoc dst
       liveBits =
         case maybeLive of
@@ -87,13 +87,13 @@ testHeap need live = BO.Instruction BO.TestHeap (bitsNeed ++ bitsLive)
 
 -- [monadic] Compile a move instruction. BM.Module state is updated if
 -- readloc src contains an atom or literal index not yet in the module tables
-moveM :: A.ReadLoc -> A.WriteLoc -> S.State BM.Module BO.Instruction
+moveM :: A.ReadLoc -> A.WriteLoc -> BM.ModuleState BO.Instruction
 moveM src dst = do
   bitsSrc <- BE.toCompactReadLocM src
   let bitsDst = BE.toCompactWriteLoc dst
   return $ BO.Instruction BO.Move (bitsSrc ++ bitsDst)
 
-callM :: Int -> A.CodeLoc -> A.CallType -> S.State BM.Module BO.Instruction
+callM :: Int -> A.CodeLoc -> A.CallType -> BM.ModuleState BO.Instruction
 callM arity codeLoc callType = do
   let arityBits = BE.toCompactUint arity
   locBits <- BE.toCompactCodeLocM codeLoc
@@ -106,19 +106,19 @@ callM arity codeLoc callType = do
             (BO.CallTailDealloc, BE.toCompactUint dealloc)
   return $ BO.Instruction opCode (arityBits ++ locBits ++ ctypeBits)
 
-tupleNewM :: Int -> A.WriteLoc -> S.State BM.Module BO.Instruction
+tupleNewM :: Int -> A.WriteLoc -> BM.ModuleState BO.Instruction
 tupleNewM sz dst = do
   let dstBits = BE.toCompactWriteLoc dst
       szBits = BE.toCompactUint sz
   return $ BO.Instruction BO.TupleNew (szBits ++ dstBits)
 
-tuplePutM :: A.ReadLoc -> S.State BM.Module BO.Instruction
+tuplePutM :: A.ReadLoc -> BM.ModuleState BO.Instruction
 tuplePutM val = do
   valBits <- BE.toCompactReadLocM val
   return $ BO.Instruction BO.TuplePut valBits
 
 tupleGetElM ::
-     A.ReadLoc -> A.ReadLoc -> A.WriteLoc -> S.State BM.Module BO.Instruction
+     A.ReadLoc -> A.ReadLoc -> A.WriteLoc -> BM.ModuleState BO.Instruction
 tupleGetElM src i dst = do
   bitsSrc <- BE.toCompactReadLocM src
   bitsI <- BE.toCompactReadLocM i
@@ -126,7 +126,7 @@ tupleGetElM src i dst = do
   return $ BO.Instruction BO.TupleGetEl (bitsSrc ++ bitsI ++ bitsDst)
 
 tupleSetElM ::
-     A.ReadLoc -> A.ReadLoc -> A.WriteLoc -> S.State BM.Module BO.Instruction
+     A.ReadLoc -> A.ReadLoc -> A.WriteLoc -> BM.ModuleState BO.Instruction
 tupleSetElM val index dst = do
   bitsVal <- BE.toCompactReadLocM val
   bitsI <- BE.toCompactReadLocM index
@@ -145,9 +145,9 @@ callBifM ::
   -> [A.ReadLoc]
   -> A.CallType
   -> A.WriteLoc
-  -> S.State BM.Module BO.Instruction
+  -> BM.ModuleState BO.Instruction
 callBifM name onfail args callType dst = do
-  nameAIndex <- BM.bcmFindAddAtomM name
+  nameAIndex <- BM.findAddAtomM name
   let bitsName = BE.toCompactUint nameAIndex
   bitsFail <- BE.toCompactLabelLocM onfail
   bitsArgs <- mapM BE.toCompactReadLocM args
@@ -160,7 +160,7 @@ callBifM name onfail args callType dst = do
     BO.Instruction op (bitsName ++ bitsFail ++ concat bitsArgs ++ bitsDst)
 
 deconsM ::
-     A.ReadLoc -> A.WriteLoc -> A.WriteLoc -> S.State BM.Module BO.Instruction
+     A.ReadLoc -> A.WriteLoc -> A.WriteLoc -> BM.ModuleState BO.Instruction
 deconsM src dstH dstT = do
   bitsSrc <- BE.toCompactReadLocM src
   let bitsH = BE.toCompactWriteLoc dstH
@@ -172,7 +172,7 @@ selectM ::
   -> A.ReadLoc
   -> A.LabelLoc
   -> A.JumpTab
-  -> S.State BM.Module BO.Instruction
+  -> BM.ModuleState BO.Instruction
 selectM selType val onfail jtab = do
   let op =
         case selType of
@@ -180,5 +180,5 @@ selectM selType val onfail jtab = do
           A.STupleArity -> BO.SelectTupleArity
   bitsVal <- BE.toCompactReadLocM val
   bitsFail <- BE.toCompactLabelLocM onfail
-  bitsJt <- BE.toCompactJumptableM jtab
+  bitsJt <- BE.toCompactJumptabM jtab
   return $ BO.Instruction op (bitsVal ++ bitsFail ++ bitsJt)

@@ -12,11 +12,11 @@ instance Show SelectSubj where
 
 data LabelLoc
   = LabelLoc Int
-  | UNoLabel
+  | NoLabel
 
 instance Show LabelLoc where
   show (LabelLoc i) = "-label:" ++ show i
-  show UNoLabel     = "-no-label"
+  show NoLabel      = "-no-label"
 
 data CodeLoc
   = CLabel LabelLoc

@@ -1,7 +1,7 @@
 module Bytecode.Encode
   ( toCompactBool
   , toCompactCodeLocM
-  , toCompactJumptableM
+  , toCompactJumptabM
   , toCompactLabelLocM
   , toCompactLiteralM
   , toCompactReadLocM
@@ -34,7 +34,7 @@ toCompactSint s
   | signedFitsIn s varlength2 = [bitsUB 2 2, bitsSB s varlength2]
   | signedFitsIn s varlength3 = [bitsUB 3 2, bitsSB s varlength3]
 
-toCompactReadLocM :: A.ReadLoc -> S.State BM.Module BitStringList
+toCompactReadLocM :: A.ReadLoc -> BM.ModuleState BitStringList
 toCompactReadLocM (A.RRegX x) = return $ termTag termTagRegX : toCompactUint x
 toCompactReadLocM (A.RRegY y) = return $ termTag termTagRegY : toCompactUint y
 toCompactReadLocM A.RNil = return [termTag termTagNil]
@@ -42,14 +42,14 @@ toCompactReadLocM (A.RInt i) = do
   let limI = fromIntegral i -- todo bigint support?
   return $ termTag termTagInteger : toCompactSint limI
 toCompactReadLocM (A.RAtom a) = do
-  aIndex <- BM.bcmFindAddAtomM a
+  aIndex <- BM.findAddAtomM a
   return $ termTag termTagAtom : toCompactUint aIndex
 toCompactReadLocM (A.RLit lit) = toCompactLiteralM lit
 
 -- [monadic] Update literal table if needed. Return index in the literal table
-toCompactLiteralM :: T.Term -> S.State BM.Module [BitString]
+toCompactLiteralM :: T.Term -> BM.ModuleState [BitString]
 toCompactLiteralM lit = do
-  litIndex <- BM.bcmFindAddLiteralM lit
+  litIndex <- BM.findAddLitM lit
   return $ termTag termTagLiteral : toCompactUint litIndex
 
 toCompactWriteLoc :: A.WriteLoc -> BitStringList
@@ -59,21 +59,21 @@ toCompactWriteLoc A.WIgnore   = [termTag termTagNil]
 
 -- [monadic] Encode code location as label, no label or an import (updates
 -- import table in the module if needed)
-toCompactCodeLocM :: A.CodeLoc -> S.State BM.Module BitStringList
+toCompactCodeLocM :: A.CodeLoc -> BM.ModuleState BitStringList
 toCompactCodeLocM (A.CLabel lloc) = toCompactLabelLocM lloc
 toCompactCodeLocM (A.CExtFunc m f a) = toCompactLiteralM lit -- do as import?
   where
     lit = T.ErlTuple [T.Atom m, T.Atom f, T.ErlInt (toInteger a)]
 
-toCompactLabelLocM :: A.LabelLoc -> S.State BM.Module BitStringList
+toCompactLabelLocM :: A.LabelLoc -> BM.ModuleState BitStringList
 toCompactLabelLocM (A.LabelLoc i) = return $ toCompactUint i
-toCompactLabelLocM A.UNoLabel     = return [termTag termTagNil]
+toCompactLabelLocM A.NoLabel     = return [termTag termTagNil]
 
 toCompactBool :: Bool -> BitString
 toCompactBool True  = bitsUB 1 1
 toCompactBool False = bitsUB 0 1
 
-toCompactJumptableM :: A.JumpTab -> S.State BM.Module BitStringList
-toCompactJumptableM jtab = do
-  jtIndex <- BM.bcmAddJumptableM jtab
+toCompactJumptabM :: A.JumpTab -> BM.ModuleState BitStringList
+toCompactJumptabM jtab = do
+  jtIndex <- BM.addJumptabM jtab
   return $ toCompactUint jtIndex
