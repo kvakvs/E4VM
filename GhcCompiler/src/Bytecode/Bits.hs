@@ -3,39 +3,39 @@
 -- between 4-8-16 or 32 bit length. Reader/writer assume whether integer has
 -- a sign or not: this information is not stored.
 module Bytecode.Bits
-  ( BitString
-  , BitStringList
+  ( Bits
+  , BitsList
   , bitsUB
   , bitsSB
   , signedFitsIn
   ) where
 
-import           Data.Bits
+import qualified Data.Bits as DBits
 
 -- An unsigned Word value which fits into Word8 bits
-data BitString
+data Bits
   = BitsSignedBig Int
                   Int
   | BitsUnsignedBig Int
                     Int
 
-instance Show BitString where
+instance Show Bits where
   show (BitsSignedBig v bits)   = show v ++ ":" ++ show bits ++ "/signed"
   show (BitsUnsignedBig v bits) = show v ++ ":" ++ show bits
 
 -- A sequence of non-byte-aligned bits which will be joined together.
 -- Assuming the reader is aware what bits mean and can decode this sequence.
-type BitStringList = [BitString]
+type BitsList = [Bits]
 
-signedFitsIn :: (Bits a, Num a, Ord a) => a -> Int -> Bool
+signedFitsIn :: (DBits.Bits a, Num a, Ord a) => a -> Int -> Bool
 signedFitsIn svalue bits =
-  let limit = 1 `shiftL` (bits - 1)
+  let limit = 1 `DBits.shiftL` (bits - 1)
   in svalue >= -limit && svalue <= limit - 1
 
-bitsUB :: Int -> Int -> BitString
+bitsUB :: Int -> Int -> Bits
 bitsUB val bits
-  | val >= 0 && val < (1 `shiftL` bits) = BitsUnsignedBig val bits
+  | val >= 0 && val < (1 `DBits.shiftL` bits) = BitsUnsignedBig val bits
 
-bitsSB :: Int -> Int -> BitString
+bitsSB :: Int -> Int -> Bits
 bitsSB val bits
   | signedFitsIn val bits = BitsSignedBig val bits

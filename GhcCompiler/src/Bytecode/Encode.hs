@@ -1,17 +1,17 @@
 module Bytecode.Encode
-  ( toCompactBool
-  , toCompactCodeLocM
-  , toCompactJumptabM
-  , toCompactLabelLocM
-  , toCompactLiteralM
-  , toCompactReadLocM
-  , toCompactSint
-  , toCompactUint
-  , toCompactWriteLoc
+  ( encBool
+  , encCodeLocM
+  , encJtabM
+  , encLabelLocM
+  , encLitM
+  , encReadLocM
+  , encSint
+  , encUint
+  , encWriteLoc
   ) where
 
 import qualified Asm                   as A
-import           Bytecode.Bits
+import qualified Bytecode.Bits         as BB
 import           Bytecode.Encode.Const
 import qualified Bytecode.Mod          as BM
 import qualified Term                  as T
@@ -19,61 +19,61 @@ import qualified Term                  as T
 import qualified Control.Monad.State   as S
 
 -- Produce untagged unsigned integer with 2 bits size prefix (4-8-16-32 bits)
-toCompactUint :: Int -> BitStringList
-toCompactUint u
-  | u >= 0 && u < varlengthLimit0 = [bitsUB 0 2, bitsUB u varlength0]
-  | u >= 0 && u < varlengthLimit1 = [bitsUB 1 2, bitsUB u varlength1]
-  | u >= 0 && u < varlengthLimit2 = [bitsUB 2 2, bitsUB u varlength2]
-  | u >= 0 && u < varlengthLimit3 = [bitsUB 3 2, bitsUB u varlength3]
+encUint :: Int -> BB.BitsList
+encUint u
+  | u >= 0 && u < varlengthLimit0 = [BB.bitsUB 0 2, BB.bitsUB u varlength0]
+  | u >= 0 && u < varlengthLimit1 = [BB.bitsUB 1 2, BB.bitsUB u varlength1]
+  | u >= 0 && u < varlengthLimit2 = [BB.bitsUB 2 2, BB.bitsUB u varlength2]
+  | u >= 0 && u < varlengthLimit3 = [BB.bitsUB 3 2, BB.bitsUB u varlength3]
 
 -- Produce untagged signed integer with 2 bits size prefix (4-8-16-32 bits)
-toCompactSint :: Int -> BitStringList
-toCompactSint s
-  | signedFitsIn s varlength0 = [bitsUB 0 2, bitsSB s varlength0]
-  | signedFitsIn s varlength1 = [bitsUB 1 2, bitsSB s varlength1]
-  | signedFitsIn s varlength2 = [bitsUB 2 2, bitsSB s varlength2]
-  | signedFitsIn s varlength3 = [bitsUB 3 2, bitsSB s varlength3]
+encSint :: Int -> BB.BitsList
+encSint s
+  | BB.signedFitsIn s varlength0 = [BB.bitsUB 0 2, BB.bitsSB s varlength0]
+  | BB.signedFitsIn s varlength1 = [BB.bitsUB 1 2, BB.bitsSB s varlength1]
+  | BB.signedFitsIn s varlength2 = [BB.bitsUB 2 2, BB.bitsSB s varlength2]
+  | BB.signedFitsIn s varlength3 = [BB.bitsUB 3 2, BB.bitsSB s varlength3]
 
-toCompactReadLocM :: A.ReadLoc -> BM.ModuleState BitStringList
-toCompactReadLocM (A.RRegX x) = return $ termTag termTagRegX : toCompactUint x
-toCompactReadLocM (A.RRegY y) = return $ termTag termTagRegY : toCompactUint y
-toCompactReadLocM A.RNil = return [termTag termTagNil]
-toCompactReadLocM (A.RInt i) = do
+encReadLocM :: A.ReadLoc -> BM.ModuleState BB.BitsList
+encReadLocM (A.RRegX x) = return $ termTag termTagRegX : encUint x
+encReadLocM (A.RRegY y) = return $ termTag termTagRegY : encUint y
+encReadLocM A.RNil = return [termTag termTagNil]
+encReadLocM (A.RInt i) = do
   let limI = fromIntegral i -- todo bigint support?
-  return $ termTag termTagInteger : toCompactSint limI
-toCompactReadLocM (A.RAtom a) = do
+  return $ termTag termTagInteger : encSint limI
+encReadLocM (A.RAtom a) = do
   aIndex <- BM.findAddAtomM a
-  return $ termTag termTagAtom : toCompactUint aIndex
-toCompactReadLocM (A.RLit lit) = toCompactLiteralM lit
+  return $ termTag termTagAtom : encUint aIndex
+encReadLocM (A.RLit lit) = encLitM lit
 
 -- [monadic] Update literal table if needed. Return index in the literal table
-toCompactLiteralM :: T.Term -> BM.ModuleState [BitString]
-toCompactLiteralM lit = do
+encLitM :: T.Term -> BM.ModuleState [BB.Bits]
+encLitM lit = do
   litIndex <- BM.findAddLitM lit
-  return $ termTag termTagLiteral : toCompactUint litIndex
+  return $ termTag termTagLiteral : encUint litIndex
 
-toCompactWriteLoc :: A.WriteLoc -> BitStringList
-toCompactWriteLoc (A.WRegX x) = termTag termTagRegX : toCompactUint x
-toCompactWriteLoc (A.WRegY y) = termTag termTagRegY : toCompactUint y
-toCompactWriteLoc A.WIgnore   = [termTag termTagNil]
+encWriteLoc :: A.WriteLoc -> BB.BitsList
+encWriteLoc (A.WRegX x) = termTag termTagRegX : encUint x
+encWriteLoc (A.WRegY y) = termTag termTagRegY : encUint y
+encWriteLoc A.WIgnore   = [termTag termTagNil]
 
 -- [monadic] Encode code location as label, no label or an import (updates
 -- import table in the module if needed)
-toCompactCodeLocM :: A.CodeLoc -> BM.ModuleState BitStringList
-toCompactCodeLocM (A.CLabel lloc) = toCompactLabelLocM lloc
-toCompactCodeLocM (A.CExtFunc m f a) = toCompactLiteralM lit -- do as import?
+encCodeLocM :: A.CodeLoc -> BM.ModuleState BB.BitsList
+encCodeLocM (A.CLabel lloc) = encLabelLocM lloc
+encCodeLocM (A.CExtFunc m f a) = encLitM lit -- do as import?
   where
     lit = T.ErlTuple [T.Atom m, T.Atom f, T.ErlInt (toInteger a)]
 
-toCompactLabelLocM :: A.LabelLoc -> BM.ModuleState BitStringList
-toCompactLabelLocM (A.LabelLoc i) = return $ toCompactUint i
-toCompactLabelLocM A.NoLabel     = return [termTag termTagNil]
+encLabelLocM :: A.LabelLoc -> BM.ModuleState BB.BitsList
+encLabelLocM (A.LabelLoc i) = return $ encUint i
+encLabelLocM A.NoLabel      = return [termTag termTagNil]
 
-toCompactBool :: Bool -> BitString
-toCompactBool True  = bitsUB 1 1
-toCompactBool False = bitsUB 0 1
+encBool :: Bool -> BB.Bits
+encBool True  = BB.bitsUB 1 1
+encBool False = BB.bitsUB 0 1
 
-toCompactJumptabM :: A.JumpTab -> BM.ModuleState BitStringList
-toCompactJumptabM jtab = do
+encJtabM :: A.JumpTab -> BM.ModuleState BB.BitsList
+encJtabM jtab = do
   jtIndex <- BM.addJumptabM jtab
-  return $ toCompactUint jtIndex
+  return $ encUint jtIndex

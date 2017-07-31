@@ -3,7 +3,7 @@ module Bytecode.Op
   , Instruction(..)
   ) where
 
-import           Bytecode.Bits
+import qualified Bytecode.Bits as BB
 import           Uerlc
 
 --import           Data.Ix
@@ -40,7 +40,7 @@ instance Show Opcode where
   show CallBif          = "+bif"
   show CallBifGc        = "+bif/gc"
   show CallGc           = "+call/gc"
-  show Call       = "+call"
+  show Call             = "+call"
   show CallTail         = "+call/tail"
   show CallTailDealloc  = "+call/tail/dealloc"
   show Decons           = "+decons"
@@ -88,7 +88,7 @@ instance Enum Opcode where
 -- A combination of {Opcode and [Bit Encoded Args]}
 data Instruction =
   Instruction Opcode
-              BitStringList
+              BB.BitsList
 
 instance Show Instruction where
   show (Instruction op bits) = show (fromEnum op) ++ " " ++ show bits ++ comment
