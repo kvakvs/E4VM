@@ -2,14 +2,15 @@ module Asm.Func
   ( Func(..)
   ) where
 
-import qualified Asm       as A
-import qualified Term      as T
+import qualified Asm             as A
+import qualified Asm.Instruction as AI
+import qualified Term            as T
 
 import           Data.List
 
 data Func = Func
   { name :: T.FunArity
-  , code :: [A.Instruction]
+  , code :: [AI.Instruction]
   }
 
 instance Show Func where

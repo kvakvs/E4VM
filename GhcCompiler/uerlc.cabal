@@ -16,7 +16,10 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:    Asm
+                    , Asm.Binary
                     , Asm.Func
+                    , Asm.Instruction
+                    , Asm.Locations
                     , Asm.Mod
                     , BeamSParser
                     , Bytecode

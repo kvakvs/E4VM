@@ -15,6 +15,7 @@ module Bytecode.Mod
   ) where
 
 import qualified Asm                 as A
+import qualified Asm.Instruction     as AI
 import qualified Bytecode.Func       as BF
 import qualified Term                as T
 
@@ -29,7 +30,7 @@ data Module = Module
   , literals :: Map.Map T.Term Int
   , imports :: Map.Map T.MFArity Int
   , funs :: Map.Map T.FunArity BF.Func
-  , jTabs :: [A.JumpTab]
+  , jTabs :: [AI.JumpTab]
   }
 
 type ModuleState = S.State Module
@@ -130,7 +131,7 @@ findAddImport imp = do
       S.put m1
       return newI
 
-addJumptabM :: A.JumpTab -> S.State Module Int
+addJumptabM :: AI.JumpTab -> S.State Module Int
 addJumptabM jtab = do
   m <- S.get
   let oldJtabs = jTabs m

@@ -4,14 +4,14 @@ module Pass.PassBeamS
   ( transform
   ) where
 
-import qualified Asm        as A
-import qualified Asm.Func   as AF
-import qualified Asm.Mod    as AM
-import qualified Term       as T
+import qualified Asm             as A
+import qualified Asm.Func        as AF
+import qualified Asm.Mod         as AM
+import qualified Term            as T
 import           Uerlc
 
-import qualified Data.Map   as Map
-import           Data.Maybe (fromJust)
+import qualified Data.Map        as Map
+import           Data.Maybe      (fromJust)
 
 transform :: T.Term -> AM.Module
 transform (T.ErlList l) = mod1
@@ -69,6 +69,7 @@ readLoc (T.ErlTuple [T.Atom "x", T.ErlInt x]) = Just $ A.RRegX (fromIntegral x)
 readLoc (T.ErlTuple [T.Atom "y", T.ErlInt y]) = Just $ A.RRegY (fromIntegral y)
 readLoc (T.ErlTuple [T.Atom "literal", lit]) = Just $ A.RLit lit
 readLoc (T.ErlTuple [T.Atom "atom", T.Atom a]) = Just $ A.RAtom a
+readLoc (T.ErlTuple [T.Atom "string", s]) = Just $ A.RLit s
 readLoc (T.Atom "nil") = Just A.RNil
 readLoc (T.ErlInt i) = Just $ A.RInt i
 readLoc (T.ErlTuple [T.Atom "integer", T.ErlInt i]) = Just $ A.RInt i
