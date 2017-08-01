@@ -1,4 +1,3 @@
---{-# LANGUAGE InstanceSigs #-}
 module Pass.PassAsm
   ( transform
   ) where
@@ -6,7 +5,7 @@ module Pass.PassAsm
 import qualified Asm                  as A
 import qualified Asm.Func             as AF
 import qualified Asm.Mod              as AM
-import qualified Bytecode             as Bc
+import qualified Bytecode             as B
 import qualified Bytecode.Func        as BF
 import qualified Bytecode.Mod         as BM
 import qualified Bytecode.Op          as BO
@@ -82,46 +81,55 @@ transform1M ::
 transform1M (A.AComment _s) = return $ Right []
 transform1M (A.ALabel _lb) = return $ Right []
 transform1M (A.ALine _ln) = return $ Right []
-transform1M (A.AError e) = return $ Right [Bc.err e]
+transform1M (A.AError e) = return $ Right [B.err e]
 transform1M (A.ATest tname onfail args maybeLive dst) = do
-  testOp <- Bc.testM tname onfail args maybeLive dst
+  testOp <- B.testM tname onfail args maybeLive dst
   return $ Right [testOp]
-transform1M (A.AAlloc need live) = return $ Right [Bc.alloc need live]
+transform1M (A.AAlloc need live) = return $ Right [B.alloc need live]
 transform1M (A.AMove src dst) = do
-  byteCode <- Bc.moveM src dst
+  byteCode <- B.moveM src dst
   return $ Right [byteCode]
 transform1M (A.ACall arity codeLoc callType) = do
-  byteCode <- Bc.callM arity codeLoc callType
+  byteCode <- B.callM arity codeLoc callType
   return $ Right [byteCode]
 transform1M (A.ATestHeap needH live) = do
-  let byteCode = Bc.testHeap needH live
+  let byteCode = B.testHeap needH live
   return $ Right [byteCode]
 transform1M (A.ATupleNew sz dst) = do
-  byteCode <- Bc.tupleNewM sz dst
+  byteCode <- B.tupleNewM sz dst
   return $ Right [byteCode]
 transform1M (A.ATuplePut val) = do
-  byteCode <- Bc.tuplePutM val
+  byteCode <- B.tuplePutM val
   return $ Right [byteCode]
 transform1M (A.ATupleGetEl src i dst) = do
-  byteCode <- Bc.tupleGetElM src i dst
+  byteCode <- B.tupleGetElM src i dst
   return $ Right [byteCode]
 transform1M (A.ATupleSetEl val index dst) = do
-  byteCode <- Bc.tupleSetElM val index dst
+  byteCode <- B.tupleSetElM val index dst
   return $ Right [byteCode]
 transform1M (A.ARet dealloc) = do
-  let byteCode = Bc.ret dealloc
+  let byteCode = B.ret dealloc
   return $ Right [byteCode]
 transform1M (A.ACallBif name onfail args callType dst) = do
-  byteCode <- Bc.callBifM name onfail args callType dst
+  byteCode <- B.callBifM name onfail args callType dst
   return $ Right [byteCode]
 transform1M (A.ADecons src dstH dstT) = do
-  byteCode <- Bc.deconsM src dstH dstT
+  byteCode <- B.deconsM src dstH dstT
+  return $ Right [byteCode]
+transform1M (A.ACons h t dst) = do
+  byteCode <- B.consM h t dst
   return $ Right [byteCode]
 transform1M (A.ASelect selType val onfail jtab) = do
-  byteCode <- Bc.selectM selType val onfail jtab
+  byteCode <- B.selectM selType val onfail jtab
   return $ Right [byteCode]
 transform1M (A.AJump lbl) = do
-  let byteCode = Bc.jump lbl
+  let byteCode = B.jump lbl
+  return $ Right [byteCode]
+transform1M (A.ACallFun arity) = do
+  let byteCode = B.callFun arity
+  return $ Right [byteCode]
+transform1M (A.ASetNil dst) = do
+  let byteCode = B.setNil dst
   return $ Right [byteCode]
 transform1M op = return $ Uerlc.errM $ "Don't know how to compile: " ++ show op
    -- return $ Right []

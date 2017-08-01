@@ -6,28 +6,29 @@ module Bytecode.Op
 import qualified Bytecode.Bits as BB
 import           Uerlc
 
---import           Data.Ix
 import qualified Data.List     as L
 import           Data.Maybe    (fromJust)
 import           Data.Tuple
 
---import           Data.Word
 data Opcode
   = Alloc
+  | Call
   | CallBif
   | CallBifGc
+  | CallFun
   | CallGc
-  | Call
   | CallTail
   | CallTailDealloc
+  | Cons
   | Decons
   | Error
   | Jump
   | Move
   | Ret0
   | RetN
-  | SelectVal
   | SelectTupleArity
+  | SelectVal
+  | SetNil
   | Test
   | TestHeap
   | TupleGetEl
@@ -40,18 +41,21 @@ instance Show Opcode where
   show Alloc            = "+alloc"
   show CallBif          = "+bif"
   show CallBifGc        = "+bif/gc"
+  show CallFun          = "+callf"
   show CallGc           = "+call/gc"
   show Call             = "+call"
   show CallTail         = "+call/tail"
   show CallTailDealloc  = "+call/tail/dealloc"
+  show Cons             = "+cons"
   show Decons           = "+decons"
   show Error            = "+err"
   show Jump             = "+jmp"
   show Move             = "+move"
   show Ret0             = "+ret0"
   show RetN             = "+retn"
-  show SelectTupleArity = "+selectarity"
-  show SelectVal        = "+selectval"
+  show SelectTupleArity = "+selarity"
+  show SelectVal        = "+selval"
+  show SetNil           = "+nil"
   show Test             = "+test"
   show TestHeap         = "+testheap"
   show TupleGetEl       = "+t_get"
@@ -65,23 +69,30 @@ bcOpEnumTable =
   , (Test, 1)
   , (Alloc, 2)
   , (Move, 3)
-  , (Call, 4)
-  , (CallGc, 5)
-  , (CallTail, 6)
-  , (CallTailDealloc, 7)
-  , (Ret0, 8)
-  , (RetN, 9)
-  , (TupleNew, 10)
-  , (TuplePut, 11)
-  , (TupleGetEl, 12)
-  , (TupleSetEl, 13)
-  , (TestHeap, 14)
+  , (TestHeap, 4)
+  , (Jump, 5)
+  , (SetNil, 6)
+  -- ---------
+  , (Call, 10)
+  , (CallGc, 11)
+  , (CallTail, 12)
+  , (CallTailDealloc, 13)
+  , (CallFun, 14)
   , (CallBif, 15)
   , (CallBifGc, 16)
-  , (Decons, 17)
-  , (SelectVal, 18)
-  , (SelectTupleArity, 19)
-  , (Jump, 20)
+  , (Ret0, 17)
+  , (RetN, 18)
+  -- ---------
+  , (TupleNew, 20)
+  , (TuplePut, 21)
+  , (TupleGetEl, 22)
+  , (TupleSetEl, 23)
+  -- ---------
+  , (Decons, 30)
+  , (Cons, 31)
+  -- ---------
+  , (SelectVal, 40)
+  , (SelectTupleArity, 41)
   ]
 
 instance Enum Opcode where

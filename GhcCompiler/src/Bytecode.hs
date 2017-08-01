@@ -2,6 +2,8 @@ module Bytecode
   ( alloc
   , callM
   , callBifM
+  , callFun
+  , consM
   , deconsM
   , encodeAtomM
   , err
@@ -9,6 +11,7 @@ module Bytecode
   , moveM
   , ret
   , selectM
+  , setNil
   , testHeap
   , testM
   , tupleGetElM
@@ -167,6 +170,14 @@ deconsM src dstH dstT = do
       bitsT = BE.encWriteLoc dstT
   return $ BO.Instruction BO.Decons (bitsSrc ++ bitsH ++ bitsT)
 
+consM ::
+     A.ReadLoc -> A.ReadLoc -> A.WriteLoc -> BM.ModuleState BO.Instruction
+consM h t dst = do
+  bitsH <- BE.encReadLocM h
+  bitsT <- BE.encReadLocM t
+  let bitsDst = BE.encWriteLoc dst
+  return $ BO.Instruction BO.Cons (bitsH ++ bitsT ++ bitsDst)
+
 selectM ::
      A.SelectSubj
   -> A.ReadLoc
@@ -187,3 +198,13 @@ jump :: A.LabelLoc -> BO.Instruction
 jump lbl =
   let bitsLbl = BE.encLabelLoc lbl
   in BO.Instruction BO.Jump bitsLbl
+
+callFun :: Int -> BO.Instruction
+callFun arity =
+  let bitsA = BE.encUint arity
+  in BO.Instruction BO.CallFun bitsA
+
+setNil :: A.WriteLoc -> BO.Instruction
+setNil dst =
+  let bitsDst = BE.encWriteLoc dst
+  in BO.Instruction BO.SetNil bitsDst
