@@ -76,8 +76,7 @@ transformAsmOpsM acc (aop:remainingAops) = do
 
 -- [monadic] For those cases when 1:1 simple mapping between asm and bytecode
 -- is enough. For complex cases add a clause in transformAsmOpsM
-transform1M ::
-     A.Instruction -> BM.ModuleState (CompileErrorOr [BO.Instruction])
+transform1M :: A.Instruction -> BM.ModuleState (CompileErrorOr [BO.Instruction])
 transform1M (A.AComment _s) = return $ Right []
 transform1M (A.ALabel _lb) = return $ Right []
 transform1M (A.ALine _ln) = return $ Right []
@@ -92,9 +91,7 @@ transform1M (A.AMove src dst) = do
 transform1M (A.ACall arity codeLoc callType) = do
   byteCode <- B.callM arity codeLoc callType
   return $ Right [byteCode]
-transform1M (A.ATestHeap needH live) = do
-  let byteCode = B.testHeap needH live
-  return $ Right [byteCode]
+transform1M (A.ATestHeap needH live) = return $ Right [B.testHeap needH live]
 transform1M (A.ATupleNew sz dst) = do
   byteCode <- B.tupleNewM sz dst
   return $ Right [byteCode]
@@ -107,9 +104,7 @@ transform1M (A.ATupleGetEl src i dst) = do
 transform1M (A.ATupleSetEl val index dst) = do
   byteCode <- B.tupleSetElM val index dst
   return $ Right [byteCode]
-transform1M (A.ARet dealloc) = do
-  let byteCode = B.ret dealloc
-  return $ Right [byteCode]
+transform1M (A.ARet dealloc) = return $ Right [B.ret dealloc]
 transform1M (A.ACallBif name onfail args callType dst) = do
   byteCode <- B.callBifM name onfail args callType dst
   return $ Right [byteCode]
@@ -122,14 +117,10 @@ transform1M (A.ACons h t dst) = do
 transform1M (A.ASelect selType val onfail jtab) = do
   byteCode <- B.selectM selType val onfail jtab
   return $ Right [byteCode]
-transform1M (A.AJump lbl) = do
-  let byteCode = B.jump lbl
-  return $ Right [byteCode]
-transform1M (A.ACallFun arity) = do
-  let byteCode = B.callFun arity
-  return $ Right [byteCode]
-transform1M (A.ASetNil dst) = do
-  let byteCode = B.setNil dst
-  return $ Right [byteCode]
+transform1M (A.AJump lbl) = return $ Right [B.jump lbl]
+transform1M (A.ACallFun arity) = return $ Right [B.callFun arity]
+transform1M (A.ASetNil dst) = return $ Right [B.setNil dst]
+transform1M (A.ATrim n) = return $ Right [B.trim n]
+transform1M (A.AMakeFun lbl nfree) = return $ Right [B.makeFun lbl nfree]
 transform1M op = return $ Uerlc.errM $ "Don't know how to compile: " ++ show op
    -- return $ Right []

@@ -8,12 +8,14 @@ module Bytecode
   , encodeAtomM
   , err
   , jump
+  , makeFun
   , moveM
   , ret
   , selectM
   , setNil
   , testHeap
   , testM
+  , trim
   , tupleGetElM
   , tupleNewM
   , tuplePutM
@@ -170,8 +172,7 @@ deconsM src dstH dstT = do
       bitsT = BE.encWriteLoc dstT
   return $ BO.Instruction BO.Decons (bitsSrc ++ bitsH ++ bitsT)
 
-consM ::
-     A.ReadLoc -> A.ReadLoc -> A.WriteLoc -> BM.ModuleState BO.Instruction
+consM :: A.ReadLoc -> A.ReadLoc -> A.WriteLoc -> BM.ModuleState BO.Instruction
 consM h t dst = do
   bitsH <- BE.encReadLocM h
   bitsT <- BE.encReadLocM t
@@ -208,3 +209,14 @@ setNil :: A.WriteLoc -> BO.Instruction
 setNil dst =
   let bitsDst = BE.encWriteLoc dst
   in BO.Instruction BO.SetNil bitsDst
+
+trim :: Int -> BO.Instruction
+trim n =
+  let bitsN = BE.encUint n
+  in BO.Instruction BO.Trim bitsN
+
+makeFun :: A.LabelLoc -> Int -> BO.Instruction
+makeFun lbl@(A.LabelLoc _) nfree =
+  let bitsNFree = BE.encUint nfree
+      bitsLbl = BE.encLabelLoc lbl
+  in BO.Instruction BO.MakeFun (bitsLbl ++ bitsNFree)

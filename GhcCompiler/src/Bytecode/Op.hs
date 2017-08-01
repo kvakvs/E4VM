@@ -23,6 +23,7 @@ data Opcode
   | Decons
   | Error
   | Jump
+  | MakeFun
   | Move
   | Ret0
   | RetN
@@ -31,6 +32,7 @@ data Opcode
   | SetNil
   | Test
   | TestHeap
+  | Trim
   | TupleGetEl
   | TupleNew
   | TuplePut
@@ -50,6 +52,7 @@ instance Show Opcode where
   show Decons           = "+decons"
   show Error            = "+err"
   show Jump             = "+jmp"
+  show MakeFun          = "+makefun"
   show Move             = "+move"
   show Ret0             = "+ret0"
   show RetN             = "+retn"
@@ -58,6 +61,7 @@ instance Show Opcode where
   show SetNil           = "+nil"
   show Test             = "+test"
   show TestHeap         = "+testheap"
+  show Trim             = "+trim"
   show TupleGetEl       = "+t_get"
   show TupleNew         = "+t_new"
   show TuplePut         = "+t_put"
@@ -72,6 +76,7 @@ bcOpEnumTable =
   , (TestHeap, 4)
   , (Jump, 5)
   , (SetNil, 6)
+  , (Trim, 7)
   -- ---------
   , (Call, 10)
   , (CallGc, 11)
@@ -93,6 +98,8 @@ bcOpEnumTable =
   -- ---------
   , (SelectVal, 40)
   , (SelectTupleArity, 41)
+  -- ---------
+  , (MakeFun, 50)
   ]
 
 instance Enum Opcode where
