@@ -1,5 +1,6 @@
 module Bytecode.Encode
-  ( encBool
+  ( encBinaryFlags
+  , encBool
   , encCodeLocM
   , encJtabM
   , encLabelLoc
@@ -17,6 +18,7 @@ import qualified Bytecode.Mod          as BM
 import qualified Term                  as T
 
 import qualified Control.Monad.State   as S
+import qualified Data.Bits             as DBits
 
 -- Produce untagged unsigned integer with 2 bits size prefix (4-8-16-32 bits)
 encUint :: Int -> BB.BitsList
@@ -45,6 +47,20 @@ encReadLocM (A.RAtom a) = do
   aIndex <- BM.findAddAtomM a
   return $ termTag termTagAtom : encUint aIndex
 encReadLocM (A.RLit lit) = encLitM lit
+encReadLocM (A.RBinaryFlags bf) = return $ encBinaryFlags bf
+
+encBinaryFlags :: A.BinaryFlags -> BB.BitsList
+encBinaryFlags (A.BinaryFlags unit sig big) = termTag termTagInteger : val
+  where
+    val = encUint $ (unit `DBits.shiftL` 2) + sigBit + bigBit
+    sigBit =
+      if sig
+        then 2
+        else 0
+    bigBit =
+      if big
+        then 1
+        else 0
 
 -- [monadic] Update literal table if needed. Return index in the literal table
 encLitM :: T.Term -> BM.ModuleState [BB.Bits]

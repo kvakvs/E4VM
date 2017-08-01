@@ -122,5 +122,8 @@ transform1M (A.ACallFun arity) = return $ Right [B.callFun arity]
 transform1M (A.ASetNil dst) = return $ Right [B.setNil dst]
 transform1M (A.ATrim n) = return $ Right [B.trim n]
 transform1M (A.AMakeFun lbl nfree) = return $ Right [B.makeFun lbl nfree]
+transform1M (A.ABsContextToBin src) = do
+  byteCode <- B.bsContextToBin src
+  return $ Right [byteCode]
 transform1M op = return $ Uerlc.errM $ "Don't know how to compile: " ++ show op
    -- return $ Right []

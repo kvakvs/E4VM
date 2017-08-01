@@ -1,5 +1,6 @@
 module Bytecode
   ( alloc
+  , bsContextToBin
   , callM
   , callBifM
   , callFun
@@ -220,3 +221,8 @@ makeFun lbl@(A.LabelLoc _) nfree =
   let bitsNFree = BE.encUint nfree
       bitsLbl = BE.encLabelLoc lbl
   in BO.Instruction BO.MakeFun (bitsLbl ++ bitsNFree)
+
+bsContextToBin :: A.ReadLoc -> BM.ModuleState BO.Instruction
+bsContextToBin src = do
+  bitsSrc <- BE.encReadLocM src
+  return $ BO.Instruction BO.BsContextToBin bitsSrc

@@ -72,14 +72,18 @@ readLoc (T.ErlTuple [T.Atom "atom", T.Atom a]) = Just $ A.RAtom a
 readLoc (T.Atom "nil") = Just A.RNil
 readLoc (T.ErlInt i) = Just $ A.RInt i
 readLoc (T.ErlTuple [T.Atom "integer", T.ErlInt i]) = Just $ A.RInt i
+readLoc f@(T.ErlTuple [T.Atom "field_flags", _]) = Just (A.RBinaryFlags bf)
+  where
+    bf = parseBinaryFlags f
 readLoc other --Just $ ReadLocError $ show other
- = Just $ Uerlc.err $ "can't parse read loc " ++ show other
+ = Just $ Uerlc.err $ "readLoc: not a readloc " ++ show other
 
 -- Given a beamS expression parse an Asm data destination
 writeLoc :: T.Term -> Maybe A.WriteLoc
 writeLoc (T.ErlTuple [T.Atom "x", T.ErlInt x]) = Just $ A.WRegX (fromIntegral x)
 writeLoc (T.ErlTuple [T.Atom "y", T.ErlInt y]) = Just $ A.WRegY (fromIntegral y)
-writeLoc other = Just $ A.WriteLocError $ show other
+writeLoc other --Just $ A.WriteLocError $ show other
+ = Uerlc.err ("writeLoc: not a write loc " ++ show other)
 
 parseLabel :: T.Term -> A.LabelLoc
 parseLabel (T.ErlTuple [T.Atom "f", T.ErlInt 0]) = A.NoLabel
@@ -88,11 +92,21 @@ parseLabel other = Uerlc.err ("not a label" ++ show other)
 
 parseChoices :: [T.Term] -> [(T.Term, A.LabelLoc)] -> [(T.Term, A.LabelLoc)]
 parseChoices [] acc = reverse acc
-parseChoices [_] _acc = Uerlc.err "parseChoices given a list of odd length"
+parseChoices [_] _acc = Uerlc.err "parseChoices: given a list of odd length"
 parseChoices (val:lbl:tl) acc = parseChoices tl acc1
   where
     ulbl = parseLabel lbl
     acc1 = (val, ulbl) : acc
+
+parseBinaryFlags :: T.Term -> A.BinaryFlags
+parseBinaryFlags (T.ErlTuple [T.Atom "field_flags", T.ErlList flgs]) =
+  A.BinaryFlags unit sig big
+  where
+    unit = 8
+    sig = T.Atom "signed" `elem` flgs
+    big = T.Atom "big" `elem` flgs
+parseBinaryFlags other =
+  Uerlc.err $ "parseBinaryFlags: can't parse binary flags " ++ show other
 
 transformCode :: [T.Term] -> [A.Instruction] -> [A.Instruction]
 transformCode [] acc = reverse acc
@@ -311,13 +325,3 @@ transformCode (T.ErlTuple [T.Atom "bs_put_integer", _onfail, src, _n, flags, dst
 transformCode (T.ErlTuple (T.Atom "%":_):tl) acc = transformCode tl acc
 transformCode (other:_tl) _acc =
   Uerlc.err ("don't know how to transform " ++ show other)
-
-parseBinaryFlags :: T.Term -> A.BinaryFlags
-parseBinaryFlags (T.ErlTuple [T.Atom "field_flags", T.ErlList flgs]) =
-  A.BinaryFlags unit sig big
-  where
-    unit = 8
-    sig = T.Atom "signed" `elem` flgs
-    big = T.Atom "big" `elem` flgs
-parseBinaryFlags other =
-  Uerlc.err $ "can't parse binary flags from " ++ show other

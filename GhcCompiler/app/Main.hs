@@ -12,12 +12,14 @@ import           System.IO
 import           System.Log.Handler.Syslog
 import           System.Log.Logger
 
-transpile :: String -> String -> BM.Module
-transpile fn input = result
-  where
-    s1 = stageParseBeamS input
-    s2 = stageBeamSToUasm s1
-    result = stageCompileAsm s2
+transpile :: String -> String -> IO BM.Module
+transpile _fileName input = do
+    let s1 = stageParseBeamS input
+    print s1
+    let s2 = stageBeamSToUasm s1
+    print s2
+    let result = stageCompileAsm s2
+    return result
 
 -- Given beam .S file contents (string) produce a Term tree structure with
 -- parsed erlang values
@@ -43,4 +45,5 @@ main = do
   [fileName] <- getArgs
   fh <- openFile fileName ReadMode
   contents <- hGetContents fh
-  print $ transpile fileName contents
+  result <- transpile fileName contents
+  print result

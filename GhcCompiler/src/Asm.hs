@@ -41,6 +41,35 @@ instance Show CallType where
   show (GcEnabledCall n)   = "-gc:" ++ show n
   show (TailCallDealloc n) = "-tail -dealloc:" ++ show n
 
+data BinUnitWidth =
+  BinUnitWidth Int
+               Int
+
+-- options for binary value: (unitsize, signed, bigendian)
+data BinaryFlags = BinaryFlags
+  { bfUnitSize :: Int
+  , bfSigned :: Bool
+  , bfBig :: Bool
+  }
+
+instance Show BinaryFlags where
+  show (BinaryFlags u sig big) =
+    "unit:" ++ show u ++ "/" ++ sigStr ++ "/" ++ bigStr
+    where
+      sigStr =
+        if sig
+          then "signed"
+          else "unsigned"
+      bigStr =
+        if big
+          then "big"
+          else "little"
+
+--instance Show BinaryFlags where
+--  show bf = "u=" ++ show (bfUnitSize bf) ++ ";" ++ signed ++ ";" ++ big
+--    where signed = if bfSigned bf then "signed" else "unsigned"
+--          big = if bfBig bf then "big" else "little"
+--
 -- sources of the data (registers, literals, immediates...)
 data ReadLoc
   = RRegX Int
@@ -49,7 +78,7 @@ data ReadLoc
   | RInt Integer
   | RLit T.Term
   | RNil
-  | ReadLocError String
+  | RBinaryFlags BinaryFlags
 
 rarrow :: String
 rarrow = "➚"
@@ -58,26 +87,24 @@ warrow :: String
 warrow = "➘"
 
 instance Show ReadLoc where
-  show (RRegX i)        = "x" ++ show i ++ rarrow
-  show (RRegY i)        = "y" ++ show i ++ rarrow
-  show (RAtom a)        = show a
-  show (RInt i)         = show i
-  show (RLit lit)       = "lit:" ++ show lit
-  show RNil             = "[]"
-  show (ReadLocError s) = "ReadLocError(" ++ s ++ ")"
+  show (RRegX i)         = "x" ++ show i ++ rarrow
+  show (RRegY i)         = "y" ++ show i ++ rarrow
+  show (RAtom a)         = show a
+  show (RInt i)          = show i
+  show (RLit lit)        = "lit:" ++ show lit
+  show RNil              = "[]"
+  show (RBinaryFlags bf) = "-bin-flags:" ++ show bf
 
 -- where you can possibly store the value
 data WriteLoc
   = WRegX Int
   | WRegY Int
   | WIgnore
-  | WriteLocError String
 
 instance Show WriteLoc where
-  show (WRegX i)         = warrow ++ "x" ++ show i
-  show (WRegY i)         = warrow ++ "y" ++ show i
-  show WIgnore           = warrow ++ "drop"
-  show (WriteLocError s) = "WriteLocError(" ++ s ++ ")"
+  show (WRegX i) = warrow ++ "x" ++ show i
+  show (WRegY i) = warrow ++ "y" ++ show i
+  show WIgnore   = warrow ++ "drop"
 
 -- bad stuff (shorthand opcodes which cause exceptions)
 data BuiltinError
@@ -93,29 +120,6 @@ instance Show BuiltinError where
   show ECaseClause   = "case_clause"
   show EBadArg       = "badarg"
   show (EBadMatch s) = "badmatch " ++ show s
-
-data BinUnitWidth =
-  BinUnitWidth Int
-               Int
-
--- options for binary value: (unitsize, signed, bigendian)
-data BinaryFlags =
-  BinaryFlags Int
-              Bool
-              Bool
-
-instance Show BinaryFlags where
-  show (BinaryFlags u sig big) =
-    "unit:" ++ show u ++ "/" ++ sigStr ++ "/" ++ bigStr
-    where
-      sigStr =
-        if sig
-          then "signed"
-          else "unsigned"
-      bigStr =
-        if big
-          then "big"
-          else "little"
 
 type JumpTab = [(T.Term, LabelLoc)]
 

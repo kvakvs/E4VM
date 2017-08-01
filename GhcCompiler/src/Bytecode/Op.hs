@@ -12,6 +12,7 @@ import           Data.Tuple
 
 data Opcode
   = Alloc
+  | BsContextToBin
   | Call
   | CallBif
   | CallBifGc
@@ -41,6 +42,7 @@ data Opcode
 
 instance Show Opcode where
   show Alloc            = "+alloc"
+  show BsContextToBin   = "+bs/ctx2bin"
   show CallBif          = "+bif"
   show CallBifGc        = "+bif/gc"
   show CallFun          = "+callf"
@@ -77,6 +79,7 @@ bcOpEnumTable =
   , (Jump, 5)
   , (SetNil, 6)
   , (Trim, 7)
+  , (MakeFun, 8)
   -- ---------
   , (Call, 10)
   , (CallGc, 11)
@@ -99,7 +102,7 @@ bcOpEnumTable =
   , (SelectVal, 40)
   , (SelectTupleArity, 41)
   -- ---------
-  , (MakeFun, 50)
+  , (BsContextToBin, 50)
   ]
 
 instance Enum Opcode where
