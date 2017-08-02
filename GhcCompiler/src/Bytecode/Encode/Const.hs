@@ -1,6 +1,6 @@
 module Bytecode.Encode.Const where
 
-import qualified Bytecode.Bits as BB
+import qualified Bits      as B
 
 import           Data.Bits
 
@@ -28,8 +28,8 @@ varlengthLimit2 = 1 `shiftL` varlength2
 varlengthLimit3 :: Int
 varlengthLimit3 = 1 `shiftL` varlength3
 
-termTag'BitSize :: Int
-termTag'BitSize = 3 :: Int
+termTag_bitSize :: Int
+termTag_bitSize = 3 :: Int
 
 termTagRegX :: Int
 termTagRegX = 0 :: Int
@@ -56,5 +56,5 @@ termTagLiteral = 6 :: Int
 termTagInteger :: Int
 termTagInteger = 7 :: Int
 
-termTag :: Int -> BB.Bits
-termTag t = BB.bitsUB t termTag'BitSize
+termTag :: Int -> B.Bits
+termTag t = B.bitsUB t termTag_bitSize

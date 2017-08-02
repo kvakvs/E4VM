@@ -1,6 +1,10 @@
 module Bytecode
   ( alloc
   , bsContextToBin
+  , bsInit
+  , bsPutIntegerM
+  , bsRestore
+  , bsSave
   , callM
   , callBifM
   , callFun
@@ -24,7 +28,7 @@ module Bytecode
   ) where
 
 import qualified Asm                 as A
-import qualified Bytecode.Bits       as BB
+import qualified Bits                as B
 import qualified Bytecode.Encode     as BE
 import qualified Bytecode.Mod        as BM
 import qualified Bytecode.Op         as BO
@@ -32,7 +36,7 @@ import qualified Uerlc
 
 import qualified Control.Monad.State as S
 
-encodeError :: A.BuiltinError -> BB.BitsList
+encodeError :: A.BuiltinError -> B.BitsList
 encodeError A.EBadArg           = BE.encUint 0
 encodeError (A.EBadMatch _rloc) = BE.encUint 1
 encodeError A.ECaseClause       = BE.encUint 2
@@ -226,3 +230,28 @@ bsContextToBin :: A.ReadLoc -> BM.ModuleState BO.Instruction
 bsContextToBin src = do
   bitsSrc <- BE.encReadLocM src
   return $ BO.Instruction BO.BsContextToBin bitsSrc
+
+bsSave ::  A.ReadLoc -> Int -> BM.ModuleState BO.Instruction
+bsSave = bsSaveRestore' BO.BsSave
+
+bsRestore :: A.ReadLoc -> Int -> BM.ModuleState BO.Instruction
+bsRestore = bsSaveRestore' BO.BsRestore
+
+bsSaveRestore' :: BO.Opcode -> A.ReadLoc -> Int -> BM.ModuleState BO.Instruction
+bsSaveRestore' opcode src index = do
+  bitsSrc <- BE.encReadLocM src
+  let bitsI = BE.encUint index
+  return $ BO.Instruction opcode (bitsSrc ++ bitsI)
+
+bsInit sz gcLive dst onFail =
+  let bitsSz = BE.encUint sz
+      bitsLive = BE.encUint gcLive
+      bitsDst = BE.encWriteLoc dst
+      bitsFail = BE.encLabelLoc onFail
+  in BO.Instruction BO.BsInit (bitsSz ++ bitsLive ++ bitsDst ++ bitsFail)
+
+bsPutIntegerM src bFlags dst = do
+  bitsSrc <- BE.encReadLocM src
+  let bitsBF = BE.encBinaryFlags bFlags
+      bitsDst = BE.encWriteLoc dst
+  return $ BO.Instruction BO.BsPutInteger (bitsSrc ++ bitsBF ++ bitsDst)

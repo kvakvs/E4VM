@@ -125,5 +125,17 @@ transform1M (A.AMakeFun lbl nfree) = return $ Right [B.makeFun lbl nfree]
 transform1M (A.ABsContextToBin src) = do
   byteCode <- B.bsContextToBin src
   return $ Right [byteCode]
+transform1M (A.ABsSave src index) = do
+  byteCode <- B.bsSave src index
+  return $ Right [byteCode]
+transform1M (A.ABsRestore src index) = do
+  byteCode <- B.bsRestore src index
+  return $ Right [byteCode]
+transform1M (A.ABsInit sz gcLive dst onFail) = do
+  let byteCode = B.bsInit sz gcLive dst onFail
+  return $ Right [byteCode]
+transform1M (A.ABsPutInteger src bFlags dst) = do
+  byteCode <- B.bsPutIntegerM src bFlags dst
+  return $ Right [byteCode]
 transform1M op = return $ Uerlc.errM $ "Don't know how to compile: " ++ show op
    -- return $ Right []

@@ -2,7 +2,7 @@
 -- units. Terms have a 3-bit tag. Integers have a 2-bit length tag choosing
 -- between 4-8-16 or 32 bit length. Reader/writer assume whether integer has
 -- a sign or not: this information is not stored.
-module Bytecode.Bits
+module Bits
   ( Bits
   , BitsList
   , bitsUB

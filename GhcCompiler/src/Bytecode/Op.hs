@@ -3,16 +3,20 @@ module Bytecode.Op
   , Instruction(..)
   ) where
 
-import qualified Bytecode.Bits as BB
+import qualified Bits       as B
 import           Uerlc
 
-import qualified Data.List     as L
-import           Data.Maybe    (fromJust)
+import qualified Data.List  as L
+import           Data.Maybe (fromJust)
 import           Data.Tuple
 
 data Opcode
   = Alloc
   | BsContextToBin
+  | BsInit
+  | BsPutInteger
+  | BsSave
+  | BsRestore
   | Call
   | CallBif
   | CallBifGc
@@ -43,6 +47,10 @@ data Opcode
 instance Show Opcode where
   show Alloc            = "+alloc"
   show BsContextToBin   = "+bs/ctx2bin"
+  show BsInit           = "+bs/init"
+  show BsPutInteger     = "+bs/puti"
+  show BsRestore        = "+bs/restore"
+  show BsSave           = "+bs/save"
   show CallBif          = "+bif"
   show CallBifGc        = "+bif/gc"
   show CallFun          = "+callf"
@@ -102,7 +110,11 @@ bcOpEnumTable =
   , (SelectVal, 40)
   , (SelectTupleArity, 41)
   -- ---------
-  , (BsContextToBin, 50)
+  , (BsInit, 50)
+  , (BsContextToBin, 51)
+  , (BsPutInteger, 52)
+  , (BsSave, 53)
+  , (BsRestore, 54)
   ]
 
 instance Enum Opcode where
@@ -112,7 +124,7 @@ instance Enum Opcode where
 -- A combination of {Opcode and [Bit Encoded Args]}
 data Instruction =
   Instruction Opcode
-              BB.BitsList
+              B.BitsList
 
 instance Show Instruction where
   show (Instruction op bits) = show (fromEnum op) ++ " " ++ show bits ++ comment

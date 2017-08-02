@@ -22,8 +22,8 @@ library
                     , Asm.Locations
                     , Asm.Mod
                     , BeamSParser
+                    , Bits
                     , Bytecode
-                    , Bytecode.Bits
                     , Bytecode.Encode
                     , Bytecode.Encode.Const
                     , Bytecode.Func
