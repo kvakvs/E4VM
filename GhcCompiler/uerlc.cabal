@@ -26,6 +26,7 @@ library
                     , Bytecode
                     , Bytecode.Encode
                     , Bytecode.Encode.Const
+                    , Bytecode.Encode.Huffman
                     , Bytecode.Func
                     , Bytecode.Mod
                     , Bytecode.Op
