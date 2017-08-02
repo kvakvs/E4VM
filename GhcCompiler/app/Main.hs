@@ -8,6 +8,7 @@ import qualified Pass.PassAsm              as P2
 import qualified Pass.PassBeamS            as P1
 import qualified Term                      as T
 
+import           Data.Word                 (Word8)
 import           System.Environment
 import           System.IO
 import           System.Log.Handler.Syslog
@@ -40,9 +41,8 @@ initLogging = do
   updateGlobalLogger rootLoggerName (addHandler s)
   updateGlobalLogger "uerlc" (setLevel DEBUG)
 
-huffpuff =
-  let input = [0, 0, 1, 1, 1, 1, 2, 2, 3, 4, 5, 5, 5, 5, 5, 5, 5, 6, 6, 7]
-  in Huff.encode input
+huffInput =
+  [0, 0, 1, 1, 1, 1, 2, 2, 3, 4, 5, 5, 5, 5, 5, 5, 5, 6, 6, 7] :: [Word8]
 
 main :: IO ()
 main = do
@@ -51,4 +51,12 @@ main = do
   fh <- openFile fileName ReadMode
   contents <- hGetContents fh
   result <- transpile fileName contents
-  print huffpuff
+  --
+  let encoder = Huff.createEncoder huffInput
+  print encoder
+  putStr "encodeSome [5]="
+  print $ Huff.encodeSome encoder [5]
+  putStr "encodeSome [1]="
+  print $ Huff.encodeSome encoder [1]
+  putStr "encodeSome [7]="
+  print $ Huff.encodeSome encoder [7]

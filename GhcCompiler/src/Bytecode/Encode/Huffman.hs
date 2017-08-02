@@ -1,77 +1,125 @@
+{-# LANGUAGE ExplicitForAll #-}
+
 -- Implementation comes from a Github Gist by ibtaylor/Huffman.hs
-module Bytecode.Encode.Huffman (encode) where
+-- https://gist.github.com/ibtaylor/1024266
+--
+module Bytecode.Encode.Huffman
+  ( createEncoder
+  , encodeSome
+  , makeFreqTable
+  ) where
 
-import qualified Bits        as B
+import qualified Bits       as B
 
-import           Data.Either
-import qualified Data.List   as L
-import qualified Data.Map    as M
+import qualified Data.List  as L
+import qualified Data.Map   as M
 import           Data.Maybe
-import qualified Data.Ord    as DO
+import           Data.Ord
+import           Data.Word  (Word8)
 
 -- val contains either leaf value or tree children. Bits is bit length
-data HuffmanTree
-  = LeafNode Int
+data HuffmanTree a
+  = LeafNode a
              Int
   | InternalNode Int
-                 HuffmanTree
-                 HuffmanTree
+                 (HuffmanTree a)
+                 (HuffmanTree a)
   deriving (Eq)
 
-instance Show HuffmanTree where
+instance Show a => Show (HuffmanTree a) where
   show = go ""
     where
       spaces = map (const ' ')
-      paren s = "(" ++ s ++ ")"
-      go ss (LeafNode s o) = "--" ++ paren (show o) ++ show s ++ "\n"
-      go ss (InternalNode o l r) =
-        let root = "--" ++ paren (show o) ++ "-+"
-            ss' = ss ++ tail (spaces root)
-            lbranch = go (ss' ++ "|") l
-            rbranch = go (ss' ++ " ") r
+      go _accum (LeafNode val nBits) =
+        "--b:" ++ show nBits ++ ",val:" ++ show val ++ "\n"
+      go accum (InternalNode nBits left right) =
+        let root = "--b:" ++ show nBits ++ "-+"
+            ss' = accum ++ tail (spaces root)
+            lbranch = go (ss' ++ "|") left
+            rbranch = go (ss' ++ " ") right
         in root ++ lbranch ++ ss' ++ "|\n" ++ ss' ++ "`" ++ rbranch
 
-frequency :: HuffmanTree -> Int
-frequency (LeafNode x _)       = x
-frequency (InternalNode x _ _) = x
+frequency :: HuffmanTree a -> Int
+frequency (LeafNode _a x)        = x
+frequency (InternalNode x _l _r) = x
 
-type HDict = M.Map Int B.Bits
+--type HDict = M.Map Int B.Bits
+data Encoder a = Encoder
+  { eCodes :: M.Map a [Word8]
+  , eTree :: HuffmanTree a
+  } deriving (Show)
 
-data Encoded = Encoded
-  { eCode :: B.BitsList
-  , eTree :: HuffmanTree
-  , eDict :: HDict
-  }
+data Frequency a =
+  Frequency a
+            Int
+  deriving (Eq)
 
-type Frequency = (Int, Int)
+instance Show a => Show (Frequency a) where
+  show (Frequency val freq) = show val ++ " (x" ++ show freq ++ ")"
 
-encode :: [Int] -> HuffmanTree
-encode input = makeTree $ makeFreqTable (L.sort input) []
+instance Eq a => Ord (Frequency a) where
+  compare (Frequency _val1 freq1) (Frequency _val2 freq2) = compare freq1 freq2
+
+--makeFrequency :: a -> Int -> (a, Int)
+--makeFrequency val freq = Frequency val freq
+createEncoder ::
+     Ord a
+  => Eq a =>
+       [a] -> Encoder a
+createEncoder input = Encoder {eTree = tree, eCodes = codes}
+  where
+    tree = makeTree $ makeFreqTable input
+    codes = makeCodes tree
+
+-- traverse the huffman tree generating a map from the symbol to its huffman
+-- tree path (where False is left, and True is right)
+makeCodes :: Ord a => HuffmanTree a -> M.Map a [Word8]
+makeCodes = M.fromList . go []
+    -- leaf nodes mark the end of a path to a symbol
+  where
+    go p (LeafNode s _)       = [(s, reverse p)]
+    -- traverse both branches and accumulate a reverse path
+    go p (InternalNode _ l r) = go (1 : p) l ++ go (0 : p) r
+
+-- from a table mapping symbols to their corresponding huffman tree bit paths,
+-- replace each instance of a symbol with its bit path
+encodeSome :: Ord a => Encoder a -> [a] -> [Word8]
+encodeSome Encoder {eCodes = tbl} = concatMap get
+  where
+    get x = fromJust (M.lookup x tbl)
+
+makeFreqTable ::
+     Ord a
+  => Eq a =>
+       [a] -> [Frequency a]
+makeFreqTable input = makeFreqTable' (L.sort input) []
 
 -- Group list contents by value, and collect counts for each value in 'accum'
-makeFreqTable :: [Int] -> [Frequency] -> [Frequency]
-makeFreqTable [] accum = accum
-makeFreqTable (h:tl) accum =
+makeFreqTable' :: Eq a => [a] -> [Frequency a] -> [Frequency a]
+makeFreqTable' [] accum = accum
+makeFreqTable' (h:tl) accum =
   let (block, moreBlocks) = L.partition (h ==) tl
-      newItem = (h, 1 + length block)
-  in makeFreqTable moreBlocks (newItem : accum)
+      newItem = Frequency h (1 + length block)
+  in makeFreqTable' moreBlocks (newItem : accum)
 
+sortHelperFn :: Ord a => (t, a) -> (t, a) -> Ordering
 sortHelperFn (_v1, count1) (_v2, count2)
   | count1 < count2 = LT
   | count1 > count2 = GT
 sortHelperFn _ _ = EQ
 
-makeTree :: [Frequency] -> HuffmanTree
-makeTree
+makeTree :: [Frequency a] -> HuffmanTree a
+makeTree inp
   -- First convert each freq tuple into a leaf then combine
- = combine . map toLeaf
+ = combine inp2
         -- Repeatedly combine lowest freq trees and reinsert the result into
         -- the freq ordered list (todo: priority queue)
   where
+    inp2 = map toLeaf inp
     combine [t] = t
     combine (ta:tb:ts) =
-      combine . L.insertBy (DO.comparing frequency) (merge ta tb) $ ts
+      combine . L.insertBy (comparing frequency) (merge ta tb) $ ts
         -- make an internal node from 2 trees. The freq is sum of two trees freq
     merge ta tb = InternalNode (frequency ta + frequency tb) ta tb
         -- make a leaf from (symbol,freq)
-    toLeaf = uncurry LeafNode
+    toLeaf (Frequency val freq) = LeafNode val freq
