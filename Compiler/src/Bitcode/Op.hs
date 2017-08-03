@@ -1,4 +1,4 @@
-module Bytecode.Op
+module Bitcode.Op
   ( Opcode(..)
   , Instruction
   , makeInstruction
@@ -6,7 +6,7 @@ module Bytecode.Op
   ) where
 
 import qualified Bits                    as B
-import           Bytecode.Encode.Huffman as H
+import           Bitcode.Encode.Huffman as H
 import           Uerlc
 
 import qualified Data.List               as L
@@ -138,13 +138,14 @@ instance Show Instruction where
     where
       comment =
         ansiCyan ++
-        " ; " ++ show op ++ " (op " ++ show opComp ++ ")" ++ ansiReset
+        " ; " ++ show op ++ " (op <<" ++ show opComp ++ ">>)" ++ ansiReset
 
 makeInstruction :: Opcode -> B.BitsList -> H.Encoder Word8 -> Instruction
 makeInstruction op argBits encoder =
-  Instruction {iOp = op, iOpCompressed = opBits, iArgs = argBits}
+  Instruction {iOp = op, iOpCompressed = zOp, iArgs = argBits}
   where
-    opBits = H.encodeSome encoder [fromIntegral $ fromEnum op]
+    op8 = fromIntegral $ fromEnum op
+    zOp = H.encodeSome encoder [op8]
 
 harcodedFrequencies :: [Frequency Word8]
 harcodedFrequencies = L.map makeFreq bcOpEnumTable

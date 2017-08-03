@@ -23,13 +23,13 @@ library
                     , Asm.Mod
                     , BeamSParser
                     , Bits
-                    , Bytecode
-                    , Bytecode.Encode
-                    , Bytecode.Encode.Const
-                    , Bytecode.Encode.Huffman
-                    , Bytecode.Func
-                    , Bytecode.Mod
-                    , Bytecode.Op
+                    , Bitcode
+                    , Bitcode.Encode
+                    , Bitcode.Encode.Const
+                    , Bitcode.Encode.Huffman
+                    , Bitcode.Func
+                    , Bitcode.Mod
+                    , Bitcode.Op
                     , Term
                     , Pass.PassAsm
                     , Pass.PassBeamS

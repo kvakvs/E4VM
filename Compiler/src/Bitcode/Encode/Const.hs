@@ -1,4 +1,4 @@
-module Bytecode.Encode.Const where
+module Bitcode.Encode.Const where
 
 import qualified Bits      as B
 

@@ -1,8 +1,8 @@
-module Bytecode.Func
+module Bitcode.Func
   ( Func(..)
   ) where
 
-import qualified Bytecode.Op as BO
+import qualified Bitcode.Op as BO
 import           Data.List
 import qualified Term        as T
 
@@ -15,8 +15,8 @@ instance Show Func where
   show (Func (T.FunArity name arity) body) =
     intercalate "\n" ["", header, ops, footer, ""]
     where
-      header = ";; bytecode fun " ++ funarity ++ " ------"
-      footer = ";; ------ end bytecode " ++ funarity
+      header = ";; bitcode fun " ++ funarity ++ " ------"
+      footer = ";; ------ end bitcode " ++ funarity
       funarity = name ++ "/" ++ show arity
       indent2 t = "  " ++ t
       ops = intercalate "\n" $ map (indent2 . show) body

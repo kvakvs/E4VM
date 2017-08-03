@@ -3,7 +3,7 @@
 -- Implementation comes from a Github Gist by ibtaylor/Huffman.hs
 -- https://gist.github.com/ibtaylor/1024266
 --
-module Bytecode.Encode.Huffman
+module Bitcode.Encode.Huffman
   ( makeEncoderFromImport
   , makeEncoderFromFreq
   , encodeSome

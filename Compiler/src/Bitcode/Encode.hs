@@ -1,4 +1,4 @@
-module Bytecode.Encode
+module Bitcode.Encode
   ( encBinaryFlags
   , encBool
   , encCodeLocM
@@ -13,8 +13,8 @@ module Bytecode.Encode
 
 import qualified Asm                   as A
 import qualified Bits                  as B
-import           Bytecode.Encode.Const
-import qualified Bytecode.Mod          as BM
+import           Bitcode.Encode.Const
+import qualified Bitcode.Mod          as BM
 import qualified Term                  as T
 
 import qualified Control.Monad.State   as S

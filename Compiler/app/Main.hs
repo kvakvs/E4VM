@@ -2,8 +2,8 @@ module Main where
 
 import qualified Asm.Mod                   as AM
 import qualified BeamSParser               as P0
-import qualified Bytecode.Encode.Huffman   as Huff
-import qualified Bytecode.Mod              as BM
+import qualified Bitcode.Encode.Huffman   as Huff
+import qualified Bitcode.Mod              as BM
 import qualified Pass.PassAsm              as P2
 import qualified Pass.PassBeamS            as P1
 import qualified Term                      as T
@@ -20,9 +20,10 @@ transpile _fileName input = do
   print s1
   let s2 = stageBeamSToUasm s1
   print s2
-  let result = stageCompileAsm s2
-  print result
-  return result
+  let bitcodeMod = stageCompileAsm s2
+  print bitcodeMod
+  print $ BM.opStats bitcodeMod
+  return bitcodeMod
 
 -- Given beam .S file contents (string) produce a Term tree structure with
 -- parsed erlang values
@@ -42,9 +43,6 @@ initLogging = do
   updateGlobalLogger rootLoggerName (addHandler s)
   updateGlobalLogger "uerlc" (setLevel DEBUG)
 
-huffInput =
-  [0, 0, 1, 1, 1, 1, 2, 2, 3, 4, 5, 5, 5, 5, 5, 5, 5, 6, 6, 7] :: [Word8]
-
 main :: IO ()
 main = do
   initLogging
@@ -53,12 +51,3 @@ main = do
   contents <- hGetContents fh
   result <- transpile fileName contents
   putStrLn "done"
-  --
---  let encoder = Huff.makeEncoderFromImport huffInput
---  print encoder
---  putStr "encodeSome [5]="
---  print $ Huff.encodeSome encoder [5]
---  putStr "encodeSome [1]="
---  print $ Huff.encodeSome encoder [1]
---  putStr "encodeSome [7]="
---  print $ Huff.encodeSome encoder [7]

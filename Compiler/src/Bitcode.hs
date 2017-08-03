@@ -1,4 +1,4 @@
-module Bytecode
+module Bitcode
   ( allocM
   , bsContextToBinM
   , bsInitM
@@ -29,9 +29,9 @@ module Bytecode
 
 import qualified Asm                 as A
 import qualified Bits                as B
-import qualified Bytecode.Encode     as BE
-import qualified Bytecode.Mod        as BM
-import qualified Bytecode.Op         as BO
+import qualified Bitcode.Encode     as BE
+import qualified Bitcode.Mod        as BM
+import qualified Bitcode.Op         as BO
 import           Uerlc
 
 import qualified Control.Monad.State as S
@@ -62,6 +62,7 @@ makeInstrM op argBits = do
   m <- S.get
   let enc = BM.huffmanEncoder m
       instr = BO.makeInstruction op argBits enc
+  BM.profileOpcodeM op
   return [instr]
 
 -- Create an instruction to generate exception

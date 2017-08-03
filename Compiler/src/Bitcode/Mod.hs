@@ -1,4 +1,4 @@
-module Bytecode.Mod
+module Bitcode.Mod
   ( Module(..)
   , ModuleState
   , new
@@ -12,13 +12,14 @@ module Bytecode.Mod
   , addImport
   , findAddImport
   , addJumptabM
+  , profileOpcodeM
   ) where
 
 import qualified Asm                     as A
 import qualified Asm.Instruction         as AI
-import qualified Bytecode.Encode.Huffman as H
-import qualified Bytecode.Func           as BF
-import qualified Bytecode.Op             as BO
+import qualified Bitcode.Encode.Huffman as H
+import qualified Bitcode.Func           as BF
+import qualified Bitcode.Op             as BO
 import qualified Term                    as T
 
 import qualified Control.Monad.State     as S
@@ -28,12 +29,21 @@ import           Data.Word               (Word8)
 
 data Module = Module
   { name :: String
+  -- all used atoms, in a table
   , atoms :: Map.Map String Int
+  -- all mentioned literals in a table
   , literals :: Map.Map T.Term Int
+  -- external mfarities referred from the code, in a table
   , imports :: Map.Map T.MFArity Int
+  -- collection of funs each with its own bitcode
   , funs :: Map.Map T.FunArity BF.Func
+  -- jump tables for selectVal and selectTupleArity
   , jTabs :: [AI.JumpTab]
+  -- Encoder pre-created with hardcoded op frequencies (B.Op.hardcodedFreq)
   , huffmanEncoder :: H.Encoder Word8
+  -- Opcodes frequencies calculated (enable this manually to generate data for
+  -- B.Op.hardcodedFreq)
+  , opStats :: Map.Map BO.Opcode Int
   }
 
 type ModuleState = S.State Module
@@ -48,6 +58,7 @@ new =
   , funs = Map.empty
   , jTabs = []
   , huffmanEncoder = H.makeEncoderFromFreq BO.harcodedFrequencies
+  , opStats = Map.empty
   }
 
 instance Show Module where
@@ -55,8 +66,8 @@ instance Show Module where
     where
       name' = name m
       funs' = funs m
-      header = ";; bytecode module " ++ name' ++ "======"
-      footer = ";; ====== end bytecode module " ++ name'
+      header = ";; bitcode module " ++ name' ++ "======"
+      footer = ";; ====== end bitcode module " ++ name'
       funsText = intercalate "\n" strFuns
       strFuns = map show (Map.elems funs')
 
@@ -143,3 +154,15 @@ addJumptabM jtab = do
       m1 = m {jTabs = oldJtabs ++ [jtab]}
   S.put m1
   return index
+
+profileOpcode :: Module -> BO.Opcode -> Module
+profileOpcode m0@Module {opStats = s0} op = m0 {opStats = s1}
+  where
+    s1 = Map.insertWith' (+) op 1 s0
+
+profileOpcodeM :: BO.Opcode -> ModuleState ()
+profileOpcodeM op = do
+  m0 <- S.get
+  let m1 = profileOpcode m0 op
+  S.put m1
+  return ()
