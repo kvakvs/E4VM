@@ -1,26 +1,26 @@
 module Bytecode
-  ( alloc
-  , bsContextToBin
-  , bsInit
+  ( allocM
+  , bsContextToBinM
+  , bsInitM
   , bsPutIntegerM
-  , bsRestore
-  , bsSave
-  , callM
+  , bsRestoreM
+  , bsSaveM
   , callBifM
-  , callFun
+  , callFunM
+  , callM
   , consM
   , deconsM
   , encodeAtomM
-  , err
-  , jump
-  , makeFun
+  , invokeErrorM
+  , jumpM
+  , makeFunM
   , moveM
-  , ret
+  , retM
   , selectM
-  , setNil
-  , testHeap
+  , setNilM
+  , testHeapM
   , testM
-  , trim
+  , trimM
   , tupleGetElM
   , tupleNewM
   , tuplePutM
@@ -32,9 +32,11 @@ import qualified Bits                as B
 import qualified Bytecode.Encode     as BE
 import qualified Bytecode.Mod        as BM
 import qualified Bytecode.Op         as BO
-import qualified Uerlc
+import           Uerlc
 
 import qualified Control.Monad.State as S
+
+type MResult = BM.ModuleState (CompileErrorOr [BO.Instruction])
 
 encodeError :: A.BuiltinError -> B.BitsList
 encodeError A.EBadArg           = BE.encUint 0
@@ -55,18 +57,22 @@ encodeAtomM a = do
   S.put mod1
   return index
 
+makeInstrM :: BO.Opcode -> B.BitsList -> S.State BM.Module [BO.Instruction]
+makeInstrM op argBits = do
+  m <- S.get
+  let enc = BM.huffmanEncoder m
+      instr = BO.makeInstruction op argBits enc
+  return [instr]
+
 -- Create an instruction to generate exception
-err :: A.BuiltinError -> BO.Instruction
-err e = BO.Instruction BO.Error (encodeError e)
+invokeErrorM :: A.BuiltinError -> MResult
+invokeErrorM e = do
+  instr <- makeInstrM BO.Error (encodeError e)
+  return $ Right instr
 
 -- [monadic] Updates atom table if needed, and returns atom index for a string
 testM ::
-     String
-  -> A.LabelLoc
-  -> [A.ReadLoc]
-  -> Maybe Int
-  -> A.WriteLoc
-  -> BM.ModuleState BO.Instruction
+     String -> A.LabelLoc -> [A.ReadLoc] -> Maybe Int -> A.WriteLoc -> MResult
 testM tname onfail args maybeLive dst = do
   testNameAtom <- encodeAtomM tname
   argBits <- mapM BE.encReadLocM args
@@ -82,29 +88,33 @@ testM tname onfail args maybeLive dst = do
       opArgs =
         BE.encUint testNameAtom ++
         onfailBits ++ liveBits ++ dstBits ++ concat argBits
-  return $ BO.Instruction BO.Test opArgs
+  instr <- makeInstrM BO.Test opArgs
+  return $ Right instr
 
-alloc :: Int -> Int -> BO.Instruction
-alloc need live = BO.Instruction BO.Alloc (bitsNeed ++ bitsLive)
-  where
-    bitsNeed = BE.encUint need
-    bitsLive = BE.encUint live
+allocM :: Int -> Int -> MResult
+allocM need live = do
+  let bitsNeed = BE.encUint need
+      bitsLive = BE.encUint live
+  instr <- makeInstrM BO.Alloc (bitsNeed ++ bitsLive)
+  return $ Right instr
 
-testHeap :: Int -> Int -> BO.Instruction
-testHeap need live = BO.Instruction BO.TestHeap (bitsNeed ++ bitsLive)
-  where
-    bitsNeed = BE.encUint need
-    bitsLive = BE.encUint live
+testHeapM :: Int -> Int -> MResult
+testHeapM need live = do
+  let bitsNeed = BE.encUint need
+      bitsLive = BE.encUint live
+  instr <- makeInstrM BO.TestHeap (bitsNeed ++ bitsLive)
+  return $ Right instr
 
 -- [monadic] Compile a move instruction. BM.Module state is updated if
 -- readloc src contains an atom or literal index not yet in the module tables
-moveM :: A.ReadLoc -> A.WriteLoc -> BM.ModuleState BO.Instruction
+moveM :: A.ReadLoc -> A.WriteLoc -> MResult
 moveM src dst = do
   bitsSrc <- BE.encReadLocM src
   let bitsDst = BE.encWriteLoc dst
-  return $ BO.Instruction BO.Move (bitsSrc ++ bitsDst)
+  instr <- makeInstrM BO.Move (bitsSrc ++ bitsDst)
+  return $ Right instr
 
-callM :: Int -> A.CodeLoc -> A.CallType -> BM.ModuleState BO.Instruction
+callM :: Int -> A.CodeLoc -> A.CallType -> MResult
 callM arity codeLoc callType = do
   let arityBits = BE.encUint arity
   locBits <- BE.encCodeLocM codeLoc
@@ -114,48 +124,49 @@ callM arity codeLoc callType = do
           A.TailCall -> (BO.CallTail, [])
           A.GcEnabledCall live -> (BO.CallGc, BE.encUint live)
           A.TailCallDealloc dealloc -> (BO.CallTailDealloc, BE.encUint dealloc)
-  return $ BO.Instruction opCode (arityBits ++ locBits ++ ctypeBits)
+  instr <- makeInstrM opCode (arityBits ++ locBits ++ ctypeBits)
+  return $ Right instr
 
-tupleNewM :: Int -> A.WriteLoc -> BM.ModuleState BO.Instruction
+tupleNewM :: Int -> A.WriteLoc -> MResult
 tupleNewM sz dst = do
   let dstBits = BE.encWriteLoc dst
       szBits = BE.encUint sz
-  return $ BO.Instruction BO.TupleNew (szBits ++ dstBits)
+  instr <- makeInstrM BO.TupleNew (szBits ++ dstBits)
+  return $ Right instr
 
-tuplePutM :: A.ReadLoc -> BM.ModuleState BO.Instruction
+tuplePutM :: A.ReadLoc -> MResult
 tuplePutM val = do
   valBits <- BE.encReadLocM val
-  return $ BO.Instruction BO.TuplePut valBits
+  instr <- makeInstrM BO.TuplePut valBits
+  return $ Right instr
 
-tupleGetElM ::
-     A.ReadLoc -> A.ReadLoc -> A.WriteLoc -> BM.ModuleState BO.Instruction
+tupleGetElM :: A.ReadLoc -> A.ReadLoc -> A.WriteLoc -> MResult
 tupleGetElM src i dst = do
   bitsSrc <- BE.encReadLocM src
   bitsI <- BE.encReadLocM i
   let bitsDst = BE.encWriteLoc dst
-  return $ BO.Instruction BO.TupleGetEl (bitsSrc ++ bitsI ++ bitsDst)
+  instr <- makeInstrM BO.TupleGetEl (bitsSrc ++ bitsI ++ bitsDst)
+  return $ Right instr
 
-tupleSetElM ::
-     A.ReadLoc -> A.ReadLoc -> A.WriteLoc -> BM.ModuleState BO.Instruction
+tupleSetElM :: A.ReadLoc -> A.ReadLoc -> A.WriteLoc -> MResult
 tupleSetElM val index dst = do
   bitsVal <- BE.encReadLocM val
   bitsI <- BE.encReadLocM index
   let bitsDst = BE.encWriteLoc dst
-  return $ BO.Instruction BO.TupleSetEl (bitsVal ++ bitsI ++ bitsDst)
+  instr <- makeInstrM BO.TupleSetEl (bitsVal ++ bitsI ++ bitsDst)
+  return $ Right instr
 
-ret :: Int -> BO.Instruction
-ret 0 = BO.Instruction BO.Ret0 []
-ret dealloc =
+retM :: Int -> MResult
+retM 0 = do
+  instr <- makeInstrM BO.Ret0 []
+  return $ Right instr
+retM dealloc = do
   let bitsD = BE.encUint dealloc
-  in BO.Instruction BO.RetN bitsD
+  instr <- makeInstrM BO.RetN bitsD
+  return $ Right instr
 
 callBifM ::
-     String
-  -> A.LabelLoc
-  -> [A.ReadLoc]
-  -> A.CallType
-  -> A.WriteLoc
-  -> BM.ModuleState BO.Instruction
+     String -> A.LabelLoc -> [A.ReadLoc] -> A.CallType -> A.WriteLoc -> MResult
 callBifM name onfail args callType dst = do
   nameAIndex <- BM.findAddAtomM name
   let bitsName = BE.encUint nameAIndex
@@ -166,30 +177,26 @@ callBifM name onfail args callType dst = do
         case callType of
           A.NormalCall         -> BO.CallBif
           A.GcEnabledCall live -> BO.CallBifGc
-  return $
-    BO.Instruction op (bitsName ++ bitsFail ++ concat bitsArgs ++ bitsDst)
+  instr <- makeInstrM op (bitsName ++ bitsFail ++ concat bitsArgs ++ bitsDst)
+  return $ Right instr
 
-deconsM ::
-     A.ReadLoc -> A.WriteLoc -> A.WriteLoc -> BM.ModuleState BO.Instruction
+deconsM :: A.ReadLoc -> A.WriteLoc -> A.WriteLoc -> MResult
 deconsM src dstH dstT = do
   bitsSrc <- BE.encReadLocM src
   let bitsH = BE.encWriteLoc dstH
       bitsT = BE.encWriteLoc dstT
-  return $ BO.Instruction BO.Decons (bitsSrc ++ bitsH ++ bitsT)
+  instr <- makeInstrM BO.Decons (bitsSrc ++ bitsH ++ bitsT)
+  return $ Right instr
 
-consM :: A.ReadLoc -> A.ReadLoc -> A.WriteLoc -> BM.ModuleState BO.Instruction
+consM :: A.ReadLoc -> A.ReadLoc -> A.WriteLoc -> MResult
 consM h t dst = do
   bitsH <- BE.encReadLocM h
   bitsT <- BE.encReadLocM t
   let bitsDst = BE.encWriteLoc dst
-  return $ BO.Instruction BO.Cons (bitsH ++ bitsT ++ bitsDst)
+  instr <- makeInstrM BO.Cons (bitsH ++ bitsT ++ bitsDst)
+  return $ Right instr
 
-selectM ::
-     A.SelectSubj
-  -> A.ReadLoc
-  -> A.LabelLoc
-  -> A.JumpTab
-  -> BM.ModuleState BO.Instruction
+selectM :: A.SelectSubj -> A.ReadLoc -> A.LabelLoc -> A.JumpTab -> MResult
 selectM selType val onfail jtab = do
   let op =
         case selType of
@@ -198,60 +205,72 @@ selectM selType val onfail jtab = do
   bitsVal <- BE.encReadLocM val
   let bitsFail = BE.encLabelLoc onfail
   bitsJt <- BE.encJtabM jtab
-  return $ BO.Instruction op (bitsVal ++ bitsFail ++ bitsJt)
+  instr <- makeInstrM op (bitsVal ++ bitsFail ++ bitsJt)
+  return $ Right instr
 
-jump :: A.LabelLoc -> BO.Instruction
-jump lbl =
+jumpM :: A.LabelLoc -> MResult
+jumpM lbl = do
   let bitsLbl = BE.encLabelLoc lbl
-  in BO.Instruction BO.Jump bitsLbl
+  instr <- makeInstrM BO.Jump bitsLbl
+  return $ Right instr
 
-callFun :: Int -> BO.Instruction
-callFun arity =
+callFunM :: Int -> MResult
+callFunM arity = do
   let bitsA = BE.encUint arity
-  in BO.Instruction BO.CallFun bitsA
+  instr <- makeInstrM BO.CallFun bitsA
+  return $ Right instr
 
-setNil :: A.WriteLoc -> BO.Instruction
-setNil dst =
+setNilM :: A.WriteLoc -> MResult
+setNilM dst = do
   let bitsDst = BE.encWriteLoc dst
-  in BO.Instruction BO.SetNil bitsDst
+  instr <- makeInstrM BO.SetNil bitsDst
+  return $ Right instr
 
-trim :: Int -> BO.Instruction
-trim n =
+trimM :: Int -> MResult
+trimM n = do
   let bitsN = BE.encUint n
-  in BO.Instruction BO.Trim bitsN
+  instr <- makeInstrM BO.Trim bitsN
+  return $ Right instr
 
-makeFun :: A.LabelLoc -> Int -> BO.Instruction
-makeFun lbl@(A.LabelLoc _) nfree =
+makeFunM :: A.LabelLoc -> Int -> MResult
+makeFunM lbl@(A.LabelLoc _) nfree = do
   let bitsNFree = BE.encUint nfree
       bitsLbl = BE.encLabelLoc lbl
-  in BO.Instruction BO.MakeFun (bitsLbl ++ bitsNFree)
+  instr <- makeInstrM BO.MakeFun (bitsLbl ++ bitsNFree)
+  return $ Right instr
 
-bsContextToBin :: A.ReadLoc -> BM.ModuleState BO.Instruction
-bsContextToBin src = do
+bsContextToBinM :: A.ReadLoc -> MResult
+bsContextToBinM src = do
   bitsSrc <- BE.encReadLocM src
-  return $ BO.Instruction BO.BsContextToBin bitsSrc
+  instr <- makeInstrM BO.BsContextToBin bitsSrc
+  return $ Right instr
 
-bsSave ::  A.ReadLoc -> Int -> BM.ModuleState BO.Instruction
-bsSave = bsSaveRestore' BO.BsSave
+bsSaveM :: A.ReadLoc -> Int -> MResult
+bsSaveM = bsSaveRestoreM BO.BsSave
 
-bsRestore :: A.ReadLoc -> Int -> BM.ModuleState BO.Instruction
-bsRestore = bsSaveRestore' BO.BsRestore
+bsRestoreM :: A.ReadLoc -> Int -> MResult
+bsRestoreM = bsSaveRestoreM BO.BsRestore
 
-bsSaveRestore' :: BO.Opcode -> A.ReadLoc -> Int -> BM.ModuleState BO.Instruction
-bsSaveRestore' opcode src index = do
+bsSaveRestoreM :: BO.Opcode -> A.ReadLoc -> Int -> MResult
+bsSaveRestoreM opcode src index = do
   bitsSrc <- BE.encReadLocM src
   let bitsI = BE.encUint index
-  return $ BO.Instruction opcode (bitsSrc ++ bitsI)
+  instr <- makeInstrM opcode (bitsSrc ++ bitsI)
+  return $ Right instr
 
-bsInit sz gcLive dst onFail =
+bsInitM :: Int -> Int -> A.WriteLoc -> A.LabelLoc -> MResult
+bsInitM sz gcLive dst onFail = do
   let bitsSz = BE.encUint sz
       bitsLive = BE.encUint gcLive
       bitsDst = BE.encWriteLoc dst
       bitsFail = BE.encLabelLoc onFail
-  in BO.Instruction BO.BsInit (bitsSz ++ bitsLive ++ bitsDst ++ bitsFail)
+  instr <- makeInstrM BO.BsInit (bitsSz ++ bitsLive ++ bitsDst ++ bitsFail)
+  return $ Right instr
 
+bsPutIntegerM :: A.ReadLoc -> A.BinaryFlags -> A.WriteLoc -> MResult
 bsPutIntegerM src bFlags dst = do
   bitsSrc <- BE.encReadLocM src
   let bitsBF = BE.encBinaryFlags bFlags
       bitsDst = BE.encWriteLoc dst
-  return $ BO.Instruction BO.BsPutInteger (bitsSrc ++ bitsBF ++ bitsDst)
+  instr <- makeInstrM BO.BsPutInteger (bitsSrc ++ bitsBF ++ bitsDst)
+  return $ Right instr

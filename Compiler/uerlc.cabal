@@ -36,6 +36,8 @@ library
                     , Uerlc
   build-depends:      base >= 4.7 && < 5
                     , ansi-terminal
+                    , binary
+                    , binary-strict
                     , bytestring
                     , containers
                     , exceptions

@@ -21,6 +21,7 @@ transpile _fileName input = do
   let s2 = stageBeamSToUasm s1
   print s2
   let result = stageCompileAsm s2
+  print result
   return result
 
 -- Given beam .S file contents (string) produce a Term tree structure with
@@ -52,7 +53,7 @@ main = do
   contents <- hGetContents fh
   result <- transpile fileName contents
   --
-  let encoder = Huff.createEncoder huffInput
+  let encoder = Huff.makeEncoderFromImport huffInput
   print encoder
   putStr "encodeSome [5]="
   print $ Huff.encodeSome encoder [5]

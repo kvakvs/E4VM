@@ -8,9 +8,11 @@ module Bits
   , bitsUB
   , bitsSB
   , signedFitsIn
+  , makeBits
   ) where
 
 import qualified Data.Bits as DBits
+import qualified Data.List as L
 
 -- An unsigned Word value which fits into Word8 bits
 data Bits
@@ -39,3 +41,15 @@ bitsUB val bits
 bitsSB :: Int -> Int -> Bits
 bitsSB val bits
   | signedFitsIn val bits = BitsSignedBig val bits
+
+-- Creates an unsigned integer from bit boolean sequence (no size preserved,
+-- use original input length to know the bit size)
+bitPack :: [Bool] -> Int
+bitPack inp = outp
+  where
+    foldFn (val, pos) True = (val `DBits.setBit` pos, pos + 1)
+    foldFn (val, pos) False = (val, pos + 1)
+    (outp, _) = L.foldl foldFn (0, 0) inp
+
+makeBits :: [Bool] -> Bits
+makeBits val = bitsUB (bitPack val) (length val)

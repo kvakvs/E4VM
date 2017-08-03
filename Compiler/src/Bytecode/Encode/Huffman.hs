@@ -4,9 +4,12 @@
 -- https://gist.github.com/ibtaylor/1024266
 --
 module Bytecode.Encode.Huffman
-  ( createEncoder
+  ( makeEncoderFromImport
+  , makeEncoderFromFreq
   , encodeSome
   , makeFreqTable
+  , Encoder
+  , Frequency(..)
   ) where
 
 import qualified Bits       as B
@@ -15,7 +18,6 @@ import qualified Data.List  as L
 import qualified Data.Map   as M
 import           Data.Maybe
 import           Data.Ord
-import           Data.Word  (Word8)
 
 -- val contains either leaf value or tree children. Bits is bit length
 data HuffmanTree a
@@ -45,7 +47,7 @@ frequency (InternalNode x _l _r) = x
 
 --type HDict = M.Map Int B.Bits
 data Encoder a = Encoder
-  { eCodes :: M.Map a [Word8]
+  { eCodes :: M.Map a [Bool]
   , eTree :: HuffmanTree a
   } deriving (Show)
 
@@ -62,29 +64,35 @@ instance Eq a => Ord (Frequency a) where
 
 --makeFrequency :: a -> Int -> (a, Int)
 --makeFrequency val freq = Frequency val freq
-createEncoder ::
+makeEncoderFromImport ::
      Ord a
   => Eq a =>
        [a] -> Encoder a
-createEncoder input = Encoder {eTree = tree, eCodes = codes}
+makeEncoderFromImport input = Encoder {eTree = tree, eCodes = codes}
   where
     tree = makeTree $ makeFreqTable input
     codes = makeCodes tree
 
+makeEncoderFromFreq :: Ord a => [Frequency a] -> Encoder a
+makeEncoderFromFreq freq = Encoder {eTree = tree, eCodes = codes}
+  where
+    tree = makeTree freq
+    codes = makeCodes tree
+
 -- traverse the huffman tree generating a map from the symbol to its huffman
 -- tree path (where False is left, and True is right)
-makeCodes :: Ord a => HuffmanTree a -> M.Map a [Word8]
+makeCodes :: Ord a => HuffmanTree a -> M.Map a [Bool]
 makeCodes = M.fromList . go []
     -- leaf nodes mark the end of a path to a symbol
   where
     go p (LeafNode s _)       = [(s, reverse p)]
     -- traverse both branches and accumulate a reverse path
-    go p (InternalNode _ l r) = go (1 : p) l ++ go (0 : p) r
+    go p (InternalNode _ l r) = go (True : p) l ++ go (False : p) r
 
 -- from a table mapping symbols to their corresponding huffman tree bit paths,
 -- replace each instance of a symbol with its bit path
-encodeSome :: Ord a => Encoder a -> [a] -> [Word8]
-encodeSome Encoder {eCodes = tbl} = concatMap get
+encodeSome :: Ord a => Encoder a -> [a] -> B.Bits
+encodeSome Encoder {eCodes = tbl} = B.makeBits . concatMap get
   where
     get x = fromJust (M.lookup x tbl)
 
@@ -101,12 +109,6 @@ makeFreqTable' (h:tl) accum =
   let (block, moreBlocks) = L.partition (h ==) tl
       newItem = Frequency h (1 + length block)
   in makeFreqTable' moreBlocks (newItem : accum)
-
---sortHelperFn :: Ord a => (t, a) -> (t, a) -> Ordering
---sortHelperFn (_v1, count1) (_v2, count2)
---  | count1 < count2 = LT
---  | count1 > count2 = GT
---sortHelperFn _ _ = EQ
 
 makeTree :: [Frequency a] -> HuffmanTree a
 makeTree inp

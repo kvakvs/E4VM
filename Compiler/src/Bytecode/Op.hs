@@ -1,14 +1,18 @@
 module Bytecode.Op
   ( Opcode(..)
-  , Instruction(..)
+  , Instruction
+  , makeInstruction
+  , harcodedFrequencies
   ) where
 
-import qualified Bits       as B
+import qualified Bits                    as B
+import           Bytecode.Encode.Huffman as H
 import           Uerlc
 
-import qualified Data.List  as L
-import           Data.Maybe (fromJust)
+import qualified Data.List               as L
+import           Data.Maybe              (fromJust)
 import           Data.Tuple
+import           Data.Word               (Word8)
 
 data Opcode
   = Alloc
@@ -122,11 +126,27 @@ instance Enum Opcode where
   toEnum = fromJust . flip lookup (map swap bcOpEnumTable)
 
 -- A combination of {Opcode and [Bit Encoded Args]}
-data Instruction =
-  Instruction Opcode
-              B.BitsList
+data Instruction = Instruction
+  { iOp :: Opcode
+  , iOpCompressed :: B.Bits
+  , iArgs :: B.BitsList
+  }
 
 instance Show Instruction where
-  show (Instruction op bits) = show (fromEnum op) ++ " " ++ show bits ++ comment
+  show (Instruction op opComp bits) =
+    show (fromEnum op) ++ " " ++ show bits ++ comment
     where
-      comment = ansiCyan ++ " ; " ++ show op ++ ansiReset
+      comment =
+        ansiCyan ++
+        " ; " ++ show op ++ " (op " ++ show opComp ++ ")" ++ ansiReset
+
+makeInstruction :: Opcode -> B.BitsList -> H.Encoder Word8 -> Instruction
+makeInstruction op argBits encoder =
+  Instruction {iOp = op, iOpCompressed = opBits, iArgs = argBits}
+  where
+    opBits = H.encodeSome encoder [fromIntegral $ fromEnum op]
+
+harcodedFrequencies :: [Frequency Word8]
+harcodedFrequencies = L.map makeFreq bcOpEnumTable
+  where
+    makeFreq (_, opc) = H.Frequency (fromIntegral opc) opc

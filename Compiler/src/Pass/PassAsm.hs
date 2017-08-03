@@ -80,62 +80,33 @@ transform1M :: A.Instruction -> BM.ModuleState (CompileErrorOr [BO.Instruction])
 transform1M (A.AComment _s) = return $ Right []
 transform1M (A.ALabel _lb) = return $ Right []
 transform1M (A.ALine _ln) = return $ Right []
-transform1M (A.AError e) = return $ Right [B.err e]
-transform1M (A.ATest tname onfail args maybeLive dst) = do
-  testOp <- B.testM tname onfail args maybeLive dst
-  return $ Right [testOp]
-transform1M (A.AAlloc need live) = return $ Right [B.alloc need live]
-transform1M (A.AMove src dst) = do
-  byteCode <- B.moveM src dst
-  return $ Right [byteCode]
-transform1M (A.ACall arity codeLoc callType) = do
-  byteCode <- B.callM arity codeLoc callType
-  return $ Right [byteCode]
-transform1M (A.ATestHeap needH live) = return $ Right [B.testHeap needH live]
-transform1M (A.ATupleNew sz dst) = do
-  byteCode <- B.tupleNewM sz dst
-  return $ Right [byteCode]
-transform1M (A.ATuplePut val) = do
-  byteCode <- B.tuplePutM val
-  return $ Right [byteCode]
-transform1M (A.ATupleGetEl src i dst) = do
-  byteCode <- B.tupleGetElM src i dst
-  return $ Right [byteCode]
-transform1M (A.ATupleSetEl val index dst) = do
-  byteCode <- B.tupleSetElM val index dst
-  return $ Right [byteCode]
-transform1M (A.ARet dealloc) = return $ Right [B.ret dealloc]
-transform1M (A.ACallBif name onfail args callType dst) = do
-  byteCode <- B.callBifM name onfail args callType dst
-  return $ Right [byteCode]
-transform1M (A.ADecons src dstH dstT) = do
-  byteCode <- B.deconsM src dstH dstT
-  return $ Right [byteCode]
-transform1M (A.ACons h t dst) = do
-  byteCode <- B.consM h t dst
-  return $ Right [byteCode]
-transform1M (A.ASelect selType val onfail jtab) = do
-  byteCode <- B.selectM selType val onfail jtab
-  return $ Right [byteCode]
-transform1M (A.AJump lbl) = return $ Right [B.jump lbl]
-transform1M (A.ACallFun arity) = return $ Right [B.callFun arity]
-transform1M (A.ASetNil dst) = return $ Right [B.setNil dst]
-transform1M (A.ATrim n) = return $ Right [B.trim n]
-transform1M (A.AMakeFun lbl nfree) = return $ Right [B.makeFun lbl nfree]
-transform1M (A.ABsContextToBin src) = do
-  byteCode <- B.bsContextToBin src
-  return $ Right [byteCode]
-transform1M (A.ABsSave src index) = do
-  byteCode <- B.bsSave src index
-  return $ Right [byteCode]
-transform1M (A.ABsRestore src index) = do
-  byteCode <- B.bsRestore src index
-  return $ Right [byteCode]
-transform1M (A.ABsInit sz gcLive dst onFail) = do
-  let byteCode = B.bsInit sz gcLive dst onFail
-  return $ Right [byteCode]
-transform1M (A.ABsPutInteger src bFlags dst) = do
-  byteCode <- B.bsPutIntegerM src bFlags dst
-  return $ Right [byteCode]
+transform1M (A.AError e) = B.invokeErrorM e
+transform1M (A.ATest tname onfail args maybeLive dst) =
+  B.testM tname onfail args maybeLive dst
+transform1M (A.AAlloc need live) = B.allocM need live
+transform1M (A.AMove src dst) = B.moveM src dst
+transform1M (A.ACall arity codeLoc callType) = B.callM arity codeLoc callType
+transform1M (A.ATestHeap needH live) = B.testHeapM needH live
+transform1M (A.ATupleNew sz dst) = B.tupleNewM sz dst
+transform1M (A.ATuplePut val) = B.tuplePutM val
+transform1M (A.ATupleGetEl src i dst) = B.tupleGetElM src i dst
+transform1M (A.ATupleSetEl val index dst) = B.tupleSetElM val index dst
+transform1M (A.ARet dealloc) = B.retM dealloc
+transform1M (A.ACallBif name onfail args callType dst) =
+  B.callBifM name onfail args callType dst
+transform1M (A.ADecons src dstH dstT) = B.deconsM src dstH dstT
+transform1M (A.ACons h t dst) = B.consM h t dst
+transform1M (A.ASelect selType val onfail jtab) =
+  B.selectM selType val onfail jtab
+transform1M (A.AJump lbl) = B.jumpM lbl
+transform1M (A.ACallFun arity) = B.callFunM arity
+transform1M (A.ASetNil dst) = B.setNilM dst
+transform1M (A.ATrim n) = B.trimM n
+transform1M (A.AMakeFun lbl nfree) = B.makeFunM lbl nfree
+transform1M (A.ABsContextToBin src) = B.bsContextToBinM src
+transform1M (A.ABsSave src index) = B.bsSaveM src index
+transform1M (A.ABsRestore src index) = B.bsRestoreM src index
+transform1M (A.ABsInit sz gcLive dst onFail) = B.bsInitM sz gcLive dst onFail
+transform1M (A.ABsPutInteger src bFlags dst) = B.bsPutIntegerM src bFlags dst
 transform1M op = return $ Uerlc.errM $ "Don't know how to compile: " ++ show op
    -- return $ Right []

@@ -14,15 +14,17 @@ module Bytecode.Mod
   , addJumptabM
   ) where
 
-import qualified Asm                 as A
-import qualified Asm.Instruction     as AI
-import qualified Bytecode.Func       as BF
-import qualified Term                as T
+import qualified Asm                     as A
+import qualified Asm.Instruction         as AI
+import qualified Bytecode.Encode.Huffman as H
+import qualified Bytecode.Func           as BF
+import qualified Bytecode.Op             as BO
+import qualified Term                    as T
 
-import qualified Control.Monad.State as S
-import qualified Control.Monad.State as S
+import qualified Control.Monad.State     as S
 import           Data.List
-import qualified Data.Map            as Map
+import qualified Data.Map                as Map
+import           Data.Word               (Word8)
 
 data Module = Module
   { name :: String
@@ -31,6 +33,7 @@ data Module = Module
   , imports :: Map.Map T.MFArity Int
   , funs :: Map.Map T.FunArity BF.Func
   , jTabs :: [AI.JumpTab]
+  , huffmanEncoder :: H.Encoder Word8
   }
 
 type ModuleState = S.State Module
@@ -44,6 +47,7 @@ new =
   , imports = Map.empty
   , funs = Map.empty
   , jTabs = []
+  , huffmanEncoder = H.makeEncoderFromFreq BO.harcodedFrequencies
   }
 
 instance Show Module where
