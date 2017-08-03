@@ -5,11 +5,11 @@ RUNOPT=+RTS -xc
 compile:
 	stack build $(STACKOPT)
 
-PRIV=../Compiler/priv
+TESTDATA=testData/
 
-INP1=$(PRIV)/gb_trees.S
-INP2=$(PRIV)/mochijson.S
-INP3=$(PRIV)/mochijson2.S
+INP1=$(TESTDATA)/gb_trees.S
+INP2=$(TESTDATA)/mochijson.S
+INP3=$(TESTDATA)/mochijson2.S
 
 %.S: %.erl
 	erlc -S -o $(@D) $^
