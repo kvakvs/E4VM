@@ -102,11 +102,11 @@ makeFreqTable' (h:tl) accum =
       newItem = Frequency h (1 + length block)
   in makeFreqTable' moreBlocks (newItem : accum)
 
-sortHelperFn :: Ord a => (t, a) -> (t, a) -> Ordering
-sortHelperFn (_v1, count1) (_v2, count2)
-  | count1 < count2 = LT
-  | count1 > count2 = GT
-sortHelperFn _ _ = EQ
+--sortHelperFn :: Ord a => (t, a) -> (t, a) -> Ordering
+--sortHelperFn (_v1, count1) (_v2, count2)
+--  | count1 < count2 = LT
+--  | count1 > count2 = GT
+--sortHelperFn _ _ = EQ
 
 makeTree :: [Frequency a] -> HuffmanTree a
 makeTree inp
