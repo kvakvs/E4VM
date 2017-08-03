@@ -52,12 +52,13 @@ main = do
   fh <- openFile fileName ReadMode
   contents <- hGetContents fh
   result <- transpile fileName contents
+  putStrLn "done"
   --
-  let encoder = Huff.makeEncoderFromImport huffInput
-  print encoder
-  putStr "encodeSome [5]="
-  print $ Huff.encodeSome encoder [5]
-  putStr "encodeSome [1]="
-  print $ Huff.encodeSome encoder [1]
-  putStr "encodeSome [7]="
-  print $ Huff.encodeSome encoder [7]
+--  let encoder = Huff.makeEncoderFromImport huffInput
+--  print encoder
+--  putStr "encodeSome [5]="
+--  print $ Huff.encodeSome encoder [5]
+--  putStr "encodeSome [1]="
+--  print $ Huff.encodeSome encoder [1]
+--  putStr "encodeSome [7]="
+--  print $ Huff.encodeSome encoder [7]

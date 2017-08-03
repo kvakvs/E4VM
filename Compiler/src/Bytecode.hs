@@ -57,7 +57,7 @@ encodeAtomM a = do
   S.put mod1
   return index
 
-makeInstrM :: BO.Opcode -> B.BitsList -> S.State BM.Module [BO.Instruction]
+makeInstrM :: BO.Opcode -> B.BitsList -> BM.ModuleState [BO.Instruction]
 makeInstrM op argBits = do
   m <- S.get
   let enc = BM.huffmanEncoder m

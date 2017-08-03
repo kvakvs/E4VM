@@ -149,4 +149,4 @@ makeInstruction op argBits encoder =
 harcodedFrequencies :: [Frequency Word8]
 harcodedFrequencies = L.map makeFreq bcOpEnumTable
   where
-    makeFreq (_, opc) = H.Frequency (fromIntegral opc) opc
+    makeFreq (_, opc) = H.Frequency (fromIntegral opc) (opc `quot` 4)
