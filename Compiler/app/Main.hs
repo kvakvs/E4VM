@@ -16,26 +16,12 @@ import           System.Log.Logger
 
 transpile :: String -> String -> IO BM.Module
 transpile _fileName input = do
-  let s1 = stageParseBeamS input
+  let s1 = P0.transform input
   print s1
-  let s2 = stageBeamSToUasm s1
+  let s2 = P1.transform s1
   print s2
-  let bitcodeMod = stageCompileAsm s2
-  print bitcodeMod
-  print $ BM.opStats bitcodeMod
+  let bitcodeMod = P2.transform s2
   return bitcodeMod
-
--- Given beam .S file contents (string) produce a Term tree structure with
--- parsed erlang values
-stageParseBeamS :: String -> T.Term
-stageParseBeamS = P0.transform
-
--- Given Term tree produce microassembly data structure
-stageBeamSToUasm :: T.Term -> AM.Module
-stageBeamSToUasm = P1.transform
-
-stageCompileAsm :: AM.Module -> BM.Module
-stageCompileAsm = P2.transform
 
 initLogging :: IO ()
 initLogging = do
@@ -49,5 +35,8 @@ main = do
   [fileName] <- getArgs
   fh <- openFile fileName ReadMode
   contents <- hGetContents fh
-  result <- transpile fileName contents
+  bitcodeMod <- transpile fileName contents
+  --
   putStrLn "done"
+  print bitcodeMod
+  print $ BM.opStats bitcodeMod

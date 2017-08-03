@@ -59,10 +59,10 @@ encodeAtomM a = do
 
 makeInstrM :: BO.Opcode -> B.BitsList -> BM.ModuleState [BO.Instruction]
 makeInstrM op argBits = do
-  m <- S.get
-  let enc = BM.huffmanEncoder m
+  m0 <- S.get
+  let enc = BM.huffmanEncoder m0
       instr = BO.makeInstruction op argBits enc
-  BM.profileOpcodeM op
+  S.put $ BM.profileOpcode m0 op
   return [instr]
 
 -- Create an instruction to generate exception

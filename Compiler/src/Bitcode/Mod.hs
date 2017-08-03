@@ -12,20 +12,20 @@ module Bitcode.Mod
   , addImport
   , findAddImport
   , addJumptabM
-  , profileOpcodeM
+  , profileOpcode
   ) where
 
-import qualified Asm                     as A
-import qualified Asm.Instruction         as AI
+import qualified Asm                    as A
+import qualified Asm.Instruction        as AI
 import qualified Bitcode.Encode.Huffman as H
 import qualified Bitcode.Func           as BF
 import qualified Bitcode.Op             as BO
-import qualified Term                    as T
+import qualified Term                   as T
 
-import qualified Control.Monad.State     as S
+import qualified Control.Monad.State    as S
 import           Data.List
-import qualified Data.Map                as Map
-import           Data.Word               (Word8)
+import qualified Data.Map               as Map
+import           Data.Word              (Word8)
 
 data Module = Module
   { name :: String
@@ -156,13 +156,12 @@ addJumptabM jtab = do
   return index
 
 profileOpcode :: Module -> BO.Opcode -> Module
-profileOpcode m0@Module {opStats = s0} op = m0 {opStats = s1}
-  where
-    s1 = Map.insertWith' (+) op 1 s0
-
-profileOpcodeM :: BO.Opcode -> ModuleState ()
-profileOpcodeM op = do
-  m0 <- S.get
-  let m1 = profileOpcode m0 op
-  S.put m1
-  return ()
+profileOpcode m0@Module {opStats = s0} op =
+  let s1 = Map.insertWith (+) op 1 s0
+  in m0 {opStats = s1}
+--profileOpcodeM :: BO.Opcode -> ModuleState ()
+--profileOpcodeM op = do
+--  m0 <- S.get
+--  let m1 = profileOpcode m0 op
+--  S.put m1
+--  return ()
