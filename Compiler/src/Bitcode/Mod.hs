@@ -12,7 +12,7 @@ module Bitcode.Mod
   , addImport
   , findAddImport
   , addJumptabM
-  , profileOpcode
+  , profileOpcodeM
   ) where
 
 import qualified Asm                    as A
@@ -26,6 +26,7 @@ import qualified Control.Monad.State    as S
 import           Data.List
 import qualified Data.Map               as Map
 import           Data.Word              (Word8)
+import qualified Debug.Trace            as Dbg
 
 data Module = Module
   { name :: String
@@ -75,7 +76,7 @@ instance Show Module where
 findAtom :: Module -> String -> Maybe Int
 findAtom m a = Map.lookup a (atoms m)
 
--- [monadic] Find atom and possibly add it
+-- Find atom and possibly add it
 findAddAtomM :: String -> S.State Module Int
 findAddAtomM a = do
   m <- S.get
@@ -109,7 +110,7 @@ addLit m lit = (m1, counter)
     newLiterals = Map.insert lit counter oldLiterals
     m1 = m {literals = newLiterals}
 
--- [monadic] Find and possibly add literal
+-- Find and possibly add literal
 findAddLitM :: T.Term -> S.State Module Int
 findAddLitM lit = do
   m <- S.get
@@ -134,7 +135,7 @@ addImport m imp = (m1, counter)
 findImport :: Module -> T.MFArity -> Maybe Int
 findImport m imp = Map.lookup imp (imports m)
 
--- [monadic] Find and possibly add import
+-- Find and possibly add import
 findAddImport :: T.MFArity -> S.State Module Int
 findAddImport imp = do
   m <- S.get
@@ -155,10 +156,14 @@ addJumptabM jtab = do
   S.put m1
   return index
 
-profileOpcode :: Module -> BO.Opcode -> Module
-profileOpcode m0@Module {opStats = s0} op =
-  let s1 = Map.insertWith (+) op 1 s0
-  in m0 {opStats = s1}
+profileOpcodeM :: BO.Opcode -> S.State Module ()
+profileOpcodeM op = do
+  m0 <- S.get
+  let s0 = opStats m0
+      s1 = Map.insertWith (+) op 1 s0
+  S.put $ m0 {opStats = s1}
+  return ()
+
 --profileOpcodeM :: BO.Opcode -> ModuleState ()
 --profileOpcodeM op = do
 --  m0 <- S.get

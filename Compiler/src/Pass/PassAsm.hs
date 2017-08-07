@@ -22,33 +22,31 @@ transform amod = bcmod
   where
     bcmod0 = BM.new
     funs = Map.elems $ AM.funs amod
-    bcmod =
-      case transformM funs bcmod0 `MEx.catchError` Left of
-        Right bcmod' -> bcmod'
-        Left e       -> Uerlc.err $ show e
+    bcmod = S.execState (transformM funs) bcmod0
+--      case transform' funs bcmod0 `MEx.catchError` Left of
+--        Right bcmod' -> bcmod'
+--        Left e       -> Uerlc.err $ show e
 
--- [monadic] given list of Asm funs and a Bitcode module, update module with
+-- given list of Asm funs and a Bitcode module, update module with
 -- funs that are transformed to Bitcode funs
-transformM :: [AF.Func] -> BM.Module -> CompileErrorOr BM.Module
-transformM [] bcMod = Right bcMod
-transformM (fun:fTail) bcMod0 = transformM fTail bcMod1
-  where
-    nameArity = AF.name fun
-    bcMod1 = updateFun nameArity bcFun bcMod0
-    bcFun =
-      case S.evalState (transformFnM fun) bcMod0 of
-        Right bcFun' -> bcFun'
-        Left e       -> Uerlc.err $ show e
+transformM :: [AF.Func] -> BM.ModuleState (CompileErrorOr ())
+transformM [] = return $ Right ()
+transformM (fun:fTail) = do
+  let nameArity = AF.name fun
+  Right bcFun <- transformFnM fun
+  updateFunM nameArity bcFun
+  transformM fTail
 
 -- Updates/writes a func in a bitcode module, returns an updated module
-updateFun :: T.FunArity -> BF.Func -> BM.Module -> BM.Module
-updateFun nameArity f bcMod0 = bcMod1
-  where
-    funs0 = BM.funs bcMod0
-    funs1 = Map.insert nameArity f funs0
-    bcMod1 = bcMod0 {BM.funs = funs1}
+updateFunM :: T.FunArity -> BF.Func -> BM.ModuleState ()
+updateFunM nameArity f = do
+  bcMod0 <- S.get
+  let funs0 = BM.funs bcMod0
+      funs1 = Map.insert nameArity f funs0
+  S.put $ bcMod0 {BM.funs = funs1}
+  return ()
 
--- [monadic] Given an Asm func converts it to a Bitcode func, also updates
+-- Given an Asm func converts it to a Bitcode func, also updates
 -- the module with whatever is found on the way (atoms, literals etc)
 transformFnM :: AF.Func -> BM.ModuleState (CompileErrorOr BF.Func)
 transformFnM fn = do
@@ -61,7 +59,7 @@ transformFnM fn = do
       in return (Right outFn)
     Left e -> return $ Left e
 
--- [monadic] Given an accumulator (bitcode ops) and input (a list of asm
+-- Given an accumulator (bitcode ops) and input (a list of asm
 -- opcodes) returns a list of bytecodes
 transformAsmOpsM ::
      [BO.Instruction]
@@ -74,7 +72,7 @@ transformAsmOpsM acc (aop:remainingAops) = do
     Right bcop -> transformAsmOpsM (bcop ++ acc) remainingAops
     Left e     -> return $ Left e
 
--- [monadic] For those cases when 1:1 simple mapping between asm and bitcode
+-- For those cases when 1:1 simple mapping between asm and bitcode
 -- is enough. For complex cases add a clause in transformAsmOpsM
 transform1M :: A.Instruction -> BM.ModuleState (CompileErrorOr [BO.Instruction])
 transform1M (A.AComment _s) = return $ Right []

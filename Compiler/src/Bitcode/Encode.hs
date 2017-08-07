@@ -62,7 +62,7 @@ encBinaryFlags (A.BinaryFlags unit sig big) = termTag termTagInteger : val
         then 1
         else 0
 
--- [monadic] Update literal table if needed. Return index in the literal table
+-- Update literal table if needed. Return index in the literal table
 encLitM :: T.Term -> BM.ModuleState [B.Bits]
 encLitM lit = do
   litIndex <- BM.findAddLitM lit
@@ -73,7 +73,7 @@ encWriteLoc (A.WRegX x) = termTag termTagRegX : encUint x
 encWriteLoc (A.WRegY y) = termTag termTagRegY : encUint y
 encWriteLoc A.WIgnore   = [termTag termTagNil]
 
--- [monadic] Encode code location as label, no label or an import (updates
+-- Encode code location as label, no label or an import (updates
 -- import table in the module if needed)
 encCodeLocM :: A.CodeLoc -> BM.ModuleState B.BitsList
 encCodeLocM (A.CLabel lloc) = return $ encLabelLoc lloc

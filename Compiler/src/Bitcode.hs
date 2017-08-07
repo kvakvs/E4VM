@@ -28,13 +28,14 @@ module Bitcode
   ) where
 
 import qualified Asm                 as A
+import qualified Bitcode.Encode      as BE
+import qualified Bitcode.Mod         as BM
+import qualified Bitcode.Op          as BO
 import qualified Bits                as B
-import qualified Bitcode.Encode     as BE
-import qualified Bitcode.Mod        as BM
-import qualified Bitcode.Op         as BO
 import           Uerlc
 
 import qualified Control.Monad.State as S
+import qualified Debug.Trace         as Dbg
 
 type MResult = BM.ModuleState (CompileErrorOr [BO.Instruction])
 
@@ -45,7 +46,7 @@ encodeError A.ECaseClause       = BE.encUint 2
 encodeError A.EFunClause        = BE.encUint 3
 encodeError A.EIfClause         = BE.encUint 4
 
--- [monadic] Returns int index of an atom in the module atoms table, optionally
+-- Returns int index of an atom in the module atoms table, optionally
 -- updates the atoms table if the string did not exist
 encodeAtomM :: String -> BM.ModuleState Int
 encodeAtomM a = do
@@ -62,7 +63,7 @@ makeInstrM op argBits = do
   m0 <- S.get
   let enc = BM.huffmanEncoder m0
       instr = BO.makeInstruction op argBits enc
-  S.put $ BM.profileOpcode m0 op
+  BM.profileOpcodeM op
   return [instr]
 
 -- Create an instruction to generate exception
@@ -71,7 +72,7 @@ invokeErrorM e = do
   instr <- makeInstrM BO.Error (encodeError e)
   return $ Right instr
 
--- [monadic] Updates atom table if needed, and returns atom index for a string
+-- Updates atom table if needed, and returns atom index for a string
 testM ::
      String -> A.LabelLoc -> [A.ReadLoc] -> Maybe Int -> A.WriteLoc -> MResult
 testM tname onfail args maybeLive dst = do
@@ -106,7 +107,7 @@ testHeapM need live = do
   instr <- makeInstrM BO.TestHeap (bitsNeed ++ bitsLive)
   return $ Right instr
 
--- [monadic] Compile a move instruction. BM.Module state is updated if
+-- Compile a move instruction. BM.Module state is updated if
 -- readloc src contains an atom or literal index not yet in the module tables
 moveM :: A.ReadLoc -> A.WriteLoc -> MResult
 moveM src dst = do
