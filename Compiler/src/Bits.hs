@@ -13,6 +13,7 @@ module Bits
 
 import qualified Data.Bits as DBits
 import qualified Data.List as L
+import qualified Data.ByteString as DBS
 
 -- An unsigned Word value which fits into Word8 bits
 data Bits
@@ -20,10 +21,12 @@ data Bits
                   Int
   | BitsUnsignedBig Int
                     Int
+  | Bytes DBS.ByteString
 
 instance Show Bits where
   show (BitsSignedBig v bits)   = show v ++ ":" ++ show bits ++ "/signed"
   show (BitsUnsignedBig v bits) = show v ++ ":" ++ show bits
+  show (Bytes bs) = "\"" ++ show bs ++ "\""
 
 -- A sequence of non-byte-aligned bits which will be joined together.
 -- Assuming the reader is aware what bits mean and can decode this sequence.

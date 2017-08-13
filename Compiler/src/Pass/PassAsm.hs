@@ -18,14 +18,9 @@ import qualified Data.Map             as Map
 
 -- Given Asm module produce Bitcode module or throw an error
 transform :: AM.Module -> BM.Module
-transform amod = bcmod
+transform amod = S.execState (transformM funs) BM.new
   where
-    bcmod0 = BM.new
     funs = Map.elems $ AM.funs amod
-    bcmod = S.execState (transformM funs) bcmod0
---      case transform' funs bcmod0 `MEx.catchError` Left of
---        Right bcmod' -> bcmod'
---        Left e       -> Uerlc.err $ show e
 
 -- given list of Asm funs and a Bitcode module, update module with
 -- funs that are transformed to Bitcode funs

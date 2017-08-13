@@ -40,8 +40,9 @@ data Module = Module
   , funs :: Map.Map T.FunArity BF.Func
   -- jump tables for selectVal and selectTupleArity
   , jTabs :: [AI.JumpTab]
-  -- Encoder pre-created with hardcoded op frequencies (B.Op.hardcodedFreq)
-  , huffmanEncoder :: H.Encoder Word8
+  -- Encoder which will be created after compiling finished from opcode
+  -- frequencies and will be used to encode opcodes into smaller bit counts
+  , huffmanEncoder :: Maybe (H.Encoder Word8)
   -- Opcodes frequencies calculated (enable this manually to generate data for
   -- B.Op.hardcodedFreq)
   , opStats :: Map.Map BO.Opcode Int
@@ -51,14 +52,13 @@ type ModuleState = S.State Module
 
 new :: Module
 new =
-  Module
-  { name = ""
+  Module { name = ""
   , atoms = Map.empty
   , literals = Map.empty
   , imports = Map.empty
   , funs = Map.empty
   , jTabs = []
-  , huffmanEncoder = H.makeEncoderFromFreq BO.harcodedFrequencies
+  , huffmanEncoder = Nothing
   , opStats = Map.empty
   }
 

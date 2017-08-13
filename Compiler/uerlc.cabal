@@ -33,6 +33,7 @@ library
                     , Term
                     , Pass.PassAsm
                     , Pass.PassBeamS
+                    , Pass.PassBitcode
                     , Uerlc
   build-depends:      base >= 4.7 && < 5
                     , ansi-terminal

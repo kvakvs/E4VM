@@ -128,24 +128,20 @@ instance Enum Opcode where
 -- A combination of {Opcode and [Bit Encoded Args]}
 data Instruction = Instruction
   { iOp :: Opcode
-  , iOpCompressed :: B.Bits
   , iArgs :: B.BitsList
   }
 
 instance Show Instruction where
-  show (Instruction op opComp bits) =
+  show (Instruction op bits) =
     show (fromEnum op) ++ " " ++ show bits ++ comment
     where
-      comment =
-        ansiCyan ++
-        " ; " ++ show op ++ " (op <<" ++ show opComp ++ ">>)" ++ ansiReset
+      comment = ansiCyan ++ " ; " ++ show op ++ ansiReset
 
-makeInstruction :: Opcode -> B.BitsList -> H.Encoder Word8 -> Instruction
-makeInstruction op argBits encoder =
-  Instruction {iOp = op, iOpCompressed = zOp, iArgs = argBits}
-  where
-    op8 = fromIntegral $ fromEnum op
-    zOp = H.encodeSome encoder [op8]
+makeInstruction :: Opcode -> B.BitsList -> Instruction
+makeInstruction op argBits =
+  Instruction {iOp = op, iArgs = argBits}
+--  where
+--    op8 = fromIntegral $ fromEnum op
 
 harcodedFrequencies :: [Frequency Word8]
 harcodedFrequencies = L.map makeFreq bcOpEnumTable
